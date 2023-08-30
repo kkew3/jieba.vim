@@ -1,0 +1,3 @@
+[submodule "pythonx/jieba_vim/jieba"]
+	path = pythonx/jieba_vim/jieba
+	url = https://github.com/fxsjy/jieba.git
