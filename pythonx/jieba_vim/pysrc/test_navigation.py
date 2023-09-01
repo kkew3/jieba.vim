@@ -36,6 +36,12 @@ def test_index_tokens():
 def test_index_last_start_of_PorH():
     pt = []
     assert index_last_start_of_PorH(pt) == 0
+    pt = [(0, 2, TokenType.space)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_last_start_of_PorH(pt) is None
+    pt = [(0, 2, TokenType.space), (3, 4, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_last_start_of_PorH(pt) == 3
     pt = [(0, 1, TokenType.hans), (2, 3, TokenType.hans)]
     pt = list(ParsedToken(*x) for x in pt)
     assert index_last_start_of_PorH(pt) == 2

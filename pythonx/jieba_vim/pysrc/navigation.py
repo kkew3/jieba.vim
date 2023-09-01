@@ -90,10 +90,12 @@ def index_tokens(parsed_tokens, bi):
 
 
 def index_last_start_of_PorH(parsed_tokens):
+    if not parsed_tokens:
+        return 0
     for ti in reversed(range(len(parsed_tokens))):
         if parsed_tokens[ti].t != TokenType.space:
             return parsed_tokens[ti].i
-    return 0
+    return None
 
 
 def index_prev_start_of_PorH(parsed_tokens, ci):
@@ -123,15 +125,25 @@ def backward_word_start(buffer, cursor_pos):
     if row == 1 and col == 0:
         return row, col
     if row == 1:
-        curr_pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
-        col = index_prev_start_of_PorH(curr_pt, col)
+        pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
+        col = index_prev_start_of_PorH(pt, col)
         if col is None:
             col = 0
         return row, col
-    curr_pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
-    col = index_prev_start_of_PorH(curr_pt, col)
+    pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
+    col = index_prev_start_of_PorH(pt, col)
     if col is not None:
         return row, col
-    prev_pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 2]))
-    col = index_last_start_of_PorH(prev_pt)
-    return row - 1, col
+    row -= 1
+    while row != 1:
+        pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
+        col = index_last_start_of_PorH(pt)
+        if col is not None:
+            return row, col
+        row -= 1
+    # if reached here, row == 1
+    pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
+    col = index_last_start_of_PorH(pt)
+    if col is None:
+        col = 0
+    return row, col
