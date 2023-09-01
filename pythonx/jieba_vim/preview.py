@@ -62,3 +62,5 @@ def preview(navi_func):
         match_pat = '|'.join('%{}c%{}l'.format(col + 1, row)
                              for row, col in cursor_positions)
         vim.command('match JiebaPreview /\\v{}/'.format(match_pat))
+    else:
+        preview_cancel()
