@@ -112,7 +112,7 @@ def index_prev_start_of_PorH(parsed_tokens, ci):
     return None
 
 
-def backward_start(buffer, cursor_pos):
+def backward_word_start(buffer, cursor_pos):
     """
     :param buffer: current buffer, a list of lines
     :param cursor_col: the (row, col) tuple of the cursor
