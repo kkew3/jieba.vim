@@ -121,9 +121,6 @@ def backward_word_start(buffer, cursor_pos):
     :return: the new cursor position
     """
     row, col = cursor_pos
-    # if at the beginning of file
-    if row == 1 and col == 0:
-        return row, col
     if row == 1:
         pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
         col = index_prev_start_of_PorH(pt, col)
