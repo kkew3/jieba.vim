@@ -23,6 +23,7 @@ For example, a sequence of P or H is considered *one* block of non-S.
 """
 import re
 import collections
+import functools
 
 import jieba_vim
 from . import punc
@@ -114,33 +115,53 @@ def index_prev_start_of_PorH(parsed_tokens, ci):
     return None
 
 
-def backward_word_start(buffer, cursor_pos):
+def _navigate(primary_index_func, secondary_index_func, backward, buffer,
+              cursor_pos):
     """
+    :param primary_index_func: the index function invoked on the first attempt
+    :param secondary_index_func: the index function invoked on the second
+           attempt
+    :param backward: whether the two index function go backward or not
     :param buffer: current buffer, a list of lines
     :param cursor_col: the (row, col) tuple of the cursor
     :return: the new cursor position
     """
+    if backward:
+        sentinel_row = 1
+        row_step = -1
+    else:
+        sentinel_row = len(buffer)
+        row_step = 1
     row, col = cursor_pos
-    if row == 1:
+    if row == sentinel_row:
         pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
-        col = index_prev_start_of_PorH(pt, col)
+        col = primary_index_func(pt, col)
         if col is None:
-            col = 0
+            if backward:
+                col = pt[0].i if pt else 0
+            else:
+                col = pt[-1].j if pt else 0
         return row, col
     pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
-    col = index_prev_start_of_PorH(pt, col)
+    col = primary_index_func(pt, col)
     if col is not None:
         return row, col
-    row -= 1
-    while row != 1:
+    row += row_step
+    while row != sentinel_row:
         pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
-        col = index_last_start_of_PorH(pt)
+        col = secondary_index_func(pt)
         if col is not None:
             return row, col
-        row -= 1
-    # if reached here, row == 1
+        row += row_step
     pt = parse_tokens(jieba_vim.jieba_cut(buffer[row - 1]))
-    col = index_last_start_of_PorH(pt)
+    col = secondary_index_func(pt)
     if col is None:
-        col = 0
+        if backward:
+            col = pt[0].i if pt else 0
+        else:
+            col = pt[-1].j if pt else 0
     return row, col
+
+
+backward_word_start = functools.partial(_navigate, index_prev_start_of_PorH,
+                                        index_last_start_of_PorH, True)
