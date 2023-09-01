@@ -5,7 +5,8 @@ Three types of tokens (see ``get_token_type`` function)::
     - ``punc`` (P for short): Chinese punctuation
     - ``hans`` (H for short): everything else (including alphanum)
 
-Between every H, if there's no S, an implicit S will be inserted.
+Between every H or between every P, if there's no S, an implicit S will be
+inserted.
 Between P and H (note the order), if there's no S, an implicit S will also be
 inserted.
 
@@ -119,9 +120,14 @@ def index_last_start_of_nonS(parsed_tokens):
     if not parsed_tokens:
         return 0
     last_valid_i = None
+    last_valid_t = None
     for ti in reversed(range(len(parsed_tokens))):
+        if (parsed_tokens[ti].t == TokenType.punc
+                and last_valid_t == TokenType.punc):
+            break
         if parsed_tokens[ti].t != TokenType.space:
             last_valid_i = parsed_tokens[ti].i
+            last_valid_t = parsed_tokens[ti].t
         if parsed_tokens[ti].t != TokenType.punc and last_valid_i is not None:
             break
     return last_valid_i
@@ -134,9 +140,14 @@ def index_prev_start_of_nonS(parsed_tokens, ci):
     if ci == parsed_tokens[ti].i:
         ti -= 1
     last_valid_i = None
+    last_valid_t = None
     while ti >= 0:
+        if (parsed_tokens[ti].t == TokenType.punc
+                and last_valid_t == TokenType.punc):
+            break
         if parsed_tokens[ti].t != TokenType.space:
             last_valid_i = parsed_tokens[ti].i
+            last_valid_t = parsed_tokens[ti].t
         if parsed_tokens[ti].t != TokenType.punc and last_valid_i is not None:
             break
         ti -= 1
@@ -155,9 +166,34 @@ def index_last_end_of_PorH(parsed_tokens):
 def index_prev_end_of_PorH(parsed_tokens, ci):
     if not parsed_tokens:
         return None
-    ti = index_tokens(parsed_tokens, ci)
-    if ci <= parsed_tokens[ti].j:
+    ti = index_tokens(parsed_tokens, ci) - 1
+    while ti >= 0:
+        if parsed_tokens[ti].t != TokenType.space:
+            return parsed_tokens[ti].j
         ti -= 1
+    return None
+
+
+def index_last_end_of_nonS(parsed_tokens):
+    if not parsed_tokens:
+        return 0
+    for ti in reversed(range(len(parsed_tokens))):
+        if parsed_tokens[ti].t != TokenType.space:
+            return parsed_tokens[ti].j
+    return None
+
+
+def index_prev_end_of_nonS(parsed_tokens, ci):
+    if not parsed_tokens:
+        return None
+    ti = index_tokens(parsed_tokens, ci) - 1
+    if parsed_tokens[ti + 1].t == TokenType.punc:
+        if ti < 0:
+            return None
+        if parsed_tokens[ti].t == TokenType.hans:
+            ti -= 1
+            if ti < 0:
+                return None
     while ti >= 0:
         if parsed_tokens[ti].t != TokenType.space:
             return parsed_tokens[ti].j
@@ -219,3 +255,5 @@ backward_WORD_start = functools.partial(_navigate, index_prev_start_of_nonS,
                                         index_last_start_of_nonS, True)
 backward_word_end = functools.partial(_navigate, index_prev_end_of_PorH,
                                       index_last_end_of_PorH, True)
+backward_WORD_end = functools.partial(_navigate, index_prev_end_of_nonS,
+                                      index_last_end_of_nonS, True)
