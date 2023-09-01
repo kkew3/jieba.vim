@@ -143,6 +143,28 @@ def index_prev_start_of_nonS(parsed_tokens, ci):
     return last_valid_i
 
 
+def index_last_end_of_PorH(parsed_tokens):
+    if not parsed_tokens:
+        return 0
+    for ti in reversed(range(len(parsed_tokens))):
+        if parsed_tokens[ti].t != TokenType.space:
+            return parsed_tokens[ti].j
+    return None
+
+
+def index_prev_end_of_PorH(parsed_tokens, ci):
+    if not parsed_tokens:
+        return None
+    ti = index_tokens(parsed_tokens, ci)
+    if ci <= parsed_tokens[ti].j:
+        ti -= 1
+    while ti >= 0:
+        if parsed_tokens[ti].t != TokenType.space:
+            return parsed_tokens[ti].j
+        ti -= 1
+    return None
+
+
 def _navigate(primary_index_func, secondary_index_func, backward, buffer,
               cursor_pos):
     """
@@ -195,3 +217,5 @@ backward_word_start = functools.partial(_navigate, index_prev_start_of_PorH,
                                         index_last_start_of_PorH, True)
 backward_WORD_start = functools.partial(_navigate, index_prev_start_of_nonS,
                                         index_last_start_of_nonS, True)
+backward_word_end = functools.partial(_navigate, index_prev_end_of_PorH,
+                                      index_last_end_of_PorH, True)
