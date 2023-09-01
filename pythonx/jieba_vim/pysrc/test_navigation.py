@@ -56,6 +56,8 @@ def test_index_last_start_of_PorH():
 
 
 def test_index_prev_start_of_PorH():
+    pt = []
+    assert index_prev_start_of_PorH(pt, 0) is None
     pt = [(0, 3, TokenType.hans)]
     pt = list(ParsedToken(*x) for x in pt)
     assert index_prev_start_of_PorH(pt, 0) is None
