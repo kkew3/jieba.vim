@@ -6,6 +6,8 @@ Three types of tokens (see ``get_token_type`` function)::
     - ``hans`` (H for short): everything else (including alphanum)
 
 Between every H, if there's no S, an implicit S will be inserted.
+Between P and H (note the order), if there's no S, an implicit S will also be
+inserted.
 
 Motions::
 
@@ -100,11 +102,8 @@ def index_last_start_of_PorH(parsed_tokens):
 
 
 def index_prev_start_of_PorH(parsed_tokens, ci):
-    # if current character index is zero, no pervious start can be found in
-    # current line of tokens
-    if ci == 0:
+    if not parsed_tokens:
         return None
-    # here we assume that when ci > 0, parsed_tokens is nonempty
     ti = index_tokens(parsed_tokens, ci)
     if ci == parsed_tokens[ti].i:
         ti -= 1
@@ -113,6 +112,35 @@ def index_prev_start_of_PorH(parsed_tokens, ci):
             return parsed_tokens[ti].i
         ti -= 1
     return None
+
+
+# Note the implicit S's
+def index_last_start_of_nonS(parsed_tokens):
+    if not parsed_tokens:
+        return 0
+    last_valid_i = None
+    for ti in reversed(range(len(parsed_tokens))):
+        if parsed_tokens[ti].t != TokenType.space:
+            last_valid_i = parsed_tokens[ti].i
+        if parsed_tokens[ti].t != TokenType.punc and last_valid_i is not None:
+            break
+    return last_valid_i
+
+
+def index_prev_start_of_nonS(parsed_tokens, ci):
+    if not parsed_tokens:
+        return None
+    ti = index_tokens(parsed_tokens, ci)
+    if ci == parsed_tokens[ti].i:
+        ti -= 1
+    last_valid_i = None
+    while ti >= 0:
+        if parsed_tokens[ti].t != TokenType.space:
+            last_valid_i = parsed_tokens[ti].i
+        if parsed_tokens[ti].t != TokenType.punc and last_valid_i is not None:
+            break
+        ti -= 1
+    return last_valid_i
 
 
 def _navigate(primary_index_func, secondary_index_func, backward, buffer,
@@ -165,3 +193,5 @@ def _navigate(primary_index_func, secondary_index_func, backward, buffer,
 
 backward_word_start = functools.partial(_navigate, index_prev_start_of_PorH,
                                         index_last_start_of_PorH, True)
+backward_WORD_start = functools.partial(_navigate, index_prev_start_of_nonS,
+                                        index_last_start_of_nonS, True)
