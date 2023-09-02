@@ -286,3 +286,261 @@ def test_index_prev_end_of_nonS():
     pt = [(0, 0, TokenType.punc), (3, 3, TokenType.punc)]
     pt = list(ParsedToken(*x) for x in pt)
     assert index_prev_end_of_nonS(pt, 4) == 0
+
+
+def test_index_first_start_of_PorH():
+    pt = []
+    assert index_first_start_of_PorH(pt) == 0
+    pt = [(0, 1, TokenType.hans), (2, 3, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_start_of_PorH(pt) == 0
+    pt = [(0, 2, TokenType.space), (3, 6, TokenType.punc),
+          (9, 12, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_start_of_PorH(pt) == 3
+    pt = [(0, 0, TokenType.punc), (3, 3, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_start_of_PorH(pt) == 0
+
+
+def test_index_next_start_of_PorH():
+    pt = []
+    assert index_next_start_of_PorH(pt, 0) is None
+    pt = [(0, 3, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_PorH(pt, 0) is None
+    assert index_next_start_of_PorH(pt, 1) is None
+    assert index_next_start_of_PorH(pt, 3) is None
+    pt = [(0, 3, TokenType.hans), (4, 5, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_PorH(pt, 0) == 4
+    assert index_next_start_of_PorH(pt, 1) == 4
+    assert index_next_start_of_PorH(pt, 3) == 4
+    assert index_next_start_of_PorH(pt, 4) is None
+    assert index_next_start_of_PorH(pt, 5) is None
+    pt = [(0, 3, TokenType.hans), (6, 9, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_PorH(pt, 0) == 6
+    assert index_next_start_of_PorH(pt, 1) == 6
+    assert index_next_start_of_PorH(pt, 3) == 6
+    assert index_next_start_of_PorH(pt, 4) == 6
+    assert index_next_start_of_PorH(pt, 5) == 6
+    assert index_next_start_of_PorH(pt, 6) is None
+    assert index_next_start_of_PorH(pt, 7) is None
+    assert index_next_start_of_PorH(pt, 9) is None
+    pt = [(0, 2, TokenType.space), (3, 6, TokenType.hans),
+          (7, 7, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_PorH(pt, 0) == 3
+    assert index_next_start_of_PorH(pt, 2) == 3
+    assert index_next_start_of_PorH(pt, 3) == 7
+    assert index_next_start_of_PorH(pt, 6) == 7
+    assert index_next_start_of_PorH(pt, 7) is None
+    pt = [(0, 1, TokenType.space), (2, 3, TokenType.punc),
+          (5, 6, TokenType.hans), (8, 9, TokenType.space)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_PorH(pt, 0) == 2
+    assert index_next_start_of_PorH(pt, 1) == 2
+    assert index_next_start_of_PorH(pt, 2) == 5
+    assert index_next_start_of_PorH(pt, 3) == 5
+    assert index_next_start_of_PorH(pt, 4) == 5
+    assert index_next_start_of_PorH(pt, 5) is None
+    assert index_next_start_of_PorH(pt, 6) is None
+    assert index_next_start_of_PorH(pt, 7) is None
+    assert index_next_start_of_PorH(pt, 8) is None
+    assert index_next_start_of_PorH(pt, 9) is None
+    pt = [(0, 0, TokenType.punc), (3, 3, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_PorH(pt, 0) == 3
+    assert index_next_start_of_PorH(pt, 1) == 3
+    assert index_next_start_of_PorH(pt, 2) == 3
+    assert index_next_start_of_PorH(pt, 3) is None
+
+
+def test_index_first_start_of_nonS():
+    pt = []
+    assert index_first_start_of_nonS(pt) == 0
+    pt = [(0, 1, TokenType.hans), (2, 3, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_start_of_nonS(pt) == 0
+    pt = [(0, 2, TokenType.space), (3, 6, TokenType.punc),
+          (9, 12, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_start_of_nonS(pt) == 3
+    pt = [(0, 0, TokenType.punc), (3, 3, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_start_of_nonS(pt) == 0
+
+
+def test_index_next_start_of_nonS():
+    pt = []
+    assert index_next_start_of_nonS(pt, 0) is None
+    pt = [(0, 3, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_nonS(pt, 0) is None
+    assert index_next_start_of_nonS(pt, 1) is None
+    assert index_next_start_of_nonS(pt, 3) is None
+    pt = [(0, 3, TokenType.hans), (4, 5, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_nonS(pt, 0) == 4
+    assert index_next_start_of_nonS(pt, 1) == 4
+    assert index_next_start_of_nonS(pt, 3) == 4
+    assert index_next_start_of_nonS(pt, 4) is None
+    assert index_next_start_of_nonS(pt, 5) is None
+    pt = [(0, 3, TokenType.hans), (6, 9, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_nonS(pt, 0) == 6
+    assert index_next_start_of_nonS(pt, 1) == 6
+    assert index_next_start_of_nonS(pt, 3) == 6
+    assert index_next_start_of_nonS(pt, 4) == 6
+    assert index_next_start_of_nonS(pt, 5) == 6
+    assert index_next_start_of_nonS(pt, 6) is None
+    assert index_next_start_of_nonS(pt, 7) is None
+    assert index_next_start_of_nonS(pt, 9) is None
+    pt = [(0, 2, TokenType.space), (3, 6, TokenType.hans),
+          (7, 7, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_nonS(pt, 0) == 3
+    assert index_next_start_of_nonS(pt, 2) == 3
+    assert index_next_start_of_nonS(pt, 3) is None
+    assert index_next_start_of_nonS(pt, 6) is None
+    assert index_next_start_of_nonS(pt, 7) is None
+    pt = [(0, 1, TokenType.space), (2, 3, TokenType.punc),
+          (5, 6, TokenType.hans), (8, 9, TokenType.space)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_nonS(pt, 0) == 2
+    assert index_next_start_of_nonS(pt, 1) == 2
+    assert index_next_start_of_nonS(pt, 2) == 5
+    assert index_next_start_of_nonS(pt, 3) == 5
+    assert index_next_start_of_nonS(pt, 4) == 5
+    assert index_next_start_of_nonS(pt, 5) is None
+    assert index_next_start_of_nonS(pt, 6) is None
+    assert index_next_start_of_nonS(pt, 7) is None
+    assert index_next_start_of_nonS(pt, 8) is None
+    assert index_next_start_of_nonS(pt, 9) is None
+    pt = [(0, 0, TokenType.punc), (3, 3, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_start_of_nonS(pt, 0) == 3
+    assert index_next_start_of_nonS(pt, 1) == 3
+    assert index_next_start_of_nonS(pt, 2) == 3
+    assert index_next_start_of_nonS(pt, 3) is None
+
+
+def test_index_first_end_of_PorH():
+    pt = []
+    assert index_first_end_of_PorH(pt) == 0
+    pt = [(0, 1, TokenType.hans), (2, 3, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_end_of_PorH(pt) == 1
+    pt = [(0, 2, TokenType.space), (3, 6, TokenType.punc),
+          (9, 12, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_end_of_PorH(pt) == 6
+    pt = [(0, 1, TokenType.punc), (3, 3, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_end_of_PorH(pt) == 1
+
+
+def test_index_next_end_of_PorH():
+    pt = []
+    assert index_next_end_of_PorH(pt, 0) is None
+    pt = [(0, 3, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_PorH(pt, 0) == 3
+    assert index_next_end_of_PorH(pt, 1) == 3
+    assert index_next_end_of_PorH(pt, 2) == 3
+    assert index_next_end_of_PorH(pt, 3) is None
+    pt = [(0, 3, TokenType.hans), (6, 9, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_PorH(pt, 0) == 3
+    assert index_next_end_of_PorH(pt, 1) == 3
+    assert index_next_end_of_PorH(pt, 3) == 9
+    assert index_next_end_of_PorH(pt, 6) == 9
+    assert index_next_end_of_PorH(pt, 7) == 9
+    assert index_next_end_of_PorH(pt, 8) == 9
+    assert index_next_end_of_PorH(pt, 9) is None
+    pt = [(0, 2, TokenType.space), (3, 6, TokenType.hans),
+          (7, 7, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_PorH(pt, 0) == 6
+    assert index_next_end_of_PorH(pt, 2) == 6
+    assert index_next_end_of_PorH(pt, 3) == 6
+    assert index_next_end_of_PorH(pt, 6) == 7
+    assert index_next_end_of_PorH(pt, 7) is None
+    pt = [(0, 1, TokenType.space), (2, 3, TokenType.punc),
+          (5, 6, TokenType.hans), (8, 9, TokenType.space)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_PorH(pt, 0) == 3
+    assert index_next_end_of_PorH(pt, 1) == 3
+    assert index_next_end_of_PorH(pt, 2) == 3
+    assert index_next_end_of_PorH(pt, 3) == 6
+    assert index_next_end_of_PorH(pt, 5) == 6
+    assert index_next_end_of_PorH(pt, 6) is None
+    assert index_next_end_of_PorH(pt, 8) is None
+    assert index_next_end_of_PorH(pt, 9) is None
+    pt = [(0, 0, TokenType.punc), (3, 3, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_PorH(pt, 0) == 3
+    assert index_next_end_of_PorH(pt, 3) is None
+
+
+def test_index_first_end_of_nonS():
+    pt = []
+    assert index_first_end_of_nonS(pt) == 0
+    pt = [(0, 1, TokenType.hans), (2, 3, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_end_of_nonS(pt) == 1
+    pt = [(0, 2, TokenType.space), (3, 6, TokenType.punc),
+          (9, 12, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_end_of_nonS(pt) == 6
+    pt = [(0, 2, TokenType.space), (3, 6, TokenType.hans),
+          (9, 12, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_end_of_nonS(pt) == 12
+    pt = [(0, 1, TokenType.punc), (3, 3, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_first_end_of_nonS(pt) == 1
+
+
+def test_index_next_end_of_nonS():
+    pt = []
+    assert index_next_end_of_nonS(pt, 0) is None
+    pt = [(0, 3, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_nonS(pt, 0) == 3
+    assert index_next_end_of_nonS(pt, 1) == 3
+    assert index_next_end_of_nonS(pt, 2) == 3
+    assert index_next_end_of_nonS(pt, 3) is None
+    pt = [(0, 3, TokenType.hans), (6, 9, TokenType.hans)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_nonS(pt, 0) == 3
+    assert index_next_end_of_nonS(pt, 1) == 3
+    assert index_next_end_of_nonS(pt, 3) == 9
+    assert index_next_end_of_nonS(pt, 6) == 9
+    assert index_next_end_of_nonS(pt, 7) == 9
+    assert index_next_end_of_nonS(pt, 8) == 9
+    assert index_next_end_of_nonS(pt, 9) is None
+    pt = [(0, 2, TokenType.space), (3, 6, TokenType.hans),
+          (7, 7, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_nonS(pt, 0) == 7
+    assert index_next_end_of_nonS(pt, 2) == 7
+    assert index_next_end_of_nonS(pt, 3) == 7
+    assert index_next_end_of_nonS(pt, 6) == 7
+    assert index_next_end_of_nonS(pt, 7) is None
+    pt = [(0, 1, TokenType.space), (2, 3, TokenType.punc),
+          (5, 6, TokenType.hans), (8, 9, TokenType.space)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_nonS(pt, 0) == 3
+    assert index_next_end_of_nonS(pt, 1) == 3
+    assert index_next_end_of_nonS(pt, 2) == 3
+    assert index_next_end_of_nonS(pt, 3) == 6
+    assert index_next_end_of_nonS(pt, 5) == 6
+    assert index_next_end_of_nonS(pt, 6) is None
+    assert index_next_end_of_nonS(pt, 8) is None
+    assert index_next_end_of_nonS(pt, 9) is None
+    pt = [(0, 0, TokenType.punc), (3, 3, TokenType.punc)]
+    pt = list(ParsedToken(*x) for x in pt)
+    assert index_next_end_of_nonS(pt, 0) == 3
+    assert index_next_end_of_nonS(pt, 3) is None

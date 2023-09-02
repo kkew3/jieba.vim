@@ -201,6 +201,115 @@ def index_prev_end_of_nonS(parsed_tokens, ci):
     return None
 
 
+def index_first_start_of_PorH(parsed_tokens):
+    if not parsed_tokens:
+        return 0
+    for tok in parsed_tokens:
+        if tok.t != TokenType.space:
+            return tok.i
+    return None
+
+
+def index_next_start_of_PorH(parsed_tokens, ci):
+    if not parsed_tokens:
+        return None
+    ti = index_tokens(parsed_tokens, ci) + 1
+    while ti < len(parsed_tokens):
+        if parsed_tokens[ti].t != TokenType.space:
+            return parsed_tokens[ti].i
+        ti += 1
+    return None
+
+
+def index_first_start_of_nonS(parsed_tokens):
+    if not parsed_tokens:
+        return 0
+    for tok in parsed_tokens:
+        if tok.t != TokenType.space:
+            return tok.i
+    return None
+
+
+def index_next_start_of_nonS(parsed_tokens, ci):
+    if not parsed_tokens:
+        return None
+    ti = index_tokens(parsed_tokens, ci) + 1
+    if parsed_tokens[ti - 1].t == TokenType.hans:
+        if ti >= len(parsed_tokens):
+            return None
+        if parsed_tokens[ti].t == TokenType.punc:
+            ti += 1
+            if ti >= len(parsed_tokens):
+                return None
+    while ti < len(parsed_tokens):
+        if parsed_tokens[ti].t != TokenType.space:
+            return parsed_tokens[ti].i
+        ti += 1
+    return None
+
+
+def index_first_end_of_PorH(parsed_tokens):
+    if not parsed_tokens:
+        return 0
+    for tok in parsed_tokens:
+        if tok.t != TokenType.space:
+            return tok.j
+    return None
+
+
+def index_next_end_of_PorH(parsed_tokens, ci):
+    if not parsed_tokens:
+        return None
+    ti = index_tokens(parsed_tokens, ci)
+    if ci == parsed_tokens[ti].j:
+        ti += 1
+    while ti < len(parsed_tokens):
+        if parsed_tokens[ti].t != TokenType.space:
+            return parsed_tokens[ti].j
+        ti += 1
+    return None
+
+
+def index_first_end_of_nonS(parsed_tokens):
+    if not parsed_tokens:
+        return 0
+    last_valid_j = None
+    last_valid_t = None
+    for tok in parsed_tokens:
+        if ((tok.t == TokenType.punc and last_valid_t == TokenType.punc) or
+            (tok.t == TokenType.hans and last_valid_t == TokenType.hans)):
+            break
+        if tok.t != TokenType.space:
+            last_valid_j = tok.j
+            last_valid_t = tok.t
+        if tok.t != TokenType.hans and last_valid_j is not None:
+            break
+    return last_valid_j
+
+
+def index_next_end_of_nonS(parsed_tokens, ci):
+    if not parsed_tokens:
+        return None
+    ti = index_tokens(parsed_tokens, ci)
+    if ci == parsed_tokens[ti].j:
+        ti += 1
+    last_valid_j = None
+    last_valid_t = None
+    while ti < len(parsed_tokens):
+        if ((parsed_tokens[ti].t == TokenType.punc
+             and last_valid_t == TokenType.punc)
+                or (parsed_tokens[ti].t == TokenType.hans
+                    and last_valid_t == TokenType.hans)):
+            break
+        if parsed_tokens[ti].t != TokenType.space:
+            last_valid_j = parsed_tokens[ti].j
+            last_valid_t = parsed_tokens[ti].t
+        if parsed_tokens[ti].t != TokenType.hans and last_valid_j is not None:
+            break
+        ti += 1
+    return last_valid_j
+
+
 def _navigate(primary_index_func, secondary_index_func, backward, buffer,
               cursor_pos):
     """
@@ -257,3 +366,11 @@ backward_word_end = functools.partial(_navigate, index_prev_end_of_PorH,
                                       index_last_end_of_PorH, True)
 backward_WORD_end = functools.partial(_navigate, index_prev_end_of_nonS,
                                       index_last_end_of_nonS, True)
+forward_word_start = functools.partial(_navigate, index_next_start_of_PorH,
+                                       index_first_start_of_PorH, False)
+forward_WORD_start = functools.partial(_navigate, index_next_start_of_nonS,
+                                       index_first_start_of_nonS, False)
+forward_word_end = functools.partial(_navigate, index_next_end_of_PorH,
+                                     index_first_end_of_PorH, False)
+forward_WORD_end = functools.partial(_navigate, index_next_end_of_nonS,
+                                     index_first_end_of_nonS, False)
