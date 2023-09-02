@@ -44,6 +44,10 @@ Plug 'kkew3/jieba.vim, { 'on': 'JiebaInit', 'for': ['markdown', 'tex'] }
 - `<Plug>(Jieba_preview_X)`：预览增强了的 `X` 的跳转位置
 - `<Plug>(Jieba_X)`: 增强了的 `X`，同时在 normal、operator-pending、visual 三种模式下可用，以及可与 count 协同使用。例如假设 `w` 被映射到 `<Plug>(Jieba_w)`，那么 `3w` 将是向后跳三个词，`d3w` 是删除后三个词；一个已知的 bug 是在 visual 模式下 count 不起作用
 
+提供以下全局变量：
+
+- `g:jieba_vim_user_dict`：可选地设置为指向文件的绝对路径，用于为 jieba 提供用户词典，请参阅 [jieba][2] 项目的帮助以获取更多信息
+
 用户可自行在 `.vimrc` 中将按键映射到这些 `<Plug>()` 映射。例如：
 
 ```vim
@@ -148,6 +152,10 @@ Provided `<Plug>()` mappings, wherein `X` denotes the eight Vim word motion keys
 - `<Plug>(Jieba_preview_cancel)`: same as the command `JiebaPreviewCancel`
 - `<Plug>(Jieba_preview_X)`: preview the destination of the augmented `X`
 - `<Plug>(Jieba_X)`: the augmented `X`. This mapping is usable in normal, operator-pending and visual modes, and can be used together with count. For example, assuming that `w` has been mapped to `<Plug>(Jieba_w)`, then `3w` will jump three words forward, `d3w` will delete three words forward; a known issue is that in visual mode, the count does not take effect
+
+Provided global variables:
+
+- `g:jieba_vim_user_dict`: can be optionally set to an absolute path pointing to a user dictionary file for jieba library. For more information, please refer to [jieba][2]
 
 User may map keys to these `<Plug>()` mappings on their own.
 For example,
