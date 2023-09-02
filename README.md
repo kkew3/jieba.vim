@@ -90,6 +90,69 @@ command! JiebaDisable call s:JiebaUnmapKeys()
 
 该代码在调用 `JiebaEnable` 命令时启用 jieba.vim，而调用 `JiebaDisable` 命令时禁用 jieba.vim。启用时 `<LocalLeader>jX` 会被映射为 `<Plug>(Jieba_preview_X)`、`X` 会被映射为 `<Plug>(Jieba_X)`。
 
+### 例子 2 -- 我的配置
+
+```vim
+function! s:JiebaMapKeys()
+    if exists("b:jieba_enabled")
+        finish
+    endif
+    let b:jieba_enabled = 1
+
+    let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
+    let modes = ["n", "o", "v",]
+    for ky in keys
+        execute 'nmap <buffer> <LocalLeader>j' . ky . ' <Plug>(Jieba_preview_' . ky . ')'
+        for md in modes
+            execute md . 'map ' . ky . ' <Plug>(Jieba_' . ky . ')'
+        endfor
+    endfor
+endfunction
+
+function! s:JiebaUnmapKeys()
+    if exists("b:jieba_enabled")
+        unlet b:jieba_enabled
+    else
+        finish
+    endif
+
+    let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
+    let modes = ["n", "o", "v",]
+    for ky in keys
+        execute 'silent! nunmap <buffer> <LocalLeader>j' . ky
+        for md in modes
+            execute 'silent! ' . md . 'unmap ' . ky
+        endfor
+    endfor
+endfunction
+
+function! s:JiebaToggle()
+    if exists("b:jieba_enabled")
+        call s:JiebaUnmapKeys()
+    else
+        call s:JiebaMapKeys()
+    endif
+endfunction
+
+command! JiebaEnable call s:JiebaMapKeys()
+command! JiebaDisable call s:JiebaUnmapKeys()
+command! JiebaToggle call s:JiebaToggle()
+
+nnoremap <Leader>jj :<C-u>JiebaToggle<CR>
+
+function! s:JiebaInitAndEnable()
+    JiebaInit
+    JiebaEnable
+endfunction
+
+augroup jieba_group
+    autocmd!
+    autocmd FileType text call s:JiebaInitAndEnable()
+    autocmd FileType markdown call s:JiebaInitAndEnable()
+    autocmd FileType tex call s:JiebaInitAndEnable()
+augroup END
+```
+
 ## 对于开发者
 
 [py.test][7] 用于测试本插件。
@@ -201,6 +264,68 @@ command! JiebaDisable call s:JiebaUnmapKeys()
 This snippet enable jieba.vim key mappings when `JiebaEnable` command is called, and disable those mappings when `JiebaDisable` is called.
 When enabling jieba.vim, `<LocalLeader>jX` will be mapped to `<Plug>(Jieba_preview_X)`, and `X` will be mapped to `<Plug>(Jieba_X)`.
 
+### Usage example 2 -- my configuration
+
+```vim
+function! s:JiebaMapKeys()
+    if exists("b:jieba_enabled")
+        finish
+    endif
+    let b:jieba_enabled = 1
+
+    let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
+    let modes = ["n", "o", "v",]
+    for ky in keys
+        execute 'nmap <buffer> <LocalLeader>j' . ky . ' <Plug>(Jieba_preview_' . ky . ')'
+        for md in modes
+            execute md . 'map ' . ky . ' <Plug>(Jieba_' . ky . ')'
+        endfor
+    endfor
+endfunction
+
+function! s:JiebaUnmapKeys()
+    if exists("b:jieba_enabled")
+        unlet b:jieba_enabled
+    else
+        finish
+    endif
+
+    let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
+    let modes = ["n", "o", "v",]
+    for ky in keys
+        execute 'silent! nunmap <buffer> <LocalLeader>j' . ky
+        for md in modes
+            execute 'silent! ' . md . 'unmap ' . ky
+        endfor
+    endfor
+endfunction
+
+function! s:JiebaToggle()
+    if exists("b:jieba_enabled")
+        call s:JiebaUnmapKeys()
+    else
+        call s:JiebaMapKeys()
+    endif
+endfunction
+
+command! JiebaEnable call s:JiebaMapKeys()
+command! JiebaDisable call s:JiebaUnmapKeys()
+command! JiebaToggle call s:JiebaToggle()
+
+nnoremap <Leader>jj :<C-u>JiebaToggle<CR>
+
+function! s:JiebaInitAndEnable()
+    JiebaInit
+    JiebaEnable
+endfunction
+
+augroup jieba_group
+    autocmd!
+    autocmd FileType text call s:JiebaInitAndEnable()
+    autocmd FileType markdown call s:JiebaInitAndEnable()
+    autocmd FileType tex call s:JiebaInitAndEnable()
+augroup END
+```
 
 ## For developers
 
