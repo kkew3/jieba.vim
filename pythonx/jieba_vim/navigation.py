@@ -47,13 +47,8 @@ def vim_wrapper_factory(py_navi_func_name):
 
 
 def get_navi_func_names():
-    func_names = []
-    dir_opts = ['forward', 'backward']
-    word_opts = ['word', 'WORD']
-    end_opts = ['start', 'end']
-    for opt in itertools.product(dir_opts, word_opts, end_opts):
-        func_names.append('_'.join(opt))
-    return func_names
+    motions = ['b', 'B', 'ge', 'gE', 'w', 'W', 'e', 'E']
+    return ['wordmotion_' + m for m in motions]
 
 
 for name in get_navi_func_names():

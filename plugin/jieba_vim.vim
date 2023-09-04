@@ -16,44 +16,20 @@ py3 import jieba_vim.pysrc.navigation
 command! JiebaInit py3 jieba_vim.jieba_initialize()
 command! JiebaPreviewCancel py3 jieba_vim.preview_cancel()
 
-nnoremap <silent> <Plug>(Jieba_preview_b) :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.backward_word_start)<CR>
-nnoremap <silent> <Plug>(Jieba_preview_B) :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.backward_WORD_start)<CR>
-nnoremap <silent> <Plug>(Jieba_preview_ge) :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.backward_word_end)<CR>
-nnoremap <silent> <Plug>(Jieba_preview_gE) :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.backward_WORD_end)<CR>
-nnoremap <silent> <Plug>(Jieba_preview_w) :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.forward_word_start)<CR>
-nnoremap <silent> <Plug>(Jieba_preview_W) :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.forward_WORD_start)<CR>
-nnoremap <silent> <Plug>(Jieba_preview_e) :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.forward_word_end)<CR>
-nnoremap <silent> <Plug>(Jieba_preview_E) :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.forward_WORD_end)<CR>
+let s:motions = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
+
+for ky in s:motions
+    execute 'nnoremap <silent> <Plug>(Jieba_preview_' . ky . ') :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.wordmotion_' . ky . ')<CR>'
+endfor
 nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>py3 jieba_vim.preview_cancel()<CR>
 
-nnoremap <silent> <Plug>(Jieba_b) :<C-u>py3 jieba_vim.navigation.backward_word_start()<CR>
-onoremap <silent> <plug>(Jieba_b) :<C-u>py3 jieba_vim.navigation.backward_word_start()<CR>
-vnoremap <silent> <plug>(Jieba_b) :<C-u>py3 jieba_vim.navigation.backward_word_start_v()<CR>
-
-nnoremap <silent> <Plug>(Jieba_B) :<C-u>py3 jieba_vim.navigation.backward_WORD_start()<CR>
-onoremap <silent> <Plug>(Jieba_B) :<C-u>py3 jieba_vim.navigation.backward_WORD_start()<CR>
-vnoremap <silent> <Plug>(Jieba_B) :<C-u>py3 jieba_vim.navigation.backward_WORD_start_v()<CR>
-
-nnoremap <silent> <Plug>(Jieba_ge) :<C-u>py3 jieba_vim.navigation.backward_word_end()<CR>
-onoremap <silent> <Plug>(Jieba_ge) :<C-u>py3 jieba_vim.navigation.backward_word_end()<CR>
-vnoremap <silent> <Plug>(Jieba_ge) :<C-u>py3 jieba_vim.navigation.backward_word_end_v()<CR>
-
-nnoremap <silent> <Plug>(Jieba_gE) :<C-u>py3 jieba_vim.navigation.backward_WORD_end()<CR>
-onoremap <silent> <Plug>(Jieba_gE) :<C-u>py3 jieba_vim.navigation.backward_WORD_end()<CR>
-vnoremap <silent> <Plug>(Jieba_gE) :<C-u>py3 jieba_vim.navigation.backward_WORD_end_v()<CR>
-
-nnoremap <silent> <Plug>(Jieba_w) :<C-u>py3 jieba_vim.navigation.forward_word_start()<CR>
-onoremap <silent> <Plug>(Jieba_w) :<C-u>py3 jieba_vim.navigation.forward_word_start()<CR>
-vnoremap <silent> <Plug>(Jieba_w) :<C-u>py3 jieba_vim.navigation.forward_word_start_v()<CR>
-
-nnoremap <silent> <Plug>(Jieba_W) :<C-u>py3 jieba_vim.navigation.forward_WORD_start()<CR>
-onoremap <silent> <Plug>(Jieba_W) :<C-u>py3 jieba_vim.navigation.forward_WORD_start()<CR>
-vnoremap <silent> <Plug>(Jieba_W) :<C-u>py3 jieba_vim.navigation.forward_WORD_start_v()<CR>
-
-nnoremap <silent> <Plug>(Jieba_e) :<C-u>py3 jieba_vim.navigation.forward_word_end()<CR>
-onoremap <silent> <Plug>(Jieba_e) :<C-u>py3 jieba_vim.navigation.forward_word_end()<CR>
-vnoremap <silent> <Plug>(Jieba_e) :<C-u>py3 jieba_vim.navigation.forward_word_end_v()<CR>
-
-nnoremap <silent> <Plug>(Jieba_E) :<C-u>py3 jieba_vim.navigation.forward_WORD_end()<CR>
-onoremap <silent> <Plug>(Jieba_E) :<C-u>py3 jieba_vim.navigation.forward_WORD_end()<CR>
-vnoremap <silent> <Plug>(Jieba_E) :<C-u>py3 jieba_vim.navigation.forward_WORD_end_v()<CR>
+let s:modes = ["n", "o", "v",]
+for ky in s:motions
+    for md in s:modes
+        if md ==# "v"
+            execute 'vnoremap <silent> <Plug>(Jieba_' . ky . ') :<C-u>py3 jieba_vim.navigation.wordmotion_' . ky . '_v()<CR>'
+        else
+            execute md . 'noremap <silent> <Plug>(Jieba_' . ky . ') :<C-u>py3 jieba_vim.navigation.wordmotion_' . ky . '()<CR>'
+        endif
+    endfor
+endfor

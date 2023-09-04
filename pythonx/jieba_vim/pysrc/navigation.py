@@ -12,14 +12,14 @@ inserted.
 
 Motions::
 
-    - ``backward_word_start``: jumps backward to each start of P or H
-    - ``backward_word_end``: similar
-    - ``forward_word_start``: similar
-    - ``forward_word_end``: similar
-    - ``backward_WORD_start``: jumps backward to each start of non-S
-    - ``backward_WORD_end``: similar
-    - ``forward_WORD_start``: similar
-    - ``forward_WORD_end``: similar
+    - ``b``: jumps backward to each start of P or H
+    - ``ge``: jumps backward to each end of P or H
+    - ``w``: jumps forward to each start of P or H
+    - ``e``: jumps forward to each end of P or H
+    - ``B``: jumps backward to each start of non-S
+    - ``gE``: jumps backward to each end of non-S
+    - ``W``: jumps forward to each start of non-S
+    - ``E``: jumps forward to each end of non-S
 
 Difference between "P or H" and "non-S":
 For example, a sequence of P or H is considered *one* block of non-S.
@@ -358,19 +358,19 @@ def _navigate(primary_index_func, secondary_index_func, backward, buffer,
     return row, col
 
 
-backward_word_start = functools.partial(_navigate, index_prev_start_of_PorH,
-                                        index_last_start_of_PorH, True)
-backward_WORD_start = functools.partial(_navigate, index_prev_start_of_nonS,
-                                        index_last_start_of_nonS, True)
-backward_word_end = functools.partial(_navigate, index_prev_end_of_PorH,
-                                      index_last_end_of_PorH, True)
-backward_WORD_end = functools.partial(_navigate, index_prev_end_of_nonS,
-                                      index_last_end_of_nonS, True)
-forward_word_start = functools.partial(_navigate, index_next_start_of_PorH,
-                                       index_first_start_of_PorH, False)
-forward_WORD_start = functools.partial(_navigate, index_next_start_of_nonS,
-                                       index_first_start_of_nonS, False)
-forward_word_end = functools.partial(_navigate, index_next_end_of_PorH,
-                                     index_first_end_of_PorH, False)
-forward_WORD_end = functools.partial(_navigate, index_next_end_of_nonS,
-                                     index_first_end_of_nonS, False)
+wordmotion_b = functools.partial(_navigate, index_prev_start_of_PorH,
+                                 index_last_start_of_PorH, True)
+wordmotion_B = functools.partial(_navigate, index_prev_start_of_nonS,
+                                 index_last_start_of_nonS, True)
+wordmotion_ge = functools.partial(_navigate, index_prev_end_of_PorH,
+                                  index_last_end_of_PorH, True)
+wordmotion_gE = functools.partial(_navigate, index_prev_end_of_nonS,
+                                  index_last_end_of_nonS, True)
+wordmotion_w = functools.partial(_navigate, index_next_start_of_PorH,
+                                 index_first_start_of_PorH, False)
+wordmotion_W = functools.partial(_navigate, index_next_start_of_nonS,
+                                 index_first_start_of_nonS, False)
+wordmotion_e = functools.partial(_navigate, index_next_end_of_PorH,
+                                 index_first_end_of_PorH, False)
+wordmotion_E = functools.partial(_navigate, index_next_end_of_nonS,
+                                 index_first_end_of_nonS, False)
