@@ -42,7 +42,7 @@ Plug 'kkew3/jieba.vim, { 'on': 'JiebaInit', 'for': ['markdown', 'tex'] }
 
 - `<Plug>(Jieba_preview_cancel)`：即 `JiebaPreviewCancel` 命令
 - `<Plug>(Jieba_preview_X)`：预览增强了的 `X` 的跳转位置
-- `<Plug>(Jieba_X)`: 增强了的 `X`，同时在 normal、operator-pending、visual 三种模式下可用，以及可与 count 协同使用。例如假设 `w` 被映射到 `<Plug>(Jieba_w)`，那么 `3w` 将是向后跳三个词，`d3w` 是删除后三个词；一个已知的 bug 是在 visual 模式下 count 不起作用
+- `<Plug>(Jieba_X)`: 增强了的 `X`，同时在 normal、operator-pending、visual 三种模式下可用，以及可与 count 协同使用。例如假设 `w` 被映射到 `<Plug>(Jieba_w)`，那么 `3w` 将是向后跳三个词，`d3w` 是删除后三个词
 
 提供以下全局变量：
 
@@ -153,6 +153,11 @@ augroup jieba_group
 augroup END
 ```
 
+## Bug
+
+- Visual 模式下无法使用 count 修饰 word motion 键，例如 `3b` 中的 `3` 不起作用
+- 使用 jieba.vim 时，受 jieba 的分词影响，按 WORD 移动的键（例如 `B`）无法跳过例如 `2023-08-01` 的字符串
+
 ## 对于开发者
 
 [py.test][7] 用于测试本插件。
@@ -214,7 +219,7 @@ Provided `<Plug>()` mappings, wherein `X` denotes the eight Vim word motion keys
 
 - `<Plug>(Jieba_preview_cancel)`: same as the command `JiebaPreviewCancel`
 - `<Plug>(Jieba_preview_X)`: preview the destination of the augmented `X`
-- `<Plug>(Jieba_X)`: the augmented `X`. This mapping is usable in normal, operator-pending and visual modes, and can be used together with count. For example, assuming that `w` has been mapped to `<Plug>(Jieba_w)`, then `3w` will jump three words forward, `d3w` will delete three words forward; a known issue is that in visual mode, the count does not take effect
+- `<Plug>(Jieba_X)`: the augmented `X`. This mapping is usable in normal, operator-pending and visual modes, and can be used together with count. For example, assuming that `w` has been mapped to `<Plug>(Jieba_w)`, then `3w` will jump three words forward, `d3w` will delete three words forward
 
 Provided global variables:
 
@@ -326,6 +331,11 @@ augroup jieba_group
     autocmd FileType tex call s:JiebaInitAndEnable()
 augroup END
 ```
+
+## Bug
+
+- In Visual mode, the count decorator cannot be used. For example, the `3` in `3b` won't work.
+- Due to the word segmentation result by jieba, keys that move by WORD (e.g. `B`) cannot move across strings like `2023-08-01`.
 
 ## For developers
 
