@@ -95,7 +95,7 @@ command! JiebaDisable call s:JiebaUnmapKeys()
 ```vim
 function! s:JiebaMapKeys()
     if exists("b:jieba_enabled")
-        finish
+        return
     endif
     let b:jieba_enabled = 1
 
@@ -113,7 +113,7 @@ function! s:JiebaUnmapKeys()
     if exists("b:jieba_enabled")
         unlet b:jieba_enabled
     else
-        finish
+        return
     endif
 
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
@@ -269,7 +269,7 @@ When enabling jieba.vim, `<LocalLeader>jX` will be mapped to `<Plug>(Jieba_previ
 ```vim
 function! s:JiebaMapKeys()
     if exists("b:jieba_enabled")
-        finish
+        return
     endif
     let b:jieba_enabled = 1
 
@@ -287,7 +287,7 @@ function! s:JiebaUnmapKeys()
     if exists("b:jieba_enabled")
         unlet b:jieba_enabled
     else
-        finish
+        return
     endif
 
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
