@@ -12,14 +12,14 @@ inserted.
 
 Motions::
 
-    - ``backward_start``: jumps backward to each start of P or H
-    - ``backward_end``: similar
-    - ``forward_start``: similar
-    - ``forward_end``: similar
-    - ``big_backward_start``: jumps backward to each start of non-S
-    - ``big_backward_end``: similar
-    - ``big_forward_start``: similar
-    - ``big_forward_end``: similar
+    - ``backward_word_start``: jumps backward to each start of P or H
+    - ``backward_word_end``: similar
+    - ``forward_word_start``: similar
+    - ``forward_word_end``: similar
+    - ``backward_WORD_start``: jumps backward to each start of non-S
+    - ``backward_WORD_end``: similar
+    - ``forward_WORD_start``: similar
+    - ``forward_WORD_end``: similar
 
 Difference between "P or H" and "non-S":
 For example, a sequence of P or H is considered *one* block of non-S.
