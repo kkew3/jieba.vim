@@ -156,7 +156,6 @@ augroup END
 ## Bug
 
 - Visual 模式下无法使用 count 修饰 word motion 键，例如 `3b` 中的 `3` 不起作用
-- 使用 jieba.vim 时，受 jieba 的分词影响，按 WORD 移动的键（例如 `B`）无法跳过例如 `2023-08-01` 的字符串
 
 ## 对于开发者
 
@@ -335,7 +334,6 @@ augroup END
 ## Bug
 
 - In Visual mode, the count decorator cannot be used. For example, the `3` in `3b` won't work.
-- Due to the word segmentation result by jieba, keys that move by WORD (e.g. `B`) cannot move across strings like `2023-08-01`.
 
 ## For developers
 

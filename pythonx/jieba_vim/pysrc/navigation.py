@@ -3,26 +3,28 @@ Three types of tokens (see ``get_token_type`` function)::
 
     - ``space`` (S for short): whitespace characters
     - ``punc`` (P for short): Chinese punctuation
+    - ``non_word`` (N for short): other non-word characters
     - ``hans`` (H for short): everything else (including alphanum)
 
-Between every H or between every P, if there's no S, an implicit S will be
-inserted.
-Between P and H (note the order), if there's no S, an implicit S will also be
-inserted.
+Implicit spaces are inserted between various types of tokens. For example,
+between H and H there will be an implicit space to form words in Chinese.
+For details of the insertion rule, please refer to
+``insert_implicit_space_rule``.
+
+After insertion of implicit space, we may treat Chinese text as if the words
+were separated by space like English. We define 'word' as a non-space token,
+and 'WORD' as a successive sequence of non-space tokens.
 
 Motions::
 
-    - ``b``: jumps backward to each start of P or H
-    - ``ge``: jumps backward to each end of P or H
-    - ``w``: jumps forward to each start of P or H
-    - ``e``: jumps forward to each end of P or H
-    - ``B``: jumps backward to each start of non-S
-    - ``gE``: jumps backward to each end of non-S
-    - ``W``: jumps forward to each start of non-S
-    - ``E``: jumps forward to each end of non-S
-
-Difference between "P or H" and "non-S":
-For example, a sequence of P or H is considered *one* block of non-S.
+    - ``b``: jumps backward to each start of word
+    - ``ge``: jumps backward to each end of word
+    - ``w``: jumps forward to each start of word
+    - ``e``: jumps forward to each end of word
+    - ``B``: jumps backward to each start of WORD
+    - ``gE``: jumps backward to each end of WORD
+    - ``W``: jumps forward to each start of WORD
+    - ``E``: jumps forward to each end of WORD
 """
 import re
 import collections
@@ -32,6 +34,7 @@ import jieba_vim
 from . import punc
 
 pat_space = re.compile(r'\s+')
+pat_nonword = re.compile(r'\W+')
 pat_punc = re.compile('[' + punc.punctuation + ']+')
 
 
@@ -39,6 +42,7 @@ class TokenType:
     space = 1
     punc = 2
     hans = 3
+    non_word = 4
 
 
 def get_token_type(token):
@@ -53,6 +57,8 @@ def get_token_type(token):
         return TokenType.space
     if pat_punc.fullmatch(token):
         return TokenType.punc
+    if pat_nonword.fullmatch(token):
+        return TokenType.non_word
     return TokenType.hans
 
 
@@ -113,12 +119,19 @@ def insert_implicit_space_rule(parsed_tok1, parsed_tok2):
         (TokenType.hans, TokenType.hans): True,
         (TokenType.hans, TokenType.punc): False,
         (TokenType.hans, TokenType.space): False,
+        (TokenType.hans, TokenType.non_word): False,
         (TokenType.punc, TokenType.hans): True,
         (TokenType.punc, TokenType.punc): True,
         (TokenType.punc, TokenType.space): False,
+        (TokenType.punc, TokenType.non_word): True,
         (TokenType.space, TokenType.hans): False,
         (TokenType.space, TokenType.punc): False,
         (TokenType.space, TokenType.space): False,
+        (TokenType.space, TokenType.non_word): False,
+        (TokenType.non_word, TokenType.hans): False,
+        (TokenType.non_word, TokenType.punc): False,
+        (TokenType.non_word, TokenType.space): False,
+        (TokenType.non_word, TokenType.non_word): False,
     }
     if to_insert_table[parsed_tok1.t, parsed_tok2.t]:
         imp_space = _gen_implicit_space_in_between(parsed_tok2)
@@ -143,7 +156,7 @@ def index_tokens(parsed_tokens, bi):
                       'parsed tokens `{}`').format(bi, parsed_tokens))
 
 
-def index_last_start_of_PorH(parsed_tokens):
+def index_last_start_of_word(parsed_tokens):
     if not parsed_tokens:
         return 0
     for ti in reversed(range(len(parsed_tokens))):
@@ -152,7 +165,7 @@ def index_last_start_of_PorH(parsed_tokens):
     return None
 
 
-def index_prev_start_of_PorH(parsed_tokens, ci):
+def index_prev_start_of_word(parsed_tokens, ci):
     if not parsed_tokens:
         return None
     ti = index_tokens(parsed_tokens, ci)
@@ -165,7 +178,7 @@ def index_prev_start_of_PorH(parsed_tokens, ci):
     return None
 
 
-def index_last_start_of_nonS(parsed_tokens):
+def index_last_start_of_WORD(parsed_tokens):
     if not parsed_tokens:
         return 0
     last_valid_i = None
@@ -177,7 +190,7 @@ def index_last_start_of_nonS(parsed_tokens):
     return last_valid_i
 
 
-def index_prev_start_of_nonS(parsed_tokens, ci):
+def index_prev_start_of_WORD(parsed_tokens, ci):
     if not parsed_tokens:
         return None
     ti = index_tokens(parsed_tokens, ci)
@@ -193,7 +206,7 @@ def index_prev_start_of_nonS(parsed_tokens, ci):
     return last_valid_i
 
 
-def index_last_end_of_PorH(parsed_tokens):
+def index_last_end_of_word(parsed_tokens):
     if not parsed_tokens:
         return 0
     for ti in reversed(range(len(parsed_tokens))):
@@ -202,7 +215,7 @@ def index_last_end_of_PorH(parsed_tokens):
     return None
 
 
-def index_prev_end_of_PorH(parsed_tokens, ci):
+def index_prev_end_of_word(parsed_tokens, ci):
     if not parsed_tokens:
         return None
     ti = index_tokens(parsed_tokens, ci) - 1
@@ -213,7 +226,7 @@ def index_prev_end_of_PorH(parsed_tokens, ci):
     return None
 
 
-def index_last_end_of_nonS(parsed_tokens):
+def index_last_end_of_WORD(parsed_tokens):
     if not parsed_tokens:
         return 0
     for ti in reversed(range(len(parsed_tokens))):
@@ -222,7 +235,7 @@ def index_last_end_of_nonS(parsed_tokens):
     return None
 
 
-def index_prev_end_of_nonS(parsed_tokens, ci):
+def index_prev_end_of_WORD(parsed_tokens, ci):
     if not parsed_tokens:
         return None
     ti = index_tokens(parsed_tokens, ci)
@@ -238,7 +251,7 @@ def index_prev_end_of_nonS(parsed_tokens, ci):
     return None
 
 
-def index_first_start_of_PorH(parsed_tokens):
+def index_first_start_of_word(parsed_tokens):
     if not parsed_tokens:
         return 0
     for tok in parsed_tokens:
@@ -247,7 +260,7 @@ def index_first_start_of_PorH(parsed_tokens):
     return None
 
 
-def index_next_start_of_PorH(parsed_tokens, ci):
+def index_next_start_of_word(parsed_tokens, ci):
     if not parsed_tokens:
         return None
     ti = index_tokens(parsed_tokens, ci) + 1
@@ -258,7 +271,7 @@ def index_next_start_of_PorH(parsed_tokens, ci):
     return None
 
 
-def index_first_start_of_nonS(parsed_tokens):
+def index_first_start_of_WORD(parsed_tokens):
     if not parsed_tokens:
         return 0
     for tok in parsed_tokens:
@@ -267,7 +280,7 @@ def index_first_start_of_nonS(parsed_tokens):
     return None
 
 
-def index_next_start_of_nonS(parsed_tokens, ci):
+def index_next_start_of_WORD(parsed_tokens, ci):
     if not parsed_tokens:
         return None
     ti = index_tokens(parsed_tokens, ci)
@@ -284,7 +297,7 @@ def index_next_start_of_nonS(parsed_tokens, ci):
     return None
 
 
-def index_first_end_of_PorH(parsed_tokens):
+def index_first_end_of_word(parsed_tokens):
     if not parsed_tokens:
         return 0
     for tok in parsed_tokens:
@@ -293,7 +306,7 @@ def index_first_end_of_PorH(parsed_tokens):
     return None
 
 
-def index_next_end_of_PorH(parsed_tokens, ci):
+def index_next_end_of_word(parsed_tokens, ci):
     if not parsed_tokens:
         return None
     ti = index_tokens(parsed_tokens, ci)
@@ -306,7 +319,7 @@ def index_next_end_of_PorH(parsed_tokens, ci):
     return None
 
 
-def index_first_end_of_nonS(parsed_tokens):
+def index_first_end_of_WORD(parsed_tokens):
     if not parsed_tokens:
         return 0
     last_valid_j = None
@@ -318,7 +331,7 @@ def index_first_end_of_nonS(parsed_tokens):
     return last_valid_j
 
 
-def index_next_end_of_nonS(parsed_tokens, ci):
+def index_next_end_of_WORD(parsed_tokens, ci):
     if not parsed_tokens:
         return None
     ti = index_tokens(parsed_tokens, ci)
@@ -386,19 +399,19 @@ def _navigate(primary_index_func, secondary_index_func, backward, buffer,
     return row, col
 
 
-wordmotion_b = functools.partial(_navigate, index_prev_start_of_PorH,
-                                 index_last_start_of_PorH, True)
-wordmotion_B = functools.partial(_navigate, index_prev_start_of_nonS,
-                                 index_last_start_of_nonS, True)
-wordmotion_ge = functools.partial(_navigate, index_prev_end_of_PorH,
-                                  index_last_end_of_PorH, True)
-wordmotion_gE = functools.partial(_navigate, index_prev_end_of_nonS,
-                                  index_last_end_of_nonS, True)
-wordmotion_w = functools.partial(_navigate, index_next_start_of_PorH,
-                                 index_first_start_of_PorH, False)
-wordmotion_W = functools.partial(_navigate, index_next_start_of_nonS,
-                                 index_first_start_of_nonS, False)
-wordmotion_e = functools.partial(_navigate, index_next_end_of_PorH,
-                                 index_first_end_of_PorH, False)
-wordmotion_E = functools.partial(_navigate, index_next_end_of_nonS,
-                                 index_first_end_of_nonS, False)
+wordmotion_b = functools.partial(_navigate, index_prev_start_of_word,
+                                 index_last_start_of_word, True)
+wordmotion_B = functools.partial(_navigate, index_prev_start_of_WORD,
+                                 index_last_start_of_WORD, True)
+wordmotion_ge = functools.partial(_navigate, index_prev_end_of_word,
+                                  index_last_end_of_word, True)
+wordmotion_gE = functools.partial(_navigate, index_prev_end_of_WORD,
+                                  index_last_end_of_WORD, True)
+wordmotion_w = functools.partial(_navigate, index_next_start_of_word,
+                                 index_first_start_of_word, False)
+wordmotion_W = functools.partial(_navigate, index_next_start_of_WORD,
+                                 index_first_start_of_WORD, False)
+wordmotion_e = functools.partial(_navigate, index_next_end_of_word,
+                                 index_first_end_of_word, False)
+wordmotion_E = functools.partial(_navigate, index_next_end_of_WORD,
+                                 index_first_end_of_WORD, False)
