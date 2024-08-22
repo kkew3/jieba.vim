@@ -10,18 +10,12 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 
 ## 安装
 
-本插件使用 Python3 开发，Vim 需要 `+python3` 特性以正常使用。
+本插件使用 Python3 + Rust 开发，Vim 需要 `+python3` 特性以正常使用。
 
 对于 [vim-plug][6]，使用如下代码安装：
 
 ```vim
-Plug 'kkew3/jieba.vim'
-```
-
-可以通过例如如下代码延迟加载：
-
-```vim
-Plug 'kkew3/jieba.vim'
+Plug 'kkew3/jieba.vim', { 'do': './build.sh' }
 ```
 
 ## 功能
@@ -172,19 +166,13 @@ That's why I develop this plugin.
 
 ## Installation
 
-This plugin was developed using Python3.
+This plugin was developed using Python3 + Rust.
 `+python3` features is required for Vim to use the jieba.vim.
 
 For [vim-plug][6],
 
 ```vim
-Plug 'kkew3/jieba.vim'
-```
-
-Users may use this snippet to delay loading:
-
-```vim
-Plug 'kkew3/jieba.vim'
+Plug 'kkew3/jieba.vim', { 'do': './build.sh' }
 ```
 
 ## Functions
