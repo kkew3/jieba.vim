@@ -1,42 +1,37 @@
 """
 These names are dynamically defined in this module::
 
-    - forward_word_start
-    - forward_word_start_v
-    - forward_word_end
-    - forward_word_end_v
-    - forward_WORD_start
-    - forward_WORD_start_v
-    - forward_WORD_end
-    - forward_WORD_end_v
-    - backward_word_start
-    - backward_word_start_v
-    - backward_word_end
-    - backward_word_end_v
-    - backward_WORD_start
-    - backward_WORD_start_v
-    - backward_WORD_end
-    - backward_WORD_end_v
+    - wordmotion_b
+    - wordmotion_b_v
+    - wordmotion_B
+    - wordmotion_B_v
+    - wordmotion_ge
+    - wordmotion_ge_v
+    - wordmotion_gE
+    - wordmotion_gE_v
+    - wordmotion_w
+    - wordmotion_w_v
+    - wordmotion_W
+    - wordmotion_W_v
+    - wordmotion_e
+    - wordmotion_e_v
+    - wordmotion_E
+    - wordmotion_E_v
 """
-import itertools
-
 import vim
 
-from .pysrc import navigation
-from .init import jieba_initialized
+import jieba_navi_rs as navigation
 
 
 def vim_wrapper_factory(py_navi_func_name):
     py_navi_func = getattr(navigation, py_navi_func_name)
 
-    @jieba_initialized
     def _wrapper():
         for _ in range(int(vim.eval('v:count1'))):
             vim.current.window.cursor = py_navi_func(vim.current.buffer,
                                                      vim.current.window.cursor)
 
     # known issue: responding_to_vcount won't work in visual mode
-    @jieba_initialized
     def _wrapper_v():
         # Reference: https://stackoverflow.com/q/16212801/7881370
         vim.command('normal! gv')

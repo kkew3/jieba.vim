@@ -1,7 +1,5 @@
 import vim
 
-from .init import jieba_initialized
-
 PREVIEW_MAX_LIMIT = 99999
 
 
@@ -25,12 +23,11 @@ def get_preview_limit():
     return min(limit, PREVIEW_MAX_LIMIT)
 
 
-@jieba_initialized
 def preview(navi_func):
     """
     Preview corresponding navigation.
 
-    :param navi_func: a function from ``jieba_vim.pysrc.navigation`` module of
+    :param navi_func: a function from ``jieba_vim.jieba_navi_rs`` module of
            signature ``(buffer, cursor_pos) -> cursor_pos``.
     """
     vim.command('hi link JiebaPreview IncSearch')
