@@ -170,7 +170,9 @@ fn index_tokens(parsed_tokens: &[ParsedToken], bi: usize) -> usize {
     }
 }
 
-pub fn index_last_start_of_word(parsed_tokens: &[ParsedToken]) -> Option<usize> {
+pub fn index_last_start_of_word(
+    parsed_tokens: &[ParsedToken],
+) -> Option<usize> {
     if parsed_tokens.is_empty() {
         Some(0)
     } else {
@@ -208,7 +210,9 @@ pub fn index_prev_start_of_word(
 }
 
 #[allow(non_snake_case)]
-pub fn index_last_start_of_WORD(parsed_tokens: &[ParsedToken]) -> Option<usize> {
+pub fn index_last_start_of_WORD(
+    parsed_tokens: &[ParsedToken],
+) -> Option<usize> {
     if parsed_tokens.is_empty() {
         Some(0)
     } else {
@@ -312,7 +316,9 @@ pub fn index_prev_end_of_WORD(
     }
 }
 
-pub fn index_first_start_of_word(parsed_tokens: &[ParsedToken]) -> Option<usize> {
+pub fn index_first_start_of_word(
+    parsed_tokens: &[ParsedToken],
+) -> Option<usize> {
     if parsed_tokens.is_empty() {
         Some(0)
     } else {
@@ -342,7 +348,9 @@ pub fn index_next_start_of_word(
 }
 
 #[allow(non_snake_case)]
-pub fn index_first_start_of_WORD(parsed_tokens: &[ParsedToken]) -> Option<usize> {
+pub fn index_first_start_of_WORD(
+    parsed_tokens: &[ParsedToken],
+) -> Option<usize> {
     index_first_start_of_word(parsed_tokens)
 }
 
@@ -452,7 +460,7 @@ fn read_buffer_cut_and_parse(
     index: usize,
 ) -> PyResult<Vec<ParsedToken>> {
     Ok(parse_tokens(
-        &jieba.cut(buffer.get_item(index)?.extract::<&str>()?, true),
+        &jieba.cut(&buffer.get_item(index)?.extract::<String>()?, true),
     ))
 }
 
