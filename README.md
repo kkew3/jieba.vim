@@ -21,7 +21,7 @@ Plug 'kkew3/jieba.vim'
 可以通过例如如下代码延迟加载：
 
 ```vim
-Plug 'kkew3/jieba.vim, { 'on': 'JiebaInit', 'for': ['markdown', 'tex'] }
+Plug 'kkew3/jieba.vim'
 ```
 
 ## 功能
@@ -33,9 +33,8 @@ Plug 'kkew3/jieba.vim, { 'on': 'JiebaInit', 'for': ['markdown', 'tex'] }
 
 ## 使用
 
-本插件设计为非侵入式，即默认不映射任何按键，但提供一些命令与 `<Plug>(...)` 映射供使用者自行配置。提供两个命令：
+本插件设计为非侵入式，即默认不映射任何按键，但提供一些命令与 `<Plug>(...)` 映射供使用者自行配置。提供一个命令：
 
-- `JiebaInit`：用于初始化 jieba，默认在第一次使用时调用，也可手动调用以消除第一次使用时的延迟感。通常该命令耗时 0.6 秒左右
 - `JiebaPreviewCancel`：用于取消按词跳转位置预览
 
 提供以下 `<Plug>()` 映射，其中 `X` 表示上文所述的八个 Vim word motion 按键，即 `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`：
@@ -140,16 +139,11 @@ command! JiebaToggle call s:JiebaToggle()
 
 nnoremap <Leader>jj :<C-u>JiebaToggle<CR>
 
-function! s:JiebaInitAndEnable()
-    JiebaInit
-    JiebaEnable
-endfunction
-
 augroup jieba_group
     autocmd!
-    autocmd FileType text call s:JiebaInitAndEnable()
-    autocmd FileType markdown call s:JiebaInitAndEnable()
-    autocmd FileType tex call s:JiebaInitAndEnable()
+    autocmd FileType text :JiebaEnable
+    autocmd FileType markdown call :JiebaEnable
+    autocmd FileType tex call :JiebaEnable
 augroup END
 ```
 
@@ -194,7 +188,7 @@ Plug 'kkew3/jieba.vim'
 Users may use this snippet to delay loading:
 
 ```vim
-Plug 'kkew3/jieba.vim, { 'on': 'JiebaInit', 'for': ['markdown', 'tex'] }
+Plug 'kkew3/jieba.vim'
 ```
 
 ## Functions
@@ -211,7 +205,6 @@ This plugin is designed to be nonintrusive, i.e. not providing any default keyma
 However, various commands and `<Plug>(...)` mappings are provided for users to manually configure to their needs.
 Provided commands:
 
-- `JiebaInit`: used to initialize jieba library. By default this will be invoked upon first usage. However, users may opt to invoke it manually beforehand, so as to eliminate the delay upon first usage. Usually this command takes 0.6 seconds to finish
 - `JiebaPreviewCancel`: used to clear up the preview markup
 
 Provided `<Plug>()` mappings, wherein `X` denotes the eight Vim word motion keys, i.e. `b`, `B`, `ge`, `gE`, `w`, `W`, `e`, `E`:
@@ -318,16 +311,11 @@ command! JiebaToggle call s:JiebaToggle()
 
 nnoremap <Leader>jj :<C-u>JiebaToggle<CR>
 
-function! s:JiebaInitAndEnable()
-    JiebaInit
-    JiebaEnable
-endfunction
-
 augroup jieba_group
     autocmd!
-    autocmd FileType text call s:JiebaInitAndEnable()
-    autocmd FileType markdown call s:JiebaInitAndEnable()
-    autocmd FileType tex call s:JiebaInitAndEnable()
+    autocmd FileType text :JiebaEnable
+    autocmd FileType markdown :JiebaEnable
+    autocmd FileType tex :JiebaEnable
 augroup END
 ```
 
