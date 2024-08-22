@@ -456,7 +456,7 @@ pub fn index_next_end_of_WORD(
 #[inline]
 fn read_buffer_cut_and_parse(
     jieba: &Jieba,
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     index: usize,
 ) -> PyResult<Vec<ParsedToken>> {
     Ok(parse_tokens(
@@ -474,7 +474,7 @@ pub fn navigate<F1, F2>(
     primary_index_func: F1,
     mut secondary_index_func: F2,
     backward: bool,
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     cursor_pos: (usize, usize),
 ) -> PyResult<(usize, usize)>
 where

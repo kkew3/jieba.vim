@@ -9,7 +9,7 @@ static DICT: &str = include_str!("data/unionwords.txt");
 
 #[pyfunction]
 fn wordmotion_b(
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     cursor_pos: (usize, usize),
 ) -> PyResult<(usize, usize)> {
     navigation::navigate(
@@ -24,7 +24,7 @@ fn wordmotion_b(
 #[pyfunction]
 #[allow(non_snake_case)]
 fn wordmotion_B(
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     cursor_pos: (usize, usize),
 ) -> PyResult<(usize, usize)> {
     navigation::navigate(
@@ -38,7 +38,7 @@ fn wordmotion_B(
 
 #[pyfunction]
 fn wordmotion_ge(
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     cursor_pos: (usize, usize),
 ) -> PyResult<(usize, usize)> {
     navigation::navigate(
@@ -53,7 +53,7 @@ fn wordmotion_ge(
 #[pyfunction]
 #[allow(non_snake_case)]
 fn wordmotion_gE(
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     cursor_pos: (usize, usize),
 ) -> PyResult<(usize, usize)> {
     navigation::navigate(
@@ -67,7 +67,7 @@ fn wordmotion_gE(
 
 #[pyfunction]
 fn wordmotion_w(
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     cursor_pos: (usize, usize),
 ) -> PyResult<(usize, usize)> {
     navigation::navigate(
@@ -82,7 +82,7 @@ fn wordmotion_w(
 #[pyfunction]
 #[allow(non_snake_case)]
 fn wordmotion_W(
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     cursor_pos: (usize, usize),
 ) -> PyResult<(usize, usize)> {
     navigation::navigate(
@@ -96,7 +96,7 @@ fn wordmotion_W(
 
 #[pyfunction]
 fn wordmotion_e(
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     cursor_pos: (usize, usize),
 ) -> PyResult<(usize, usize)> {
     navigation::navigate(
@@ -111,7 +111,7 @@ fn wordmotion_e(
 #[pyfunction]
 #[allow(non_snake_case)]
 fn wordmotion_E(
-    buffer: &Bound<'_, PySequence>,
+    buffer: &Bound<'_, PyAny>,
     cursor_pos: (usize, usize),
 ) -> PyResult<(usize, usize)> {
     navigation::navigate(
