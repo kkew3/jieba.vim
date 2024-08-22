@@ -10,16 +10,15 @@ endif
 
 py3 import jieba_vim
 py3 import jieba_vim.navigation
-py3 import jieba_vim.pysrc.navigation
+py3 import jieba_vim.jieba_navi_rs
 
 
-command! JiebaInit py3 jieba_vim.jieba_initialize()
 command! JiebaPreviewCancel py3 jieba_vim.preview_cancel()
 
 let s:motions = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
 
 for ky in s:motions
-    execute 'nnoremap <silent> <Plug>(Jieba_preview_' . ky . ') :<C-u>py3 jieba_vim.preview(jieba_vim.pysrc.navigation.wordmotion_' . ky . ')<CR>'
+    execute 'nnoremap <silent> <Plug>(Jieba_preview_' . ky . ') :<C-u>py3 jieba_vim.preview(jieba_vim.jieba_navi_rs.wordmotion_' . ky . ')<CR>'
 endfor
 nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>py3 jieba_vim.preview_cancel()<CR>
 
