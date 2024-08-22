@@ -20,7 +20,7 @@ These names are dynamically defined in this module::
 """
 import vim
 
-import jieba_navi_rs as navigation
+from . import jieba_navi_rs as navigation
 
 
 def vim_wrapper_factory(py_navi_func_name):
