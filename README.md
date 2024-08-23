@@ -132,8 +132,8 @@ nnoremap <Leader>jj :<C-u>JiebaToggle<CR>
 augroup jieba_group
     autocmd!
     autocmd FileType text :JiebaEnable
-    autocmd FileType markdown call :JiebaEnable
-    autocmd FileType tex call :JiebaEnable
+    autocmd FileType markdown :JiebaEnable
+    autocmd FileType tex :JiebaEnable
 augroup END
 ```
 
