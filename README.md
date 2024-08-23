@@ -143,11 +143,11 @@ augroup END
 
 ## 对于开发者
 
-[py.test][7] 用于测试本插件。
-若想在本地运行测试，首先将 `pythonx/jieba_vim/__init__.py` 中的后三行注释掉，然后运行在 `pythonx/jieba_vim` 目录下运行
+若想在本地运行针对 rust 实现的测试，
 
 ```bash
-pytest pysrc
+cd pythonx
+cargo test
 ```
 
 ---
@@ -305,11 +305,11 @@ augroup END
 
 ## For developers
 
-[py.test][7] is used to test the Python backend.
-To run tests locally, first comment out the last three lines of `pythonx/jieba_vim/__init__.py`, then run under directory `pythonx/jieba_vim`
+To run tests against rust implementation locally,
 
 ```bash
-pytest pysrc
+cd pythonx
+cargo test
 ```
 
 
@@ -320,4 +320,3 @@ pytest pysrc
 [4]: https://github.com/ginqi7/deno-bridge-jieba
 [5]: https://github.com/cathaysia/jieba_nvim
 [6]: https://github.com/junegunn/vim-plug
-[7]: https://docs.pytest.org/en/7.4.x/
