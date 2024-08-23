@@ -1,6 +1,6 @@
 # jieba.vim: Vim 的中文按词跳转插件
 
-*我在名为 `rust` 的 git branch 上传了实验性的基于 `jieba-rs` 的 rust 中文跳转实现，启动时间提速 60%。*
+*我在名为 `rust` 的 [git branch](https://github.com/kkew3/jieba.vim/tree/rust) 上传了实验性的基于 `jieba-rs` 的 rust 中文跳转实现，启动时间提速 60%。*
 
 *For English, see below.*
 
