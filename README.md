@@ -15,7 +15,7 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 对于 [vim-plug][6]，使用如下代码安装：
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'branch': 'rust', 'do': './build.sh' }
 ```
 
 可能需要进入插件目录调整 `pythonx/Cargo.toml` 中的 pyo3 python ABI 版本，以匹配 vim 中 python3 的版本。
@@ -181,7 +181,7 @@ This plugin was developed using Python3 + Rust.
 For [vim-plug][6],
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'branch': 'rust', 'do': './build.sh' }
 ```
 
 User may need to adjust the pyo3 python ABI in `pythonx/Cargo.toml` under the plugin directory after downloading the plugin, in order to match with the python3 version vim is compiled against.
