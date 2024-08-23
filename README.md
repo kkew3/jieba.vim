@@ -18,6 +18,15 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 Plug 'kkew3/jieba.vim', { 'do': './build.sh' }
 ```
 
+可能需要进入插件目录调整 `pythonx/Cargo.toml` 中的 pyo3 python ABI 版本，以匹配 vim 中 python3 的版本。
+可以在终端使用
+
+```bash
+vim +"py3 print(sys.version)"
+```
+
+查看 vim 的 python3 版本。
+
 ## 功能
 
 1. 增强八个 Vim word motion 的功能，即 `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`，使其能用于中文分词（同时也保留其按空格分词的功能）。其行为与默认行为相似，例如 `w` 不会跳过中文标点而 `W` 会跳过中文标点等。
@@ -173,6 +182,13 @@ For [vim-plug][6],
 
 ```vim
 Plug 'kkew3/jieba.vim', { 'do': './build.sh' }
+```
+
+User may need to adjust the pyo3 python ABI in `pythonx/Cargo.toml` under the plugin directory after downloading the plugin, in order to match with the python3 version vim is compiled against.
+The vim's python3 version may be checked by the following command at terminal:
+
+```bash
+vim +"py3 print(sys.version)"
 ```
 
 ## Functions
