@@ -2,7 +2,6 @@ mod navigation;
 pub mod punc;
 
 use pyo3::prelude::*;
-use pyo3::types::PySequence;
 
 // flate!(static DICT: str from "src/data/unionwords.txt");
 static DICT: &str = include_str!("data/unionwords.txt");
