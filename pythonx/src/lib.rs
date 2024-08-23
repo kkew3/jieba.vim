@@ -4,6 +4,8 @@ pub mod punc;
 use pyo3::prelude::*;
 
 // flate!(static DICT: str from "src/data/unionwords.txt");
+
+// Copied from https://github.com/liwenju0/cutword/blob/main/cutword/unionwords.txt
 static DICT: &str = include_str!("data/unionwords.txt");
 
 #[pyfunction]
