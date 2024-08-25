@@ -19,3 +19,4 @@ once_cell = "1.19"
 [build-dependencies]
 pyo3-build-config = "0.22"
 symlink = "0.1"
+curl = "0.4"

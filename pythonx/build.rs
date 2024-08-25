@@ -1,3 +1,5 @@
+use curl::easy::Easy;
+use std::io::Write;
 use std::{env, fs, io};
 
 fn ensure_not_exists(path: &str) -> Result<(), ()> {
@@ -10,7 +12,35 @@ fn ensure_not_exists(path: &str) -> Result<(), ()> {
     }
 }
 
+fn mkdir(path: &str) {
+    match fs::create_dir(path) {
+        Ok(()) => (),
+        Err(err) => match err.kind() {
+            io::ErrorKind::AlreadyExists => (),
+            _ => panic!("Failed to mkdir \"{}\"", path),
+        },
+    }
+}
+
+fn download_word_list_from_cutword(path: &str) {
+    let outfile = fs::File::create(path).unwrap();
+    let mut outfile = io::BufWriter::new(outfile);
+    let mut handle = Easy::new();
+    let url = "https://raw.githubusercontent.com/liwenju0/cutword/main/cutword/unionwords.txt";
+    handle.url(url).unwrap();
+    let mut transfer = handle.transfer();
+    transfer
+        .write_function(|data| {
+            outfile.write_all(data).unwrap();
+            Ok(data.len())
+        })
+        .unwrap();
+    transfer.perform().unwrap();
+}
+
 fn main() {
+    mkdir("src/data");
+    download_word_list_from_cutword("src/data/unionwords.txt");
     pyo3_build_config::add_extension_module_link_args();
     if env::var("PROFILE").unwrap() == "release" {
         env::set_current_dir("jieba_vim").unwrap();
