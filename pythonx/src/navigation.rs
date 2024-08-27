@@ -3,7 +3,6 @@ use const_format::concatcp;
 use jieba_rs::Jieba;
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
-use pyo3::types::PySequence;
 use regex::Regex;
 use std::io::BufReader;
 
