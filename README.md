@@ -44,7 +44,7 @@ vim +"py3 print(sys.version)"
 
 - `<Plug>(Jieba_preview_cancel)`：即 `JiebaPreviewCancel` 命令
 - `<Plug>(Jieba_preview_X)`：预览增强了的 `X` 的跳转位置
-- `<Plug>(Jieba_X)`: 增强了的 `X`，同时在 normal、operator-pending、visual 三种模式下可用，以及可与 count 协同使用。例如假设 `w` 被映射到 `<Plug>(Jieba_w)`，那么 `3w` 将是向后跳三个词，`d3w` 是删除后三个词
+- `<Plug>(Jieba_X)`: 增强了的 `X`，同时在 normal、operator-pending、visual (除 visual line 模式外) 三种模式下可用，以及可与 count 协同使用。例如假设 `w` 被映射到 `<Plug>(Jieba_w)`，那么 `3w` 将是向后跳三个词，`d3w` 是删除后三个词
 
 用户可自行在 `.vimrc` 中将按键映射到这些 `<Plug>()` 映射。例如：
 
@@ -62,7 +62,7 @@ map w <Plug>(Jieba_w)
 ```vim
 function! s:JiebaMapKeys()
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
-    let modes = ["n", "o", "v",]
+    let modes = ["n", "o", "x",]
     for ky in keys
         execute 'nmap <buffer> <LocalLeader>j' . ky . ' <Plug>(Jieba_preview_' . ky . ')'
         for md in modes
@@ -73,7 +73,7 @@ endfunction
 
 function! s:JiebaUnmapKeys()
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
-    let modes = ["n", "o", "v",]
+    let modes = ["n", "o", "x",]
     for ky in keys
         execute 'silent! nunmap <buffer> <LocalLeader>j' . ky
         for md in modes
@@ -98,7 +98,7 @@ function! s:JiebaMapKeys()
     let b:jieba_enabled = 1
 
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
-    let modes = ["n", "o", "v",]
+    let modes = ["n", "o", "x",]
     for ky in keys
         execute 'nmap <buffer> <LocalLeader>j' . ky . ' <Plug>(Jieba_preview_' . ky . ')'
         for md in modes
@@ -115,7 +115,7 @@ function! s:JiebaUnmapKeys()
     endif
 
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
-    let modes = ["n", "o", "v",]
+    let modes = ["n", "o", "x",]
     for ky in keys
         execute 'silent! nunmap <buffer> <LocalLeader>j' . ky
         for md in modes
@@ -145,10 +145,6 @@ augroup jieba_group
     autocmd FileType tex :JiebaEnable
 augroup END
 ```
-
-## Bug
-
-- Visual 模式下无法使用 count 修饰 word motion 键，例如 `3b` 中的 `3` 不起作用
 
 ## 对于开发者
 
@@ -211,7 +207,7 @@ Provided `<Plug>()` mappings, wherein `X` denotes the eight Vim word motion keys
 
 - `<Plug>(Jieba_preview_cancel)`: same as the command `JiebaPreviewCancel`
 - `<Plug>(Jieba_preview_X)`: preview the destination of the augmented `X`
-- `<Plug>(Jieba_X)`: the augmented `X`. This mapping is usable in normal, operator-pending and visual modes, and can be used together with count. For example, assuming that `w` has been mapped to `<Plug>(Jieba_w)`, then `3w` will jump three words forward, `d3w` will delete three words forward
+- `<Plug>(Jieba_X)`: the augmented `X`. This mapping is usable in normal, operator-pending and visual modes (except for visual line mode), and can be used together with count. For example, assuming that `w` has been mapped to `<Plug>(Jieba_w)`, then `3w` will jump three words forward, `d3w` will delete three words forward
 
 User may map keys to these `<Plug>()` mappings on their own.
 For example,
@@ -230,7 +226,7 @@ Insert the following code in `.vimrc`:
 ```vim
 function! s:JiebaMapKeys()
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
-    let modes = ["n", "o", "v",]
+    let modes = ["n", "o", "x",]
     for ky in keys
         execute 'nmap <buffer> <LocalLeader>j' . ky . ' <Plug>(Jieba_preview_' . ky . ')'
         for md in modes
@@ -241,7 +237,7 @@ endfunction
 
 function! s:JiebaUnmapKeys()
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
-    let modes = ["n", "o", "v",]
+    let modes = ["n", "o", "x",]
     for ky in keys
         execute 'silent! nunmap <buffer> <LocalLeader>j' . ky
         for md in modes
@@ -267,7 +263,7 @@ function! s:JiebaMapKeys()
     let b:jieba_enabled = 1
 
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
-    let modes = ["n", "o", "v",]
+    let modes = ["n", "o", "x",]
     for ky in keys
         execute 'nmap <buffer> <LocalLeader>j' . ky . ' <Plug>(Jieba_preview_' . ky . ')'
         for md in modes
@@ -284,7 +280,7 @@ function! s:JiebaUnmapKeys()
     endif
 
     let keys = ["b", "B", "ge", "gE", "w", "W", "e", "E",]
-    let modes = ["n", "o", "v",]
+    let modes = ["n", "o", "x",]
     for ky in keys
         execute 'silent! nunmap <buffer> <LocalLeader>j' . ky
         for md in modes
@@ -314,10 +310,6 @@ augroup jieba_group
     autocmd FileType tex :JiebaEnable
 augroup END
 ```
-
-## Bug
-
-- In Visual mode, the count decorator cannot be used. For example, the `3` in `3b` won't work.
 
 ## For developers
 

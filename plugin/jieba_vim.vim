@@ -22,13 +22,14 @@ for ky in s:motions
 endfor
 nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>py3 jieba_vim.preview_cancel()<CR>
 
-let s:modes = ["n", "o", "v",]
+let s:modes = ["n", "o", "x",]
 for ky in s:motions
     for md in s:modes
-        if md ==# "v"
-            execute 'vnoremap <silent> <Plug>(Jieba_' . ky . ') :<C-u>py3 jieba_vim.navigation.wordmotion_' . ky . '_v()<CR>'
+        if md ==# "x"
+            " Reference: https://github.com/svermeulen/vim-NotableFt/blob/master/plugin/NotableFt.vim
+            execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "<Esc>:<C-u>py3 jieba_vim.navigation.wordmotion_' . ky . '(" . v:count1 . ")<CR>m>gv"'
         else
-            execute md . 'noremap <silent> <Plug>(Jieba_' . ky . ') :<C-u>py3 jieba_vim.navigation.wordmotion_' . ky . '()<CR>'
+            execute md . 'noremap <expr> <silent> <Plug>(Jieba_' . ky . ') ":<C-u>py3 jieba_vim.navigation.wordmotion_' . ky . '(" . v:count1 . ")<CR>"'
         endif
     endfor
 endfor
