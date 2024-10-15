@@ -146,6 +146,10 @@ augroup jieba_group
 augroup END
 ```
 
+## Bug
+
+- 无法对行末文字做 `onoremap` 操作。详见[这个提问][onoremap-question]。
+
 ## 对于开发者
 
 若想在本地运行针对 rust 实现的测试，
@@ -311,6 +315,10 @@ augroup jieba_group
 augroup END
 ```
 
+## Bug
+
+- `onoremap` does not apply to the end of line. For details see [this question][onoremap-question].
+
 ## For developers
 
 To run tests against rust implementation locally,
@@ -328,3 +336,4 @@ cargo test
 [4]: https://github.com/ginqi7/deno-bridge-jieba
 [5]: https://github.com/cathaysia/jieba_nvim
 [6]: https://github.com/junegunn/vim-plug
+[onoremap-question]: https://stackoverflow.com/q/79082971/7881370
