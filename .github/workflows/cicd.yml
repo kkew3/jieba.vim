@@ -88,8 +88,6 @@ jobs:
             os: macos-14
           - target: x86_64-pc-windows-msvc
             os: windows-2022
-          - target: i686-pc-windows-msvc
-            os: windows-2022
     env:
       BUILD_CMD: cargo
     steps:
