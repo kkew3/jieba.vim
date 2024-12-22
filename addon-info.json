@@ -1,0 +1,6 @@
+
+{
+  "name": "jieba",
+  "description": "基于 jieba 的 Vim 按词跳转插件",
+  "author": "Kaiwen Wu"
+}
