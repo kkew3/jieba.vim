@@ -16,10 +16,10 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 
 本插件使用 Python3 + Rust 开发，Vim 需要 `+python3` 特性以正常使用。
 
-对于 [vim-plug][6]，使用如下代码安装：
+对于 [vim-plug][6]，使用如下代码安装最新稳定版：
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'branch': 'rust', 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.2', 'do': './build.sh' }
 ```
 
 虽然通常不需要，但在极少数情况下可能需要进入插件目录调整 `pythonx/Cargo.toml` 中的 pyo3 python ABI 版本，以匹配 vim 中 python3 的版本。可以在终端使用
@@ -110,10 +110,10 @@ That's why I develop this plugin.
 This plugin was developed using Python3 + Rust.
 `+python3` features is required for Vim to use the jieba.vim.
 
-For [vim-plug][6],
+For [vim-plug][6], the latest stable version is installable using:
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'branch': 'rust', 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.2', 'do': './build.sh' }
 ```
 
 Though not always necessary, user may need to adjust the pyo3 python ABI in `pythonx/Cargo.toml` under the plugin directory after downloading the plugin, in order to match with the python3 version vim is compiled against.
