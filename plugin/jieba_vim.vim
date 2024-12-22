@@ -56,13 +56,13 @@ let s:motions = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
 " @section Mappings, mappings
 " 提供以下 `<Plug>()` 映射，其中 X 表示 Vim word motion 按键，即
 " b、B、ge、gE、w、W、e、E：
-" >
-"   <Plug>(Jieba_preview_cancel)：即 JiebaPreviewCancel 命令
-"   <Plug>(Jieba_preview_X)：预览增强了的 X 的跳转位置
-"   <Plug>(Jieba_X): 增强了的 X，同时在 normal、operator-pending、visual 三种模式下可用，以及可与 count 协同使用。例如假设 w 被映射到 <Plug>(Jieba_w)，那么 3w 将是向后跳三个词，d3w 是删除后三个词
-" <
 "
-" 用户可自行在 .vimrc 中将按键映射到这些 <Plug>() 映射。例如：
+"   - `<Plug>(Jieba_preview_cancel)`：即 |:JiebaPreviewCancel| 命令
+"   - `<Plug>(Jieba_preview_X)`：预览增强了的 X 的跳转位置
+"   - `<Plug>(Jieba_X)`: 增强了的 X，同时在 normal、operator-pending、visual 三种模式下可用，以及可与 count 协同使用。例如假设 w 被映射到 `<Plug>(Jieba_w)`，那么 3w 将是向后跳三个词，d3w 是删除后三个词
+"
+"
+" 用户可自行在 .vimrc 中将按键映射到这些 `<Plug>()` 映射。例如：
 " >
 "   nmap <LocalLeader>jw <Plug>(Jieba_preview_w)
 "   " 等等，以及
