@@ -54,8 +54,8 @@ let s:motions = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
 
 ""
 " @section Mappings, mappings
-" 提供以下 `<Plug>()` 映射，其中 X 表示 Vim word motion 按键，
-" 即 b、B、ge、gE、w、W、e、E：
+" 提供以下 `<Plug>()` 映射，其中 X 表示 Vim word motion 按键，即
+" b、B、ge、gE、w、W、e、E：
 " >
 "   <Plug>(Jieba_preview_cancel)：即 JiebaPreviewCancel 命令
 "   <Plug>(Jieba_preview_X)：预览增强了的 X 的跳转位置
@@ -69,8 +69,8 @@ let s:motions = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
 "   map w <Plug>(Jieba_w)
 "   " 等等
 " <
-" 提供快捷开关 g:jieba_vim_keymap，可通过在 .vimrc 中将其设为 1
-" 来开启对八个 word motion 的 nmap, xmap 和 omap。
+" 提供快捷开关 g:jieba_vim_keymap，可通过在 .vimrc 中将其设为 1 来开启对八个
+" word motion 的 nmap, xmap 和 omap。
 
 
 for ky in s:motions
