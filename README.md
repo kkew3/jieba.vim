@@ -2,7 +2,7 @@
 
 [![cicd](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml/badge.svg)](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml)
 
-> 做最好的基于 jieba 的 Vim 中文分词插件。
+> 做最好的基于 jieba 的 Vim/Neovim 中文分词插件。
 
 <em>For English, see <a href="#en">below</a>.</em>
 
@@ -14,7 +14,7 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 
 ## 安装
 
-本插件使用 Python3 + Rust 开发，Vim 需要 `+python3` 特性以正常使用。
+本插件使用 Python3 + Rust 开发，Vim/Neovim 需要 `+python3` 特性以正常使用。
 
 对于 [vim-plug][6]，使用如下代码安装最新稳定版：
 
@@ -108,7 +108,7 @@ That's why I develop this plugin.
 ## Installation
 
 This plugin was developed using Python3 + Rust.
-`+python3` features is required for Vim to use the jieba.vim.
+`+python3` features is required for Vim/Neovim to use the jieba.vim.
 
 For [vim-plug][6], the latest stable version is installable using:
 
