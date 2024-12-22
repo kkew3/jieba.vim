@@ -35,7 +35,7 @@ let g:jieba_vim_user_dict = get(g:, 'jieba_vim_user_dict', '')
 
 
 ""
-" (默认 0)：是/否 (1/0) 自动开启 keymap。
+" (默认 0)：是/否 (1/0) 自动开启 keymap（不包含预览）。
 let g:jieba_vim_keymap = get(g:, 'jieba_vim_keymap', 0)
 
 if !has('python3')
