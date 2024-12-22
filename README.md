@@ -2,8 +2,6 @@
 
 [![cicd](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml/badge.svg)](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml)
 
-*在[此](https://github.com/kkew3/jieba.vim/tree/dev/rust)关注最新开发进度。*
-
 > 做最好的基于 jieba 的 Vim 中文分词插件。
 
 <em>For English, see <a href="#en">below</a>.</em>
