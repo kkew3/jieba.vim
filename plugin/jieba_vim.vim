@@ -15,7 +15,7 @@
 
 ""
 " @section Introduction, intro
-" @stylized jieba
+" @stylized jieba.vim
 " @library
 " @order intro config
 " jieba.vim 是一个基于 jieba 中文分词插件.
