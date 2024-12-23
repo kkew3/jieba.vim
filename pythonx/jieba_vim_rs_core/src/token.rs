@@ -863,6 +863,7 @@ mod tests {
     }
 
     proptest! {
+        #![proptest_config(ProptestConfig::with_cases(10000))]
         #[test]
         fn parse_str_tokens_are_nonempty_contiguous_word(s in "\\PC*") {
             let tokens = parse_str_test(&s, true);
@@ -878,6 +879,7 @@ mod tests {
     }
 
     proptest! {
+        #![proptest_config(ProptestConfig::with_cases(10000))]
         #[test]
         #[allow(non_snake_case)]
         fn parse_str_tokens_are_nonempty_contiguous_WORD(s in "\\PC*") {
