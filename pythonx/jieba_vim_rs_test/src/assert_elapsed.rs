@@ -29,6 +29,6 @@ impl AssertElapsed {
 
     pub fn toc(&self) {
         let duration = self.start.elapsed();
-        assert!(duration <= self.max_duration);
+        assert!(duration <= self.max_duration, "duration: {:?}", duration);
     }
 }
