@@ -62,10 +62,9 @@ jobs:
           git clone https://github.com/junegunn/vader.vim.git "$GITHUB_WORKSPACE/vim_bundle/vader.vim"
 
       - name: Verify and run unit tests
-        env:
-          VIM_BIN_NAME: ${{ matrix.vim.dist }}
         run: |
           export VIM_BUNDLE_PATH="$GITHUB_WORKSPACE/vim_bundle"
+          export VIM_BIN_NAME=${{ matrix.vim.dist }}
           cd "$GITHUB_WORKSPACE/jieba_vim/pythonx/jieba_vim_rs_core"
           cargo test -F verifiable_case
 
