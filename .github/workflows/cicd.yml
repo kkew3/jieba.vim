@@ -3,15 +3,11 @@ name: CI/CD
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - "pythonx/jieba_vim_rs_core/**"
-      - "pythonx/jieba_vim_rs_test/**"
-      - "pythonx/jieba_vim_rs_test_macro/**"
+    branches:
+      - rust
   push:
-    paths:
-      - "pythonx/jieba_vim_rs_core/**"
-      - "pythonx/jieba_vim_rs_test/**"
-      - "pythonx/jieba_vim_rs_test_macro/**"
+    branches:
+      - rust
 
 jobs:
   unit_test:
