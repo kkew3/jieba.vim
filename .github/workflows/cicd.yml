@@ -162,6 +162,8 @@ jobs:
 
           CDYLIB_NAME=${CDYLIB_PREFIX}${LIB_NAME}${CDYLIB_SUFFIX}
           LIB_PATH="$GTIHUB_WORKSPACE/jieba_vim/pythonx/target/${{ matrix.job.target }}/release/${CDYLIB_NAME}"
+          echo "LIB_PATH=$LIB_PATH"
+          find "$GITHUB_WORKSPACE/jieba_vim"
           test -f "$LIB_PATH"
 
           echo "CDYLIB_SUFFIX=$CDYLIB_SUFFIX" >> $GITHUB_OUTPUT
