@@ -152,10 +152,6 @@ jobs:
           cd "$GITHUB_WORKSPACE/jieba_vim/pythonx/jieba_vim_rs_core" && $BUILD_CMD test --release --target=${{ matrix.job.target }}
           cd "$GITHUB_WORKSPACE/jieba_vim/pythonx" && $BUILD_CMD build --locked --release --target=${{ matrix.job.target }}
 
-      - name: Debug after test and build
-        if: ${{ matrix.job.target == 'x86_64-unknown-linux-gnu' || matrix.job.target == 'aarch64-apple-darwin' || matrix.job.target == 'x86_64-pc-windows-msvc' }}
-        uses: fawazahmed0/action-debug-vscode@main
-
       - name: Set cdylib name and path
         id: cdylib
         shell: bash
