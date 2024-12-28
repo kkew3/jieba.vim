@@ -159,9 +159,8 @@ jobs:
       - name: Set cdylib name and path
         id: cdylib
         shell: bash
-        env:
-          LIB_NAME: jieba_vim_rs
         run: |
+          LIB_NAME=jieba_vim_rs
           case ${{ matrix.job.target }} in
             *-linux-*)      CDYLIB_SUFFIX=".so";    CDYLIB_PREFIX="lib"; ;;
             *-apple-darwin) CDYLIB_SUFFIX=".dylib"; CDYLIB_PREFIX="lib"; ;;
@@ -169,7 +168,7 @@ jobs:
           esac
 
           CDYLIB_NAME=${CDYLIB_PREFIX}${LIB_NAME}${CDYLIB_SUFFIX}
-          LIB_PATH="$GTIHUB_WORKSPACE/jieba_vim/target/${{ matrix.job.target }}/release/${CDYLIB_NAME}"
+          LIB_PATH="$GTIHUB_WORKSPACE/jieba_vim/pythonx/target/${{ matrix.job.target }}/release/${CDYLIB_NAME}"
           test -f "$LIB_PATH"
 
           echo "CDYLIB_SUFFIX=$CDYLIB_SUFFIX" >> $GITHUB_OUTPUT
@@ -178,9 +177,8 @@ jobs:
       - name: Rename dylib
         id: package
         shell: bash
-        env:
-          LIB_NAME: jieba_vim_rs
         run: |
+          LIB_NAME=jieba_vim_rs
           PKG_BASEDIR="$GITHUB_WORKSPACE/packages"
           mkdir -p "$PKG_BASEDIR" && cd "$PKG_BASEDIR"
           TO_NAME="${LIB_NAME}-${{ matrix.job.target }}${{ steps.cdylib.outputs.CDYLIB_SUFFIX }}"
