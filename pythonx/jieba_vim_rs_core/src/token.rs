@@ -28,6 +28,12 @@ enum CharType {
     Word(WordCharType),
     /// Non-word characters.
     NonWord(NonWordCharType),
+    /// Unicode combining characters. See
+    /// https://en.wikipedia.org/wiki/Combining_character. Note that this
+    /// intentionally does not include combining diacritical marks extended,
+    /// which might be included in the future in case of frequent need in
+    /// practice.
+    CombiningDiacriticalMark,
 }
 
 /// Word character types.
@@ -54,6 +60,13 @@ enum NonWordCharType {
     IsolatedPunc,
     /// Other non-word characters.
     Other,
+}
+
+fn is_combining_diacritical_mark(c: char) -> bool {
+    match c {
+        '\u{0300}'..='\u{036f}' => true,
+        _ => false,
+    }
 }
 
 // The unicodes of CJK characters and punctuations are quoted from Github
@@ -99,6 +112,8 @@ fn categorize_char(c: char) -> CharType {
         // https://www.compart.com/en/unicode/block/U+3000.
         | '\u{303f}'
         => CharType::Space,
+
+        c if is_combining_diacritical_mark(c) => CharType::CombiningDiacriticalMark,
 
         // Ideographic number zero.
         | '\u{3007}'
@@ -260,6 +275,11 @@ enum CharGroupType {
     Word(WordCharGroupType),
     /// A sequence of [`CharType::NonWord`] characters.
     NonWord(NonWordCharGroupType),
+    /// A sequence of [`CharType::CombiningDiacriticalMark`]. We have to make
+    /// room dedicated for this type (abbr. CDM), since in terms of major
+    /// class, CDM is compatible with non-汉字 word, non-汉字 word is compatible
+    /// with 汉字 word, but CDM is *not* compatible with 汉字 word.
+    CombiningDiacriticalMark,
 }
 
 /// Word character group types.
@@ -317,6 +337,9 @@ impl From<Char> for CharGroup {
                 CharType::Word(WordCharType::Other) => {
                     CharGroupType::Word(WordCharGroupType::Other)
                 }
+                CharType::CombiningDiacriticalMark => {
+                    CharGroupType::CombiningDiacriticalMark
+                }
                 CharType::NonWord(NonWordCharType::LeftPunc) => {
                     CharGroupType::NonWord(
                         NonWordCharGroupType::LeftPuncLeading,
@@ -354,11 +377,11 @@ impl CharGroup {
         }
     }
 
-    /// Push a [`Char`]. Given back `c` if their types are not compatible
-    /// in major class (space, word, nonword). `self`'s type may be modified
-    /// accordingly, but it's guaranteed that the majar class of `self` will
-    /// not be changed after push. Panics if there's gap between `self` and
-    /// `c`.
+    /// Push a [`Char`]. Giving back `c` if their types are not compatible in
+    /// major class (space, word, nonword). Combining characters are compatible
+    /// with any other major class. `self`'s type may be modified accordingly,
+    /// but it's guaranteed that the majar class of `self` will not be changed
+    /// after push. Panics if there's gap between `self` and `c`.
     fn push(&mut self, c: Char) -> Result<(), Char> {
         assert_eq!(self.col.excl_end_byte_index, c.col.start_byte_index);
 
@@ -369,17 +392,25 @@ impl CharGroup {
         use WordCharGroupType as WG;
         use WordCharType as W;
         match (&self.ty, &c.ty) {
-            (G::Space, Space) => (),
+            (G::CombiningDiacriticalMark, CombiningDiacriticalMark) => (),
+            (G::CombiningDiacriticalMark, Word(W::Other)) => {
+                self.ty = G::Word(WG::Other);
+            }
 
-            (G::Word(WG::Hanzi), Word(_)) => (),
+            (G::Space, Space) | (G::Space, CombiningDiacriticalMark) => (),
+
+            (G::Word(WG::Hanzi), Word(_))
+            | (G::Word(WG::Hanzi), CombiningDiacriticalMark) => (),
 
             (G::Word(WG::Other), Word(W::Hanzi)) => {
                 self.ty = G::Word(WG::Hanzi);
             }
-            (G::Word(WG::Other), Word(W::Other)) => (),
+            (G::Word(WG::Other), Word(W::Other))
+            | (G::Word(WG::Other), CombiningDiacriticalMark) => (),
 
             (G::NonWord(NG::LeftPuncLeading), NonWord(N::LeftPunc))
-            | (G::NonWord(NG::LeftPuncLeading), NonWord(N::Other)) => (),
+            | (G::NonWord(NG::LeftPuncLeading), NonWord(N::Other))
+            | (G::NonWord(NG::LeftPuncLeading), CombiningDiacriticalMark) => (),
             (G::NonWord(NG::LeftPuncLeading), NonWord(N::RightPunc))
             | (G::NonWord(NG::LeftPuncLeading), NonWord(N::IsolatedPunc)) => {
                 self.ty = G::NonWord(NG::LeftPuncLeadingRightPuncEnding);
@@ -390,7 +421,8 @@ impl CharGroup {
                 self.ty = G::NonWord(NG::Other);
             }
             (G::NonWord(NG::RightPuncEnding), NonWord(N::RightPunc))
-            | (G::NonWord(NG::RightPuncEnding), NonWord(N::IsolatedPunc)) => (),
+            | (G::NonWord(NG::RightPuncEnding), NonWord(N::IsolatedPunc))
+            | (G::NonWord(NG::RightPuncEnding), CombiningDiacriticalMark) => (),
 
             (
                 G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
@@ -407,10 +439,15 @@ impl CharGroup {
             | (
                 G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
                 NonWord(N::IsolatedPunc),
+            )
+            | (
+                G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
+                CombiningDiacriticalMark,
             ) => (),
 
             (G::NonWord(NG::Other), NonWord(N::LeftPunc))
-            | (G::NonWord(NG::Other), NonWord(N::Other)) => (),
+            | (G::NonWord(NG::Other), NonWord(N::Other))
+            | (G::NonWord(NG::Other), CombiningDiacriticalMark) => (),
             (G::NonWord(NG::Other), NonWord(N::RightPunc))
             | (G::NonWord(NG::Other), NonWord(N::IsolatedPunc)) => {
                 self.ty = G::NonWord(NG::RightPuncEnding);
@@ -419,7 +456,12 @@ impl CharGroup {
             _ => return Err(c),
         }
         self.chars.push(c.ch);
-        self.col.incl_end_byte_index = c.col.incl_end_byte_index;
+        // Combining diacritical marks modify previous character only, and does
+        // not take space.
+        match &c.ty {
+            CombiningDiacriticalMark => (),
+            _ => self.col.incl_end_byte_index = c.col.incl_end_byte_index,
+        }
         self.col.excl_end_byte_index = c.col.excl_end_byte_index;
         Ok(())
     }
@@ -431,14 +473,6 @@ impl CharGroup {
         self.chars.append(&mut other.chars);
         self.col.incl_end_byte_index = other.col.incl_end_byte_index;
         self.col.excl_end_byte_index = other.col.excl_end_byte_index;
-    }
-}
-
-// `CharGroup` is not meant to be displayed. Therefore, I'm not implementing
-// `std::fmt::Display`.
-impl ToString for CharGroup {
-    fn to_string(&self) -> String {
-        self.chars.iter().collect()
     }
 }
 
@@ -454,14 +488,21 @@ fn group_chars_rule(
         Some(mut group) => match group.push(c) {
             Err(c) => {
                 let c = CharGroup::from(c);
-                // `group` and `c` are compatible in major type. We may need to
-                // insert implicit whitespace in between. Since it's cheap, we
-                // prepare one beforehand.
+                // `group` and `c` are not compatible in major type. We may
+                // need to insert implicit whitespace in between. Since it's
+                // cheap, we prepare one beforehand.
                 let ispace =
                     CharGroup::new_implicit_whitespace(c.col.start_byte_index);
                 use CharGroupType::*;
                 use NonWordCharGroupType as N;
+                use WordCharGroupType as W;
                 match (&group.ty, &c.ty) {
+                    (CombiningDiacriticalMark, Word(W::Hanzi))
+                    | (CombiningDiacriticalMark, NonWord(_))
+                    | (CombiningDiacriticalMark, Space) => {
+                        vec![group, c]
+                    }
+
                     // We never need to insert implicit space after a space.
                     (Space, Word(_)) | (Space, NonWord(_)) => vec![group, c],
 
@@ -485,6 +526,26 @@ fn group_chars_rule(
             }
             Ok(()) => vec![group],
         },
+    }
+}
+
+/// If the first [`CharGroup`] is of type
+/// [`CharGroupType::CombiningDiacriticalMark`], convert it to
+/// [`WordCharGroupType::Other`].
+fn convert_first_cdm_group_rule(
+    prev_group: Option<CharGroup>,
+    mut group: CharGroup,
+    _args: &(),
+) -> Vec<CharGroup> {
+    match prev_group {
+        None => match group.ty {
+            CharGroupType::CombiningDiacriticalMark => {
+                group.ty = CharGroupType::Word(WordCharGroupType::Other);
+                vec![group]
+            }
+            _ => vec![group],
+        },
+        Some(prev_group) => vec![prev_group, group],
     }
 }
 
@@ -548,6 +609,105 @@ fn insert_implicit_whitespace_in_cut_result_rule(
     }
 }
 
+/// Assuming `group.ty` is [`WordCharGroupType::Hanzi`], this function goes
+/// through the following steps:
+///
+/// 1. Temporarily remove all combining diacritical marks from the group.
+/// 2. Cut words using `jieba`.
+/// 3. Revert removal of the combining marks and append combining marks to each
+///    cut group.
+/// 4. Count the number of chars in each cut group and return.
+fn cut_hanzi_group_and_count_chars<C: JiebaPlaceholder>(
+    group: &CharGroup,
+    jieba: &C,
+) -> Vec<usize> {
+    let mut marks = Vec::with_capacity(group.chars.len());
+    let group_string_no_marks: String = group
+        .chars
+        .iter()
+        .copied()
+        .filter_map(|c| {
+            let is_mark = is_combining_diacritical_mark(c);
+            marks.push(is_mark);
+            if is_mark {
+                None
+            } else {
+                Some(c)
+            }
+        })
+        .collect();
+    let cut_char_counts0 = utils::chain_into_vec(
+        [0],
+        jieba
+            .cut_hmm(&group_string_no_marks)
+            .into_iter()
+            .map(|part| part.chars().count()),
+    );
+    let refined_cut_char_counts =
+        append_mark_to_cuts(&marks, &cut_char_counts0);
+    refined_cut_char_counts
+}
+
+/// The step 3 in [`cut_hanzi_group`].
+///
+/// For example, given a [`CharGroup`] of type [`WordCharGroupType::Hanzi`],
+/// denote 汉字 by `H`, combining marks by `m`, other non-space characters
+/// by `A`, the string representation of the group might be: `m H m H A m`.
+/// Clearly, `marks` will be `true false true false false true`. Suppose the
+/// first `H`s make up a word, then `cut_char_counts0` will be `0 2 1`, where
+/// `0` is fixed, `2` signifies the two `H`s, and `1` for the `A`. The output
+/// will be `1 3 2`, corresponding to `[m] [H m H] [A m]`.
+///
+/// Properties:
+///
+/// - Neither `marks` nor `cut_char_counts0` is empty.
+/// - The first element of `cut_char_counts0` is zero.
+/// - The `cut_char_counts0` and the output elements are guaranteed positive,
+///   except for the first element.
+/// - Number of false's in `marks` equals the sum of input `cut_char_counts0`.
+/// - The sum of the output equals the length of `marks`.
+fn append_mark_to_cuts(
+    marks: &[bool],
+    cut_char_counts0: &[usize],
+) -> Vec<usize> {
+    let mut out = vec![0; cut_char_counts0.len()];
+    let mut x = 0; // The accumulator of `marks`.
+    let mut y = 0; // The accumulator of `cut_char_counts0`.
+    let mut cum_marks = marks
+        .iter()
+        .map(|m| {
+            if !*m {
+                x += 1;
+            }
+            x
+        })
+        .peekable();
+    let mut cum_char_counts = cut_char_counts0
+        .iter()
+        .map(|c| {
+            y += c;
+            y
+        })
+        .peekable();
+    let mut out_iter = out.iter_mut().peekable();
+    while cum_marks.peek().is_some()
+        && cum_char_counts.peek().is_some()
+        && out_iter.peek().is_some()
+    {
+        let x = cum_marks.peek().unwrap();
+        let y = cum_char_counts.peek().unwrap();
+        if x <= y {
+            **out_iter.peek_mut().unwrap() += 1;
+            cum_marks.next().unwrap();
+        } else {
+            cum_char_counts.next().unwrap();
+            out_iter.next().unwrap();
+        }
+    }
+
+    out
+}
+
 /// Cut [`CharGroup`]s of type [`WordCharGroupType::Hanzi`] into sub groups,
 /// and insert implicit whitespaces in between. Since this merging rule
 /// ought to be used after [`group_chars_rule`], we won't need to care about
@@ -567,12 +727,9 @@ fn cut_hanzi_rule<C: JiebaPlaceholder>(
     use WordCharGroupType as W;
     match group.ty {
         Word(W::Hanzi) => {
-            let s = group.to_string();
-            let n_chars: Vec<_> = jieba
-                .cut_hmm(&s)
-                .into_iter()
-                .map(|part| part.chars().count())
-                .collect();
+            let n_chars = cut_hanzi_group_and_count_chars(&group, jieba);
+            // We have assumed that each subgroup contains chars of the same
+            // major class, which is subject to the property of `jieba`.
             let sub_groups = group.split_into_subgroups(n_chars);
             utils::chain_into_vec(
                 prev_group,
@@ -605,6 +762,7 @@ pub(crate) enum TokenType {
     /// contrast, is a sequence of either word or non-word non-whitespace
     /// characters.
     Word,
+    /// Tokens that contain space and/or unicode combining characters only.
     Space,
 }
 
@@ -646,6 +804,7 @@ fn parse_chars_into_words<C: JiebaPlaceholder>(
     jieba: &C,
 ) -> Vec<Token> {
     let groups = utils::stack_merge(chars, &(), group_chars_rule);
+    let groups = utils::stack_merge(groups, &(), convert_first_cdm_group_rule);
     let groups = utils::stack_merge(groups, jieba, cut_hanzi_rule);
     let groups =
         utils::stack_merge(groups, &(), remove_implicit_whitespace_rule);
@@ -681,6 +840,7 @@ fn parse_chars_into_WORDs<C: JiebaPlaceholder>(
     jieba: &C,
 ) -> Vec<Token> {
     let groups = utils::stack_merge(chars, &(), group_chars_rule);
+    let groups = utils::stack_merge(groups, &(), convert_first_cdm_group_rule);
     let groups = utils::stack_merge(groups, jieba, cut_hanzi_rule);
     let groups = utils::stack_merge(groups, &(), concat_nonspace_groups_rule);
     let groups =
@@ -769,6 +929,41 @@ mod tests {
     use jieba_vim_rs_test::assert_elapsed::AssertElapsed;
     use once_cell::sync::OnceCell;
     use proptest::prelude::*;
+
+    #[test]
+    fn test_append_mark_to_cuts_1() {
+        let counts = vec![0usize, 2, 1];
+        let marks = vec![true, false, true, false, false, true];
+        assert_eq!(append_mark_to_cuts(&marks, &counts), vec![1, 3, 2]);
+    }
+
+    #[test]
+    fn test_append_mark_to_cuts_2() {
+        let counts = vec![0usize, 2, 1];
+        let marks = vec![true, true, false, true, false, false, true];
+        assert_eq!(append_mark_to_cuts(&marks, &counts), vec![2, 3, 2]);
+    }
+
+    #[test]
+    fn test_append_mark_to_cuts_3() {
+        let counts = vec![0usize, 1, 1, 1];
+        let marks = vec![true, false, true, false, false, true];
+        assert_eq!(append_mark_to_cuts(&marks, &counts), vec![1, 2, 1, 2]);
+    }
+
+    #[test]
+    fn test_append_mark_to_cuts_4() {
+        let counts = vec![0usize, 2, 2];
+        let marks = vec![false, true, false, true, false, false];
+        assert_eq!(append_mark_to_cuts(&marks, &counts), vec![0, 4, 2]);
+    }
+
+    #[test]
+    fn test_append_mark_to_cuts_5() {
+        let counts = vec![0usize, 2];
+        let marks = vec![false, false];
+        assert_eq!(append_mark_to_cuts(&marks, &counts), vec![0, 2]);
+    }
 
     impl JiebaPlaceholder for Jieba {
         fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
@@ -1035,5 +1230,294 @@ mod tests {
                 test_macros::token!(17, 19, 20, Word), // "jkl"
             ]
         );
+    }
+
+    #[test]
+    fn test_parse_combining_chars_modifying_space_word() {
+        // i.e. "xx ̆cab  ̂de".
+        let tokens = parse_str_test("xx \u{0306}cab  \u{0302}de", true);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 1, 2, Word),
+                test_macros::token!(2, 2, 5, Space),
+                test_macros::token!(5, 7, 8, Word),
+                test_macros::token!(8, 9, 12, Space),
+                test_macros::token!(12, 13, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_combining_chars_modifying_space_WORD() {
+        // i.e. "xx ̆cab  ̂de".
+        let tokens = parse_str_test("xx \u{0306}cab  \u{0302}de", false);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 1, 2, Word),
+                test_macros::token!(2, 2, 5, Space),
+                test_macros::token!(5, 7, 8, Word),
+                test_macros::token!(8, 9, 12, Space),
+                test_macros::token!(12, 13, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_combining_chars_modifying_letter_1_word() {
+        // i.e. "xy a͡bc d̂ef".
+        let tokens = parse_str_test("xy a\u{0361}bc d\u{0302}ef", true);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 1, 2, Word),
+                test_macros::token!(2, 2, 3, Space),
+                test_macros::token!(3, 7, 8, Word),
+                test_macros::token!(8, 8, 9, Space),
+                test_macros::token!(9, 13, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_combining_chars_modifying_letter_1_WORD() {
+        // i.e. "xy a͡bc d̂ef".
+        let tokens = parse_str_test("xy a\u{0361}bc d\u{0302}ef", false);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 1, 2, Word),
+                test_macros::token!(2, 2, 3, Space),
+                test_macros::token!(3, 7, 8, Word),
+                test_macros::token!(8, 8, 9, Space),
+                test_macros::token!(9, 13, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_combining_chars_modifying_letter_2_word() {
+        // Example from http://demo.danielmclaren.com/2015/diacriticism/.
+        // i.e. "f̸̰̻̯̙̳́̍͗̕o͕̟̫ͮ͆̉̾̍̉̏o̵͖̪͇̪̥͗̈ͭ̕ b̶̬̣̜̱̜͉̾ͩ͌a͚̯̮͒ͬ̆̊̍͂̕r̹̥̟̘̱͙͊͗̀̓".
+        let tokens = parse_str_test(
+            "f\u{0330}\u{0338}\u{0315}\u{033b}\u{0301}\u{032f}\u{0319}\
+            \u{030d}\u{0357}\u{0333}o\u{036e}\u{0355}\u{0346}\u{031f}\u{0309}\
+            \u{033e}\u{032b}\u{030d}\u{0309}\u{030f}o\u{0357}\u{0356}\u{032a}\
+            \u{0308}\u{0347}\u{032a}\u{0315}\u{036d}\u{0325}\u{0335} b\u{032c}\
+            \u{0323}\u{0336}\u{031c}\u{033e}\u{0331}\u{0369}\u{031c}\u{0349}\
+            \u{034c}a\u{035a}\u{0352}\u{036c}\u{0306}\u{0315}\u{030a}\u{030d}\
+            \u{032f}\u{032e}\u{0342}r\u{0339}\u{034a}\u{0357}\u{0325}\u{031f}\
+            \u{0318}\u{0331}\u{0340}\u{0359}\u{0343}",
+            true,
+        );
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 42, 63, Word),
+                test_macros::token!(63, 63, 64, Space),
+                test_macros::token!(64, 106, 127, Word),
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_combining_chars_modifying_letter_2_WORD() {
+        // Example from http://demo.danielmclaren.com/2015/diacriticism/.
+        // i.e. "f̸̰̻̯̙̳́̍͗̕o͕̟̫ͮ͆̉̾̍̉̏o̵͖̪͇̪̥͗̈ͭ̕ b̶̬̣̜̱̜͉̾ͩ͌a͚̯̮͒ͬ̆̊̍͂̕r̹̥̟̘̱͙͊͗̀̓".
+        let tokens = parse_str_test(
+            "f\u{0330}\u{0338}\u{0315}\u{033b}\u{0301}\u{032f}\u{0319}\
+            \u{030d}\u{0357}\u{0333}o\u{036e}\u{0355}\u{0346}\u{031f}\u{0309}\
+            \u{033e}\u{032b}\u{030d}\u{0309}\u{030f}o\u{0357}\u{0356}\u{032a}\
+            \u{0308}\u{0347}\u{032a}\u{0315}\u{036d}\u{0325}\u{0335} b\u{032c}\
+            \u{0323}\u{0336}\u{031c}\u{033e}\u{0331}\u{0369}\u{031c}\u{0349}\
+            \u{034c}a\u{035a}\u{0352}\u{036c}\u{0306}\u{0315}\u{030a}\u{030d}\
+            \u{032f}\u{032e}\u{0342}r\u{0339}\u{034a}\u{0357}\u{0325}\u{031f}\
+            \u{0318}\u{0331}\u{0340}\u{0359}\u{0343}",
+            false,
+        );
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 42, 63, Word),
+                test_macros::token!(63, 63, 64, Space),
+                test_macros::token!(64, 106, 127, Word),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_combining_chars_modifying_hanzi_1_word() {
+        let tokens = parse_str_test("你好\u{0302}世界", true);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 3, 8, Word),
+                test_macros::token!(8, 11, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_combining_chars_modifying_hanzi_1_WORD() {
+        let tokens = parse_str_test("你好\u{0302}世界", false);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 3, 8, Word),
+                test_macros::token!(8, 11, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_combining_chars_modifying_hanzi_2_word() {
+        let tokens = parse_str_test("你\u{0302}好世界", true);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 5, 8, Word),
+                test_macros::token!(8, 11, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_combining_chars_modifying_hanzi_2_WORD() {
+        let tokens = parse_str_test("你\u{0302}好世界", false);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 5, 8, Word),
+                test_macros::token!(8, 11, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_combining_chars_modifying_hanzi_3_word() {
+        let tokens = parse_str_test("你好世界\u{0302}", true);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 3, 6, Word),
+                test_macros::token!(6, 9, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_combining_chars_modifying_hanzi_3_WORD() {
+        let tokens = parse_str_test("你好世界\u{0302}", false);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 3, 6, Word),
+                test_macros::token!(6, 9, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_starts_with_combining_chars_1_word() {
+        // i.e. "̂̂̂̂̂ abc".
+        let tokens = parse_str_test(
+            "\u{0302}\u{0302}\u{0302}\u{0302}\u{0302} abc",
+            true,
+        );
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 0, 10, Word),
+                test_macros::token!(10, 10, 11, Space),
+                test_macros::token!(11, 13, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_starts_with_combining_chars_1_WORD() {
+        // i.e. "̂̂̂̂̂ abc".
+        let tokens = parse_str_test(
+            "\u{0302}\u{0302}\u{0302}\u{0302}\u{0302} abc",
+            false,
+        );
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 0, 10, Word),
+                test_macros::token!(10, 10, 11, Space),
+                test_macros::token!(11, 13, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_starts_with_combining_chars_2_word() {
+        // i.e. ̂̂̂̂̂abc".
+        let tokens =
+            parse_str_test("\u{0302}\u{0302}\u{0302}\u{0302}\u{0302}abc", true);
+        assert_eq!(tokens, vec![test_macros::token!(0, 12, 13, Word)]);
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_starts_with_combining_chars_2_WORD() {
+        // i.e. ̂̂̂̂̂abc".
+        let tokens = parse_str_test(
+            "\u{0302}\u{0302}\u{0302}\u{0302}\u{0302}abc",
+            false,
+        );
+        assert_eq!(tokens, vec![test_macros::token!(0, 12, 13, Word)]);
+    }
+
+    #[test]
+    fn test_parse_starts_with_combining_chars_3_word() {
+        let tokens = parse_str_test("\u{0302}你好世界", true);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 0, 2, Word),
+                test_macros::token!(2, 5, 8, Word),
+                test_macros::token!(8, 11, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_starts_with_combining_chars_3_WORD() {
+        let tokens = parse_str_test("\u{0302}你好世界", false);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 5, 8, Word),
+                test_macros::token!(8, 11, 14, Word),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_combining_chars_only_word() {
+        // i.e. "̂̂̂̂̂"
+        let tokens =
+            parse_str_test("\u{0302}\u{0302}\u{0302}\u{0302}\u{0302}", true);
+        assert_eq!(tokens, vec![test_macros::token!(0, 0, 10, Word)]);
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_parse_combining_chars_only_WORD() {
+        // i.e. "̂̂̂̂̂"
+        let tokens =
+            parse_str_test("\u{0302}\u{0302}\u{0302}\u{0302}\u{0302}", false);
+        assert_eq!(tokens, vec![test_macros::token!(0, 0, 10, Word)]);
     }
 }
