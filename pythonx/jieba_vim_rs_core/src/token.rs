@@ -122,12 +122,6 @@ fn categorize_char(c: char) -> CharType {
         | '\u{2e80}'..='\u{2ef3}'
         => CharType::Word(WordCharType::Hanzi),
 
-        // Default value of 'iskeyword' in Vim (ASCII range).
-        'a'..='z' | 'A'..='Z' | '0'..='9' | '_'
-        // Default value of 'iskeyword' in Vim (extended ASCII range).
-        | '\u{c0}'..='\u{ff}'
-        => CharType::Word(WordCharType::Other),
-
         // Fullwidth ASCII variants.
         '\u{ff04}' | '\u{ff08}' | '\u{ff3b}' | '\u{ff5b}' | '\u{ff5f}'
         // Halfwidth CJK punctuation.
@@ -196,6 +190,19 @@ fn categorize_char(c: char) -> CharType {
         // Latin punctuation.
         | '\u{00b7}'
         => CharType::NonWord(NonWordCharType::IsolatedPunc),
+
+        // Default value of 'iskeyword' in Vim (ASCII range: '@,48-57,_').
+        'a'..='z' | 'A'..='Z' | '0'..='9' | '_'
+        // Default value of 'iskeyword' in Vim (extended ASCII range:
+        // '192-255').
+        | '\u{c0}'..='\u{ff}'
+        => CharType::Word(WordCharType::Other),
+        // Default value of 'iskeyword' in Vim (Unicode alphabetic: '@')
+        c if c.is_alphabetic() => CharType::Word(WordCharType::Other),
+        // Although not `is_alphabetic`, apparently spacing modifier letters
+        // (https://en.wikipedia.org/wiki/Spacing_Modifier_Letters) are word
+        // characters in Vim (both compatible and nocompatible).
+        '\u{02b0}'..='\u{02ff}' => CharType::Word(WordCharType::Other),
 
         _ => CharType::NonWord(NonWordCharType::Other),
     }
@@ -1009,6 +1016,23 @@ mod tests {
                 test_macros::token!(0, 6, 9, Word), // "（你好"
                 test_macros::token!(9, 12, 15, Word), // "——"
                 test_macros::token!(15, 24, 27, Word), // "世界）。"
+            ]
+        );
+    }
+
+    #[test]
+    fn test_parse_spacing_modifiers_1_word() {
+        let tokens = parse_str_test("abc  ʰdef g˦hi jkl", true);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 2, 3, Word), // "abc"
+                test_macros::token!(3, 4, 5, Space),
+                test_macros::token!(5, 9, 10, Word), // "ʰdef"
+                test_macros::token!(10, 10, 11, Space),
+                test_macros::token!(11, 15, 16, Word), // "g˦hi"
+                test_macros::token!(16, 16, 17, Space),
+                test_macros::token!(17, 19, 20, Word), // "jkl"
             ]
         );
     }
