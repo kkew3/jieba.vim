@@ -48,16 +48,9 @@ enum WordCharType {
 /// Non-word character types.
 #[derive(Debug)]
 enum NonWordCharType {
-    /// Left-associated CJK punctuations. When a word character is followed by
-    /// a [`NonWordCharType::LeftPunc`], an implicit space is added in between.
-    LeftPunc,
     /// Right-associated CJK punctuations. When a word character follows a
     /// [`NonWordCharType::RightPunc`], an implicit space is added in between.
     RightPunc,
-    /// Isolated CJK punctuations. When a word character is followed by or
-    /// follows a [`NonWordCharType::IsolatedPunc`], an implicit space is added
-    /// in between.
-    IsolatedPunc,
     /// Other non-word characters.
     Other,
 }
@@ -97,7 +90,7 @@ fn is_combining_diacritical_mark(c: char) -> bool {
 // IN THE SOFTWARE.
 // ---
 //
-// The partition of CJK punctuations into left/right/isolated types are decided
+// The partition of CJK punctuations into right/other types are decided
 // by myself, with help from https://www.compart.com/en/unicode. For CJK
 // punctuations that I don't know how to categorize, I've marked them with `??`
 // on the right.
@@ -139,29 +132,25 @@ fn categorize_char(c: char) -> CharType {
 
         // Fullwidth ASCII variants.
         '\u{ff04}' | '\u{ff08}' | '\u{ff3b}' | '\u{ff5b}' | '\u{ff5f}'
+        | '\u{ff09}' | '\u{ff3d}' | '\u{ff5d}' | '\u{ff60}' | '\u{ff05}'
         // Halfwidth CJK punctuation.
-        | '\u{ff62}'
+        | '\u{ff62}' | '\u{ff63}'
         // CJK angle and corner brackets.
         | '\u{3008}' | '\u{300a}' | '\u{300c}' | '\u{300e}' | '\u{3010}'
-        // CJK brackets and symbols/punctuation.
-        | '\u{3014}' | '\u{3016}' | '\u{3018}' | '\u{301a}' | '\u{301d}'
-        // Quotation marks and apostrophe.
-        | '\u{2018}' | '\u{201c}'
-        => CharType::NonWord(NonWordCharType::LeftPunc),
-
-        // Fullwidth ASCII variants.
-        '\u{ff09}' | '\u{ff0c}' | '\u{ff1a}' | '\u{ff1b}' | '\u{ff3d}'
-        | '\u{ff5d}' | '\u{ff60}' | '\u{ff05}'
-        // Halfwidth CJK punctuation.
-        | '\u{ff63}' | '\u{ff64}'
-        // CJK symbols and punctuation.
-        | '\u{3001}'
-        // CJK angle and corner brackets.
         | '\u{3009}' | '\u{300b}' | '\u{300d}' | '\u{300f}' | '\u{3011}'
         // CJK brackets and symbols/punctuation.
+        | '\u{3014}' | '\u{3016}' | '\u{3018}' | '\u{301a}' | '\u{301d}'
         | '\u{3015}' | '\u{3017}' | '\u{3019}' | '\u{301b}' | '\u{301e}'
         // Quotation marks and apostrophe.
-        | '\u{2019}' | '\u{201d}'
+        | '\u{2018}' | '\u{201c}' | '\u{2019}' | '\u{201d}'
+        => CharType::NonWord(NonWordCharType::Other),
+
+        // Fullwidth ASCII variants.
+        '\u{ff0c}' | '\u{ff1a}' | '\u{ff1b}'
+        // Halfwidth CJK punctuation.
+        | '\u{ff64}'
+        // CJK symbols and punctuation.
+        | '\u{3001}'
         // Small form variants.
         | '\u{fe51}' | '\u{fe54}'
         // Fullwidth full stop.
@@ -204,7 +193,7 @@ fn categorize_char(c: char) -> CharType {
         | '\u{fe4f}'
         // Latin punctuation.
         | '\u{00b7}'
-        => CharType::NonWord(NonWordCharType::IsolatedPunc),
+        => CharType::NonWord(NonWordCharType::Other),
 
         // Default value of 'iskeyword' in Vim (ASCII range: '@,48-57,_').
         'a'..='z' | 'A'..='Z' | '0'..='9' | '_'
@@ -295,25 +284,11 @@ enum WordCharGroupType {
 /// Non-word character group types.
 #[derive(Debug, PartialEq, Eq)]
 enum NonWordCharGroupType {
-    /// A sequence of [`CharType::NonWord`] that starts with a
-    /// [`NonWordCharType::LeftPunc`] or [`NonWordCharType::IsolatedPunc`],
-    /// but does not end with a [`NonWordCharType::RightPunc`] or
-    /// [`NonWordCharType::IsolatedPunc`].
-    LeftPuncLeading,
     /// A sequence of [`CharType::NonWord`] that ends with a
-    /// [`NonWordCharType::RightPunc`] or [`NonWordCharType::IsolatedPunc`]
-    /// but does not start with a [`NonWordCharType::LeftPunc`] or
-    /// [`NonWordCharType::IsolatedPunc`].
+    /// [`NonWordCharType::RightPunc`].
     RightPuncEnding,
-    /// A sequence of [`CharType::NonWord`] that starts with a
-    /// [`NonWordCharType::LeftPunc`] or [`NonWordCharType::IsolatedPunc`],
-    /// and ends with a [`NonWordCharType::RightPunc`] or
-    /// [`NonWordCharType::IsolatedPunc`].
-    LeftPuncLeadingRightPuncEnding,
-    /// A sequence of [`CharType::NonWord`] that neither starts with a
-    /// [`NonWordCharType::LeftPunc`] or [`NonWordCharType::IsolatedPunc`],
-    /// nor ends with a [`NonWordCharType::RightPunc`] or
-    /// [`NonWordCharType::IsolatedPunc`].
+    /// A sequence of [`CharType::NonWord`] that does not end with a
+    /// [`NonWordCharType::RightPunc`].
     Other,
 }
 
@@ -340,19 +315,9 @@ impl From<Char> for CharGroup {
                 CharType::CombiningDiacriticalMark => {
                     CharGroupType::CombiningDiacriticalMark
                 }
-                CharType::NonWord(NonWordCharType::LeftPunc) => {
-                    CharGroupType::NonWord(
-                        NonWordCharGroupType::LeftPuncLeading,
-                    )
-                }
                 CharType::NonWord(NonWordCharType::RightPunc) => {
                     CharGroupType::NonWord(
                         NonWordCharGroupType::RightPuncEnding,
-                    )
-                }
-                CharType::NonWord(NonWordCharType::IsolatedPunc) => {
-                    CharGroupType::NonWord(
-                        NonWordCharGroupType::LeftPuncLeadingRightPuncEnding,
                     )
                 }
                 CharType::NonWord(NonWordCharType::Other) => {
@@ -438,59 +403,20 @@ impl CharGroup {
                 do_push(self, c)
             }
 
-            (G::NonWord(NG::LeftPuncLeading), NonWord(N::LeftPunc))
-            | (G::NonWord(NG::LeftPuncLeading), NonWord(N::Other))
-            | (G::NonWord(NG::LeftPuncLeading), CombiningDiacriticalMark) => {
-                do_push(self, c)
-            }
-            (G::NonWord(NG::LeftPuncLeading), NonWord(N::RightPunc))
-            | (G::NonWord(NG::LeftPuncLeading), NonWord(N::IsolatedPunc)) => {
-                self.ty = G::NonWord(NG::LeftPuncLeadingRightPuncEnding);
-                do_push(self, c)
-            }
-
-            (G::NonWord(NG::RightPuncEnding), NonWord(N::LeftPunc))
-            | (G::NonWord(NG::RightPuncEnding), NonWord(N::Other)) => {
+            (G::NonWord(NG::RightPuncEnding), NonWord(N::Other)) => {
                 self.ty = G::NonWord(NG::Other);
                 do_push(self, c)
             }
             (G::NonWord(NG::RightPuncEnding), NonWord(N::RightPunc))
-            | (G::NonWord(NG::RightPuncEnding), NonWord(N::IsolatedPunc))
             | (G::NonWord(NG::RightPuncEnding), CombiningDiacriticalMark) => {
                 do_push(self, c)
             }
 
-            (
-                G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
-                NonWord(N::LeftPunc),
-            )
-            | (
-                G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
-                NonWord(N::Other),
-            ) => {
-                self.ty = G::NonWord(NG::LeftPuncLeading);
-                do_push(self, c)
-            }
-            (
-                G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
-                NonWord(N::RightPunc),
-            )
-            | (
-                G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
-                NonWord(N::IsolatedPunc),
-            )
-            | (
-                G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
-                CombiningDiacriticalMark,
-            ) => do_push(self, c),
-
-            (G::NonWord(NG::Other), NonWord(N::LeftPunc))
-            | (G::NonWord(NG::Other), NonWord(N::Other))
+            (G::NonWord(NG::Other), NonWord(N::Other))
             | (G::NonWord(NG::Other), CombiningDiacriticalMark) => {
                 do_push(self, c)
             }
-            (G::NonWord(NG::Other), NonWord(N::RightPunc))
-            | (G::NonWord(NG::Other), NonWord(N::IsolatedPunc)) => {
+            (G::NonWord(NG::Other), NonWord(N::RightPunc)) => {
                 self.ty = G::NonWord(NG::RightPuncEnding);
                 do_push(self, c)
             }
@@ -504,18 +430,10 @@ impl CharGroup {
             (G::Space, Word(_)) | (G::Space, NonWord(_)) => Err(vec![c.into()]),
 
             (G::Word(_), Space) => Err(vec![c.into()]),
-            (G::Word(_), NonWord(N::LeftPunc))
-            | (G::Word(_), NonWord(N::IsolatedPunc)) => {
-                let c = CharGroup::from(c);
-                let ispace =
-                    CharGroup::new_implicit_whitespace(c.col.start_byte_index);
-                Err(vec![ispace, c])
-            }
             (G::Word(_), NonWord(_)) => Err(vec![c.into()]),
 
             (G::NonWord(_), Space) => Err(vec![c.into()]),
-            (G::NonWord(NG::RightPuncEnding), Word(_))
-            | (G::NonWord(NG::LeftPuncLeadingRightPuncEnding), Word(_)) => {
+            (G::NonWord(NG::RightPuncEnding), Word(_)) => {
                 let c = CharGroup::from(c);
                 let ispace =
                     CharGroup::new_implicit_whitespace(c.col.start_byte_index);
@@ -1017,11 +935,11 @@ mod tests {
         ));
         assert!(matches!(
             categorize_char('（'),
-            CharType::NonWord(NonWordCharType::LeftPunc)
+            CharType::NonWord(NonWordCharType::Other)
         ));
         assert!(matches!(
             categorize_char('—'),
-            CharType::NonWord(NonWordCharType::IsolatedPunc)
+            CharType::NonWord(NonWordCharType::Other)
         ));
         assert!(matches!(categorize_char('\u{3000}'), CharType::Space));
     }
@@ -1134,10 +1052,10 @@ mod tests {
         assert_eq!(
             tokens,
             vec![
-                test_macros::token!(0, 4, 5, Word),
-                test_macros::token!(5, 5, 6, Word),
-                test_macros::token!(6, 6, 7, Space),
-                test_macros::token!(7, 11, 12, Word),
+                test_macros::token!(0, 4, 5, Word),  // "hello"
+                test_macros::token!(5, 5, 6, Word),  // ","
+                test_macros::token!(6, 6, 7, Space), // " "
+                test_macros::token!(7, 11, 12, Word), // "world"
             ]
         );
     }
@@ -1149,9 +1067,9 @@ mod tests {
         assert_eq!(
             tokens,
             vec![
-                test_macros::token!(0, 5, 6, Word),
-                test_macros::token!(6, 6, 7, Space),
-                test_macros::token!(7, 11, 12, Word),
+                test_macros::token!(0, 5, 6, Word), // "hello,"
+                test_macros::token!(6, 6, 7, Space), // " "
+                test_macros::token!(7, 11, 12, Word), // "world"
             ]
         );
     }
@@ -1162,8 +1080,8 @@ mod tests {
         assert_eq!(
             tokens,
             vec![
-                test_macros::token!(0, 1, 4, Word),
-                test_macros::token!(4, 10, 11, Word),
+                test_macros::token!(0, 1, 4, Word),   // "B超"
+                test_macros::token!(4, 10, 11, Word), // "foo_bar"
             ]
         );
     }
@@ -1175,8 +1093,8 @@ mod tests {
         assert_eq!(
             tokens,
             vec![
-                test_macros::token!(0, 1, 4, Word),
-                test_macros::token!(4, 10, 11, Word),
+                test_macros::token!(0, 1, 4, Word),   // "B超"
+                test_macros::token!(4, 10, 11, Word), // "foo_bar"
             ]
         );
     }
@@ -1187,10 +1105,10 @@ mod tests {
         assert_eq!(
             tokens,
             vec![
-                test_macros::token!(0, 1, 4, Word),
-                test_macros::token!(4, 4, 7, Word),
-                test_macros::token!(7, 9, 10, Word),
-                test_macros::token!(10, 16, 19, Word),
+                test_macros::token!(0, 1, 4, Word),    // "B超"
+                test_macros::token!(4, 4, 7, Word),    // "，"
+                test_macros::token!(7, 9, 10, Word),   // "foo"
+                test_macros::token!(10, 16, 19, Word), // "。。。"
             ]
         );
     }
@@ -1202,8 +1120,8 @@ mod tests {
         assert_eq!(
             tokens,
             vec![
-                test_macros::token!(0, 4, 7, Word),
-                test_macros::token!(7, 16, 19, Word),
+                test_macros::token!(0, 4, 7, Word), // "B超，"
+                test_macros::token!(7, 16, 19, Word), // "foo。。。"
             ]
         );
     }
@@ -1227,14 +1145,7 @@ mod tests {
     #[allow(non_snake_case)]
     fn test_parse_hanzi_1_WORD() {
         let tokens = parse_str_test("（你好——世界）。", false);
-        assert_eq!(
-            tokens,
-            vec![
-                test_macros::token!(0, 6, 9, Word), // "（你好"
-                test_macros::token!(9, 12, 15, Word), // "——"
-                test_macros::token!(15, 24, 27, Word), // "世界）。"
-            ]
-        );
+        assert_eq!(tokens, vec![test_macros::token!(0, 24, 27, Word)]);
     }
 
     #[test]
