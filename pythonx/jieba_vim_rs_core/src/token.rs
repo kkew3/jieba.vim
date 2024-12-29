@@ -34,6 +34,12 @@ enum CharType {
     /// which might be included in the future in case of frequent need in
     /// practice.
     CombiningDiacriticalMark,
+    /// Emojis are essentially non-word characters. However, Vim treat emojis
+    /// differently from other non-word characters such as punctuation. For
+    /// example, `🖖🖖🖖🖖,,,abc` contains three tokens (vulcan salutes,
+    /// commas, and "abc"), instead of two tokens (vulcan salutes and commas,
+    /// and "abc").
+    Emoji,
 }
 
 /// Word character types.
@@ -51,7 +57,7 @@ enum NonWordCharType {
     /// Right-associated CJK punctuations. When a word character follows a
     /// [`NonWordCharType::RightPunc`], an implicit space is added in between.
     RightPunc,
-    /// Other non-word characters.
+    /// Other non-word characters. This includes the zero-width joiner (ZWJ).
     Other,
 }
 
@@ -208,6 +214,8 @@ fn categorize_char(c: char) -> CharType {
         // characters in Vim (both compatible and nocompatible).
         '\u{02b0}'..='\u{02ff}' => CharType::Word(WordCharType::Other),
 
+        c if unic_emoji_char::is_emoji(c) => CharType::Emoji,
+
         _ => CharType::NonWord(NonWordCharType::Other),
     }
 }
@@ -269,6 +277,8 @@ enum CharGroupType {
     /// class, CDM is compatible with non-汉字 word, non-汉字 word is compatible
     /// with 汉字 word, but CDM is *not* compatible with 汉字 word.
     CombiningDiacriticalMark,
+    /// A sequence of [`CharType::Emoji`].
+    Emoji,
 }
 
 /// Word character group types.
@@ -323,6 +333,7 @@ impl From<Char> for CharGroup {
                 CharType::NonWord(NonWordCharType::Other) => {
                     CharGroupType::NonWord(NonWordCharGroupType::Other)
                 }
+                CharType::Emoji => CharGroupType::Emoji,
             },
         }
     }
@@ -421,25 +432,38 @@ impl CharGroup {
                 do_push(self, c)
             }
 
+            (G::Emoji, Emoji) | (G::Emoji, CombiningDiacriticalMark) => {
+                do_push(self, c)
+            }
+
             // === Not compatible cases ===
             (G::CombiningDiacriticalMark, Word(W::Hanzi))
             | (G::CombiningDiacriticalMark, NonWord(_))
-            | (G::CombiningDiacriticalMark, Space) => Err(vec![c.into()]),
+            | (G::CombiningDiacriticalMark, Space)
+            | (G::CombiningDiacriticalMark, Emoji) => Err(vec![c.into()]),
 
             // We never need to insert implicit space after a space.
-            (G::Space, Word(_)) | (G::Space, NonWord(_)) => Err(vec![c.into()]),
+            (G::Space, Word(_))
+            | (G::Space, NonWord(_))
+            | (G::Space, Emoji) => Err(vec![c.into()]),
 
-            (G::Word(_), Space) => Err(vec![c.into()]),
-            (G::Word(_), NonWord(_)) => Err(vec![c.into()]),
+            (G::Word(_), Space)
+            | (G::Word(_), NonWord(_))
+            | (G::Word(_), Emoji) => Err(vec![c.into()]),
 
-            (G::NonWord(_), Space) => Err(vec![c.into()]),
             (G::NonWord(NG::RightPuncEnding), Word(_)) => {
                 let c = CharGroup::from(c);
                 let ispace =
                     CharGroup::new_implicit_whitespace(c.col.start_byte_index);
                 Err(vec![ispace, c])
             }
-            (G::NonWord(_), Word(_)) => Err(vec![c.into()]),
+            (G::NonWord(_), Space)
+            | (G::NonWord(_), Word(_))
+            | (G::NonWord(_), Emoji) => Err(vec![c.into()]),
+
+            (G::Emoji, Space)
+            | (G::Emoji, Word(_))
+            | (G::Emoji, NonWord(_)) => Err(vec![c.into()]),
         }
     }
 
@@ -942,6 +966,12 @@ mod tests {
             CharType::NonWord(NonWordCharType::Other)
         ));
         assert!(matches!(categorize_char('\u{3000}'), CharType::Space));
+        assert!(matches!(categorize_char('\u{1f596}'), CharType::Emoji));
+        assert!(matches!(categorize_char('\u{1f3ff}'), CharType::Emoji));
+        assert!(matches!(
+            categorize_char('\u{200d}'),
+            CharType::NonWord(NonWordCharType::Other)
+        ));
     }
 
     #[test]
@@ -1452,5 +1482,82 @@ mod tests {
         let tokens =
             parse_str_test("\u{0302}\u{0302}\u{0302}\u{0302}\u{0302}", false);
         assert_eq!(tokens, vec![test_macros::token!(0, 0, 10, Word)]);
+    }
+
+    #[test]
+    fn test_emoji_zwj_word() {
+        // i.e. "👨‍👩‍👧‍👦".
+        let tokens = parse_str_test(
+            "\u{1f468}\u{200d}\u{1f469}\u{200d}\u{1f467}\u{200d}\u{1f466}",
+            true,
+        );
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 0, 4, Word),
+                test_macros::token!(4, 4, 7, Word),
+                test_macros::token!(7, 7, 11, Word),
+                test_macros::token!(11, 11, 14, Word),
+                test_macros::token!(14, 14, 18, Word),
+                test_macros::token!(18, 18, 21, Word),
+                test_macros::token!(21, 21, 25, Word),
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_emoji_zwj_WORD() {
+        // i.e. "👨‍👩‍👧‍👦".
+        let tokens = parse_str_test(
+            "\u{1f468}\u{200d}\u{1f469}\u{200d}\u{1f467}\u{200d}\u{1f466}",
+            false,
+        );
+        assert_eq!(tokens, vec![test_macros::token!(0, 21, 25, Word)]);
+    }
+
+    #[test]
+    fn test_emoji_surrounded_by_nonword_word() {
+        // i.e. ".🖖,,abc"
+        let tokens = parse_str_test(".\u{1f596},,abc", true);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 0, 1, Word),  // "."
+                test_macros::token!(1, 1, 5, Word),  // "🖖"
+                test_macros::token!(5, 6, 7, Word),  // ",,"
+                test_macros::token!(7, 9, 10, Word), // "abc"
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_emoji_surrounded_by_nonword_WORD() {
+        // i.e. ".🖖,,abc"
+        let tokens = parse_str_test(".\u{1f596},,abc", false);
+        assert_eq!(tokens, vec![test_macros::token!(0, 9, 10, Word)]);
+    }
+
+    #[test]
+    fn test_emoji_surrounded_by_hanzi_word() {
+        // i.e. "你好🖖世界".
+        let tokens = parse_str_test("你好\u{1f596}世界", true);
+        assert_eq!(
+            tokens,
+            vec![
+                test_macros::token!(0, 3, 6, Word),  // "你好"
+                test_macros::token!(6, 6, 10, Word), // "🖖"
+                test_macros::token!(10, 13, 16, Word), // "世界"
+            ]
+        );
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_emoji_surrounded_by_hanzi_WORD() {
+        // i.e. "你好🖖世界".
+        let tokens = parse_str_test("你好\u{1f596}世界", false);
+        assert_eq!(tokens, vec![test_macros::token!(0, 13, 16, Word)]);
     }
 }
