@@ -377,13 +377,32 @@ impl CharGroup {
         }
     }
 
-    /// Push a [`Char`]. Giving back `c` if their types are not compatible in
-    /// major class (space, word, nonword). Combining characters are compatible
-    /// with any other major class. `self`'s type may be modified accordingly,
-    /// but it's guaranteed that the majar class of `self` will not be changed
-    /// after push. Panics if there's gap between `self` and `c`.
-    fn push(&mut self, c: Char) -> Result<(), Char> {
+    /// Try to push a [`Char`]. If `self` and `c` are compatible in major class
+    /// (space, word, nonword). The type of `self` may be modified accordingly,
+    /// but it's guaranteed that the major class will not be changed. If `c`
+    /// is of type [`CharType::CombiningDiacriticalMark`], it's guaranteed to
+    /// be compatible with `self`. Otherwise, return a vec of [`CharGroup`]s
+    /// of either length 1 or 2, where the last element is the singleton char
+    /// group comprised of `c`, with implicit whitespace optionally inserted
+    /// before. In this case, `self` will not be modified. Panics if there's
+    /// gap between `self` and `c`.
+    fn push(&mut self, c: Char) -> Result<(), Vec<CharGroup>> {
         assert_eq!(self.col.excl_end_byte_index, c.col.start_byte_index);
+
+        fn do_push(
+            group: &mut CharGroup,
+            c: Char,
+        ) -> Result<(), Vec<CharGroup>> {
+            group.chars.push(c.ch);
+            // Combining diacritical marks modify previous character only, and does
+            // not take space.
+            match &c.ty {
+                CombiningDiacriticalMark => (),
+                _ => group.col.incl_end_byte_index = c.col.incl_end_byte_index,
+            }
+            group.col.excl_end_byte_index = c.col.excl_end_byte_index;
+            Ok(())
+        }
 
         use CharGroupType as G;
         use CharType::*;
@@ -392,37 +411,54 @@ impl CharGroup {
         use WordCharGroupType as WG;
         use WordCharType as W;
         match (&self.ty, &c.ty) {
-            (G::CombiningDiacriticalMark, CombiningDiacriticalMark) => (),
+            // === Compatible cases ===
+            (G::CombiningDiacriticalMark, CombiningDiacriticalMark) => {
+                do_push(self, c)
+            }
             (G::CombiningDiacriticalMark, Word(W::Other)) => {
                 self.ty = G::Word(WG::Other);
+                do_push(self, c)
             }
 
-            (G::Space, Space) | (G::Space, CombiningDiacriticalMark) => (),
+            (G::Space, Space) | (G::Space, CombiningDiacriticalMark) => {
+                do_push(self, c)
+            }
 
             (G::Word(WG::Hanzi), Word(_))
-            | (G::Word(WG::Hanzi), CombiningDiacriticalMark) => (),
+            | (G::Word(WG::Hanzi), CombiningDiacriticalMark) => {
+                do_push(self, c)
+            }
 
             (G::Word(WG::Other), Word(W::Hanzi)) => {
                 self.ty = G::Word(WG::Hanzi);
+                do_push(self, c)
             }
             (G::Word(WG::Other), Word(W::Other))
-            | (G::Word(WG::Other), CombiningDiacriticalMark) => (),
+            | (G::Word(WG::Other), CombiningDiacriticalMark) => {
+                do_push(self, c)
+            }
 
             (G::NonWord(NG::LeftPuncLeading), NonWord(N::LeftPunc))
             | (G::NonWord(NG::LeftPuncLeading), NonWord(N::Other))
-            | (G::NonWord(NG::LeftPuncLeading), CombiningDiacriticalMark) => (),
+            | (G::NonWord(NG::LeftPuncLeading), CombiningDiacriticalMark) => {
+                do_push(self, c)
+            }
             (G::NonWord(NG::LeftPuncLeading), NonWord(N::RightPunc))
             | (G::NonWord(NG::LeftPuncLeading), NonWord(N::IsolatedPunc)) => {
                 self.ty = G::NonWord(NG::LeftPuncLeadingRightPuncEnding);
+                do_push(self, c)
             }
 
             (G::NonWord(NG::RightPuncEnding), NonWord(N::LeftPunc))
             | (G::NonWord(NG::RightPuncEnding), NonWord(N::Other)) => {
                 self.ty = G::NonWord(NG::Other);
+                do_push(self, c)
             }
             (G::NonWord(NG::RightPuncEnding), NonWord(N::RightPunc))
             | (G::NonWord(NG::RightPuncEnding), NonWord(N::IsolatedPunc))
-            | (G::NonWord(NG::RightPuncEnding), CombiningDiacriticalMark) => (),
+            | (G::NonWord(NG::RightPuncEnding), CombiningDiacriticalMark) => {
+                do_push(self, c)
+            }
 
             (
                 G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
@@ -431,7 +467,10 @@ impl CharGroup {
             | (
                 G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
                 NonWord(N::Other),
-            ) => self.ty = G::NonWord(NG::LeftPuncLeading),
+            ) => {
+                self.ty = G::NonWord(NG::LeftPuncLeading);
+                do_push(self, c)
+            }
             (
                 G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
                 NonWord(N::RightPunc),
@@ -443,27 +482,47 @@ impl CharGroup {
             | (
                 G::NonWord(NG::LeftPuncLeadingRightPuncEnding),
                 CombiningDiacriticalMark,
-            ) => (),
+            ) => do_push(self, c),
 
             (G::NonWord(NG::Other), NonWord(N::LeftPunc))
             | (G::NonWord(NG::Other), NonWord(N::Other))
-            | (G::NonWord(NG::Other), CombiningDiacriticalMark) => (),
+            | (G::NonWord(NG::Other), CombiningDiacriticalMark) => {
+                do_push(self, c)
+            }
             (G::NonWord(NG::Other), NonWord(N::RightPunc))
             | (G::NonWord(NG::Other), NonWord(N::IsolatedPunc)) => {
                 self.ty = G::NonWord(NG::RightPuncEnding);
+                do_push(self, c)
             }
 
-            _ => return Err(c),
+            // === Not compatible cases ===
+            (G::CombiningDiacriticalMark, Word(W::Hanzi))
+            | (G::CombiningDiacriticalMark, NonWord(_))
+            | (G::CombiningDiacriticalMark, Space) => Err(vec![c.into()]),
+
+            // We never need to insert implicit space after a space.
+            (G::Space, Word(_)) | (G::Space, NonWord(_)) => Err(vec![c.into()]),
+
+            (G::Word(_), Space) => Err(vec![c.into()]),
+            (G::Word(_), NonWord(N::LeftPunc))
+            | (G::Word(_), NonWord(N::IsolatedPunc)) => {
+                let c = CharGroup::from(c);
+                let ispace =
+                    CharGroup::new_implicit_whitespace(c.col.start_byte_index);
+                Err(vec![ispace, c])
+            }
+            (G::Word(_), NonWord(_)) => Err(vec![c.into()]),
+
+            (G::NonWord(_), Space) => Err(vec![c.into()]),
+            (G::NonWord(NG::RightPuncEnding), Word(_))
+            | (G::NonWord(NG::LeftPuncLeadingRightPuncEnding), Word(_)) => {
+                let c = CharGroup::from(c);
+                let ispace =
+                    CharGroup::new_implicit_whitespace(c.col.start_byte_index);
+                Err(vec![ispace, c])
+            }
+            (G::NonWord(_), Word(_)) => Err(vec![c.into()]),
         }
-        self.chars.push(c.ch);
-        // Combining diacritical marks modify previous character only, and does
-        // not take space.
-        match &c.ty {
-            CombiningDiacriticalMark => (),
-            _ => self.col.incl_end_byte_index = c.col.incl_end_byte_index,
-        }
-        self.col.excl_end_byte_index = c.col.excl_end_byte_index;
-        Ok(())
     }
 
     /// Append `group` after `self`. The type of `self` won't be changed.
@@ -486,44 +545,7 @@ fn group_chars_rule(
     match group {
         None => vec![CharGroup::from(c)],
         Some(mut group) => match group.push(c) {
-            Err(c) => {
-                let c = CharGroup::from(c);
-                // `group` and `c` are not compatible in major type. We may
-                // need to insert implicit whitespace in between. Since it's
-                // cheap, we prepare one beforehand.
-                let ispace =
-                    CharGroup::new_implicit_whitespace(c.col.start_byte_index);
-                use CharGroupType::*;
-                use NonWordCharGroupType as N;
-                use WordCharGroupType as W;
-                match (&group.ty, &c.ty) {
-                    (CombiningDiacriticalMark, Word(W::Hanzi))
-                    | (CombiningDiacriticalMark, NonWord(_))
-                    | (CombiningDiacriticalMark, Space) => {
-                        vec![group, c]
-                    }
-
-                    // We never need to insert implicit space after a space.
-                    (Space, Word(_)) | (Space, NonWord(_)) => vec![group, c],
-
-                    (Word(_), Space) => vec![group, c],
-                    (Word(_), NonWord(N::LeftPuncLeading))
-                    | (Word(_), NonWord(N::LeftPuncLeadingRightPuncEnding)) => {
-                        vec![group, ispace, c]
-                    }
-                    (Word(_), NonWord(_)) => vec![group, c],
-
-                    (NonWord(_), Space) => vec![group, c],
-                    (NonWord(N::RightPuncEnding), Word(_))
-                    | (NonWord(N::LeftPuncLeadingRightPuncEnding), Word(_)) => {
-                        vec![group, ispace, c]
-                    }
-                    (NonWord(_), Word(_)) => vec![group, c],
-
-                    // Should not happen.
-                    _ => panic!(),
-                }
-            }
+            Err(joined) => utils::chain_into_vec([group], joined),
             Ok(()) => vec![group],
         },
     }
