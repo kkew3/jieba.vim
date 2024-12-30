@@ -10,7 +10,15 @@ on:
       - rust
 
 jobs:
+  check_github_ref:
+    name: Check github ref value
+    runs-on: ubuntu-22.04
+    steps:
+      - shell: bash
+        run: echo ${{ github.ref }}
+
   unit_test:
+    needs: check_github_ref
     name: "Unit test for ${{ matrix.vim.dist }} @ ${{ matrix.vim.version }}"
     runs-on: ubuntu-22.04
     strategy:
