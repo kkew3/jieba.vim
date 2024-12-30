@@ -6,8 +6,8 @@ on:
     branches:
       - rust
   push:
-    branches:
-      - rust
+    tags:
+      - 'v*'
 
 jobs:
   check_github_ref:
