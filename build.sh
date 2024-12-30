@@ -1,3 +1,50 @@
 #!/bin/bash
-set -e
-cd pythonx && cargo build -r
+
+has() {
+    while [ -n "$1" ]; do
+        if ! builtin command -v "$1" > /dev/null; then
+            return 1
+        fi
+        shift
+    done
+}
+
+download_release() {
+    curr_commit="$(git rev-parse HEAD)"
+    curr_tag="$(git describe --exact-match "$curr_commit" 2> /dev/null)"
+    if [ -z "$curr_tag" ]; then
+        return 1
+    fi
+    arch="$(uname -m)"
+    os="$(uname -s)"
+    url=""
+    case "$arch-$os" in
+        x86_64-Darwin)
+            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-x86_64-apple-darwin.dylib;
+            name=jieba_vim_rs.so;
+            ;;
+        aarch64-Darwin)
+            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-aarch64-apple-darwin.dylib;
+            name=jieba_vim_rs.so;
+            ;;
+        x86_64-Linux)
+            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-x86_64-unknown-linux-gnu.so;
+            name=jieba_vim_rs.so;
+            ;;
+    esac
+    if [ -z "$url" ]; then
+        return 1
+    fi
+    curl -fsSLo "pythonx/jieba_vim/$name" "$url"
+}
+
+build_from_source() {
+    cd pythonx && cargo build -r
+}
+
+if has git uname curl; then
+    if download_release; then
+        exit 0
+    fi
+fi
+build_from_source
