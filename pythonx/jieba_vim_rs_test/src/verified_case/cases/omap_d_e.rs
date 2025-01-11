@@ -12,7 +12,6 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use std::env;
 use std::fmt;
 use std::fs::File;
 use std::io::BufWriter;
@@ -20,6 +19,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use super::super::vim_env::VimDistro;
 use super::super::Count;
 use super::{utils, MotionOutput, VerifiableCase, TEMPLATES};
 use crate::cursor_marker::{self, CursorMarker};
@@ -77,9 +77,10 @@ impl VerifiableCase for OmapDECase {
         let count = self.count.to_string();
         let motion = self.motion_str();
         let d_special = self.d_special;
-        let nvim = env::var("VIM_BIN_NAME")
-            .map(|s| s == "nvim")
-            .unwrap_or(false);
+        let nvim = match VimDistro::new_from_env() {
+            VimDistro::Vim(_) => false,
+            VimDistro::Nvim(_) => true,
+        };
 
         let ctx = minijinja::context!(buffer);
         TEMPLATES

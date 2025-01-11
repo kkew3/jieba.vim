@@ -34,7 +34,7 @@ def compile_j2(vim_bin: Literal['vim', 'nvim'], verify_only: bool):
                         template.render(vim=vim, nvim=nvim, verify=False))
 
 
-def eval_with_vim(vim_bin: Literal['vim', 'nvim']):
+def eval_with_vim(vim_bin: str):
     proc = subprocess.run([
         vim_bin, '-u', 'vimrc', '-c', 'silent Vader! {}'.format(
             os.path.join(BASEDIR, '*.vader'))
@@ -48,7 +48,8 @@ def eval_with_vim(vim_bin: Literal['vim', 'nvim']):
 def test_all():
     vim_bin = os.environ['VIM_BIN_NAME']
     verify_only = bool(int(os.environ.get('VERIFY_ONLY', '0')))
-    assert vim_bin in ('vim', 'nvim')
+    _, _, vim_bin_name = vim_bin.rpartition('/')
+    assert vim_bin_name in ('vim', 'nvim')
     clean_vader()
-    compile_j2(vim_bin, verify_only)
+    compile_j2(vim_bin_name, verify_only)
     eval_with_vim(vim_bin)
