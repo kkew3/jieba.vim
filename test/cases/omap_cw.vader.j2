@@ -1,0 +1,70 @@
+* See https://vimhelp.org/motion.txt.html#word
+
+{% set keys = ["w", "W", "e", "E", "b", "B", "ge", "gE"] -%}
+{%- set bang = "!" if verify else "" -%}
+{%- set vim_compatible = true -%}
+{%- set nvim_compatible = true %}
+
+Before:
+  {%- for k in keys %}
+  map {{ k }} <Plug>(Jieba_{{ k }})
+  {%- endfor %}
+  let @x = ""
+
+After:
+  {%- for k in keys %}
+  unmap {{ k }}
+  {%- endfor %}
+
+---
+
+{%- if (not vim or vim_compatible) and (not nvim or nvim_compatible) %}
+
+Given:
+  aaa aaa
+
+Execute:
+  normal{{ bang }} cwx
+
+Expect:
+  x aaa
+
+---
+
+Given:
+  aaa aaa
+
+Execute:
+  normal{{ bang }} cWx
+
+Expect:
+  x aaa
+
+---
+
+Given:
+  aaa,, aaa
+
+Execute:
+  normal{{ bang }} cwx
+
+Expect:
+  x,, aaa
+
+---
+
+Given:
+  aaa,, aaa
+
+Execute:
+  normal{{ bang }} cWx
+
+Expect:
+  x aaa
+
+{% endif %}
+
+---
+
+Before:
+After:
