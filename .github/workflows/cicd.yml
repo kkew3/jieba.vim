@@ -10,8 +10,8 @@ on:
       - 'v*'
 
 jobs:
-  unit_test:
-    name: "Unit test for ${{ matrix.vim.dist }} @ ${{ matrix.vim.version }}"
+  unit_test_integration_test:
+    name: "Unit test and integration test for ${{ matrix.vim.dist }} @ ${{ matrix.vim.version }}"
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -29,7 +29,17 @@ jobs:
         with:
           path: jieba_vim
 
+      - name: Cache vim/nvim and vader.vim
+        id: cache-vim
+        uses: actions/cache@v4
+        with:
+          path: |
+            vim
+            vim_bundle/vader.vim
+          key: vim-distro-${{ matrix.vim.dist }}-${{ matrix.vim.version }}
+
       - name: Install vim/nvim
+        if: steps.cache-vim.outputs.cache-hit != 'true'
         run: |
           case ${{ matrix.vim.dist }} in
             vim)
@@ -43,8 +53,11 @@ jobs:
             nvim)
               sudo apt-get update
               sudo apt-get install -y curl tar
-              curl -fsSL https://github.com/neovim/neovim/releases/download/${{ matrix.vim.version }}/nvim-linux64.tar.gz | tar xzf -
-              echo "$GITHUB_WORKSPACE/nvim-linux64/bin" >> $GITHUB_PATH
+              cd "$GITHUB_WORKSPACE"
+              mkdir vim
+              # Extract nvim to "vim", so that it's easier to cache the result.
+              curl -fsSL https://github.com/neovim/neovim/releases/download/${{ matrix.vim.version }}/nvim-linux64.tar.gz | tar xzf - --strip-components=1 -C vim
+              echo "$GITHUB_WORKSPACE/vim/bin" >> $GITHUB_PATH
               ;;
           esac
 
@@ -53,6 +66,7 @@ jobs:
           ${{ matrix.vim.dist }} --version
 
       - name: Install vader.vim
+        if: steps.cache-vim.outputs.cache-hit != 'true'
         run: |
           mkdir "$GITHUB_WORKSPACE/vim_bundle"
           git clone https://github.com/junegunn/vader.vim.git "$GITHUB_WORKSPACE/vim_bundle/vader.vim"
@@ -63,12 +77,29 @@ jobs:
           export VIM_BIN_NAME=${{ matrix.vim.dist }}
           cd "$GITHUB_WORKSPACE/jieba_vim/pythonx/jieba_vim_rs_core"
           cargo test -F verifiable_case
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install integration test dependencies
+        run: |
+          cd "$GITHUB_WORKSPACE/jieba_vim/test"
+          pip install .
+      
+      - name: Run integration tests
+        run: |
+          cd "$GITHUB_WORKSPACE/jieba_vim/test"
+          export VIM_BUNDLE_PATH="$GITHUB_WORKSPACE/vim_bundle"
+          export VIM_BIN_NAME=${{ matrix.vim.dist }}
+          pytest
 
   # Reference: https://github.com/sharkdp/fd/blob/master/.github/workflows/CICD.yml
   build:
     name: Build for ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
-    needs: unit_test
+    needs: unit_test_integration_test
     strategy:
       fail-fast: false
       matrix:
