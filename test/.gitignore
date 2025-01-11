@@ -4,3 +4,4 @@ cases/*.vader
 __pycache__/
 /poetry.lock
 *.egg-info
+*.env
