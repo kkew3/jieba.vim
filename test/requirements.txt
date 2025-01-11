@@ -1,3 +1,0 @@
-pytest
-pynvim
-Jinja2
