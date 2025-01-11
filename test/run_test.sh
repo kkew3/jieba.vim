@@ -1,7 +1,5 @@
 #!/bin/bash
-[ ! -d "../venv" ] && python3 -m venv ../venv
-source ../venv/bin/activate
-pip install -q -r requirements.txt
+source venv/bin/activate
 echo "=== vim integration tests ==="
 VIM_BIN_NAME=vim pytest
 echo

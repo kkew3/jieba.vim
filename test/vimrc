@@ -4,5 +4,5 @@ set rtp+=~/.vim/bundle/vader.vim
 set rtp+=..
 filetype plugin indent on
 if has("nvim")
-    let g:python3_host_prog = "../venv/bin/python3"
+    let g:python3_host_prog = "venv/bin/python3"
 endif
