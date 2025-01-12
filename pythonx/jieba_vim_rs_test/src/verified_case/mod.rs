@@ -15,6 +15,7 @@
 mod base;
 pub mod cases;
 mod verify;
+mod vim_env;
 
 pub use base::{Count, Mode, Motion, Operator, VisualModeKind};
 pub use verify::verify_cases;

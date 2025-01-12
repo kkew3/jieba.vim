@@ -2,3 +2,7 @@ cases/*.vader
 .hypothesis/
 .pytest_cache/
 __pycache__/
+/poetry.lock
+*.egg-info
+*.env
+/run_test.sh

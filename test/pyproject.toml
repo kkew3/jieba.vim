@@ -1,0 +1,13 @@
+[project]
+name = "jieba-vim-integration-test"
+version = "0.1.0"
+description = "Integration tests of jieba.vim."
+requires-python = ">=3.9"
+dependencies = [
+    "jinja2 (>=3.1.5,<4.0.0)",
+    "pytest (>=8.3.4,<9.0.0)",
+    "pynvim (>=0.5.2,<0.6.0)",
+]
+
+[tool.poetry]
+package-mode = false

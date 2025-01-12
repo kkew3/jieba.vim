@@ -23,6 +23,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use super::cases::VerifiableCase;
+use super::vim_env::{VimBundlePath, VimDistro};
 
 fn write_group_vader<I: IntoIterator<Item = P>, P: AsRef<Path>>(
     path: &Path,
@@ -78,10 +79,10 @@ where
 
     // Create a minimal vimrc if not already exists.
     let vimrc_path = basedir.join("vimrc");
-    let vim_bundle_path =
-        env::var("VIM_BUNDLE_PATH").unwrap_or("~/.vim/bundle".into());
+    let vim_bundle_path = VimBundlePath::new_from_env();
     if let Ok(mut file) = File::create_new(vimrc_path) {
-        write!(file, "set rtp+={}/vader.vim\n", vim_bundle_path).unwrap();
+        write!(file, "set rtp+={}\n", vim_bundle_path.get_vader_rtp()).unwrap();
+        write!(file, "set nocompatible\n").unwrap();
     }
 
     // Create the vim vader files for cases that are not verified.
@@ -113,39 +114,20 @@ where
     );
 
     // Run the tests.
-    let vim_bin = env::var("VIM_BIN_NAME").unwrap_or("vim".into());
-    let proc = if vim_bin == "vim" {
-        Command::new("vim")
-            .args(&[
-                "-N",
-                "-u",
-                "vimrc",
-                "-c",
-                &format!("silent Vader! {}", group_path.to_str().unwrap()),
-            ])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped())
-            .current_dir(&basedir)
-            .spawn()
-            .unwrap()
-    } else if vim_bin == "nvim" {
-        Command::new("nvim")
-            .args(&[
-                "-u",
-                "vimrc",
-                "-c",
-                &format!("silent Vader! {}", group_path.to_str().unwrap()),
-            ])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped())
-            .current_dir(&basedir)
-            .spawn()
-            .unwrap()
-    } else {
-        panic!("Unexpected VIM_BIN_NAME: {}", vim_bin);
-    };
+    let vim_bin = VimDistro::new_from_env();
+    let proc = Command::new(vim_bin.as_ref())
+        .args(&[
+            "-u",
+            "vimrc",
+            "-c",
+            &format!("silent Vader! {}", group_path.to_str().unwrap()),
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .current_dir(&basedir)
+        .spawn()
+        .unwrap();
     let proc_out = proc.wait_with_output().unwrap();
     if proc_out.status.success() {
         // Write cache to disk to indicate verification success.
