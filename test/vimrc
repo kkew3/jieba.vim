@@ -4,5 +4,12 @@ set rtp+=~/.vim/bundle/vader.vim
 set rtp+=..
 filetype plugin indent on
 if has("nvim")
-    let g:python3_host_prog = "venv/bin/python3"
+    if isdirectory("venv")
+        let g:python3_host_prog = "venv/bin/python3"
+    elseif isdirectory(".venv")
+        let g:python3_host_prog = ".venv/bin/python3"
+    else
+        " For Github workflows.
+        let g:python3_host_prog = trim(system("which python3"))
+    endif
 endif
