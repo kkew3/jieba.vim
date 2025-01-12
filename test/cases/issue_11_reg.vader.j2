@@ -1,0 +1,375 @@
+* This test checks the refactoring of motions w and b, plus the non-d-special
+* case of motions e and ge.
+
+{% set keys = ["w", "W", "e", "E", "b", "B", "ge", "gE"] -%}
+{%- set bang = "!" if verify else "" -%}
+{%- set vim_compatible = true -%}
+{%- set nvim_compatible = true %}
+
+Before:
+  {%- for k in keys %}
+  map {{ k }} <Plug>(Jieba_{{ k }})
+  {%- endfor %}
+  let @a = ""
+  let @" = ""
+
+After:
+  {%- for k in keys %}
+  unmap {{ k }}
+  {%- endfor %}
+
+---
+
+{%- if (not vim or vim_compatible) and (not nvim or nvim_compatible) %}
+
+Given:
+  aa bb ccc
+
+Execute (unnamed register for w, delete):
+  normal! gg0w
+  normal{{ bang }} dw
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  aa ccc
+
+Execute (unnamed register for w, delete + paste):
+  normal! gg0w
+  normal{{ bang }} dw
+  normal! P
+
+Then:
+  AssertEqual 6, col(".")
+
+Expect:
+  aa bb ccc
+
+Execute (unnamed register for w, change):
+  normal! gg0w
+  normal{{ bang }} cwXYZ
+
+Then:
+  AssertEqual 6, col(".")
+
+Expect:
+  aa XYZ ccc
+
+Execute (unnamed register for w, change + paste):
+  normal! gg0w
+  normal{{ bang }} cwXYZ
+  normal! p
+
+Then:
+  AssertEqual 8, col(".")
+
+Expect:
+  aa XYZbb ccc
+
+Execute (named register for w, delete):
+  normal! gg0w
+  normal{{ bang }} "adw
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  aa ccc
+
+Execute (named register for w, delete + paste):
+  normal! gg0w
+  normal{{ bang }} "adw
+  normal! "aP
+
+Then:
+  AssertEqual 6, col(".")
+
+Expect:
+  aa bb ccc
+
+Execute (named register for w, change):
+  normal! gg0w
+  normal{{ bang }} "acwXYZ
+
+Then:
+  AssertEqual 6, col(".")
+
+Expect:
+  aa XYZ ccc
+
+Execute (named register for w, change + paste):
+  normal! gg0w
+  normal{{ bang }} "acwXYZ
+  normal! "ap
+
+Then:
+  AssertEqual 8, col(".")
+
+Expect:
+  aa XYZbb ccc
+
+---
+
+Execute (unnamed register for b, delete):
+  normal! gg0w
+  normal{{ bang }} db
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  bb ccc
+
+Execute (unnamed register for b, delete + paste):
+  normal! gg0w
+  normal{{ bang }} db
+  normal! P
+
+Then:
+  AssertEqual 3, col(".")
+
+Expect:
+  aa bb ccc
+
+Execute (unnamed register for b, change):
+  normal! gg0w
+  normal{{ bang }} cbXYZ
+
+Then:
+  AssertEqual 3, col(".")
+
+Expect:
+  XYZbb ccc
+
+Execute (unnamed register for b, change + paste):
+  normal! gg0w
+  normal{{ bang }} cbXYZ
+  normal! p
+
+Then:
+  AssertEqual 6, col(".")
+
+Expect:
+  XYZaa bb ccc
+
+Execute (named register for b, delete):
+  normal! gg0w
+  normal{{ bang }} "adb
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  bb ccc
+
+Execute (named register for b, delete + paste):
+  normal! gg0w
+  normal{{ bang }} "adb
+  normal! "aP
+
+Then:
+  AssertEqual 3, col(".")
+
+Expect:
+  aa bb ccc
+
+Execute (named register for b, change):
+  normal! gg0w
+  normal{{ bang }} "acbXYZ
+
+Then:
+  AssertEqual 3, col(".")
+
+Expect:
+  XYZbb ccc
+
+Execute (named register for b, change + paste):
+  normal! gg0w
+  normal{{ bang }} "acbXYZ
+  normal! "ap
+
+Then:
+  AssertEqual 6, col(".")
+
+Expect:
+  XYZaa bb ccc
+
+---
+
+Execute (unnamed register for e, delete):
+  normal! gg0w
+  normal{{ bang }} de
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  aa  ccc
+
+Execute (unnamed register for e, delete + paste):
+  normal! gg0w
+  normal{{ bang }} de
+  normal! P
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  aa bb ccc
+
+Execute (unnamed register for e, change):
+  normal! gg0w
+  normal{{ bang }} ceXYZ
+
+Then:
+  AssertEqual 6, col(".")
+
+Expect:
+  aa XYZ ccc
+
+Execute (unnamed register for e, change + paste):
+  normal! gg0w
+  normal{{ bang }} ceXYZ
+  normal! p
+
+Then:
+  AssertEqual 8, col(".")
+
+Expect:
+  aa XYZbb ccc
+
+Execute (named register for e, delete):
+  normal! gg0w
+  normal{{ bang }} "ade
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  aa  ccc
+
+Execute (named register for e, delete + paste):
+  normal! gg0w
+  normal{{ bang }} "ade
+  normal! "aP
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  aa bb ccc
+
+Execute (named register for e, change):
+  normal! gg0w
+  normal{{ bang }} "aceXYZ
+
+Then:
+  AssertEqual 6, col(".")
+
+Expect:
+  aa XYZ ccc
+
+Execute (named register for e, change + paste):
+  normal! gg0w
+  normal{{ bang }} "aceXYZ
+  normal! "ap
+
+Then:
+  AssertEqual 8, col(".")
+
+Expect:
+  aa XYZbb ccc
+
+---
+
+Execute (unnamed register for ge, delete):
+  normal! gg0w
+  normal{{ bang }} dge
+
+Then:
+  AssertEqual 2, col(".")
+
+Expect:
+  ab ccc
+
+Execute (unnamed register for ge, delete + paste):
+  normal! gg0w
+  normal{{ bang }} dge
+  normal! P
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  aa bb ccc
+
+Execute (unnamed register for ge, change):
+  normal! gg0w
+  normal{{ bang }} cgeXYZ
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  aXYZb ccc
+
+Execute (unnamed register for ge, change + paste):
+  normal! gg0w
+  normal{{ bang }} cgeXYZ
+  normal! p
+
+Then:
+  AssertEqual 7, col(".")
+
+Expect:
+  aXYZa bb ccc
+
+Execute (named register for ge, delete):
+  normal! gg0w
+  normal{{ bang }} "adge
+
+Then:
+  AssertEqual 2, col(".")
+
+Expect:
+  ab ccc
+
+Execute (named register for ge, delete + paste):
+  normal! gg0w
+  normal{{ bang }} "adge
+  normal! "aP
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  aa bb ccc
+
+Execute (named register for ge, change):
+  normal! gg0w
+  normal{{ bang }} "acgeXYZ
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  aXYZb ccc
+
+Execute (named register for ge, change + paste):
+  normal! gg0w
+  normal{{ bang }} "acgeXYZ
+  normal! "ap
+
+Then:
+  AssertEqual 7, col(".")
+
+Expect:
+  aXYZa bb ccc
+
+{% endif %}
+
+---
+
+Before:
+After:
