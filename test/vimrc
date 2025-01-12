@@ -1,6 +1,11 @@
 " This vimscript should be sourced under REPO_ROOT/test.
 set nocompatible
-set rtp+=~/.vim/bundle/vader.vim
+if exists("$VIM_BUNDLE_PATH")
+    " For Github workflows.
+    let &rtp .= "," . expand("$VIM_BUNDLE_PATH") . "/vader.vim"
+else
+    set rtp+=~/.vim/bundle/vader.vim
+endif
 set rtp+=..
 filetype plugin indent on
 if has("nvim")
