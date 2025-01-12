@@ -42,10 +42,6 @@ jobs:
             vim_bundle/vader.vim
           key: vim-distro-${{ matrix.vim.dist }}-${{ matrix.vim.version }}
 
-      - name: Debug before installing vim/nvim
-        uses: fawazahmed0/action-debug-vscode@main
-        if: ${{ matrix.vim.version }} == 'v8.2.0'
-
       - name: Install vim/nvim
         if: steps.cache-vim.outputs.cache-hit != 'true'
         run: |
@@ -57,19 +53,35 @@ jobs:
               git checkout ${{ matrix.vim.version }}
               # References:
               # - https://allanchain.github.io/blog/post/compile-vim-python3/
-              # - https://stackoverflow.com/a/59573172/7881370
-              # - https://stackoverflow.com/a/3374130/7881370
-              ./configure \
-                  --with-features=huge \
-                  --enable-fail-if-missing \
-                  --enable-largefile \
-                  --enable-multibyte \
-                  --enable-python3interp=dynamic \
-                  --with-python3-command=python3.11 \
-                  --with-python3-stable-abi=3.11 \
-                  --with-python3-config-dir="$(python3-config --configdir)"
-                  --enable-gui=no \
-                  --prefix="$GITHUB_WORKSPACE/vim/prefix"
+              case ${{ matrix.vim.version }} in
+                v9.1.0)
+                  LDFLAGS=-rdynamic ./configure \
+                      --with-features=huge \
+                      --enable-fail-if-missing \
+                      --enable-largefile \
+                      --enable-multibyte \
+                      --enable-python3interp \
+                      --with-python3-command=python3.11 \
+                      --with-python3-stable-abi=3.11 \
+                      --enable-gui=no \
+                      --prefix="$GITHUB_WORKSPACE/vim/prefix"
+                  ;;
+                v8.2.0)
+                  env \
+                      vi_cv_path_python3_plibs="-L$(python3.11-config --configdir) -lpython3.11 -ldl -lm" \
+                      vi_cv_var_python3_version=3.11 \
+                      LDFLAGS=-rdynamic \
+                      ./configure \
+                      --with-features=huge \
+                      --enable-fail-if-missing \
+                      --enable-largefile \
+                      --enable-multibyte \
+                      --enable-python3interp \
+                      --with-python3-command=python3.11 \
+                      --with-python3-config-dir="$(python3.11-config --configdir)" \
+                      --prefix="$GITHUB_WORKSPACE/vim/prefix"
+                  ;;
+              esac
               make -j4 && make install
               echo "$GITHUB_WORKSPACE/vim/prefix/bin" >> $GITHUB_PATH
               ;;
