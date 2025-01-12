@@ -62,6 +62,17 @@ def upperbound_count(count):
     return min(18446744073709551615, count)
 
 
+def get_register_value(register):
+    # The register is quoted by single quotes because no register is named `'`.
+    return vim.eval("getreg('{}')".format(register))
+
+
+def set_register_value(register, value):
+    # First escape backslashes and double quotes.
+    value = value.replace('\\', '\\\\').replace('"', '\\"')
+    vim.command("call setreg('{}', \"{}\")".format(register, value))
+
+
 def _init_word_motion():
     global word_motion
     if word_motion is not None:
@@ -133,28 +144,27 @@ def _vim_wrapper_factory_omap_w(motion_name):
     assert motion_name in ['w', 'W']
     fun_name = 'omap_' + motion_name
 
-    def _motion_wrapper(operator, count):
+    def _motion_wrapper(register, operator, count):
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
-        # virtualedit trick reference:
-        # https://github.com/svermeulen/vim-NotableFt/blob/01732102c1d8c7b7bd6e221329e37685aa4ab41a/plugin/NotableFt.vim#L242-L256
-        #
-        # I tried `let s:jieba_vim_previous_virtualedit = &virtualedit` but got
-        # error "Illegal variable name: s:jieba_vim_previous_virtualedit". Will
-        # the use of global variable lead to race condition when there are
-        # multiple instances of Vim open?
-        vim.command('let g:jieba_vim_previous_virtualedit = &virtualedit')
-        vim.command('set virtualedit=onemore')
+        virtualedit_config = vim.eval('&virtualedit')
         output = method(vim.current.buffer, vim.current.window.cursor,
                         operator, count)
-        vim.current.window.cursor = output.cursor
+        col_before = vim.current.window.cursor[1]
+        vim.command('set virtualedit=onemore')
+        # `output.cursor[1] + 1` because vim column starts from 1 whereas vim
+        # python api column starts from 0.
         vim.command(
-            'augroup jieba_vim_reset_virtualedit '
-            '| autocmd! '
-            '| autocmd TextChanged,CursorMoved <buffer> '
-            'execute "set virtualedit=" . g:jieba_vim_previous_virtualedit '
-            '| autocmd! jieba_vim_reset_virtualedit '
-            '| augroup END')
+            '''execute 'silent normal! "{}{}:call cursor({}, {})' . "\\<CR>"'''
+            .format(register, operator, output.cursor[0],
+                    output.cursor[1] + 1))
+        if operator == 'c':
+            # Running `c` in `normal!` as above will shift the cursor one more
+            # character to the left; so we need to shift back one character.
+            if col_before > 0:
+                vim.command('normal! l')
+            vim.command('startinsert')
+        vim.command('set virtualedit={}'.format(virtualedit_config))
 
     return {fun_name: _motion_wrapper}
 
@@ -163,46 +173,45 @@ def _vim_wrapper_factory_omap_e(motion_name):
     assert motion_name in ['e', 'E']
     fun_name = 'omap_' + motion_name
 
-    def _motion_wrapper(operator, count):
+    def _motion_wrapper(register, operator, count):
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
-        # virtualedit trick reference:
-        # https://github.com/svermeulen/vim-NotableFt/blob/01732102c1d8c7b7bd6e221329e37685aa4ab41a/plugin/NotableFt.vim#L242-L256
-        #
-        # I tried `let s:jieba_vim_previous_virtualedit = &virtualedit` but got
-        # error "Illegal variable name: s:jieba_vim_previous_virtualedit". Will
-        # the use of global variable lead to race condition when there are
-        # multiple instances of Vim open?
-        vim.command('let g:jieba_vim_previous_virtualedit = &virtualedit')
-        vim.command('set virtualedit=onemore')
+        virtualedit_config = vim.eval('&virtualedit')
         output = method(vim.current.buffer, vim.current.window.cursor,
                         operator, count)
+        line_before = vim.current.window.cursor[0]
         col_before = vim.current.window.cursor[1]
-        vim.current.window.cursor = output.cursor
+        # This will be used in d-special case below.
+        chars_before_cursor = vim.current.buffer[line_before - 1][:col_before]
+        vim.command('set virtualedit=onemore')
+        # `output.cursor[1] + 1` because vim column starts from 1 whereas vim
+        # python api column starts from 0.
         vim.command(
-            'augroup jieba_vim_reset_virtualedit '
-            '| autocmd! '
-            '| autocmd TextChanged,CursorMoved <buffer> '
-            'execute "set virtualedit=" . g:jieba_vim_previous_virtualedit '
-            '| autocmd! jieba_vim_reset_virtualedit '
-            '| augroup END')
+            '''execute 'silent normal! "{}{}v:call cursor({}, {})' . "\\<CR>"'''
+            .format(register, operator, output.cursor[0],
+                    output.cursor[1] + 1))
+        reg_value = get_register_value(register)
+        if operator == 'c':
+            # Running `c` in `normal!` as above will shift the cursor one more
+            # character to the left; so we need to shift back one character.
+            if col_before:
+                vim.command('normal! l')
+            vim.command('startinsert')
         # This patch breaks `.` (see https://vimhelp.org/repeat.txt.html#.).
-        # Need help on fixing this issue.
-        if operator == 'd' and output.d_special:
-            if int(vim.eval('has("nvim")')):
-                vim.command(
-                    'augroup jieba_vim_teardown_d_special '
-                    '| autocmd! '
-                    '| autocmd TextChanged <buffer> execute "normal! dd" | execute "silent call cursor(line(\'.\'), {})" '
-                    '| autocmd! jieba_vim_teardown_d_special '
-                    '| augroup END'.format(col_before + 1))
-            else:
-                vim.command(
-                    'augroup jieba_vim_teardown_d_special '
-                    '| autocmd! '
-                    '| autocmd TextChanged <buffer> execute "normal! dd" '
-                    '| autocmd! jieba_vim_teardown_d_special '
-                    '| augroup END')
+        elif operator == 'd' and output.d_special:
+            vim.command('normal! "{}dd'.format(register))
+            # `reg_value2` consists of `chars_before_cursor` and the rest. We
+            # need this order: `chars_before_cursor`, `reg_value`, the rest.
+            reg_value2 = get_register_value(register)
+            reg_value = (
+                chars_before_cursor + reg_value + reg_value2[col_before:])
+            set_register_value(register, reg_value)
+            # We don't need this block because somehow having
+            # virtualedit=onemore overcomes the cursor position issue.
+            #if int(vim.eval('has("nvim")')):
+            #    vim.command("""execute 'silent call cursor(line("."), {})'"""
+            #                .format(col_before + 1))
+        vim.command('set virtualedit={}'.format(virtualedit_config))
 
     return {fun_name: _motion_wrapper}
 
@@ -211,7 +220,7 @@ def _vim_wrapper_factory_omap_b(motion_name):
     assert motion_name in ['b', 'B']
     fun_name = 'omap_' + motion_name
 
-    def _motion_wrapper(operator, count):
+    def _motion_wrapper(register, operator, count):
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
         output = method(vim.current.buffer, vim.current.window.cursor, count)
@@ -221,8 +230,9 @@ def _vim_wrapper_factory_omap_b(motion_name):
             # `output.cursor[1] + 1` because vim column starts from 1 whereas
             # vim python api column starts from 0.
             vim.command(
-                'execute "silent normal! {}:call cursor({}, {})\\<CR>"'.format(
-                    operator, output.cursor[0], output.cursor[1] + 1))
+                '''execute 'silent normal! "{}{}:call cursor({}, {})' . "\\<CR>"'''
+                .format(register, operator, output.cursor[0],
+                        output.cursor[1] + 1))
             if operator == 'c':
                 # Running `c` in `normal!` as above will shift the cursor one more
                 # character to the left; so we need to shift back one character.
@@ -237,7 +247,7 @@ def _vim_wrapper_factory_omap_ge(motion_name):
     assert motion_name in ['ge', 'gE']
     fun_name = 'omap_' + motion_name
 
-    def _motion_wrapper(operator, count):
+    def _motion_wrapper(register, operator, count):
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
         output = method(vim.current.buffer, vim.current.window.cursor,
@@ -249,8 +259,10 @@ def _vim_wrapper_factory_omap_ge(motion_name):
             # `output.cursor[1] + 1` because vim column starts from 1 whereas
             # vim python api column starts from 0.
             vim.command(
-                'execute "silent normal! {}v:call cursor({}, {})\\<CR>"'
-                .format(operator, output.cursor[0], output.cursor[1] + 1))
+                '''execute 'silent normal! "{}{}v:call cursor({}, {})' . "\\<CR>"'''
+                .format(register, operator, output.cursor[0],
+                        output.cursor[1] + 1))
+            reg_value = get_register_value(register)
             if operator == 'c':
                 # Running `c` in `normal!` as above will shift the cursor one
                 # more character to the left; so we need to shift back one
@@ -259,9 +271,10 @@ def _vim_wrapper_factory_omap_ge(motion_name):
                     vim.command('normal! l')
                 vim.command('startinsert')
             # This patch breaks `.` (see https://vimhelp.org/repeat.txt.html#.).
-            # Need help on fixing this issue.
             elif operator == 'd' and output.d_special:
-                vim.command('normal! dd')
+                vim.command('normal! "{}dd'.format(register))
+                reg_value += get_register_value(register)
+                set_register_value(register, reg_value)
                 if int(vim.eval('has("nvim")')):
                     vim.command(
                         '''execute "silent call cursor(line('.'), {})"'''

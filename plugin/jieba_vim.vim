@@ -80,13 +80,17 @@ nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>py3 jieba_vim.preview_cance
 
 for ky in s:motions
     execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') ":<C-u>py3 jieba_vim.navigation.nmap_' . ky . '(" . v:count1 . ")<CR>"'
-    if ky ==# "e" || ky ==# "E"
-        execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "v:<C-u>py3 jieba_vim.navigation.omap_' . ky . '(\"" . v:operator . "\", " . v:count1 . ")<CR>"'
-    elseif ky ==# "b" || ky ==# "B" || ky ==# "ge" || ky ==# "gE"
-        execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "<Esc>:<C-u>py3 jieba_vim.navigation.omap_' . ky . '(\"" . v:operator . "\", " . v:count1 . ")<CR>"'
-    else
-        execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') ":<C-u>py3 jieba_vim.navigation.omap_' . ky . '(\"" . v:operator . "\", " . v:count1 . ")<CR>"'
-    endif
+    execute
+        \ 'onoremap <expr> <silent> <Plug>(Jieba_'
+        \ . ky
+        \ . ') "<Esc>:<C-u>py3 jieba_vim.navigation.omap_'
+        \ . ky
+        \ . "('"
+        \ . '" . v:register . "'
+        \ . "', '"
+        \ . '" . v:operator . "'
+        \ . "', "
+        \ . '" . v:count1 . ")<CR>"'
     execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "<Esc>:<C-u>py3 jieba_vim.navigation.xmap_' . ky . '(" . v:count1 . ")<CR>:py3 jieba_vim.navigation.teardown_xmap_' . ky . '()<CR>"'
 endfor
 
