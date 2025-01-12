@@ -24,14 +24,14 @@ jobs:
           - dist: nvim
             version: v0.10.2
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: jieba_vim
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-      - uses: actions/checkout@v4
-        with:
-          path: jieba_vim
 
       - name: Cache vim/nvim and vader.vim
         id: cache-vim
