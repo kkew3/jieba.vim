@@ -78,6 +78,11 @@ jobs:
           cd "$GITHUB_WORKSPACE/jieba_vim/pythonx/jieba_vim_rs_core"
           cargo test -F verifiable_case
       
+      - name: Build
+        run: |
+          cd "$GITHUB_WORKSPACE/jieba_vim/pythonx"
+          cargo build --locked --release
+      
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -87,6 +92,9 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/jieba_vim/test"
           pip install .
+
+      - name: Debug before running integration test
+        uses: fawazahmed0/action-debug-vscode@main
       
       - name: Run integration tests
         run: |
