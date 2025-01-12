@@ -42,6 +42,10 @@ jobs:
             vim_bundle/vader.vim
           key: vim-distro-${{ matrix.vim.dist }}-${{ matrix.vim.version }}
 
+      - name: Debug before installing vim/nvim
+        uses: fawazahmed0/action-debug-vscode@main
+        if: ${{ matrix.vim.version }} == 'v8.2.0'
+
       - name: Install vim/nvim
         if: steps.cache-vim.outputs.cache-hit != 'true'
         run: |
@@ -76,6 +80,18 @@ jobs:
               mkdir vim
               # Extract nvim to "vim", so that it's easier to cache the result.
               curl -fsSL https://github.com/neovim/neovim/releases/download/${{ matrix.vim.version }}/nvim-linux64.tar.gz | tar xzf - --strip-components=1 -C vim
+              echo "$GITHUB_WORKSPACE/vim/bin" >> $GITHUB_PATH
+              ;;
+          esac
+
+      - name: Add vim/nvim to PATH
+        if: steps.cache-vim.outputs.cache-hit == 'true'
+        run: |
+          case ${{ matrix.vim.dist }} in
+            vim)
+              echo "$GITHUB_WORKSPACE/vim/prefix/bin" >> $GITHUB_PATH
+              ;;
+            nvim)
               echo "$GITHUB_WORKSPACE/vim/bin" >> $GITHUB_PATH
               ;;
           esac
