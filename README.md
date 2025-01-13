@@ -12,6 +12,13 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 
 [jieba][2] 是一个用于中文分词的 Python 包。已经有很多插件项目诸如 [Jieba][3] (VSCode)、[Deno bridge jieba][4] (Emacs)、[jieba_nvim][5] (neovim) 将其用以更好地编辑中文文本。然而我还没有发现 Vim 8 上的 jieba 插件，因此我开发了这个插件。
 
+特色一览：
+
+- 增强 vim word motions 使其能够处理汉字。
+- 测试丰富，覆盖各种边缘用例。
+- 使用 Rust + Python 编写，有速度保证。
+- 为主流平台提供预编译链接库，无需本地 Rust 开发环境。
+
 ## 安装
 
 本插件使用 Python3 + Rust 开发，Vim/Neovim 需要 `+python3` 特性以正常使用。
@@ -105,6 +112,13 @@ It works well for space-delimited language like English, but not quite well for 
 It has been used in various projects (e.g. [Jieba][3] (for VSCode), [Deno bridge jieba][4] (for Emacs), [jieba_nvim][5] (for neovim)) to facilitate better word motions when editing Chinese.
 However, I haven't seen one for Vim.
 That's why I develop this plugin.
+
+Features overview:
+
+- Augmented vim word motions for Chinese.
+- Backed by tests, covering edge cases.
+- Written in Rust + Python, providing fluent user experience.
+- No need for local Rust development environment on major OS and platforms.
 
 ## Installation
 
