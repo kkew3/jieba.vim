@@ -108,7 +108,7 @@ for ky in s:motions
         \ . '" . v:operator . "'
         \ . "', "
         \ . '" . v:count1 . ")<CR>"'
-    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "<Esc>:<C-u>py3 jieba_vim.navigation.xmap_' . ky . '(" . v:count1 . ")<CR>:py3 jieba_vim.navigation.teardown_xmap_' . ky . '()<CR>"'
+    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "<Esc>:<C-u>py3 jieba_vim.navigation.xmap_' . ky . '(" . v:count1 . ")<CR>"'
 endfor
 
 let s:modes = ["n", "x", "o"]

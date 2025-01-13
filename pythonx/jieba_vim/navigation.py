@@ -17,33 +17,25 @@ These names are dynamically defined in this module::
     - nmap_w
     - nmap_W
     - xmap_w
-    - teardown_xmap_w
     - xmap_W
-    - teardown_xmap_W
     - omap_w
     - omap_W
     - nmap_e
     - nmap_E
     - xmap_e
-    - teardown_xmap_e
     - xmap_E
-    - teardown_xmap_E
     - omap_e
     - omap_E
     - nmap_b
     - nmap_B
     - xmap_b
-    - teardown_xmap_b
     - xmap_B
-    - teardown_xmap_B
     - omap_b
     - omap_B
     - nmap_ge
     - nmap_gE
     - xmap_ge
-    - teardown_xmap_ge
     - xmap_gE
-    - teardown_xmap_gE
     - omap_ge
     - omap_gE
 """
@@ -109,11 +101,7 @@ def _vim_wrapper_factory_x(motion_name):
     def _motion_wrapper(count):
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
-        # I tried `let s:jieba_vim_previous_virtualedit = &virtualedit` but got
-        # error "Illegal variable name: s:jieba_vim_previous_virtualedit". Will
-        # the use of global variable lead to race condition when there are
-        # multiple instances of Vim open?
-        vim.command('let g:jieba_vim_previous_virtualedit = &virtualedit')
+        virtualedit_config = vim.eval('&virtualedit')
         vim.command('set virtualedit=onemore')
         # Handle the case where cursor is one character after the last
         # character of the buffer in visual mode.
@@ -125,19 +113,12 @@ def _vim_wrapper_factory_x(motion_name):
             output = method(vim.current.buffer, vim.current.window.cursor,
                             count)
         vim.current.window.cursor = output.cursor
-
-    def _teardown_wrapper():
         # The `m>gv` trick reference:
         # https://github.com/svermeulen/vim-NotableFt/blob/01732102c1d8c7b7bd6e221329e37685aa4ab41a/plugin/NotableFt.vim#L32
-        vim.command('normal! m>')
-        vim.command(
-            'execute "set virtualedit=" . g:jieba_vim_previous_virtualedit')
-        vim.command('normal! gv')
+        vim.command('normal! m>gv')
+        vim.command('set virtualedit={}'.format(virtualedit_config))
 
-    return {
-        fun_name: _motion_wrapper,
-        'teardown_' + fun_name: _teardown_wrapper,
-    }
+    return {fun_name: _motion_wrapper}
 
 
 def _vim_wrapper_factory_omap_w(motion_name):
