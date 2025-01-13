@@ -17,33 +17,25 @@ These names are dynamically defined in this module::
     - nmap_w
     - nmap_W
     - xmap_w
-    - teardown_xmap_w
     - xmap_W
-    - teardown_xmap_W
     - omap_w
     - omap_W
     - nmap_e
     - nmap_E
     - xmap_e
-    - teardown_xmap_e
     - xmap_E
-    - teardown_xmap_E
     - omap_e
     - omap_E
     - nmap_b
     - nmap_B
     - xmap_b
-    - teardown_xmap_b
     - xmap_B
-    - teardown_xmap_B
     - omap_b
     - omap_B
     - nmap_ge
     - nmap_gE
     - xmap_ge
-    - teardown_xmap_ge
     - xmap_gE
-    - teardown_xmap_gE
     - omap_ge
     - omap_gE
 """
@@ -109,35 +101,51 @@ def _vim_wrapper_factory_x(motion_name):
     def _motion_wrapper(count):
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
-        # I tried `let s:jieba_vim_previous_virtualedit = &virtualedit` but got
-        # error "Illegal variable name: s:jieba_vim_previous_virtualedit". Will
-        # the use of global variable lead to race condition when there are
-        # multiple instances of Vim open?
-        vim.command('let g:jieba_vim_previous_virtualedit = &virtualedit')
+        virtualedit_config = vim.eval('&virtualedit')
         vim.command('set virtualedit=onemore')
         # Handle the case where cursor is one character after the last
         # character of the buffer in visual mode.
-        line = vim.current.window.cursor[0]
+        #
+        # FIXME Current handling does not cover every edge case, especially
+        # the case where the cursor is at the last character of the buffer in
+        # visual line mode. I'm aware of it, and intentionally mark
+        # test/cases/xmap_ge_eol.vader.j2 as IGNORED. Generally speaking, the
+        # failed case (which involves motion `ge` in visual line mode) does not
+        # have severe impact to users, as `ge` is rarely used. Some plugins,
+        # e.g. preservim/vim-markdown, even remaps it to certain plugin
+        # function. Therefore, this might be fixed in the future, but with a
+        # relatively low priority.
+        line, col = vim.current.window.cursor
+        # True if the cursor needs repositioning. This condition is neither
+        # sufficient nor necessary, meaning that there will be false positives.
+        # Note, however, that without the fourth clause `visualmode() != "V"`,
+        # the condition becomes necessary. The fourth clause is added to reduce
+        # the number of false positives.
+        need_reposition_cursor = bool(
+            int(
+                vim.eval('''line("'>") == line("$") '''
+                         '''&& col("'>") == col("$") '''
+                         '''&& line(".") == line("'>") '''
+                         '''&& visualmode() != "V"''')))
         col_gt = int(vim.eval('''col("'>")''')) - 1
-        if col_gt >= len(vim.current.buffer[line - 1].encode('utf-8')):
+        if motion_name in ('ge', 'gE') and need_reposition_cursor:
+            # Reposition the cursor to (line, col_gt).
             output = method(vim.current.buffer, (line, col_gt), count)
+            # Since `ge` should move cursor backward, if the cursor results
+            # in a position after the previous position, it means the
+            # repositioning is a false positive. We will then rerun the
+            # function without repositioning to find the output cursor.
+            if output.cursor[0] == line and output.cursor[1] > col:
+                output = method(vim.current.buffer, (line, col), count)
         else:
-            output = method(vim.current.buffer, vim.current.window.cursor,
-                            count)
+            output = method(vim.current.buffer, (line, col), count)
         vim.current.window.cursor = output.cursor
-
-    def _teardown_wrapper():
         # The `m>gv` trick reference:
         # https://github.com/svermeulen/vim-NotableFt/blob/01732102c1d8c7b7bd6e221329e37685aa4ab41a/plugin/NotableFt.vim#L32
-        vim.command('normal! m>')
-        vim.command(
-            'execute "set virtualedit=" . g:jieba_vim_previous_virtualedit')
-        vim.command('normal! gv')
+        vim.command('normal! m>gv')
+        vim.command('set virtualedit={}'.format(virtualedit_config))
 
-    return {
-        fun_name: _motion_wrapper,
-        'teardown_' + fun_name: _teardown_wrapper,
-    }
+    return {fun_name: _motion_wrapper}
 
 
 def _vim_wrapper_factory_omap_w(motion_name):
@@ -248,8 +256,9 @@ def _vim_wrapper_factory_omap_b(motion_name):
                 .format(register, operator, output.cursor[0],
                         output.cursor[1] + 1))
             if operator == 'c':
-                # Running `c` in `normal!` as above will shift the cursor one more
-                # character to the left; so we need to shift back one character.
+                # Running `c` in `normal!` as above will shift the cursor one
+                # more character to the left; so we need to shift back one
+                # character.
                 if output.cursor[1] > 0:
                     vim.command('normal! l')
                 vim.command('startinsert')
