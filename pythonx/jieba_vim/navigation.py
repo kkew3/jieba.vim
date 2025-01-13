@@ -229,8 +229,9 @@ def _vim_wrapper_factory_omap_b(motion_name):
                 .format(register, operator, output.cursor[0],
                         output.cursor[1] + 1))
             if operator == 'c':
-                # Running `c` in `normal!` as above will shift the cursor one more
-                # character to the left; so we need to shift back one character.
+                # Running `c` in `normal!` as above will shift the cursor one
+                # more character to the left; so we need to shift back one
+                # character.
                 if output.cursor[1] > 0:
                     vim.command('normal! l')
                 vim.command('startinsert')
