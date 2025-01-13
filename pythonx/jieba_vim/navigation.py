@@ -105,13 +105,40 @@ def _vim_wrapper_factory_x(motion_name):
         vim.command('set virtualedit=onemore')
         # Handle the case where cursor is one character after the last
         # character of the buffer in visual mode.
-        line = vim.current.window.cursor[0]
+        #
+        # FIXME Current handling does not cover every edge case, especially
+        # the case where the cursor is at the last character of the buffer in
+        # visual line mode. I'm aware of it, and intentionally mark
+        # test/cases/xmap_ge_eol.vader.j2 as IGNORED. Generally speaking, the
+        # failed case (which involves motion `ge` in visual line mode) does not
+        # have severe impact to users, as `ge` is rarely used. Some plugins,
+        # e.g. preservim/vim-markdown, even remaps it to certain plugin
+        # function. Therefore, this might be fixed in the future, but with a
+        # relatively low priority.
+        line, col = vim.current.window.cursor
+        # True if the cursor needs repositioning. This condition is neither
+        # sufficient nor necessary, meaning that there will be false positives.
+        # Note, however, that without the fourth clause `visualmode() != "V"`,
+        # the condition becomes necessary. The fourth clause is added to reduce
+        # the number of false positives.
+        need_reposition_cursor = bool(
+            int(
+                vim.eval('''line("'>") == line("$") '''
+                         '''&& col("'>") == col("$") '''
+                         '''&& line(".") == line("'>") '''
+                         '''&& visualmode() != "V"''')))
         col_gt = int(vim.eval('''col("'>")''')) - 1
-        if col_gt >= len(vim.current.buffer[line - 1].encode('utf-8')):
+        if motion_name in ('ge', 'gE') and need_reposition_cursor:
+            # Reposition the cursor to (line, col_gt).
             output = method(vim.current.buffer, (line, col_gt), count)
+            # Since `ge` should move cursor backward, if the cursor results
+            # in a position after the previous position, it means the
+            # repositioning is a false positive. We will then rerun the
+            # function without repositioning to find the output cursor.
+            if output.cursor[0] == line and output.cursor[1] > col:
+                output = method(vim.current.buffer, (line, col), count)
         else:
-            output = method(vim.current.buffer, vim.current.window.cursor,
-                            count)
+            output = method(vim.current.buffer, (line, col), count)
         vim.current.window.cursor = output.cursor
         # The `m>gv` trick reference:
         # https://github.com/svermeulen/vim-NotableFt/blob/01732102c1d8c7b7bd6e221329e37685aa4ab41a/plugin/NotableFt.vim#L32
