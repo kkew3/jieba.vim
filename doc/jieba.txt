@@ -7,6 +7,7 @@ CONTENTS                                                      *jieba-contents*
   2. Configuration..............................................|jieba-config|
   3. Commands.................................................|jieba-commands|
   4. Mappings.................................................|jieba-mappings|
+  5. Optional Dependency................................|jieba-opt-dependency|
 
 ==============================================================================
 INTRODUCTION                                                     *jieba-intro*
@@ -51,6 +52,12 @@ MAPPINGS                                                      *jieba-mappings*
 <
 提供快捷开关 g:jieba_vim_keymap，可通过在 .vimrc 中将其设为 1 来开启对八个 word motion 的 nmap, xmap
 和 omap。
+
+==============================================================================
+OPTIONAL DEPENDENCY                                     *jieba-opt-dependency*
+
+如果用户安装了 `tpope/vim-repeat` (https://github.com/tpope/vim-repeat)，可使用 |.| 重复上一次
+word operation。例如 `dw.` 相当于 `dwdw`。
 
 
 vim:tw=78:ts=8:ft=help:norl:

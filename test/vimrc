@@ -3,8 +3,10 @@ set nocompatible
 if exists("$VIM_BUNDLE_PATH")
     " For Github workflows.
     let &rtp .= "," . expand("$VIM_BUNDLE_PATH") . "/vader.vim"
+    let &rtp .= "," . expand("$VIM_BUNDLE_PATH") . "/vim-repeat"
 else
     set rtp+=~/.vim/bundle/vader.vim
+    set rtp+=~/.vim/bundle/vim-repeat
 endif
 set rtp+=..
 filetype plugin indent on

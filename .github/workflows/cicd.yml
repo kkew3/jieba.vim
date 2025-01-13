@@ -39,7 +39,7 @@ jobs:
         with:
           path: |
             vim
-            vim_bundle/vader.vim
+            vim_bundle
           key: vim-distro-${{ matrix.vim.dist }}-${{ matrix.vim.version }}
 
       - name: Install vim/nvim
@@ -117,6 +117,7 @@ jobs:
         run: |
           mkdir "$GITHUB_WORKSPACE/vim_bundle"
           git clone https://github.com/junegunn/vader.vim.git "$GITHUB_WORKSPACE/vim_bundle/vader.vim"
+          git clone https://github.com/tpope/vim-repeat.git "$GITHUB_WORKSPACE/vim_bundle/vim-repeat"
 
       - name: Verify and run unit tests
         run: |
