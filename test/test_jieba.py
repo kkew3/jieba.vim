@@ -1,6 +1,7 @@
 import os
 from typing import Literal
 import subprocess
+import warnings
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -26,12 +27,17 @@ def compile_j2(vim_bin: Literal['vim', 'nvim'], verify_only: bool):
                     encoding='utf-8') as outfile:
                 outfile.write(template.render(vim=vim, nvim=nvim, verify=True))
             if not verify_only:
-                file = 'test_{}'.format(name[:-3])
-                with open(
-                        os.path.join(BASEDIR, file), 'w',
-                        encoding='utf-8') as outfile:
-                    outfile.write(
-                        template.render(vim=vim, nvim=nvim, verify=False))
+                if name.startswith('IGNORED'):
+                    warnings.warn(
+                        'Skip compiling {} because it is intentionally ignored'
+                        .format(name))
+                else:
+                    file = 'test_{}'.format(name[:-3])
+                    with open(
+                            os.path.join(BASEDIR, file), 'w',
+                            encoding='utf-8') as outfile:
+                        outfile.write(
+                            template.render(vim=vim, nvim=nvim, verify=False))
 
 
 def eval_with_vim(vim_bin: str):
