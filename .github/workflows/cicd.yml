@@ -112,7 +112,7 @@ jobs:
         run: |
           ${{ matrix.vim.dist }} --version
 
-      - name: Install vader.vim
+      - name: Install vader.vim and vim-repeat
         if: steps.cache-vim.outputs.cache-hit != 'true'
         run: |
           mkdir "$GITHUB_WORKSPACE/vim_bundle"
@@ -135,6 +135,9 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/jieba_vim/test"
           pip install .
+      
+      - name: Debug before running integration test
+        uses: fawazahmed0/action-debug-vscode@main
       
       - name: Run integration tests
         run: |
