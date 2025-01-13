@@ -145,6 +145,9 @@ def _vim_wrapper_factory_omap_w(motion_name):
     fun_name = 'omap_' + motion_name
 
     def _motion_wrapper(register, operator, count):
+        vim.command(
+            'silent! call repeat#setreg("\\<Plug>(Jieba_internal_o_{})", \'{}\')'
+            .format(motion_name, register))
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
         virtualedit_config = vim.eval('&virtualedit')
@@ -165,6 +168,9 @@ def _vim_wrapper_factory_omap_w(motion_name):
                 vim.command('normal! l')
             vim.command('startinsert')
         vim.command('set virtualedit={}'.format(virtualedit_config))
+        vim.command(
+            'silent! call repeat#set("\\<Plug>(Jieba_internal_o_{})", {})'
+            .format(motion_name, count))
 
     return {fun_name: _motion_wrapper}
 
@@ -174,6 +180,9 @@ def _vim_wrapper_factory_omap_e(motion_name):
     fun_name = 'omap_' + motion_name
 
     def _motion_wrapper(register, operator, count):
+        vim.command(
+            'silent! call repeat#setreg("\\<Plug>(Jieba_internal_o_{})", \'{}\')'
+            .format(motion_name, register))
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
         virtualedit_config = vim.eval('&virtualedit')
@@ -197,7 +206,6 @@ def _vim_wrapper_factory_omap_e(motion_name):
             if col_before:
                 vim.command('normal! l')
             vim.command('startinsert')
-        # This patch breaks `.` (see https://vimhelp.org/repeat.txt.html#.).
         elif operator == 'd' and output.d_special:
             vim.command('normal! "{}dd'.format(register))
             # `reg_value2` consists of `chars_before_cursor` and the rest. We
@@ -212,6 +220,9 @@ def _vim_wrapper_factory_omap_e(motion_name):
             #    vim.command("""execute 'silent call cursor(line("."), {})'"""
             #                .format(col_before + 1))
         vim.command('set virtualedit={}'.format(virtualedit_config))
+        vim.command(
+            'silent! call repeat#set("\\<Plug>(Jieba_internal_o_{})", {})'
+            .format(motion_name, count))
 
     return {fun_name: _motion_wrapper}
 
@@ -221,6 +232,9 @@ def _vim_wrapper_factory_omap_b(motion_name):
     fun_name = 'omap_' + motion_name
 
     def _motion_wrapper(register, operator, count):
+        vim.command(
+            'silent! call repeat#setreg("\\<Plug>(Jieba_internal_o_{})", \'{}\')'
+            .format(motion_name, register))
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
         output = method(vim.current.buffer, vim.current.window.cursor, count)
@@ -239,6 +253,9 @@ def _vim_wrapper_factory_omap_b(motion_name):
                 if output.cursor[1] > 0:
                     vim.command('normal! l')
                 vim.command('startinsert')
+        vim.command(
+            'silent! call repeat#set("\\<Plug>(Jieba_internal_o_{})", {})'
+            .format(motion_name, count))
 
     return {fun_name: _motion_wrapper}
 
@@ -248,6 +265,9 @@ def _vim_wrapper_factory_omap_ge(motion_name):
     fun_name = 'omap_' + motion_name
 
     def _motion_wrapper(register, operator, count):
+        vim.command(
+            'silent! call repeat#setreg("\\<Plug>(Jieba_internal_o_{})", \'{}\')'
+            .format(motion_name, register))
         count = upperbound_count(count)
         method = getattr(word_motion, fun_name)
         output = method(vim.current.buffer, vim.current.window.cursor,
@@ -270,7 +290,6 @@ def _vim_wrapper_factory_omap_ge(motion_name):
                 if output.cursor[1] > 0:
                     vim.command('normal! l')
                 vim.command('startinsert')
-            # This patch breaks `.` (see https://vimhelp.org/repeat.txt.html#.).
             elif operator == 'd' and output.d_special:
                 vim.command('normal! "{}dd'.format(register))
                 reg_value += get_register_value(register)
@@ -279,6 +298,9 @@ def _vim_wrapper_factory_omap_ge(motion_name):
                     vim.command(
                         '''execute "silent call cursor(line('.'), {})"'''
                         .format(col_before + 1))
+        vim.command(
+            'silent! call repeat#set("\\<Plug>(Jieba_internal_o_{})", {})'
+            .format(motion_name, count))
 
     return {fun_name: _motion_wrapper}
 

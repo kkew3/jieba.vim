@@ -695,6 +695,19 @@ fn cut_hanzi_rule<C: JiebaPlaceholder>(
             // We have assumed that each subgroup contains chars of the same
             // major class, which is subject to the property of `jieba`.
             let sub_groups = group.split_into_subgroups(n_chars);
+            // In the case where `group` is the first group, it's likely
+            // that the first sub-group is a combining diacritical mark, and
+            // we need to convert it again to a word. This happens because
+            // `split_into_subgroups` recategorizes chars.
+            let sub_groups = if prev_group.is_none() {
+                utils::stack_merge(
+                    sub_groups,
+                    &(),
+                    convert_first_cdm_group_rule,
+                )
+            } else {
+                sub_groups
+            };
             utils::chain_into_vec(
                 prev_group,
                 utils::stack_merge(
@@ -1064,6 +1077,20 @@ mod tests {
                 assert!(tok.col.incl_end_byte_index < tok.col.excl_end_byte_index);
                 start = tok.col.excl_end_byte_index;
             }
+        }
+    }
+
+    #[test]
+    fn test_dba879258_parse_str_tokens_are_nonempty_contiguous_word() {
+        let s = "\u{300}A⼀";
+        let tokens = parse_str_test(s, true);
+        let mut start = 0;
+        for tok in tokens {
+            assert_eq!(tok.col.start_byte_index, start);
+            assert!(tok.col.start_byte_index < tok.col.excl_end_byte_index);
+            assert!(tok.col.start_byte_index <= tok.col.incl_end_byte_index);
+            assert!(tok.col.incl_end_byte_index < tok.col.excl_end_byte_index);
+            start = tok.col.excl_end_byte_index;
         }
     }
 

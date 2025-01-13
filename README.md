@@ -34,7 +34,8 @@ vim +"py3 print(sys.version)"
 
 1. 增强八个 Vim word motion，即 `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`，在 `nmap`, `xmap` 和 `omap` 下的功能，使其能用于中文分词（同时也保留其按空格分词的功能）。其行为与默认行为相似，例如 `w` 不会跳过中文标点而 `W` 会跳过中文标点等。
 2. 在无中文 ASCII 文档中与 Vim 原生 word motion 行为*完全兼容*。结合懒惰加载（见下文 `g:jieba_vim_lazy` 开关）可实现（在某些文档类型中）常开。
-3. 预览 word motion 的跳转位置。由于中文分词有时存在歧义，即使没有歧义也会有人类与 jieba 的对齐问题，因此有时中文 word motion 的跳转位置并不显然。这时用户可能想提前预览将要进行的跳转将会跳转到哪些位置。
+3. 如果安装了 [`tpope/vim-repeat`][vim-repeat]，可使用 [`.`][dot-repeat] 重复上一次 word operation。例如 `dw.` 相当于 `dwdw`。
+4. 预览 word motion 的跳转位置。由于中文分词有时存在歧义，即使没有歧义也会有人类与 jieba 的对齐问题，因此有时中文 word motion 的跳转位置并不显然。这时用户可能想提前预览将要进行的跳转将会跳转到哪些位置。
 
 ## 使用
 
@@ -127,7 +128,8 @@ vim +"py3 print(sys.version)"
 
 1. Augment eight Vim word motions (i.e. `b`, `B`, `ge`, `gE`, `w`, `W`, `e`, `E`) such that they can be used in Chinese text and English text at the same time. The augmented behavior remains similar. For example, augmented `w` won't jump over Chinese punctuation whereas `W` will.
 2. The behavior of the augmented word motions is compatible with Vim's original word motions when handling ASCII text without Chinese. Together with lazy loading (see the option `g:jieba_vim_lazy`), it's possible to leave this plugin on (for certain file types).
-3. Preview the destination of the word motions beforehand. Since there's sometimes ambiguity in Chinese word segmentation, and since even when there's no ambiguity, jieba library may not align well with human users, it's not always evident where a word motion will jump to. In such circumstance, user may want to preview jumps beforehand.
+3. If [`tpope/vim-repeat`][vim-repeat] has been installed, [`.`][dot-repeat] can be used to repeat last word operation. For example, `dw.` will be equivalent to `dwdw`.
+4. Preview the destination of the word motions beforehand. Since there's sometimes ambiguity in Chinese word segmentation, and since even when there's no ambiguity, jieba library may not align well with human users, it's not always evident where a word motion will jump to. In such circumstance, user may want to preview jumps beforehand.
 
 ## Usage
 
@@ -192,3 +194,5 @@ Apache license v2.
 [4]: https://github.com/ginqi7/deno-bridge-jieba
 [5]: https://github.com/cathaysia/jieba_nvim
 [6]: https://github.com/junegunn/vim-plug
+[vim-repeat]: https://github.com/tpope/vim-repeat
+[dot-repeat]: https://vimhelp.org/repeat.txt.html#.

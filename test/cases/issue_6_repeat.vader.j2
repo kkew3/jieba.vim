@@ -1,0 +1,602 @@
+* See https://github.com/kkew3/jieba.vim/issues/6.
+
+{% set keys = ["w", "W", "e", "E", "b", "B", "ge", "gE"] -%}
+{%- set bang = "!" if verify else "" -%}
+{%- set vim_compatible = true -%}
+{%- set nvim_compatible = true %}
+
+Before:
+  {%- for k in keys %}
+  map {{ k }} <Plug>(Jieba_{{ k }})
+  {%- endfor %}
+  let @a = ""
+  let @" = ""
+
+After:
+  {%- for k in keys %}
+  unmap {{ k }}
+  {%- endfor %}
+
+---
+
+{%- if (not vim or vim_compatible) and (not nvim or nvim_compatible) %}
+
+* These are the cases on the issue page.
+
+Given:
+  a
+     
+  b
+     
+  cd
+
+Execute (case 1 first step):
+  normal! 4gg0
+  normal{{ bang }} dge
+
+Then:
+  AssertEqual 3, line(".")
+  AssertEqual 1, col(".")
+
+Expect:
+  a
+     
+  cd
+
+Execute (case 1 first step + repeat):
+  normal! 4gg0
+  normal{{ bang }} dge
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, line(".")
+  AssertEqual 1, col(".")
+
+Expect:
+  d
+
+Execute (case 2 first step):
+  normal! 5gg0
+  normal{{ bang }} dge
+
+Then:
+  AssertEqual 3, line(".")
+  AssertEqual 1, col(".")
+
+Expect:
+  a
+     
+  d
+
+Execute (case 2 first step + repeat):
+  normal! 5gg0
+  normal{{ bang }} dge
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, line(".")
+  AssertEqual 1, col(".")
+
+Expect:
+  
+
+Given:
+  abc def ghi
+
+Execute (case 3 first step):
+  normal! $
+  normal{{ bang }} db
+
+Then:
+  AssertEqual 9, col(".")
+
+Expect:
+  abc def i
+
+Execute (case 3 first step + repeat):
+  normal! $
+  normal{{ bang }} db
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc i
+
+
+
+* Below are more systematic tests.
+
+* Simple one line cases.
+
+Given:
+  abc defg gh ijkl mn opq
+
+Execute (dw first step):
+  normal! fd
+  normal{{ bang }} dw
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc gh ijkl mn opq
+
+Execute (dw first step + repeat x1):
+  normal! fd
+  normal{{ bang }} dw
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc ijkl mn opq
+
+Execute (dw first step + repeat x2):
+  normal! fd
+  normal{{ bang }} dw
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc mn opq
+
+Execute (dw first step + repeat x4):
+  normal! fd
+  normal{{ bang }} dw
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  abc 
+
+Execute (dw first step + repeat x5):
+  normal! fd
+  normal{{ bang }} dw
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 3, col(".")
+
+Expect:
+  abc
+
+Execute (dw first step + repeat x6):
+  normal! fd
+  normal{{ bang }} dw
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 2, col(".")
+
+Expect:
+  ab
+
+Execute (dw first step + repeat x8):
+  normal! fd
+  normal{{ bang }} dw
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  
+
+Execute (dw first step + repeat x9):
+  normal! fd
+  normal{{ bang }} dw
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  
+
+Execute (d2w first step):
+  normal! fd
+  normal{{ bang }} d2w
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc ijkl mn opq
+
+Execute (d2w first step + repeat x1):
+  normal! fd
+  normal{{ bang }} d2w
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc opq
+
+---
+
+Given:
+  abc defg gh ijkl mn opq
+
+Execute (de first step):
+  normal! fd
+  normal{{ bang }} de
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc  gh ijkl mn opq
+
+Execute (de first step + repeat x1):
+  normal! fd
+  normal{{ bang }} de
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc  ijkl mn opq
+
+Execute (de first step + repeat x2):
+  normal! fd
+  normal{{ bang }} de
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc  mn opq
+
+Execute (de first step + repeat x4):
+  normal! fd
+  normal{{ bang }} de
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 4, col(".")
+
+Expect:
+  abc 
+
+Execute (de first step + repeat x5):
+  normal! fd
+  normal{{ bang }} de
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 3, col(".")
+
+Expect:
+  abc
+
+Execute (de first step + repeat x6):
+  normal! fd
+  normal{{ bang }} de
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 2, col(".")
+
+Expect:
+  ab
+
+Execute (de first step + repeat x8):
+  normal! fd
+  normal{{ bang }} de
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  
+
+Execute (de first step + repeat x9):
+  normal! fd
+  normal{{ bang }} de
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  
+
+Execute (d2e first step):
+  normal! fd
+  normal{{ bang }} d2e
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc  ijkl mn opq
+
+Execute (d2e first step + repeat x1):
+  normal! fd
+  normal{{ bang }} d2e
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc  opq
+
+---
+
+Given:
+  abc defg gh ijkl mn opq
+
+Execute (db first step):
+  normal! fm
+  normal{{ bang }} db
+
+Then:
+  AssertEqual 13, col(".")
+
+Expect:
+  abc defg gh mn opq
+
+Execute (db first step + repeat x1):
+  normal! fm
+  normal{{ bang }} db
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 10, col(".")
+
+Expect:
+  abc defg mn opq
+
+Execute (db first step + repeat x2):
+  normal! fm
+  normal{{ bang }} db
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 5, col(".")
+
+Expect:
+  abc mn opq
+
+Execute (db first step + repeat x3):
+  normal! fm
+  normal{{ bang }} db
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  mn opq
+
+Execute (db first step + repeat x4):
+  normal! fm
+  normal{{ bang }} db
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  mn opq
+
+Execute (d2b first step):
+  normal! fm
+  normal{{ bang }} d2b
+
+Then:
+  AssertEqual 10, col(".")
+
+Expect:
+  abc defg mn opq
+
+Execute (d2b first step + repeat x1):
+  normal! fm
+  normal{{ bang }} d2b
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  mn opq
+
+---
+
+Given:
+  abc defg gh ijkl mn opq
+
+Execute (dge first step):
+  normal! fm
+  normal{{ bang }} dge
+
+Then:
+  AssertEqual 16, col(".")
+
+Expect:
+  abc defg gh ijkn opq
+
+Execute (dge first step + repeat x1):
+  normal! fm
+  normal{{ bang }} dge
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 11, col(".")
+
+Expect:
+  abc defg g opq
+
+Execute (dge first step + repeat x2):
+  normal! fm
+  normal{{ bang }} dge
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 10, col(".")
+
+Expect:
+  abc defg opq
+
+Execute (dge first step + repeat x3):
+  normal! fm
+  normal{{ bang }} dge
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 8, col(".")
+
+Expect:
+  abc defpq
+
+Execute (dge first step + repeat x4):
+  normal! fm
+  normal{{ bang }} dge
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 3, col(".")
+
+Expect:
+  abq
+
+Execute (dge first step + repeat x5):
+  normal! fm
+  normal{{ bang }} dge
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  
+
+Execute (dge first step + repeat x6):
+  normal! fm
+  normal{{ bang }} dge
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 1, col(".")
+
+Expect:
+  
+
+Execute (d2ge first step):
+  normal! fm
+  normal{{ bang }} d2ge
+
+Then:
+  AssertEqual 11, col(".")
+
+Expect:
+  abc defg gn opq
+
+Execute (d2ge first step + repeat x1):
+  normal! fm
+  normal{{ bang }} d2ge
+  normal{{ bang }} .
+
+Then:
+  AssertEqual 3, col(".")
+
+Expect:
+  ab opq
+
+
+{% endif %}
+
+---
+
+Before:
+After:

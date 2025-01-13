@@ -17,7 +17,7 @@
 " @section Introduction, intro
 " @stylized jieba.vim
 " @library
-" @order intro config
+" @order intro config commands mappings opt-dependency
 " jieba.vim 是一个基于 jieba 中文分词插件.
 
 
@@ -72,6 +72,11 @@ let s:motions = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
 " 提供快捷开关 g:jieba_vim_keymap，可通过在 .vimrc 中将其设为 1 来开启对八个
 " word motion 的 nmap, xmap 和 omap。
 
+""
+" @section Optional Dependency, opt-dependency
+" 如果用户安装了 `tpope/vim-repeat` (https://github.com/tpope/vim-repeat)，可使用 |.|
+" 重复上一次 word operation。例如 `dw.` 相当于 `dwdw`。
+
 
 for ky in s:motions
     execute 'nnoremap <silent> <Plug>(Jieba_preview_' . ky . ') :<C-u>py3 jieba_vim.preview(jieba_vim.navigation.word_motion.preview_nmap_' . ky . ')<CR>'
@@ -80,6 +85,18 @@ nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>py3 jieba_vim.preview_cance
 
 for ky in s:motions
     execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') ":<C-u>py3 jieba_vim.navigation.nmap_' . ky . '(" . v:count1 . ")<CR>"'
+    " This mapping is used internally to implement dot-repeat.
+    execute
+        \ 'nnoremap <expr> <silent> <Plug>(Jieba_internal_o_'
+        \ . ky
+        \ . ') "<Esc>:<C-u>py3 jieba_vim.navigation.omap_'
+        \ . ky
+        \ . "('"
+        \ . '" . v:register . "'
+        \ . "', '"
+        \ . '" . v:operator . "'
+        \ . "', "
+        \ . '" . v:count1 . ")<CR>"'
     execute
         \ 'onoremap <expr> <silent> <Plug>(Jieba_'
         \ . ky
