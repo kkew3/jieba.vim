@@ -10,7 +10,7 @@
 
 Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移动光标。对于英语等使用空格分隔单词的语言，它能很好地工作，但对于像中文一样不使用空格分隔单词的语言则很难使用。
 
-[jieba][2] 是一个用于中文分词的 Python 包。已经有很多插件项目诸如 [Jieba][3] (VSCode)、[Deno bridge jieba][4] (Emacs)、[jieba_nvim][5] (neovim) 将其用以更好地编辑中文文本。然而我还没有发现 Vim 8 上的 jieba 插件，因此我开发了这个插件。
+[jieba][2] 是一个用于中文分词的 Python 包。已经有很多插件项目诸如 [Jieba][3] (VSCode)、[Deno bridge jieba][4] (Emacs)、[jieba_nvim][5] (neovim) 将其用以更好地编辑中文文本。然而我还没有发现 Vim 8/9 上的 jieba 插件，因此我开发了这个插件。
 
 特色一览：
 
