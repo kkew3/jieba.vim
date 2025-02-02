@@ -372,8 +372,8 @@ impl CharGroup {
             c: Char,
         ) -> Result<(), Vec<CharGroup>> {
             group.chars.push(c.ch);
-            // Combining diacritical marks modify previous character only, and does
-            // not take space.
+            // Combining diacritical marks modify previous character only, and
+            // does not take space.
             match &c.ty {
                 CombiningDiacriticalMark => (),
                 _ => group.col.incl_end_byte_index = c.col.incl_end_byte_index,
