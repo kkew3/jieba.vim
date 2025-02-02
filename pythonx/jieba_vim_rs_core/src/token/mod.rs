@@ -14,6 +14,8 @@
 
 use crate::utils;
 
+mod isk;
+
 pub trait JiebaPlaceholder {
     /// Cut sentence with `hmm` enabled.
     fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str>;

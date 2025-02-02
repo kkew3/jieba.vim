@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 unic-emoji-char = "0.9"
+santiago = "1.3"
 
 [dev-dependencies]
 jieba-rs = "0.7"
