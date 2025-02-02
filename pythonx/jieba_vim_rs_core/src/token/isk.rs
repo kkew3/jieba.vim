@@ -270,21 +270,22 @@ fn grammar() -> Grammar<Ast> {
     )
 }
 
+/// `'iskeyword'` option parsing error.
 #[derive(Debug)]
-enum Error {
-    Lexer,
-    Parser,
+pub enum Error {
+    Lexer(LexerError),
+    Parser(ParseError<Ast>),
 }
 
 impl From<LexerError> for Error {
-    fn from(_: LexerError) -> Self {
-        Error::Lexer
+    fn from(value: LexerError) -> Self {
+        Error::Lexer(value)
     }
 }
 
 impl From<ParseError<Ast>> for Error {
-    fn from(_: ParseError<Ast>) -> Self {
-        Error::Parser
+    fn from(value: ParseError<Ast>) -> Self {
+        Error::Parser(value)
     }
 }
 
@@ -299,13 +300,14 @@ fn ast_parts_to_parts(parts: Ast) -> Vec<Part> {
     part_vec
 }
 
-struct IskParser {
+/// Parser for `'iskeyword'` option values.
+pub struct IskParser {
     lexer_rules: LexerRules,
     grammar: Grammar<Ast>,
 }
 
 impl IskParser {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             lexer_rules: lexer_rules(),
             grammar: grammar(),
@@ -449,6 +451,138 @@ impl<T: BoundedChain + Copy> Intervals<T> {
             }
         });
         self.0.append(&mut new_intervals);
+    }
+}
+
+/// Represents the '@'. When interpreted as a char, it's '@'. When interpreted
+/// as an ASCII range, it's `a-z,A-Z,192-255`, per
+/// https://vimhelp.org/options.txt.html#%27isfname%27:
+///
+/// > Normally these are the characters a to z and A to Z, plus accented
+///   characters.
+struct AtSymbol;
+
+impl From<AtSymbol> for u8 {
+    fn from(_: AtSymbol) -> Self {
+        64
+    }
+}
+
+impl From<AtSymbol> for Vec<(u8, u8)> {
+    fn from(_: AtSymbol) -> Self {
+        vec![(65, 90), (97, 122), (192, 255)]
+    }
+}
+
+impl TryFrom<CharSpec> for u8 {
+    type Error = AtSymbol;
+
+    /// Convert `value` to `char`, treating '@' as a special case.
+    fn try_from(value: CharSpec) -> Result<Self, Self::Error> {
+        match value {
+            CharSpec::Number(num) => Ok(num.into()),
+            CharSpec::Char(ch) => {
+                if ch == '@' {
+                    Err(AtSymbol)
+                } else {
+                    if ch as u32 <= u8::MAX as u32 {
+                        Ok(ch as u8)
+                    } else {
+                        panic!("CharSpec holds non-ASCII char: {}", ch)
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl TryFrom<Item> for (u8, u8) {
+    type Error = AtSymbol;
+
+    /// Convert `value` to `(u8, u8)`, treating '@' outside a range as a
+    /// special case.
+    fn try_from(value: Item) -> Result<Self, Self::Error> {
+        match value {
+            Item::CharSpec(cs) => u8::try_from(cs).map(|ch| (ch, ch)),
+            Item::Range(lhs, rhs) => {
+                let lhs = lhs.try_into().unwrap_or_else(Into::into);
+                let rhs = rhs.try_into().unwrap_or_else(Into::into);
+                Ok((lhs, rhs))
+            }
+        }
+    }
+}
+
+/// Predicate for whether an ASCII or unicode is a word.
+pub struct WordPredicate {
+    /// Set of ASCII characters defined by doubly inclusive intervals. When
+    /// there's no interval, the set is an empty set.
+    ascii_set: Intervals<u8>,
+    /// True if '@' is included.
+    include_alphabetic: bool,
+}
+
+impl WordPredicate {
+    fn new() -> Self {
+        Self {
+            ascii_set: Intervals::default(),
+            include_alphabetic: false,
+        }
+    }
+
+    fn add_part(&mut self, part: Part) {
+        match part {
+            Part::Part(item) => match item.try_into() {
+                Ok(interval) => {
+                    self.ascii_set.push(interval);
+                    self.ascii_set.merge();
+                }
+                Err(at) => {
+                    let at_intervals: Vec<_> = at.into();
+                    self.ascii_set.append(at_intervals);
+                    self.ascii_set.merge();
+                    self.include_alphabetic = true;
+                }
+            },
+            Part::NegPart(item) => match item.try_into() {
+                Ok(interval) => self.ascii_set.remove(&interval),
+                Err(at) => {
+                    let at_intervals: Vec<_> = at.into();
+                    for interval in at_intervals.iter() {
+                        self.ascii_set.remove(interval);
+                    }
+                    self.include_alphabetic = false;
+                }
+            },
+        }
+    }
+
+    /// Try to construct a `WordPredicate` from `'iskeyword'` option value.
+    pub fn try_from_isk(
+        isk_parser: &IskParser,
+        value: &str,
+    ) -> Result<Self, Error> {
+        let mut wp = Self::new();
+        for part in isk_parser.parse(value)? {
+            wp.add_part(part);
+        }
+        Ok(wp)
+    }
+
+    /// Check if `ascii` is a word. Panics if `ascii` cannot be converted to
+    /// u8.
+    pub fn is_word(&self, ascii: char) -> bool {
+        if ascii as u32 <= u8::MAX as u32 {
+            let ascii = ascii as u8;
+            self.ascii_set.contains(&ascii)
+        } else {
+            panic!("char is not ascii: {}", ascii);
+        }
+    }
+
+    /// Check if a unicode alphabet like 汉字 is a word.
+    pub fn is_unicode_alphabet_word(&self) -> bool {
+        self.include_alphabetic
     }
 }
 
