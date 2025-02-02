@@ -115,7 +115,7 @@ fn categorize_char(c: char) -> CharType {
         c if is_combining_diacritical_mark(c) => CharType::CombiningDiacriticalMark,
 
         // Ideographic number zero.
-        | '\u{3007}'
+        '\u{3007}'
         // CJK unified ideographs.
         | '\u{4e00}'..='\u{9fff}'
         // CJK unified ideographs extension A.
