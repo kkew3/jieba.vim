@@ -822,6 +822,21 @@ mod tests {
                 Part::Part(Item::CharSpec(CharSpec::Char('^')))
             ]
         );
+        assert_eq!(
+            parse_isk_test(&parser, "^^-^").unwrap(),
+            vec![Part::NegPart(Item::Range(
+                CharSpec::Char('^'),
+                CharSpec::Char('^')
+            ))]
+        );
+        assert_eq!(
+            parse_isk_test(&parser, "^").unwrap(),
+            vec![Part::Part(Item::CharSpec(CharSpec::Char('^')))]
+        );
+        assert_eq!(
+            parse_isk_test(&parser, "^^").unwrap(),
+            vec![Part::NegPart(Item::CharSpec(CharSpec::Char('^')))]
+        );
         // 'iskeyword' default for Win32.
         assert_eq!(
             parse_isk_test(&parser, "@,48-57,_,128-167,224-235").unwrap(),
