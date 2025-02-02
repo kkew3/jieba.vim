@@ -588,53 +588,67 @@ impl WordPredicate {
 
 #[cfg(test)]
 mod tests {
+    use jieba_vim_rs_test::assert_elapsed::AssertElapsed;
+
     use super::*;
+
+    fn parse_isk_test(
+        parser: &IskParser,
+        value: &str,
+    ) -> Result<Vec<Part>, Error> {
+        let timing = AssertElapsed::tic(5);
+        let parts = parser.parse(value);
+        timing.toc();
+        parts
+    }
 
     #[test]
     fn test_grammar() {
+        let timing = AssertElapsed::tic(5);
         let parser = IskParser::new();
+        timing.toc();
 
         assert_eq!(
-            parser.parse("48").unwrap(),
+            parse_isk_test(&parser, "48").unwrap(),
             vec![Part::Part(Item::CharSpec(CharSpec::Number(48)))]
         );
         assert_eq!(
-            parser.parse("#-43").unwrap(),
+            parse_isk_test(&parser, "#-43").unwrap(),
             vec![Part::Part(Item::Range(
                 CharSpec::Char('#'),
                 CharSpec::Number(43)
             ))]
         );
         assert_eq!(
-            parser.parse("128-140").unwrap(),
+            parse_isk_test(&parser, "128-140").unwrap(),
             vec![Part::Part(Item::Range(
                 CharSpec::Number(128),
                 CharSpec::Number(140)
             ))]
         );
         assert_eq!(
-            parser.parse("--57").unwrap(),
+            parse_isk_test(&parser, "--57").unwrap(),
             vec![Part::Part(Item::Range(
                 CharSpec::Char('-'),
                 CharSpec::Number(57)
             ))]
         );
         assert_eq!(
-            parser.parse("---").unwrap(),
+            parse_isk_test(&parser, "---").unwrap(),
             vec![Part::Part(Item::Range(
                 CharSpec::Char('-'),
                 CharSpec::Char('-')
             ))]
         );
         assert_eq!(
-            parser.parse("^a-z").unwrap(),
+            parse_isk_test(&parser, "^a-z").unwrap(),
             vec![Part::NegPart(Item::Range(
                 CharSpec::Char('a'),
                 CharSpec::Char('z')
             ))]
         );
         assert_eq!(
-            parser.parse("93-95,^^").unwrap(),
+            parse_isk_test(&parser, "93-95,^^").unwrap(),
             vec![
                 Part::Part(Item::Range(
                     CharSpec::Number(93),
@@ -644,14 +658,14 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse("^93-^").unwrap(),
+            parse_isk_test(&parser, "^93-^").unwrap(),
             vec![Part::NegPart(Item::Range(
                 CharSpec::Number(93),
                 CharSpec::Char('^')
             ))]
         );
         assert_eq!(
-            parser.parse("^48-^,,,^").unwrap(),
+            parse_isk_test(&parser, "^48-^,,,^").unwrap(),
             vec![
                 Part::NegPart(Item::Range(
                     CharSpec::Number(48),
@@ -662,7 +676,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse("48-57,93-^").unwrap(),
+            parse_isk_test(&parser, "48-57,93-^").unwrap(),
             vec![
                 Part::Part(Item::Range(
                     CharSpec::Number(48),
@@ -675,7 +689,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse("^a-z,#,^").unwrap(),
+            parse_isk_test(&parser, "^a-z,#,^").unwrap(),
             vec![
                 Part::NegPart(Item::Range(
                     CharSpec::Char('a'),
@@ -686,7 +700,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse("^a-z,#,^^").unwrap(),
+            parse_isk_test(&parser, "^a-z,#,^^").unwrap(),
             vec![
                 Part::NegPart(Item::Range(
                     CharSpec::Char('a'),
@@ -696,27 +710,27 @@ mod tests {
                 Part::NegPart(Item::CharSpec(CharSpec::Char('^')))
             ]
         );
-        parser.parse("^-^").unwrap_err();
+        parse_isk_test(&parser, "^-^").unwrap_err();
         assert_eq!(
-            parser.parse("@").unwrap(),
+            parse_isk_test(&parser, "@").unwrap(),
             vec![Part::Part(Item::CharSpec(CharSpec::Char('@')))]
         );
         assert_eq!(
-            parser.parse("@-@").unwrap(),
+            parse_isk_test(&parser, "@-@").unwrap(),
             vec![Part::Part(Item::Range(
                 CharSpec::Char('@'),
                 CharSpec::Char('@')
             ))]
         );
         assert_eq!(
-            parser.parse("@-65").unwrap(),
+            parse_isk_test(&parser, "@-65").unwrap(),
             vec![Part::Part(Item::Range(
                 CharSpec::Char('@'),
                 CharSpec::Number(65)
             ))]
         );
         assert_eq!(
-            parser.parse("_,-,128-140,^#-43").unwrap(),
+            parse_isk_test(&parser, "_,-,128-140,^#-43").unwrap(),
             vec![
                 Part::Part(Item::CharSpec(CharSpec::Char('_'))),
                 Part::Part(Item::CharSpec(CharSpec::Char('-'))),
@@ -731,7 +745,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse("@,^a-z").unwrap(),
+            parse_isk_test(&parser, "@,^a-z").unwrap(),
             vec![
                 Part::Part(Item::CharSpec(CharSpec::Char('@'))),
                 Part::NegPart(Item::Range(
@@ -741,7 +755,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse("a-z,A-Z,@-@").unwrap(),
+            parse_isk_test(&parser, "a-z,A-Z,@-@").unwrap(),
             vec![
                 Part::Part(Item::Range(
                     CharSpec::Char('a'),
@@ -758,18 +772,18 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse(",").unwrap(),
+            parse_isk_test(&parser, ",").unwrap(),
             vec![Part::Part(Item::CharSpec(CharSpec::Char(',')))]
         );
         assert_eq!(
-            parser.parse(",,,").unwrap(),
+            parse_isk_test(&parser, ",,,").unwrap(),
             vec![
                 Part::Part(Item::CharSpec(CharSpec::Char(','))),
                 Part::Part(Item::CharSpec(CharSpec::Char(',')))
             ]
         );
         assert_eq!(
-            parser.parse("48-57,,,_").unwrap(),
+            parse_isk_test(&parser, "48-57,,,_").unwrap(),
             vec![
                 Part::Part(Item::Range(
                     CharSpec::Number(48),
@@ -780,7 +794,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse("32-~,^,,9").unwrap(),
+            parse_isk_test(&parser, "32-~,^,,9").unwrap(),
             vec![
                 Part::Part(Item::Range(
                     CharSpec::Number(32),
@@ -791,7 +805,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse(",,^,,^^,^").unwrap(),
+            parse_isk_test(&parser, ",,^,,^^,^").unwrap(),
             vec![
                 Part::Part(Item::CharSpec(CharSpec::Char(','))),
                 Part::NegPart(Item::CharSpec(CharSpec::Char(','))),
@@ -800,17 +814,37 @@ mod tests {
             ]
         );
         assert_eq!(
-            parser.parse("^^,,,^,,^").unwrap(),
+            parse_isk_test(&parser, "^^,,,^,,^").unwrap(),
             vec![
                 Part::NegPart(Item::CharSpec(CharSpec::Char('^'))),
                 Part::Part(Item::CharSpec(CharSpec::Char(','))),
                 Part::NegPart(Item::CharSpec(CharSpec::Char(','))),
                 Part::Part(Item::CharSpec(CharSpec::Char('^')))
+            ]
+        );
+        // 'iskeyword' default for Win32.
+        assert_eq!(
+            parse_isk_test(&parser, "@,48-57,_,128-167,224-235").unwrap(),
+            vec![
+                Part::Part(Item::CharSpec(CharSpec::Char('@'))),
+                Part::Part(Item::Range(
+                    CharSpec::Number(48),
+                    CharSpec::Number(57)
+                )),
+                Part::Part(Item::CharSpec(CharSpec::Char('_'))),
+                Part::Part(Item::Range(
+                    CharSpec::Number(128),
+                    CharSpec::Number(167)
+                )),
+                Part::Part(Item::Range(
+                    CharSpec::Number(224),
+                    CharSpec::Number(235)
+                )),
             ]
         );
         // 'iskeyword' value for vim help.
         assert_eq!(
-            parser.parse(r#"!-~,^*,^|,^",192-255"#).unwrap(),
+            parse_isk_test(&parser, r#"!-~,^*,^|,^",192-255"#).unwrap(),
             vec![
                 Part::Part(Item::Range(
                     CharSpec::Char('!'),
@@ -827,7 +861,7 @@ mod tests {
         );
         // Recommended 'iskeyword' value for C.
         assert_eq!(
-            parser.parse("a-z,A-Z,48-57,_,.,-,>").unwrap(),
+            parse_isk_test(&parser, "a-z,A-Z,48-57,_,.,-,>").unwrap(),
             vec![
                 Part::Part(Item::Range(
                     CharSpec::Char('a'),
