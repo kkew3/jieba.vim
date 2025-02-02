@@ -320,6 +320,138 @@ impl IskParser {
     }
 }
 
+trait RetainMut<T> {
+    fn retain_mut<F>(&mut self, f: F)
+    where
+        F: FnMut(&mut T) -> bool;
+}
+
+impl<T> RetainMut<T> for Vec<T> {
+    fn retain_mut<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&mut T) -> bool,
+    {
+        self.dedup_by(|a, _| !f(a));
+        if !self.is_empty() {
+            if !f(self.first_mut().unwrap()) {
+                self.remove(0);
+            }
+        }
+    }
+}
+
+/// Types where each value has at most one successor and at most one
+/// predecessor.
+trait BoundedChain: Ord + Sized {
+    /// Return the successor of `self`, if exists.
+    fn succ(&self) -> Option<Self>;
+    /// Return the predecessor of `self`, if exists.
+    fn pred(&self) -> Option<Self>;
+}
+
+impl BoundedChain for u8 {
+    fn succ(&self) -> Option<Self> {
+        self.checked_add(1)
+    }
+
+    fn pred(&self) -> Option<Self> {
+        self.checked_sub(1)
+    }
+}
+
+/// Set defined by doubly inclusive intervals. When there's no interval, the
+/// set is an empty set.
+struct Intervals<T>(Vec<(T, T)>);
+
+impl<T> Default for Intervals<T> {
+    /// Construct an empty set.
+    fn default() -> Self {
+        Self(Vec::new())
+    }
+}
+
+impl<T> Intervals<T> {
+    fn push(&mut self, interval: (T, T)) {
+        self.0.push(interval);
+    }
+
+    fn append(&mut self, mut intervals: Vec<(T, T)>) {
+        self.0.append(&mut intervals);
+    }
+}
+
+impl<T: Ord> Intervals<T> {
+    fn contains(&self, value: &T) -> bool {
+        self.0.iter().any(|(a, b)| a <= value && value <= b)
+    }
+}
+
+impl<T: Ord + Copy> Intervals<T> {
+    /// Merge overlapping intervals.
+    fn merge(&mut self) {
+        self.0.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+        self.0.dedup_by(|a, b| {
+            if a.0 <= b.1 {
+                b.1 = std::cmp::max(a.1, b.1);
+                true
+            } else {
+                false
+            }
+        });
+    }
+}
+
+impl<T: BoundedChain + Copy> Intervals<T> {
+    /// Remove the interval `r` from the union of `self`.
+    fn remove(&mut self, r: &(T, T)) {
+        let mut new_intervals = Vec::new();
+        self.0.retain_mut(|a| {
+            if a.0 == a.1 {
+                r.1 < a.0 || r.0 > a.1
+            } else {
+                if r.1 < a.0 || r.0 > a.1 {
+                    true
+                } else if r.1 == a.0 {
+                    // Since a.1 > a.0 == r.1, the successor of r.1 must exist.
+                    a.0 = r.1.succ().unwrap();
+                    true
+                } else if r.0 == a.1 {
+                    // Since a.0 < a.1 == r.0, the predecessor of r.0 must exist.
+                    a.1 = r.0.pred().unwrap();
+                    true
+                } else if r.0 <= a.0 && r.1 > a.0 && r.1 < a.1 {
+                    // Since a.1 > r.1, the successor of r.1 must exist.
+                    a.0 = r.1.succ().unwrap();
+                    true
+                } else if r.0 > a.0 /* && r.1 > a.0 */ && r.1 < a.1 {
+                    // Since r.1 < a.1, the successor of r.1 must exist.
+                    new_intervals.push((r.1.succ().unwrap(), a.1));
+                    // Since a.0 < r.0, the predecessor of r.0 must exist.
+                    a.1 = r.0.pred().unwrap();
+                    true
+                } else if r.1 >= a.1 && r.0 > a.0 && r.0 < a.1 {
+                    // Since a.0 < r.0, the predecessor of r.0 must exist.
+                    a.1 = r.0.pred().unwrap();
+                    true
+                } else if r.1 >= a.1 && r.0 <= a.0 {
+                    false
+                } else if r.1 == a.1 && r.0 > a.0 {
+                    // Since a.0 < r.0, the predecessor of r.0 must exist.
+                    a.1 = r.0.pred().unwrap();
+                    true
+                } else if r.0 == a.0 && r.1 < a.1 {
+                    // Since r.1 < a.1, the successor of r.1 must exist.
+                    a.0 = r.1.succ().unwrap();
+                    true
+                } else {
+                    unreachable!()
+                }
+            }
+        });
+        self.0.append(&mut new_intervals);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -581,5 +713,154 @@ mod tests {
                 Part::Part(Item::CharSpec(CharSpec::Char('>')))
             ]
         );
+    }
+
+    fn merge_intervals_test<T: Ord + Copy>(
+        intervals: Vec<(T, T)>,
+    ) -> Vec<(T, T)> {
+        let mut intervals = Intervals(intervals);
+        intervals.merge();
+        intervals.0
+    }
+
+    #[test]
+    fn test_merge_intervals() {
+        let itvls = vec![(1, 5), (6, 7)];
+        assert_eq!(merge_intervals_test(itvls), vec![(1, 5), (6, 7)]);
+
+        let itvls = vec![(1, 5), (5, 7)];
+        assert_eq!(merge_intervals_test(itvls), vec![(1, 7)]);
+
+        let itvls = vec![(1, 5), (3, 7)];
+        assert_eq!(merge_intervals_test(itvls), vec![(1, 7)]);
+
+        let itvls = vec![(1, 5), (0, 7)];
+        assert_eq!(merge_intervals_test(itvls), vec![(0, 7)]);
+
+        let itvls = vec![(1, 5), (3, 4)];
+        assert_eq!(merge_intervals_test(itvls), vec![(1, 5)]);
+
+        let itvls = vec![(1, 5), (1, 5)];
+        assert_eq!(merge_intervals_test(itvls), vec![(1, 5)]);
+
+        let itvls = vec![(1, 5), (0, 3)];
+        assert_eq!(merge_intervals_test(itvls), vec![(0, 5)]);
+
+        let itvls = vec![(1, 5), (0, 1)];
+        assert_eq!(merge_intervals_test(itvls), vec![(0, 5)]);
+
+        let itvls = vec![(1, 5), (0, 0)];
+        assert_eq!(merge_intervals_test(itvls), vec![(0, 0), (1, 5)]);
+
+        let itvls = vec![(1, 5), (7, 10), (6, 7)];
+        assert_eq!(merge_intervals_test(itvls), vec![(1, 5), (6, 10)]);
+
+        let itvls = vec![(1, 5), (7, 10), (3, 8)];
+        assert_eq!(merge_intervals_test(itvls), vec![(1, 10)]);
+
+        let itvls = vec![(1, 5), (8, 10), (15, 17), (7, 11)];
+        assert_eq!(
+            merge_intervals_test(itvls),
+            vec![(1, 5), (7, 11), (15, 17)]
+        );
+
+        let itvls = vec![(1, 5), (8, 10), (15, 17), (5, 8)];
+        assert_eq!(merge_intervals_test(itvls), vec![(1, 10), (15, 17)]);
+
+        let itvls = vec![(1, 5), (8, 10), (15, 17), (2, 8), (9, 20)];
+        assert_eq!(merge_intervals_test(itvls), vec![(1, 20)]);
+    }
+
+    #[test]
+    fn test_retain_mut() {
+        fn rule(e: &mut i32) -> bool {
+            if e != &0 {
+                *e *= 2;
+                true
+            } else {
+                false
+            }
+        }
+
+        let mut v = vec![];
+        v.retain_mut(rule);
+        assert!(v.is_empty());
+
+        let mut v = vec![0];
+        v.retain_mut(rule);
+        assert!(v.is_empty());
+
+        let mut v = vec![2];
+        v.retain_mut(rule);
+        assert_eq!(v, vec![4]);
+
+        let mut v = vec![2, 0];
+        v.retain_mut(rule);
+        assert_eq!(v, vec![4]);
+
+        let mut v = vec![0, 2];
+        v.retain_mut(rule);
+        assert_eq!(v, vec![4]);
+
+        let mut v = vec![0, 2, 0];
+        v.retain_mut(rule);
+        assert_eq!(v, vec![4]);
+
+        let mut v = vec![2, 3, 0, 0, 1, 0, 4, 5, 6, 0];
+        v.retain_mut(rule);
+        assert_eq!(v, vec![4, 6, 2, 8, 10, 12]);
+
+        let mut v = vec![0, 0, 2, 3, 0, 0, 1, 0, 4, 5, 6, 0];
+        v.retain_mut(rule);
+        assert_eq!(v, vec![4, 6, 2, 8, 10, 12]);
+    }
+
+    fn remove_interval_test<T: BoundedChain + Copy>(
+        intervals: Vec<(T, T)>,
+        r: &(T, T),
+    ) -> Vec<(T, T)> {
+        let mut intervals = Intervals(intervals);
+        intervals.remove(r);
+        intervals.0
+    }
+
+    #[test]
+    fn test_remove_interval() {
+        assert_eq!(remove_interval_test(vec![(5, 10)], &(0, 3)), vec![(5, 10)]);
+        assert_eq!(remove_interval_test(vec![(5, 10)], &(0, 5)), vec![(6, 10)]);
+        assert_eq!(remove_interval_test(vec![(5, 10)], &(0, 6)), vec![(7, 10)]);
+        assert!(remove_interval_test(vec![(5, 10)], &(0, 10)).is_empty());
+        assert!(remove_interval_test(vec![(5, 10)], &(0, 13)).is_empty());
+        assert_eq!(remove_interval_test(vec![(5, 10)], &(5, 5)), vec![(6, 10)]);
+        assert_eq!(remove_interval_test(vec![(5, 10)], &(5, 6)), vec![(7, 10)]);
+        assert!(remove_interval_test(vec![(5, 10)], &(5, 10)).is_empty());
+        assert_eq!(
+            remove_interval_test(vec![(5, 10)], &(6, 6)),
+            vec![(5, 5), (7, 10)]
+        );
+        assert_eq!(
+            remove_interval_test(vec![(5, 10)], &(6, 8)),
+            vec![(5, 5), (9, 10)]
+        );
+        assert_eq!(remove_interval_test(vec![(5, 10)], &(6, 10)), vec![(5, 5)]);
+        assert_eq!(remove_interval_test(vec![(5, 10)], &(6, 13)), vec![(5, 5)]);
+        assert_eq!(
+            remove_interval_test(vec![(5, 10)], &(10, 10)),
+            vec![(5, 9)]
+        );
+        assert_eq!(
+            remove_interval_test(vec![(5, 10)], &(10, 12)),
+            vec![(5, 9)]
+        );
+        assert_eq!(
+            remove_interval_test(vec![(5, 10)], &(11, 13)),
+            vec![(5, 10)]
+        );
+        assert_eq!(remove_interval_test(vec![(5, 5)], &(0, 3)), vec![(5, 5)]);
+        assert!(remove_interval_test(vec![(5, 5)], &(0, 5)).is_empty());
+        assert!(remove_interval_test(vec![(5, 5)], &(0, 6)).is_empty());
+        assert!(remove_interval_test(vec![(5, 5)], &(5, 5)).is_empty());
+        assert!(remove_interval_test(vec![(5, 5)], &(5, 7)).is_empty());
+        assert_eq!(remove_interval_test(vec![(5, 5)], &(7, 8)), vec![(5, 5)]);
     }
 }
