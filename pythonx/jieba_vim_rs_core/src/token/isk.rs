@@ -1,5 +1,7 @@
-//! Categorize characters into words, nonwords and spaces, based on
-//! `'iskeyword'` Vim option.
+//! Figure out which letters are words, based on `'iskeyword'` Vim option.
+//! Why to use context-free grammar parser when the option value is regular?
+//! Because it's not possible to capture repetition of the same group, while at
+//! the same time, iterative partial matching produces ambiguity.
 
 use std::rc::Rc;
 
