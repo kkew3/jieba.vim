@@ -39,6 +39,20 @@ vim +"py3 print(sys.version)"
 
 查看 vim 的 python3 版本。
 
+对于 Neovim 用户，可使用 lazy.nvim 安装：
+
+```lua
+{
+    "kkew3/jieba.vim",
+    tag = "v1.0.4",
+    build = "./build.sh",
+    init = function()
+      vim.g.jieba_vim_lazy = 1
+      vim.g.jieba_vim_keymap = 1
+    end,
+},
+```
+
 ## 功能
 
 1. 增强八个 Vim word motion，即 `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`，在 `nmap`, `xmap` 和 `omap` 下的功能，使其能用于中文分词（同时也保留其按空格分词的功能）。其行为与默认行为相似，例如 `w` 不会跳过中文标点而 `W` 会跳过中文标点等。
@@ -141,6 +155,20 @@ The vim's python3 version may be checked by the following command at terminal:
 
 ```bash
 vim +"py3 print(sys.version)"
+```
+
+For Neovim users, it can be installed using lazy.nvim:
+
+```lua
+{
+  "kkew3/jieba.vim",
+  tag = "v1.0.4",
+  build = "./build.sh",
+  init = function()
+    vim.g.jieba_vim_lazy = 1
+    vim.g.jieba_vim_keymap = 1
+  end,
+},
 ```
 
 ## Functions
