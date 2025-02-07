@@ -1,6 +1,6 @@
 # jieba.vim: Vim 的中文按词跳转插件
 
-[![cicd]()](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml)
+[![cicd](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml/badge.svg)](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml)
 
 > 做最好的基于 jieba 的 Vim/Neovim 中文分词插件。
 
