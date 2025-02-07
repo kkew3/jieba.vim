@@ -1,6 +1,6 @@
 # jieba.vim: Vim 的中文按词跳转插件
 
-[![cicd](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml/badge.svg)](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml)
+[![cicd]()](https://github.com/kkew3/jieba.vim/actions/workflows/cicd.yml)
 
 > 做最好的基于 jieba 的 Vim/Neovim 中文分词插件。
 
@@ -38,6 +38,20 @@ vim +"py3 print(sys.version)"
 ```
 
 查看 vim 的 python3 版本。
+
+对于 Neovim 用户，可使用 lazy.nvim 安装：
+
+```lua
+{
+    "kkew3/jieba.vim",
+    tag = "v1.0.4",
+    build = "./build.sh",
+    init = function()
+      vim.g.jieba_vim_lazy = 1
+      vim.g.jieba_vim_keymap = 1
+    end,
+},
+```
 
 ## 功能
 
@@ -141,6 +155,20 @@ The vim's python3 version may be checked by the following command at terminal:
 
 ```bash
 vim +"py3 print(sys.version)"
+```
+
+For Neovim users, it can be installed using lazy.nvim:
+
+```lua
+{
+  "kkew3/jieba.vim",
+  tag = "v1.0.4",
+  build = "./build.sh",
+  init = function()
+    vim.g.jieba_vim_lazy = 1
+    vim.g.jieba_vim_keymap = 1
+  end,
+},
 ```
 
 ## Functions
