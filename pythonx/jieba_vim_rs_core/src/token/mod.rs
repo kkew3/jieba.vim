@@ -16,12 +16,9 @@ use crate::utils;
 
 mod char;
 mod isk;
+mod jieba;
 
-pub trait JiebaPlaceholder {
-    /// Cut sentence with `hmm` enabled.
-    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str>;
-}
-
+pub use jieba::JiebaPlaceholder;
 
 /// The column location of a char or a token in a line.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
