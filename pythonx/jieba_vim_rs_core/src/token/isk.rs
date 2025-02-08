@@ -618,6 +618,7 @@ mod tests {
         let parser = IskParser::new();
         timing.toc();
 
+        assert!(parse_isk_test(&parser, "").unwrap().is_empty());
         assert_eq!(
             parse_isk_test(&parser, "48").unwrap(),
             vec![Part::Part(Item::CharSpec(CharSpec::Number(48)))]
