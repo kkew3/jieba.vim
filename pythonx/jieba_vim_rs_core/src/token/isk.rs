@@ -615,6 +615,10 @@ mod tests {
             vec![Part::Part(Item::CharSpec(CharSpec::Number(48)))]
         );
         assert_eq!(
+            parse_isk_test(&parser, "-").unwrap(),
+            vec![Part::Part(Item::CharSpec(CharSpec::Char('-')))]
+        );
+        assert_eq!(
             parse_isk_test(&parser, "#-43").unwrap(),
             vec![Part::Part(Item::Range(
                 CharSpec::Char('#'),
