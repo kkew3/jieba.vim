@@ -155,7 +155,7 @@ fn ast_part_to_part(part: Ast) -> Part {
 }
 
 fn parse_lexemes_number(lexemes: &[&Rc<Lexeme>]) -> Ast {
-    let value = str::parse(&lexemes[0].raw).unwrap();
+    let value = lexemes[0].raw.parse().unwrap();
     Ast::Number(value)
 }
 
