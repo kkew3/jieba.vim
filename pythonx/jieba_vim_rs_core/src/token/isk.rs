@@ -275,19 +275,19 @@ fn grammar() -> Grammar<Ast> {
 /// `'iskeyword'` option parsing error.
 #[derive(Debug)]
 pub enum Error {
-    Lexer(LexerError),
-    Parser(ParseError<Ast>),
+    Lexer,
+    Parser,
 }
 
 impl From<LexerError> for Error {
-    fn from(value: LexerError) -> Self {
-        Error::Lexer(value)
+    fn from(_: LexerError) -> Self {
+        Error::Lexer
     }
 }
 
 impl From<ParseError<Ast>> for Error {
-    fn from(value: ParseError<Ast>) -> Self {
-        Error::Parser(value)
+    fn from(_: ParseError<Ast>) -> Self {
+        Error::Parser
     }
 }
 
