@@ -585,15 +585,9 @@ impl WordPredicate {
         Ok(wp)
     }
 
-    /// Check if `ascii` is a word. Panics if `ascii` cannot be converted to
-    /// u8.
-    pub fn is_word(&self, ascii: char) -> bool {
-        if ascii as u32 <= u8::MAX as u32 {
-            let ascii = ascii as u8;
-            self.ascii_set.contains(&ascii)
-        } else {
-            panic!("char is not ascii: {}", ascii);
-        }
+    /// Check if `ascii` is a word.
+    pub fn is_ascii_word(&self, ascii: u8) -> bool {
+        self.ascii_set.contains(&ascii)
     }
 
     /// Check if a unicode alphabet like 汉字 is a word.
