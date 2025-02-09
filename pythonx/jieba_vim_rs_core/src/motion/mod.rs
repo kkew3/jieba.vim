@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::token::{JiebaPlaceholder, Token};
+use crate::token::{JiebaPlaceholder, Token, TokenLike};
 #[cfg(test)]
 use jieba_vim_rs_test::verified_case::cases::MotionOutput as TestMotionOutput;
 use std::cmp::Ordering;
@@ -73,9 +73,9 @@ impl PartialEq<TestMotionOutput> for MotionOutput {
 fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
     tokens
         .binary_search_by(|tok| {
-            if col < tok.col.start_byte_index {
+            if col < tok.first_char() {
                 Ordering::Greater
-            } else if col >= tok.col.excl_end_byte_index {
+            } else if col >= tok.last_char1() {
                 Ordering::Less
             } else {
                 Ordering::Equal
