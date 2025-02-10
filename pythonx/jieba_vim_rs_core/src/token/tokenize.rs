@@ -17,28 +17,27 @@
 use crate::utils;
 
 use super::char::{self, CharType, NonWordCharType, WordCharType};
-use super::isk::{IskParser, WordPredicate};
+use super::isk::WordPredicate;
 use super::JiebaPlaceholder;
 
 /// The tokenizer.
 pub struct Tokenizer<C> {
-    isk_parser: IskParser,
     word_predicate: WordPredicate,
     jieba: C,
 }
 
-impl<C: JiebaPlaceholder> Tokenizer<C> {
+impl<C> Tokenizer<C> {
     /// Create a new tokenizer from `'iskeyword'` option value. Panics if the
     /// option value is invalid, which should not happen in practice.
-    pub fn new(jieba: C, isk_option: &str) -> Self {
-        let isk_parser = IskParser::new();
-        let word_predicate =
-            WordPredicate::try_from_isk(&isk_parser, isk_option).unwrap();
+    pub fn new<P: Into<WordPredicate>>(jieba: C, word_predicate: P) -> Self {
         Self {
-            isk_parser,
             word_predicate,
             jieba,
         }
+    }
+
+    pub fn get_word_predicate_mut(&mut self) {
+        &mut self.word_predicate
     }
 }
 

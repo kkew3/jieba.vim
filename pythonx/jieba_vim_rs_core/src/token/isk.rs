@@ -597,6 +597,22 @@ impl WordPredicate {
 }
 
 #[cfg(test)]
+impl From<&'static str> for WordPredicate {
+    fn from(value: &'static str) -> Self {
+        let isk_parser = IskParser::new();
+        WordPredicate::try_from_isk(&isk_parser, value).unwrap()
+    }
+}
+
+#[cfg(test)]
+impl From<String> for WordPredicate {
+    fn from(value: String) -> Self {
+        let isk_parser = IskParser::new();
+        WordPredicate::try_from_isk(&isk_parser, &value).unwrap()
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use jieba_vim_rs_test::assert_elapsed::AssertElapsed;
 
