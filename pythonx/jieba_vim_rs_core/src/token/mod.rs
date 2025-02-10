@@ -15,6 +15,7 @@
 mod char;
 mod isk;
 mod jieba;
+pub mod token_iter;
 mod tokenize;
 
 pub use jieba::JiebaPlaceholder;

@@ -825,7 +825,7 @@ pub enum TokenType {
 
 impl Token {
     #[cfg(test)]
-    fn new(
+    pub(crate) fn new(
         start_byte_index: usize,
         incl_end_byte_index: usize,
         excl_end_byte_index: usize,
