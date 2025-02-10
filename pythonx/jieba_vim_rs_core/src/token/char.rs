@@ -189,7 +189,6 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
     match c {
         SPACE!() => CharType::Space,
         COMBINING_DIACRITICAL_MARK!() => CharType::CombiningDiacriticalMark,
-        c if unic_emoji_char::is_emoji(c) => CharType::Emoji,
         c => match ascii_or(c) {
             Ok(ascii) => {
                 if word_predicate.is_ascii_word(ascii) {
@@ -214,7 +213,9 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
                     CharType::Word(WordCharType::Other)
                 }
                 c => {
-                    if c.is_alphabetic()
+                    if unic_emoji_char::is_emoji(c) {
+                        CharType::Emoji
+                    } else if c.is_alphabetic()
                         && word_predicate.is_unicode_alphabet_word()
                     {
                         CharType::Word(WordCharType::Other)
