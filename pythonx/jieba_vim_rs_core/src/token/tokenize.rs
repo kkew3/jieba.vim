@@ -31,12 +31,12 @@ impl<C> Tokenizer<C> {
     /// option value is invalid, which should not happen in practice.
     pub fn new<P: Into<WordPredicate>>(jieba: C, word_predicate: P) -> Self {
         Self {
-            word_predicate,
+            word_predicate: word_predicate.into(),
             jieba,
         }
     }
 
-    pub fn get_word_predicate_mut(&mut self) {
+    pub fn get_word_predicate_mut(&mut self) -> &mut WordPredicate {
         &mut self.word_predicate
     }
 }
