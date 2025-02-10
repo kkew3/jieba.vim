@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -20,3 +20,30 @@ mod tokenize;
 
 pub use jieba::JiebaPlaceholder;
 pub use tokenize::{Token, TokenLike, TokenType};
+
+/// Get the index of the token in `tokens` that covers `col`. Return `None` if
+/// `col` is to the right of the last token.
+pub(crate) fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
+    use std::cmp::Ordering;
+    tokens
+        .binary_search_by(|tok| {
+            if col < tok.first_char() {
+                Ordering::Greater
+            } else if col >= tok.last_char1() {
+                Ordering::Less
+            } else {
+                Ordering::Equal
+            }
+        })
+        .ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::index_tokens;
+
+    #[test]
+    fn test_index_tokens() {
+        assert_eq!(index_tokens(&[], 0), None);
+    }
+}

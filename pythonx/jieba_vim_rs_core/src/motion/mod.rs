@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -14,14 +14,12 @@
 
 #[cfg(test)]
 use crate::token::Tokenizer;
-use crate::token::{Token, TokenLike};
 #[cfg(test)]
 use jieba_rs::Jieba;
 #[cfg(test)]
 use jieba_vim_rs_test::verified_case::cases::MotionOutput as TestMotionOutput;
 #[cfg(test)]
 use once_cell::sync::Lazy;
-use std::cmp::Ordering;
 
 mod d_special;
 mod nmap_b;
@@ -65,22 +63,6 @@ impl PartialEq<TestMotionOutput> for MotionOutput {
     }
 }
 
-/// Get the index of the token in `tokens` that covers `col`. Return `None` if
-/// `col` is to the right of the last token.
-fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
-    tokens
-        .binary_search_by(|tok| {
-            if col < tok.first_char() {
-                Ordering::Greater
-            } else if col >= tok.last_char1() {
-                Ordering::Less
-            } else {
-                Ordering::Equal
-            }
-        })
-        .ok()
-}
-
 #[cfg(test)]
 static WORD_MOTION: Lazy<WordMotion<Jieba>> = Lazy::new(|| {
     WordMotion::new(Tokenizer::new(Jieba::new(), "@,48-57,_,192-255"))
@@ -95,14 +77,4 @@ impl<C> WordMotion<C> {
 #[ctor::ctor]
 fn init_word_motion() {
     WORD_MOTION._noop(); // force initialization
-}
-
-#[cfg(test)]
-mod tests {
-    use super::index_tokens;
-
-    #[test]
-    fn test_index_tokens() {
-        assert_eq!(index_tokens(&[], 0), None);
-    }
 }
