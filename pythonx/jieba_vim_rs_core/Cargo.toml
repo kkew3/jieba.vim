@@ -10,7 +10,7 @@ santiago = "1.3"
 [dev-dependencies]
 jieba-rs = "0.7"
 proptest = "1.0"
-ctor = "0.2.8"
+ctor = "0.2.9"
 once_cell = "1.20"
 jieba_vim_rs_test = { path = "../jieba_vim_rs_test" }
 jieba_vim_rs_test_macro = { path = "../jieba_vim_rs_test_macro" }
