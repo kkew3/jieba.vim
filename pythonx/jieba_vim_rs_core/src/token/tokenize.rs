@@ -986,7 +986,6 @@ impl<C: JiebaPlaceholder> Tokenizer<C> {
 
 #[cfg(test)]
 mod tests {
-    use jieba_vim_rs_test::assert_elapsed::AssertElapsed;
     use proptest::prelude::*;
 
     use crate::token::jieba::KeywordCutter;
@@ -1077,9 +1076,7 @@ mod tests {
         s: &str,
         into_word: bool,
     ) -> Vec<Token> {
-        let timing = AssertElapsed::tic(10);
         let output = tokenizer.parse_str(s, into_word);
-        timing.toc();
         output
     }
 

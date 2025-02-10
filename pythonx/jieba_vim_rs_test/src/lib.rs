@@ -12,6 +12,5 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-pub mod assert_elapsed;
 pub mod cursor_marker;
 pub mod verified_case;

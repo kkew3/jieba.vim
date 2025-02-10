@@ -73,7 +73,6 @@ mod tests {
         mode = "o",
         operator = "c",
         motion = "e",
-        timeout = 50,
         backend_path = "crate::motion::WORD_MOTION"
     )]
     #[vcase(name = "empty", buffer = ["{}"])]

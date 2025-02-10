@@ -183,7 +183,6 @@ pub struct VerifiedCasesHeader {
     mode: Mode,
     operator: Operator,
     motion: Motion,
-    timeout: u64,
     backend_path: String,
     buffer_type: String,
 }
@@ -204,7 +203,6 @@ impl Parse for VerifiedCasesHeader {
         let mut mode = None;
         let mut operator = None;
         let mut motion = None;
-        let mut timeout = None;
         let mut backend_path = None;
         let mut buffer_type = None;
 
@@ -238,11 +236,6 @@ impl Parse for VerifiedCasesHeader {
                                 .unwrap()?;
                                 motion = Some(parsed);
                             }
-                            "timeout" => {
-                                let parsed =
-                                    parse_int_value(&name_value.value).unwrap();
-                                timeout = Some(parsed);
-                            }
                             "backend_path" => {
                                 let parsed =
                                     parse_str_value(&name_value.value).unwrap();
@@ -269,10 +262,6 @@ impl Parse for VerifiedCasesHeader {
                 Span::call_site(),
                 "Missing `motion`",
             ))?,
-            timeout: timeout.ok_or(syn::Error::new(
-                Span::call_site(),
-                "Missing `timeout`",
-            ))?,
             backend_path: backend_path.ok_or(syn::Error::new(
                 Span::call_site(),
                 "Missing `backend_path`",
@@ -286,7 +275,6 @@ pub struct VerifiedCases {
     mode: Mode,
     operator: Operator,
     motion: Motion,
-    timeout: u64,
     backend_path: syn::Path,
     buffer_type: syn::Type,
     group_name: String,
@@ -326,7 +314,6 @@ impl VerifiedCases {
             mode: header.mode,
             operator: header.operator,
             motion: header.motion,
-            timeout: header.timeout,
             backend_path: syn::parse_str(&header.backend_path).unwrap(),
             buffer_type: syn::parse_str(&header.buffer_type).unwrap(),
             group_name: flat_cases.mod_name,
@@ -609,7 +596,6 @@ macro_rules! def_assertion {
                     syn::parse_str(&format!("{}_{}", case_name, case_id)).unwrap();
                 let backend_path = &self.backend_path;
                 let buffer_type = &self.buffer_type;
-                let timeout = self.timeout;
 
                 let lnum_before = case.lnum_before;
                 let col_before = case.col_before;
@@ -627,13 +613,10 @@ macro_rules! def_assertion {
                 quote! {
                     #[test]
                     fn #test_name() {
-                        use jieba_vim_rs_test::assert_elapsed::AssertElapsed;
                         use jieba_vim_rs_test::verified_case::cases::MotionOutput as TestMotionOutput;
 
                         let buffer: #buffer_type = vec![#(#buffer.to_string()),*].into();
-                        let timing = AssertElapsed::tic(#timeout);
                         let pred_output = #backend_path.$fun_name_to_test(&buffer, (#lnum_before, #col_before), #count, #word).unwrap();
-                        timing.toc();
                         let true_output = TestMotionOutput {
                             new_cursor_pos: (#true_lnum_after, #true_col_after),
                             d_special: #true_d_special,

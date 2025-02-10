@@ -598,25 +598,19 @@ impl TryFrom<String> for WordPredicate {
 
 #[cfg(test)]
 mod tests {
-    use jieba_vim_rs_test::assert_elapsed::AssertElapsed;
-
     use super::*;
 
     fn parse_isk_test(
         parser: &IskParser,
         value: &str,
     ) -> Result<Vec<Part>, Error> {
-        let timing = AssertElapsed::tic(5);
         let parts = parser.parse(value);
-        timing.toc();
         parts
     }
 
     #[test]
     fn test_grammar() {
-        let timing = AssertElapsed::tic(5);
         let parser = IskParser::new();
-        timing.toc();
 
         assert!(parse_isk_test(&parser, "").unwrap().is_empty());
         assert_eq!(

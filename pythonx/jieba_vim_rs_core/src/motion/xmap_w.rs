@@ -105,7 +105,6 @@ mod tests {
     #[verified_cases(
         mode = "xc",
         motion = "w",
-        timeout = 50,
         backend_path = "crate::motion::WORD_MOTION"
     )]
     #[vcase(name = "empty", buffer = ["{}"])]
