@@ -34,16 +34,6 @@ mod xmap_e;
 mod xmap_ge;
 mod xmap_w;
 
-/// Any type that resembles a Vim buffer.
-pub trait BufferLike {
-    type Error;
-
-    /// Get the line at line number `lnum` (1-indexed).
-    fn getline(&self, lnum: usize) -> Result<String, Self::Error>;
-
-    /// Get the total number of lines in the buffer.
-    fn lines(&self) -> Result<usize, Self::Error>;
-}
 
 /// The motion return type.
 #[derive(Debug)]
@@ -106,32 +96,6 @@ impl<C> WordMotion<C> {
 #[ctor::ctor]
 fn init_word_motion() {
     WORD_MOTION._noop(); // force initialization
-}
-
-#[cfg(test)]
-impl BufferLike for Vec<&'static str> {
-    type Error = ();
-
-    fn getline(&self, lnum: usize) -> Result<String, Self::Error> {
-        self.get(lnum - 1).map(|s| s.to_string()).ok_or(())
-    }
-
-    fn lines(&self) -> Result<usize, Self::Error> {
-        Ok(self.len())
-    }
-}
-
-#[cfg(test)]
-impl BufferLike for Vec<String> {
-    type Error = ();
-
-    fn getline(&self, lnum: usize) -> Result<String, Self::Error> {
-        self.get(lnum - 1).map(|s| s.to_string()).ok_or(())
-    }
-
-    fn lines(&self) -> Result<usize, Self::Error> {
-        Ok(self.len())
-    }
 }
 
 #[cfg(test)]
