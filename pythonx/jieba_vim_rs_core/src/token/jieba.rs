@@ -12,6 +12,9 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+//! This module defines abstraction over `Jieba`, and several implementation of
+//! it.
+
 /// Jieba-like types, defined so that this crate won't need to actually depend
 /// on `jieba-rs`.
 pub trait JiebaPlaceholder {
