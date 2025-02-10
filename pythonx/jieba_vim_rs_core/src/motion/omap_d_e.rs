@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,8 +12,11 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use super::{d_special, BufferLike, MotionOutput, WordMotion};
 use crate::token::JiebaPlaceholder;
+use crate::BufferLike;
+
+use super::d_special;
+use super::{MotionOutput, WordMotion};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `e` (if `word` is `true`) or `E` (if `word` is `false`) in
@@ -63,7 +66,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             new_cursor_pos: mo.new_cursor_pos,
             d_special: d_special::is_d_special(
                 buffer,
-                &self.jieba,
+                &self.tokenizer,
                 cursor_pos,
                 mo.new_cursor_pos,
                 word,

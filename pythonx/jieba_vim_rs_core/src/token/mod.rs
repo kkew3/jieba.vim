@@ -19,7 +19,7 @@ pub mod token_iter;
 mod tokenize;
 
 pub use jieba::JiebaPlaceholder;
-pub use tokenize::{Token, TokenLike, TokenType};
+pub use tokenize::{Token, TokenLike, TokenType, Tokenizer};
 
 /// Get the index of the token in `tokens` that covers `col`. Return `None` if
 /// `col` is to the right of the last token.

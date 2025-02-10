@@ -15,7 +15,7 @@
 use crate::token::Tokenizer;
 
 pub struct WordMotion<C> {
-    tokenizer: Tokenizer<C>,
+    pub(super) tokenizer: Tokenizer<C>,
 }
 
 impl<C> WordMotion<C> {

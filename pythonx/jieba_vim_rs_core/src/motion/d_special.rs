@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,14 +12,14 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use super::{index_tokens, BufferLike};
-use crate::token::{self, JiebaPlaceholder, TokenLike, TokenType};
+use crate::token::{self, JiebaPlaceholder, TokenLike, TokenType, Tokenizer};
+use crate::BufferLike;
 
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.
 pub fn is_d_special<B: BufferLike + ?Sized, C: JiebaPlaceholder>(
     buffer: &B,
-    jieba: &C,
+    tokenizer: &Tokenizer<C>,
     start_cursor_pos: (usize, usize),
     end_cursor_pos: (usize, usize),
     word: bool,
@@ -32,9 +32,9 @@ pub fn is_d_special<B: BufferLike + ?Sized, C: JiebaPlaceholder>(
     }
 
     let tokens_cursor_line =
-        token::parse_str(buffer.getline(start_lnum)?, jieba, word);
+        tokenizer.parse_str(&buffer.getline(start_lnum)?, word);
     if !tokens_cursor_line.is_empty() {
-        let i = index_tokens(&tokens_cursor_line, start_col).unwrap();
+        let i = token::index_tokens(&tokens_cursor_line, start_col).unwrap();
         if tokens_cursor_line[..i].iter().any(|tok| match tok.ty {
             TokenType::Space => false,
             TokenType::Word => true,
@@ -50,9 +50,9 @@ pub fn is_d_special<B: BufferLike + ?Sized, C: JiebaPlaceholder>(
     }
 
     let tokens_new_cursor_line =
-        token::parse_str(buffer.getline(end_lnum)?, jieba, word);
+        tokenizer.parse_str(&buffer.getline(end_lnum)?, word);
     if !tokens_new_cursor_line.is_empty() {
-        let j = index_tokens(&tokens_new_cursor_line, end_col).unwrap();
+        let j = token::index_tokens(&tokens_new_cursor_line, end_col).unwrap();
         if tokens_new_cursor_line[j + 1..]
             .iter()
             .any(|tok| match tok.ty {
