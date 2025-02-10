@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use jieba_vim_rs_core::motion::BufferLike;
+use jieba_vim_rs_core::BufferLike;
 
 /// Construct highlight positions. `motion1` should be a one-step motion
 /// function. `cursor_pos` is the current cursor position. To preview current
