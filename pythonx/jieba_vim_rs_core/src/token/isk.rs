@@ -338,26 +338,6 @@ impl IskParser {
     }
 }
 
-trait RetainMut<T> {
-    fn retain_mut<F>(&mut self, f: F)
-    where
-        F: FnMut(&mut T) -> bool;
-}
-
-impl<T> RetainMut<T> for Vec<T> {
-    fn retain_mut<F>(&mut self, mut f: F)
-    where
-        F: FnMut(&mut T) -> bool,
-    {
-        self.dedup_by(|a, _| !f(a));
-        if !self.is_empty() {
-            if !f(self.first_mut().unwrap()) {
-                self.remove(0);
-            }
-        }
-    }
-}
-
 /// Types where each value has at most one successor and at most one
 /// predecessor.
 trait BoundedChain: Ord + Sized {
