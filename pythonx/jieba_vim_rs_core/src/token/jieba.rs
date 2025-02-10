@@ -20,11 +20,12 @@ pub trait JiebaPlaceholder {
 }
 
 #[cfg(test)]
-use std::collections::HashSet;
+use trie_rs::Trie;
 
+/// Cut words deterministically according to a predefined dictionary.
 #[cfg(test)]
 pub struct KeywordCutter {
-    dict: HashSet<String>,
+    dict: Trie<u8>,
 }
 
 #[cfg(test)]
@@ -39,38 +40,61 @@ impl KeywordCutter {
 #[cfg(test)]
 impl JiebaPlaceholder for KeywordCutter {
     fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
-        let mut i = 0;
-        let boundaries: Vec<_> = sentence
+        // A `matched_len` basically means that at the i-th char position,
+        // either sentence[i..i + matched_len[i]] is a keyword of `self`, or
+        // `matched_len[i]` is zero.
+        let matched_len: Vec<_> = sentence
             .char_indices()
-            .map(|(i, _)| i)
-            .chain([sentence.len()])
+            .map(|(start, ch)| {
+                self.dict
+                    .common_prefix_search(&sentence[start..])
+                    .map(|n: String| (n.chars().count(), n.len()))
+                    .max_by_key(|(n_chars, _)| *n_chars)
+                    .unwrap_or((0, ch.len_utf8()))
+            })
             .collect();
-        let mut result = Vec::new();
-        let n_chars = boundaries.len();
-        while i < n_chars {
-            let mut found = false;
-            for j in (i + 1..=n_chars).rev() {
-                let segment = &sentence[boundaries[i]..boundaries[j]];
-                if self.dict.contains(segment) {
-                    result.push(segment);
-                    i = j;
-                    found = true;
-                    break;
+
+        /// Basically, what it does is to scan from left to right in
+        /// `matched_len`. On nonzero value n, push n to the result, and skip
+        /// the next n-1 element in `matched_len`; on zero value, find the next
+        /// nonzero value and push the number of contiguous zero values before
+        /// one is found. Finally, return the result Vec. It's guaranteed that
+        /// `matched_len` is long enough.
+        fn fold_to_bytes(matched_len: Vec<(usize, usize)>) -> Vec<usize> {
+            let mut result = Vec::new();
+            let mut i = 0;
+
+            while i < matched_len.len() {
+                let (n_chars, n_bytes) = matched_len[i];
+                if n_chars > 0 {
+                    result.push(n_bytes);
+                    i += n_chars; // Skip the next n-1 elements
+                } else {
+                    let zero_byte_count = matched_len[i..]
+                        .iter()
+                        .take_while(|(n_chars, _)| n_chars == &0)
+                        .map(|(_, n_bytes)| {
+                            i += 1;
+                            n_bytes
+                        })
+                        .sum();
+                    result.push(zero_byte_count);
                 }
             }
-            if !found {
-                let mut j = i + 1;
-                let mut segment = &sentence[boundaries[i]..boundaries[j]];
-                while j < n_chars && !self.dict.contains(segment) {
-                    j += 1;
-                    segment = &sentence[boundaries[i]..boundaries[j]];
-                }
-                result.push(segment);
-                i = j;
-            }
+
+            result
         }
 
-        result
+        let folded = fold_to_bytes(matched_len);
+        let mut start = 0;
+        folded
+            .into_iter()
+            .map(|n_bytes| {
+                let segment = &sentence[start..start + n_bytes];
+                start += n_bytes;
+                segment
+            })
+            .collect()
     }
 }
 
