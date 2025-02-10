@@ -30,6 +30,7 @@ pub struct TokenIteratorItem {
 }
 
 impl TokenIteratorItem {
+    #[cfg(test)]
     fn new(lnum: usize, token: Option<Token>, cursor: bool, eol: bool) -> Self {
         Self {
             lnum,
@@ -685,6 +686,7 @@ mod tests {
             );
         }
 
+        #[test]
         fn three_empty() {
             let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
