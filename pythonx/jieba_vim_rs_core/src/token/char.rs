@@ -340,7 +340,8 @@ mod tests {
         ));
 
         // Lowercase ASCII, digits and 汉字 iskeyword.
-        let wp = WordPredicate::try_from_isk(&isk_parser, "@,^A-Z").unwrap();
+        let wp =
+            WordPredicate::try_from_isk(&isk_parser, "@,^A-Z,48-57").unwrap();
         assert!(matches!(
             categorize_char('a', &wp),
             CharType::Word(WordCharType::Other)
@@ -359,7 +360,7 @@ mod tests {
         ));
         assert!(matches!(
             categorize_char('_', &wp),
-            CharType::Word(WordCharType::Other)
+            CharType::NonWord(NonWordCharType::Other)
         ));
         assert!(matches!(categorize_char(' ', &wp), CharType::Space));
         assert!(matches!(categorize_char('\u{3000}', &wp), CharType::Space));
