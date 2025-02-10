@@ -14,7 +14,7 @@
 
 mod char;
 mod isk;
-mod jieba;
+pub(crate) mod jieba;
 pub mod token_iter;
 mod tokenize;
 

@@ -13,9 +13,9 @@
 // under the License.
 
 #[cfg(test)]
-use crate::token::Tokenizer;
+use crate::token::jieba::KeywordCutter;
 #[cfg(test)]
-use jieba_rs::Jieba;
+use crate::token::Tokenizer;
 #[cfg(test)]
 use jieba_vim_rs_test::verified_case::cases::MotionOutput as TestMotionOutput;
 #[cfg(test)]
@@ -64,8 +64,8 @@ impl PartialEq<TestMotionOutput> for MotionOutput {
 }
 
 #[cfg(test)]
-static WORD_MOTION: Lazy<WordMotion<Jieba>> = Lazy::new(|| {
-    WordMotion::new(Tokenizer::new(Jieba::new(), "@,48-57,_,192-255"))
+static WORD_MOTION: Lazy<WordMotion<KeywordCutter>> = Lazy::new(|| {
+    WordMotion::new(Tokenizer::new(KeywordCutter::new([]), "@,48-57,_,192-255"))
 });
 
 #[cfg(test)]
