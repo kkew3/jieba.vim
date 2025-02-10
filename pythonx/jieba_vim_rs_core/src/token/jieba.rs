@@ -20,6 +20,16 @@ pub trait JiebaPlaceholder {
 }
 
 #[cfg(test)]
+use jieba_rs::Jieba;
+
+#[cfg(test)]
+impl JiebaPlaceholder for Jieba {
+    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
+        self.cut(sentence, true)
+    }
+}
+
+#[cfg(test)]
 use trie_rs::Trie;
 
 /// Cut words deterministically according to a predefined dictionary.
