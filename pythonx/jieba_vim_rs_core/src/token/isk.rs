@@ -596,19 +596,21 @@ impl WordPredicate {
     }
 }
 
-#[cfg(test)]
-impl From<&'static str> for WordPredicate {
-    fn from(value: &'static str) -> Self {
+impl TryFrom<&str> for WordPredicate {
+    type Error = Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
         let isk_parser = IskParser::new();
-        WordPredicate::try_from_isk(&isk_parser, value).unwrap()
+        WordPredicate::try_from_isk(&isk_parser, value)
     }
 }
 
-#[cfg(test)]
-impl From<String> for WordPredicate {
-    fn from(value: String) -> Self {
+impl TryFrom<String> for WordPredicate {
+    type Error = Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         let isk_parser = IskParser::new();
-        WordPredicate::try_from_isk(&isk_parser, &value).unwrap()
+        WordPredicate::try_from_isk(&isk_parser, &value)
     }
 }
 

@@ -27,11 +27,29 @@ pub struct Tokenizer<C> {
 }
 
 impl<C> Tokenizer<C> {
+    /// Create a new tokenizer from `'iskeyword'` option value.
+    pub fn try_new<P: TryInto<WordPredicate>>(
+        jieba: C,
+        word_predicate: P,
+    ) -> Result<Self, P::Error> {
+        Ok(Self {
+            word_predicate: word_predicate.try_into()?,
+            jieba,
+        })
+    }
+
     /// Create a new tokenizer from `'iskeyword'` option value. Panics if the
-    /// option value is invalid, which should not happen in practice.
-    pub fn new<P: Into<WordPredicate>>(jieba: C, word_predicate: P) -> Self {
+    /// option value is invalid.
+    #[cfg(test)]
+    pub(crate) fn new<P: TryInto<WordPredicate>>(
+        jieba: C,
+        word_predicate: P,
+    ) -> Self
+    where
+        P::Error: std::fmt::Debug,
+    {
         Self {
-            word_predicate: word_predicate.into(),
+            word_predicate: word_predicate.try_into().unwrap(),
             jieba,
         }
     }
