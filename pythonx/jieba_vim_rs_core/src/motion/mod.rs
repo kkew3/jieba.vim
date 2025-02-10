@@ -12,9 +12,15 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::token::{JiebaPlaceholder, Token, TokenLike};
+#[cfg(test)]
+use crate::token::Tokenizer;
+use crate::token::{Token, TokenLike};
+#[cfg(test)]
+use jieba_rs::Jieba;
 #[cfg(test)]
 use jieba_vim_rs_test::verified_case::cases::MotionOutput as TestMotionOutput;
+#[cfg(test)]
+use once_cell::sync::Lazy;
 use std::cmp::Ordering;
 
 mod d_special;
@@ -29,11 +35,13 @@ mod omap_d_ge;
 mod omap_e;
 mod omap_ge;
 mod omap_w;
+mod word_motion;
 mod xmap_b;
 mod xmap_e;
 mod xmap_ge;
 mod xmap_w;
 
+pub use word_motion::WordMotion;
 
 /// The motion return type.
 #[derive(Debug)]
@@ -73,19 +81,10 @@ fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
         .ok()
 }
 
-pub struct WordMotion<C> {
-    jieba: C,
-}
-
-impl<C: JiebaPlaceholder> WordMotion<C> {
-    pub fn new(jieba: C) -> Self {
-        Self { jieba }
-    }
-}
-
 #[cfg(test)]
-static WORD_MOTION: once_cell::sync::Lazy<WordMotion<jieba_rs::Jieba>> =
-    once_cell::sync::Lazy::new(|| WordMotion::new(jieba_rs::Jieba::new()));
+static WORD_MOTION: Lazy<WordMotion<Jieba>> = Lazy::new(|| {
+    WordMotion::new(Tokenizer::new(Jieba::new(), "@,48-57,_,192-255"))
+});
 
 #[cfg(test)]
 impl<C> WordMotion<C> {
