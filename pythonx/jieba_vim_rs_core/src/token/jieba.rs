@@ -120,5 +120,8 @@ mod tests {
             kc.cut_hmm("foo你bar好你好"),
             vec!["foo你", "bar", "好", "你好"]
         );
+
+        let kc = KeywordCutter::new(["⼀".into()]);
+        assert_eq!(kc.cut_hmm("\u{300}A⼀"), vec!["\u{300}A", "⼀"]);
     }
 }

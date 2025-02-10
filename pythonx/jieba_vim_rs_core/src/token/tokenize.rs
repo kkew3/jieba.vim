@@ -986,7 +986,6 @@ impl<C: JiebaPlaceholder> Tokenizer<C> {
 
 #[cfg(test)]
 mod tests {
-    use jieba_rs::Jieba;
     use jieba_vim_rs_test::assert_elapsed::AssertElapsed;
     use proptest::prelude::*;
 
@@ -1019,12 +1018,6 @@ mod tests {
         let counts = vec![0, 2];
         let marks = vec![false, false];
         assert_eq!(append_mark_to_cuts(&marks, &counts), vec![0, 2]);
-    }
-
-    impl JiebaPlaceholder for Jieba {
-        fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
-            self.cut(sentence, true)
-        }
     }
 
     #[test]
@@ -1084,14 +1077,17 @@ mod tests {
         s: &str,
         into_word: bool,
     ) -> Vec<Token> {
-        let timing = AssertElapsed::tic(20);
+        let timing = AssertElapsed::tic(10);
         let output = tokenizer.parse_str(s, into_word);
         timing.toc();
         output
     }
 
     /// Test whether for any input string, the tokenization outputs are
-    /// contiguous non-empty tokens.
+    /// contiguous non-empty tokens. Note that we didn't use `jieba_rs::Jieba`.
+    /// This is because it's very rare to get 汉字 words from randomly generated
+    /// string. Having a Jieba instance here won't really change anything
+    /// except for making tests slow.
     macro_rules! def_parse_str_tests {
         ($($test_name:ident: $isk:literal, $into_word:literal);*$(;)?) => {
             $(
@@ -1100,7 +1096,7 @@ mod tests {
                     #[test]
                     #[allow(non_snake_case)]
                     fn $test_name(s in "\\PC*") {
-                        let tokenizer = Tokenizer::new(Jieba::new(), $isk);
+                        let tokenizer = Tokenizer::new(KeywordCutter::new([]), $isk);
                         let tokens = parse_str_test(&tokenizer, &s, $into_word);
                         let mut start = 0;
                         for tok in tokens {
@@ -1139,7 +1135,10 @@ mod tests {
     fn test_parse_str_tokens_are_nonempty_contiguous_word_default_isk_failed_1()
     {
         let s = "\u{300}A⼀";
-        let tokenizer = Tokenizer::new(Jieba::new(), "@,48-57,_,192-255");
+        // Mimic `jieba_rs::Jieba`'s property to cut at the boundary of
+        // different character classes.
+        let kc = KeywordCutter::new(["⼀".into()]);
+        let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
         let tokens = parse_str_test(&tokenizer, s, true);
         let mut start = 0;
         for tok in tokens {
