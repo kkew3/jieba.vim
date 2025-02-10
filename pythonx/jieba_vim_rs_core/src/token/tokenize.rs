@@ -1605,7 +1605,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                build_simple_tokens(vec![("（你好世界——世界）。", Word)])
+                build_simple_tokens(vec![
+                    ("（你好", Word),
+                    ("世界——世界）。", Word)
+                ])
             );
         }
 
@@ -2884,7 +2887,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                build_simple_tokens(vec![("你好你好\u{1f596}世界", Word)])
+                build_simple_tokens(vec![
+                    ("你好", Word),
+                    ("你好\u{1f596}世界", Word)
+                ])
             );
         }
 
