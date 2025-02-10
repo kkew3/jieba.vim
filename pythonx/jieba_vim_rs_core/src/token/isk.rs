@@ -179,6 +179,8 @@ fn parse_lexemes_single_char(lexemes: &[&Rc<Lexeme>]) -> Ast {
 
 fn grammar() -> Grammar<Ast> {
     santiago::grammar!(
+        "sent" => empty =>
+            |_| Ast::PartsTerm;
         "sent" => rules "parts" "last_part" =>
             |trees| {
                 let (parts, last_part) = vec_to_tuple2(trees);
