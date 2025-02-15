@@ -720,6 +720,8 @@ mod tests {
             ]
         );
         parse_isk_test(&parser, "^-^").unwrap_err();
+        parse_isk_test(&parser, r"\\").unwrap_err();
+        parse_isk_test(&parser, r"a-z,\\,.").unwrap_err();
         assert_eq!(
             parse_isk_test(&parser, "@").unwrap(),
             vec![Part::Part(Item::CharSpec(CharSpec::Char('@')))]
