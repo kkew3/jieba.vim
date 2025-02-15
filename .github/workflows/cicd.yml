@@ -123,12 +123,12 @@ jobs:
         run: |
           export VIM_BUNDLE_PATH="$GITHUB_WORKSPACE/vim_bundle"
           export VIM_BIN_NAME=${{ matrix.vim.dist }}
-          cd "$GITHUB_WORKSPACE/jieba_vim/pythonx/jieba_vim_rs_core"
+          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_core"
           cargo test -F verifiable_case
       
       - name: Build
         run: |
-          cd "$GITHUB_WORKSPACE/jieba_vim/pythonx"
+          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend"
           cargo build --locked --release
       
       - name: Install integration test dependencies
@@ -222,9 +222,9 @@ jobs:
       - name: Test and build
         shell: bash
         run: |
-          cd "$GITHUB_WORKSPACE/jieba_vim/pythonx/jieba_vim_rs_test" && $BUILD_CMD test --release --target=${{ matrix.job.target }}
-          cd "$GITHUB_WORKSPACE/jieba_vim/pythonx/jieba_vim_rs_core" && $BUILD_CMD test --release --target=${{ matrix.job.target }}
-          cd "$GITHUB_WORKSPACE/jieba_vim/pythonx" && $BUILD_CMD build --locked --release --target=${{ matrix.job.target }}
+          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_test" && $BUILD_CMD test --release --target=${{ matrix.job.target }}
+          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_core" && $BUILD_CMD test --release --target=${{ matrix.job.target }}
+          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && $BUILD_CMD build --locked --release --target=${{ matrix.job.target }}
 
       - name: Set cdylib name and path
         id: cdylib
@@ -238,7 +238,7 @@ jobs:
           esac
 
           CDYLIB_NAME=${CDYLIB_PREFIX}${LIB_NAME}${CDYLIB_SUFFIX}
-          LIB_PATH="$GITHUB_WORKSPACE/jieba_vim/pythonx/target/${{ matrix.job.target }}/release/${CDYLIB_NAME}"
+          LIB_PATH="$GITHUB_WORKSPACE/jieba_vim/rust_backend/target/${{ matrix.job.target }}/release/${CDYLIB_NAME}"
           test -f "$LIB_PATH"
 
           echo "CDYLIB_SUFFIX=$CDYLIB_SUFFIX" >> $GITHUB_OUTPUT
