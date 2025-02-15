@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -17,8 +17,9 @@ use std::fs::File;
 use std::io::BufReader;
 
 use jieba_rs::Jieba;
-use jieba_vim_rs_core::motion::{BufferLike, MotionOutput, WordMotion};
-use jieba_vim_rs_core::token::JiebaPlaceholder;
+use jieba_vim_rs_core::motion::{MotionOutput, WordMotion};
+use jieba_vim_rs_core::token::{JiebaPlaceholder, Tokenizer};
+use jieba_vim_rs_core::BufferLike;
 use pyo3::exceptions::{PyIOError, PyValueError};
 use pyo3::prelude::*;
 
@@ -105,8 +106,8 @@ impl WordMotionWrapper {
     /// Load jieba with the default dictionary, or with custom dictionary given
     /// dictionary path.
     #[new]
-    #[pyo3(signature = (path=None))]
-    pub fn from_dict(path: Option<&str>) -> PyResult<Self> {
+    #[pyo3(signature = (isk_option, path=None))]
+    pub fn new(isk_option: &str, path: Option<&str>) -> PyResult<Self> {
         let jieba = match path {
             None => Jieba::new(),
             Some(path) => {
@@ -118,9 +119,28 @@ impl WordMotionWrapper {
                 })?
             }
         };
+        let tokenizer = Tokenizer::try_new(JiebaWrapper(jieba), isk_option)
+            .map_err(|_| {
+                PyValueError::new_err(format!(
+                    "failed to parse isk: {}",
+                    isk_option
+                ))
+            })?;
         Ok(Self {
-            wm: WordMotion::new(JiebaWrapper(jieba)),
+            wm: WordMotion::new(tokenizer),
         })
+    }
+
+    pub fn set_isk(&mut self, isk_option: &str) -> PyResult<()> {
+        self.wm
+            .get_tokenizer_mut()
+            .try_set_word_predicate(isk_option)
+            .map_err(|_| {
+                PyValueError::new_err(format!(
+                    "failed to parse isk: {}",
+                    isk_option
+                ))
+            })
     }
 
     pub fn nmap_w(
@@ -657,18 +677,38 @@ pub struct LazyWordMotionWrapper {
 #[pymethods]
 impl LazyWordMotionWrapper {
     #[new]
-    #[pyo3(signature = (path=None))]
-    pub fn from_dict(path: Option<String>) -> PyResult<Self> {
+    #[pyo3(signature = (isk_option, path=None))]
+    pub fn new(isk_option: &str, path: Option<String>) -> PyResult<Self> {
         // Check if `path` is readable beforehand.
         if let Some(path) = &path {
             File::open(path).map_err(|err| PyIOError::new_err(err))?;
         }
+        let jieba = LazyJiebaWrapper {
+            path,
+            jieba: RefCell::new(None),
+        };
+        let tokenizer =
+            Tokenizer::try_new(jieba, isk_option).map_err(|_| {
+                PyValueError::new_err(format!(
+                    "failed to parse isk: {}",
+                    isk_option
+                ))
+            })?;
         Ok(Self {
-            wm: WordMotion::new(LazyJiebaWrapper {
-                path,
-                jieba: RefCell::new(None),
-            }),
+            wm: WordMotion::new(tokenizer),
         })
+    }
+
+    pub fn set_isk(&mut self, isk_option: &str) -> PyResult<()> {
+        self.wm
+            .get_tokenizer_mut()
+            .try_set_word_predicate(isk_option)
+            .map_err(|_| {
+                PyValueError::new_err(format!(
+                    "failed to parse isk: {}",
+                    isk_option
+                ))
+            })
     }
 
     pub fn nmap_w(

@@ -1,0 +1,159 @@
+* This test checks whether 'iskeyword' option is respected. See
+* https://github.com/kkew3/jieba.vim/issues/16 for details.
+
+{% set keys = ["w", "W", "e", "E", "b", "B", "ge", "gE"] -%}
+{%- set bang = "!" if verify else "" -%}
+{%- set vim_compatible = true -%}
+{%- set nvim_compatible = true %}
+
+---
+
+{%- if (not vim or vim_compatible) and (not nvim or nvim_compatible) %}
+
+Before:
+  {%- for k in keys %}
+  map {{ k }} <Plug>(Jieba_{{ k }})
+  {%- endfor %}
+  set iskeyword=a-z,A-Z,48-57,_,.,-,>
+  py3 jieba_vim.navigation.update_isk()
+
+After:
+  {%- for k in keys %}
+  unmap {{ k }}
+  {%- endfor %}
+  set iskeyword=@,48-57,_,192-255
+  py3 jieba_vim.navigation.update_isk()
+
+Given:
+  aa.bb ccc->d efg
+
+Execute:
+  normal! gg0
+  normal{{ bang }} e
+
+Then:
+  AssertEqual 5, col(".")
+
+Execute:
+  normal! gg0
+  normal{{ bang }} w
+
+Then:
+  AssertEqual 7, col(".")
+
+Execute:
+  normal! gg0
+  normal{{ bang }} 2w
+
+Then:
+  AssertEqual 14, col(".")
+
+Execute:
+  normal! gg0w
+  normal{{ bang }} e
+
+Then:
+  AssertEqual 12, col(".")
+
+---
+
+-- Test for backslash in 'iskeyword' option
+Before:
+  {%- for k in keys %}
+  map {{ k }} <Plug>(Jieba_{{ k }})
+  {%- endfor %}
+  set iskeyword=a-z,\\,.
+  py3 jieba_vim.navigation.update_isk()
+
+After:
+  {%- for k in keys %}
+  unmap {{ k }}
+  {%- endfor %}
+  set iskeyword=@,48-57,_,192-255
+  py3 jieba_vim.navigation.update_isk()
+
+Given:
+  aa\bb c.cc\\d efg
+
+Execute:
+  normal! gg0
+  normal{{ bang }} e
+
+Then:
+  AssertEqual 5, col(".")
+
+Execute:
+  normal! gg0
+  normal{{ bang }} w
+
+Then:
+  AssertEqual 7, col(".")
+
+Execute:
+  normal! gg0
+  normal{{ bang }} 2w
+
+Then:
+  AssertEqual 15, col(".")
+
+Execute:
+  normal! gg0w
+  normal{{ bang }} e
+
+Then:
+  AssertEqual 13, col(".")
+
+---
+
+-- Test for '@' in 'iskeyword' option
+Before:
+  {%- for k in keys %}
+  map {{ k }} <Plug>(Jieba_{{ k }})
+  {%- endfor %}
+  set iskeyword=a-z,@-@,.
+  py3 jieba_vim.navigation.update_isk()
+
+After:
+  {%- for k in keys %}
+  unmap {{ k }}
+  {%- endfor %}
+  set iskeyword=@,48-57,_,192-255
+  py3 jieba_vim.navigation.update_isk()
+
+Given:
+  aa@bb c.cc@@D efg
+
+Execute:
+  normal! gg0
+  normal{{ bang }} e
+
+Then:
+  AssertEqual 5, col(".")
+
+Execute:
+  normal! gg0
+  normal{{ bang }} w
+
+Then:
+  AssertEqual 7, col(".")
+
+Execute:
+  normal! gg0
+  normal{{ bang }} 2w
+
+Then:
+  AssertEqual 13, col(".")
+
+Execute:
+  normal! gg0w
+  normal{{ bang }} e
+
+Then:
+  AssertEqual 12, col(".")
+
+{% endif %}
+
+---
+
+Before:
+After:

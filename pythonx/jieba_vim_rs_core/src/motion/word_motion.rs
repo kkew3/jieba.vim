@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,23 +12,18 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use std::time::{Duration, Instant};
+use crate::token::Tokenizer;
 
-pub struct AssertElapsed {
-    max_duration: Duration,
-    start: Instant,
+pub struct WordMotion<C> {
+    pub(super) tokenizer: Tokenizer<C>,
 }
 
-impl AssertElapsed {
-    pub fn tic(millis: u64) -> Self {
-        Self {
-            max_duration: Duration::from_millis(millis),
-            start: Instant::now(),
-        }
+impl<C> WordMotion<C> {
+    pub fn new(tokenizer: Tokenizer<C>) -> Self {
+        Self { tokenizer }
     }
 
-    pub fn toc(&self) {
-        let duration = self.start.elapsed();
-        assert!(duration <= self.max_duration, "duration: {:?}", duration);
+    pub fn get_tokenizer_mut(&mut self) -> &mut Tokenizer<C> {
+        &mut self.tokenizer
     }
 }

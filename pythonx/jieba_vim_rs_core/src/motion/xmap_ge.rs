@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,8 +12,10 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use super::{BufferLike, MotionOutput, WordMotion};
 use crate::token::JiebaPlaceholder;
+use crate::BufferLike;
+
+use super::{MotionOutput, WordMotion};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `ge` (if `word` is `true`) or `gE` (if `word` is `false`)
@@ -59,7 +61,6 @@ mod tests {
     #[verified_cases(
         mode = "xc",
         motion = "ge",
-        timeout = 50,
         backend_path = "crate::motion::WORD_MOTION"
     )]
     #[vcase(name = "empty", buffer = ["}{"])]

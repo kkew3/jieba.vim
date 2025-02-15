@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,18 +12,13 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-pub fn stack_merge<'a, T, U, F, A>(
-    elements: Vec<T>,
-    args: &A,
-    mut rule_func: F,
-) -> Vec<U>
+pub fn stack_merge<T, U, F>(elements: Vec<T>, mut rule_func: F) -> Vec<U>
 where
-    F: FnMut(Option<U>, T, &A) -> Vec<U>,
-    A: 'a,
+    F: FnMut(Option<U>, T) -> Vec<U>,
 {
     let mut stack: Vec<U> = vec![];
     for e in elements {
-        let mut merged = rule_func(stack.pop(), e, args);
+        let mut merged = rule_func(stack.pop(), e);
         stack.append(&mut merged);
     }
     stack

@@ -1,4 +1,4 @@
-# Copyright 2024 Kaiwen Wu. All Rights Reserved.
+# Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy
@@ -70,17 +70,23 @@ def _init_word_motion():
     if word_motion is not None:
         return
     user_dict = vim.eval('g:jieba_vim_user_dict') or None
+    isk = vim.eval('&iskeyword')
     try:
         if int(vim.eval('g:jieba_vim_lazy')):
-            word_motion = jieba_vim_rs.LazyWordMotion(user_dict)
+            word_motion = jieba_vim_rs.LazyWordMotion(isk, user_dict)
         else:
-            word_motion = jieba_vim_rs.WordMotion(user_dict)
+            word_motion = jieba_vim_rs.WordMotion(isk, user_dict)
     except (IOError, ValueError):
         vim.command('echoerr "jieba.vim: failed to load user dict: {}"'.format(
             user_dict))
 
 
 _init_word_motion()
+
+
+def update_isk():
+    isk = vim.eval('&iskeyword')
+    word_motion.set_isk(isk)
 
 
 def _vim_wrapper_factory_n(motion_name):

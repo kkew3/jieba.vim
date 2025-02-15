@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,9 +12,11 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use super::token_iter::{BackwardTokenIterator, TokenIteratorItem};
-use super::{BufferLike, MotionOutput, WordMotion};
+use crate::token::token_iter::{BackwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
+use crate::BufferLike;
+
+use super::{MotionOutput, WordMotion};
 
 /// Test if a token is stoppable for `omap_b`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
@@ -63,9 +65,14 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ) -> Result<MotionOutput, B::Error> {
         let (mut lnum, mut col) = cursor_pos;
         let mut prevent_change = lnum == 1 && col == 0 && count > 0;
-        let mut it =
-            BackwardTokenIterator::new(buffer, &self.jieba, lnum, col, word)?
-                .peekable();
+        let mut it = BackwardTokenIterator::new(
+            buffer,
+            &self.tokenizer,
+            lnum,
+            col,
+            word,
+        )?
+        .peekable();
         while count > 0 && it.peek().is_some() {
             let item = it.next().unwrap()?;
             if !is_stoppable(&item) {
@@ -102,7 +109,6 @@ mod tests {
         mode = "o",
         operator = "d",
         motion = "b",
-        timeout = 50,
         backend_path = "crate::motion::WORD_MOTION"
     )]
     #[vcase(name = "empty", buffer = ["}{"], prevent_change)]
