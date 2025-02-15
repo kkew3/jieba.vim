@@ -219,6 +219,9 @@ jobs:
           cargo -V
           rustc -V
 
+      - name: Debug before running build
+        uses: fawazahmed0/action-debug-vscode@main
+
       - name: Test and build
         shell: bash
         run: |
