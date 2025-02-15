@@ -152,12 +152,12 @@ jobs:
       fail-fast: false
       matrix:
         job:
-          # This should be re-enabled after issue #8 is resolved. See more at
+          # This is enabled because wall time check in unit tests has been
+          # removed. But the issue might not be resolved yet. See more at
           # https://github.com/kkew3/jieba.vim/issues/8.
-          #
-          # - target: aarch64-unknown-linux-gnu
-          #   os: ubuntu-22.04
-          #   use-cross: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-22.04
+            use-cross: true
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
             use-cross: true
