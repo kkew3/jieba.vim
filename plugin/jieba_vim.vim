@@ -1,4 +1,4 @@
-" Copyright 2024 Kaiwen Wu. All Rights Reserved.
+" Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
 "
 " Licensed under the Apache License, Version 2.0 (the "License"); you may not
 " use this file except in compliance with the License. You may obtain a copy
@@ -119,3 +119,8 @@ if g:jieba_vim_keymap
         endfor
     endfor
 endif
+
+augroup jieba_vim_update_isk
+    autocmd!
+    autocmd OptionSet iskeyword py3 jieba_vim.navigation.update_isk()
+augroup END
