@@ -219,12 +219,10 @@ jobs:
           cargo -V
           rustc -V
 
-      - name: Debug before running build
-        uses: fawazahmed0/action-debug-vscode@main
-
       - name: Test and build
         shell: bash
         run: |
+          export SKIP_EXPOSE_SHARED_LIBRARY_TO_PYTHON=1
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_test" && $BUILD_CMD test --release --target=${{ matrix.job.target }}
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_core" && $BUILD_CMD test --release --target=${{ matrix.job.target }}
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && $BUILD_CMD build --locked --release --target=${{ matrix.job.target }}
