@@ -31,7 +31,7 @@ Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.4', 'do': './build.sh' }
 
 其中 `./build.sh` 用于下载预编译链接库，然后如果没有找到的话再尝试本地编译。
 
-虽然通常不需要，但在极少数情况下可能需要进入插件目录调整 `pythonx/Cargo.toml` 中的 pyo3 python ABI 版本，以匹配 vim 中 python3 的版本。可以在终端使用
+虽然通常不需要，但在极少数情况下可能需要进入插件目录调整 `rust_backend/Cargo.toml` 中的 pyo3 python ABI 版本，以匹配 vim 中 python3 的版本。可以在终端使用
 
 ```bash
 vim +"py3 print(sys.version)"
@@ -95,7 +95,7 @@ map w <Plug>(Jieba_w)
 
 ```bash
 # 核心代码
-cd pythonx/jieba_vim_rs_core
+cd rust_backend/jieba_vim_rs_core
 cargo test
 # 可开启 verifiable_case 来验证测试本身是否正确，需要安装 junegunn/vader.vim
 # (https://github.com/junegunn/vader.vim).
@@ -150,7 +150,7 @@ Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.4', 'do': './build.sh' }
 where `./build.sh` is used to download precompiled shared library.
 Local compilation will be attempted only if the shared library cannot be found.
 
-Though not always necessary, user may need to adjust the pyo3 python ABI in `pythonx/Cargo.toml` under the plugin directory after downloading the plugin, in order to match with the python3 version vim is compiled against.
+Though not always necessary, user may need to adjust the pyo3 python ABI in `rust_backend/Cargo.toml` under the plugin directory after downloading the plugin, in order to match with the python3 version vim is compiled against.
 The vim's python3 version may be checked by the following command at terminal:
 
 ```bash
@@ -216,7 +216,7 @@ To run tests against rust implementation locally,
 
 ```bash
 # Core logic
-cd pythonx/jieba_vim_rs_core
+cd rust_backend/jieba_vim_rs_core
 cargo test
 # verifiable_case feature can be enabled to verify the correctness of the tests.
 # junegunn/vader.vim (https://github.com/junegunn/vader.vim) is required.
