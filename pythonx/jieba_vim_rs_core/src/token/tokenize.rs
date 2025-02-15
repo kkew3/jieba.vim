@@ -54,6 +54,14 @@ impl<C> Tokenizer<C> {
         }
     }
 
+    pub fn try_set_word_predicate<P: TryInto<WordPredicate>>(
+        &mut self,
+        word_predicate: P,
+    ) -> Result<(), P::Error> {
+        self.word_predicate = word_predicate.try_into()?;
+        Ok(())
+    }
+
     pub fn get_word_predicate_mut(&mut self) -> &mut WordPredicate {
         &mut self.word_predicate
     }

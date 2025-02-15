@@ -131,6 +131,18 @@ impl WordMotionWrapper {
         })
     }
 
+    pub fn set_isk(&mut self, isk_option: &str) -> PyResult<()> {
+        self.wm
+            .get_tokenizer_mut()
+            .try_set_word_predicate(isk_option)
+            .map_err(|_| {
+                PyValueError::new_err(format!(
+                    "failed to parse isk: {}",
+                    isk_option
+                ))
+            })
+    }
+
     pub fn nmap_w(
         &self,
         buffer: &Bound<'_, PyAny>,
@@ -685,6 +697,18 @@ impl LazyWordMotionWrapper {
         Ok(Self {
             wm: WordMotion::new(tokenizer),
         })
+    }
+
+    pub fn set_isk(&mut self, isk_option: &str) -> PyResult<()> {
+        self.wm
+            .get_tokenizer_mut()
+            .try_set_word_predicate(isk_option)
+            .map_err(|_| {
+                PyValueError::new_err(format!(
+                    "failed to parse isk: {}",
+                    isk_option
+                ))
+            })
     }
 
     pub fn nmap_w(
