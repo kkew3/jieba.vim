@@ -39,7 +39,7 @@ download_release() {
 }
 
 build_from_source() {
-    cd pythonx && cargo build -r
+    cd rust_backend && cargo build -r
 }
 
 if has git uname curl; then
