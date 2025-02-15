@@ -67,14 +67,3 @@ impl PartialEq<TestMotionOutput> for MotionOutput {
 static WORD_MOTION: Lazy<WordMotion<KeywordCutter>> = Lazy::new(|| {
     WordMotion::new(Tokenizer::new(KeywordCutter::new([]), "@,48-57,_,192-255"))
 });
-
-#[cfg(test)]
-impl<C> WordMotion<C> {
-    fn _noop(&self) {}
-}
-
-#[cfg(test)]
-#[ctor::ctor]
-fn init_word_motion() {
-    WORD_MOTION._noop(); // force initialization
-}
