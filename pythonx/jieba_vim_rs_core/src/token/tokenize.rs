@@ -1524,8 +1524,7 @@ mod tests {
                 build_simple_tokens(vec![
                     ("B", Word),
                     ("超", Word),
-                    ("，", Word),
-                    ("foo。。。", Word)
+                    ("，foo。。。", Word)
                 ])
             );
         }
@@ -1574,7 +1573,7 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                build_simple_tokens(vec![("B超，foo。。。", Word)])
+                build_simple_tokens(vec![("B超，", Word), ("foo。。。", Word)])
             );
         }
     }
@@ -1773,7 +1772,7 @@ mod tests {
             use TokenType::*;
             let tokenizer =
                 Tokenizer::new(KeywordCutter::new(["你好".into()]), "");
-            let tokens = parse_str_test(&tokenizer, SENT, true);
+            let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
                 build_simple_tokens(vec![
