@@ -52,6 +52,9 @@ pub enum WordCharType {
 /// Non-word character types.
 #[derive(Debug)]
 pub enum NonWordCharType {
+    /// 汉字 characters, when '@' is not included in the `'iskeyword'` Vim
+    /// option.
+    Hanzi,
     /// Right-associated CJK punctuations. When a word character follows a
     /// [`NonWordCharType::RightPunc`], an implicit space is added in between.
     RightPunc,
@@ -202,7 +205,7 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
                     if word_predicate.is_unicode_alphabet_word() {
                         CharType::Word(WordCharType::Hanzi)
                     } else {
-                        CharType::NonWord(NonWordCharType::Other)
+                        CharType::NonWord(NonWordCharType::Hanzi)
                     }
                 }
                 RIGHT_PUNC!() => CharType::NonWord(NonWordCharType::RightPunc),
@@ -264,7 +267,7 @@ mod tests {
         assert!(matches!(categorize_char('\u{3000}', &wp), CharType::Space));
         assert!(matches!(
             categorize_char('我', &wp),
-            CharType::NonWord(NonWordCharType::Other)
+            CharType::NonWord(NonWordCharType::Hanzi)
         ));
         assert!(matches!(
             categorize_char('，', &wp),
@@ -315,7 +318,7 @@ mod tests {
         assert!(matches!(categorize_char('\u{3000}', &wp), CharType::Space));
         assert!(matches!(
             categorize_char('我', &wp),
-            CharType::NonWord(NonWordCharType::Other)
+            CharType::NonWord(NonWordCharType::Hanzi)
         ));
         assert!(matches!(
             categorize_char('，', &wp),
@@ -418,7 +421,7 @@ mod tests {
         assert!(matches!(categorize_char('\u{3000}', &wp), CharType::Space));
         assert!(matches!(
             categorize_char('我', &wp),
-            CharType::NonWord(NonWordCharType::Other)
+            CharType::NonWord(NonWordCharType::Hanzi)
         ));
         assert!(matches!(
             categorize_char('，', &wp),

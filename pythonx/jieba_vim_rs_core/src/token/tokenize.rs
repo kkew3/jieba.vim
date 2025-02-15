@@ -186,6 +186,9 @@ enum WordCharGroupType {
 /// Non-word character group types.
 #[derive(Debug, PartialEq, Eq)]
 enum NonWordCharGroupType {
+    /// A sequence of [`CharType::Word`] that contains [`WordCharType::Hanzi`].
+    /// This happens when '@' is not in `'iskeyword'`.
+    Hanzi,
     /// A sequence of [`CharType::NonWord`] that ends with a
     /// [`NonWordCharType::RightPunc`].
     RightPuncEnding,
@@ -225,6 +228,9 @@ impl From<CharToken> for CharTokenGroup {
                     CharGroupType::NonWord(
                         NonWordCharGroupType::RightPuncEnding,
                     )
+                }
+                CharType::NonWord(NonWordCharType::Hanzi) => {
+                    CharGroupType::NonWord(NonWordCharGroupType::Hanzi)
                 }
                 CharType::NonWord(NonWordCharType::Other) => {
                     CharGroupType::NonWord(NonWordCharGroupType::Other)
@@ -402,6 +408,10 @@ impl CharTokenGroup {
             | (G::NonWord(NG::RightPuncEnding), CombiningDiacriticalMark) => {
                 do_push(self, c)
             }
+            (G::NonWord(NG::Hanzi), NonWord(N::Hanzi))
+            | (G::NonWord(NG::Hanzi), CombiningDiacriticalMark) => {
+                do_push(self, c)
+            }
 
             (G::NonWord(NG::Other), NonWord(N::Other))
             | (G::NonWord(NG::Other), CombiningDiacriticalMark) => {
@@ -437,6 +447,9 @@ impl CharTokenGroup {
                 Err(CharTokenGroupPushError::Singleton(c.into()))
             }
 
+            (G::NonWord(NG::Hanzi), NonWord(_)) => {
+                Err(CharTokenGroupPushError::Singleton(c.into()))
+            }
             (G::NonWord(NG::RightPuncEnding), Word(_)) => {
                 let c = CharTokenGroup::from(c);
                 let ispace = ImplicitWhitespace::new(c.col.start_byte_index);
@@ -444,6 +457,7 @@ impl CharTokenGroup {
             }
             (G::NonWord(_), Space)
             | (G::NonWord(_), Word(_))
+            | (G::NonWord(_), NonWord(N::Hanzi))
             | (G::NonWord(_), Emoji) => {
                 Err(CharTokenGroupPushError::Singleton(c.into()))
             }
