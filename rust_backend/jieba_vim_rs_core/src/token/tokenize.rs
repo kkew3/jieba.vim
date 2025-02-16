@@ -85,6 +85,10 @@ pub trait TokenLike {
     fn last_char1(&self) -> usize;
 }
 
+fn get_token<'a, T: TokenLike>(line: &'a str, token: &T) -> &'a str {
+    &line[token.first_char()..token.last_char1()]
+}
+
 /// The column location of a token in a line.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 struct Col {
@@ -127,7 +131,6 @@ macro_rules! impl_token_like_from_col {
 /// A Char token.
 #[derive(Debug)]
 struct CharToken {
-    ch: char,
     col: Col,
     ty: CharType,
 }
@@ -137,7 +140,6 @@ impl_token_like_from_col!(CharToken);
 impl<C> Tokenizer<C> {
     fn new_char_token(&self, ch: char, start_byte_index: usize) -> CharToken {
         CharToken {
-            ch,
             col: Col {
                 start_byte_index,
                 incl_end_byte_index: start_byte_index,
@@ -208,7 +210,6 @@ enum NonWordCharGroupType {
 /// A non-empty group of [`CharToken`]s of compatible types.
 #[derive(Debug, PartialEq, Eq)]
 struct CharTokenGroup {
-    chars: Vec<char>,
     col: Col,
     ty: CharGroupType,
 }
@@ -219,7 +220,6 @@ impl From<CharToken> for CharTokenGroup {
     /// Construct a [`CharTokenGroup`] from a [`CharToken`] token.
     fn from(c: CharToken) -> Self {
         Self {
-            chars: vec![c.ch],
             col: c.col,
             ty: match c.ty {
                 CharType::Space => CharGroupType::Space,
@@ -363,7 +363,6 @@ impl CharTokenGroup {
             group: &mut CharTokenGroup,
             c: CharToken,
         ) -> Result<(), CharTokenGroupPushError> {
-            group.chars.push(c.ch);
             // Combining diacritical marks modify previous character only, and
             // does not take space.
             match &c.ty {
@@ -486,9 +485,8 @@ impl CharTokenGroup {
     /// combining diacritical mark too, as it would have been pushed to `self`.
     /// Therefore, we don't need to worry about `other` being such type as long
     /// as this method is called after [`CharTokenGroup::push`].
-    fn append(&mut self, mut other: CharTokenGroup) {
+    fn append(&mut self, other: CharTokenGroup) {
         assert_eq!(self.col.excl_end_byte_index, other.col.start_byte_index);
-        self.chars.append(&mut other.chars);
         self.col.incl_end_byte_index = other.col.incl_end_byte_index;
         self.col.excl_end_byte_index = other.col.excl_end_byte_index;
     }
@@ -611,12 +609,14 @@ impl<C> Tokenizer<C> {
     /// if `self.chars.len() != sizes.sum()`.
     fn split_into_subgroups(
         &self,
+        line: &str,
         char_group: CharTokenGroup,
         sizes: Vec<usize>,
     ) -> Vec<CharTokenGroup> {
-        assert_eq!(char_group.chars.len(), sizes.iter().sum::<usize>());
+        let token = get_token(line, &char_group);
+        assert_eq!(token.chars().count(), sizes.iter().sum::<usize>());
         let mut sub_groups = Vec::with_capacity(sizes.len());
-        let mut chars = char_group.chars.into_iter();
+        let mut chars = token.chars();
         let mut start = char_group.col.start_byte_index;
         for sz in sizes {
             let mut sub_chars = (0..sz).map(|_| {
@@ -692,14 +692,13 @@ fn insert_implicit_whitespace_in_cut_result(
 ///    cut group.
 /// 4. Count the number of chars in each cut group and return.
 fn cut_hanzi_group_and_count_chars<C: JiebaPlaceholder>(
+    line: &str,
     group: &CharTokenGroup,
     jieba: &C,
 ) -> Vec<usize> {
-    let mut marks = Vec::with_capacity(group.chars.len());
-    let group_string_no_marks: String = group
-        .chars
-        .iter()
-        .copied()
+    let mut marks = Vec::new();
+    let group_string_no_marks: String = get_token(line, group)
+        .chars()
         .filter_map(|c| {
             let is_mark = char::is_combining_diacritical_mark(c);
             marks.push(is_mark);
@@ -796,6 +795,7 @@ fn append_mark_to_cuts(
 fn cut_hanzi_rule<C: JiebaPlaceholder>(
     prev_group: Option<MaybeImplicitCharTokenGroup>,
     group: MaybeImplicitCharTokenGroup,
+    line: &str,
     tokenizer: &Tokenizer<C>,
 ) -> Vec<MaybeImplicitCharTokenGroup> {
     use CharGroupType::*;
@@ -809,8 +809,9 @@ fn cut_hanzi_rule<C: JiebaPlaceholder>(
         CharTokenGroup(group) => match group.ty {
             Word(W::Hanzi) => {
                 let n_chars =
-                    cut_hanzi_group_and_count_chars(&group, tokenizer);
-                let sub_groups = tokenizer.split_into_subgroups(group, n_chars);
+                    cut_hanzi_group_and_count_chars(line, &group, tokenizer);
+                let sub_groups =
+                    tokenizer.split_into_subgroups(line, group, n_chars);
                 // In the case where `group` is the first group, it's likely
                 // that the first sub-group is a combining diacritical mark,
                 // and we need to convert it again to a word. This happens
@@ -835,10 +836,11 @@ fn cut_hanzi_rule<C: JiebaPlaceholder>(
 /// See [`cut_hanzi_rule`] for details.
 fn cut_hanzi<C: JiebaPlaceholder>(
     groups: Vec<MaybeImplicitCharTokenGroup>,
+    line: &str,
     tokenizer: &Tokenizer<C>,
 ) -> Vec<MaybeImplicitCharTokenGroup> {
     utils::stack_merge(groups, |prev_group, group| {
-        cut_hanzi_rule(prev_group, group, tokenizer)
+        cut_hanzi_rule(prev_group, group, line, tokenizer)
     })
 }
 
@@ -931,10 +933,14 @@ fn remove_implicit_whitespace(
 
 impl<C: JiebaPlaceholder> Tokenizer<C> {
     /// Parse a vec of [`CharToken`]s into `word`s and space.
-    fn parse_chars_into_words(&self, chars: Vec<CharToken>) -> Vec<Token> {
+    fn parse_chars_into_words(
+        &self,
+        line: &str,
+        chars: Vec<CharToken>,
+    ) -> Vec<Token> {
         let groups = group_chars(chars);
         let groups = convert_first_cdm_group(groups);
-        let groups = cut_hanzi(groups, self);
+        let groups = cut_hanzi(groups, line, self);
         let groups = remove_implicit_whitespace(groups);
         groups.into_iter().map(Token::from).collect()
     }
@@ -982,10 +988,14 @@ fn concat_nonspace_groups(
 impl<C: JiebaPlaceholder> Tokenizer<C> {
     /// Parse a vec of [`CharToken`]s into `WORD`s and space.
     #[allow(non_snake_case)]
-    fn parse_chars_into_WORDs(&self, chars: Vec<CharToken>) -> Vec<Token> {
+    fn parse_chars_into_WORDs(
+        &self,
+        line: &str,
+        chars: Vec<CharToken>,
+    ) -> Vec<Token> {
         let groups = group_chars(chars);
         let groups = convert_first_cdm_group(groups);
-        let groups = cut_hanzi(groups, self);
+        let groups = cut_hanzi(groups, line, self);
         let groups = concat_nonspace_groups(groups);
         let groups = remove_implicit_whitespace(groups);
         groups.into_iter().map(Token::from).collect()
@@ -999,9 +1009,9 @@ impl<C: JiebaPlaceholder> Tokenizer<C> {
     pub fn parse_str(&self, line: &str, into_word: bool) -> Vec<Token> {
         let chars = self.parse_str_into_chars(line, 0);
         if into_word {
-            self.parse_chars_into_words(chars)
+            self.parse_chars_into_words(line, chars)
         } else {
-            self.parse_chars_into_WORDs(chars)
+            self.parse_chars_into_WORDs(line, chars)
         }
     }
 }
@@ -1049,7 +1059,6 @@ mod tests {
         assert_eq!(
             cg,
             CharTokenGroup {
-                chars: vec!['h', 'e', 'l', 'l', 'o'],
                 col: Col {
                     start_byte_index: 0,
                     incl_end_byte_index: 4,
@@ -1058,12 +1067,11 @@ mod tests {
                 ty: CharGroupType::Word(WordCharGroupType::Other),
             }
         );
-        let groups = tokenizer.split_into_subgroups(cg, vec![2, 2, 1]);
+        let groups = tokenizer.split_into_subgroups("hello", cg, vec![2, 2, 1]);
         assert_eq!(
             groups,
             vec![
                 CharTokenGroup {
-                    chars: vec!['h', 'e'],
                     col: Col {
                         start_byte_index: 0,
                         incl_end_byte_index: 1,
@@ -1072,7 +1080,6 @@ mod tests {
                     ty: CharGroupType::Word(WordCharGroupType::Other),
                 },
                 CharTokenGroup {
-                    chars: vec!['l', 'l'],
                     col: Col {
                         start_byte_index: 2,
                         incl_end_byte_index: 3,
@@ -1081,7 +1088,6 @@ mod tests {
                     ty: CharGroupType::Word(WordCharGroupType::Other),
                 },
                 CharTokenGroup {
-                    chars: vec!['o'],
                     col: Col {
                         start_byte_index: 4,
                         incl_end_byte_index: 4,
