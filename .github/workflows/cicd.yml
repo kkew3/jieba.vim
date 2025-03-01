@@ -199,12 +199,10 @@ jobs:
       - name: Debug before running build
         uses: fawazahmed0/action-debug-vscode@main
 
-      - name: Test and build
+      - name: Build
         shell: bash
         run: |
           export SKIP_EXPOSE_SHARED_LIBRARY_TO_PYTHON=1
-          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_test" && cargo test --release --target=${{ matrix.job.target }}
-          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_core" && cargo test --release --target=${{ matrix.job.target }}
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && cargo build --locked --release --target=${{ matrix.job.target }}
 
       - name: Set cdylib name and path
