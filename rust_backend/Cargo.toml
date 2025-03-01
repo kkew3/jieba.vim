@@ -25,4 +25,4 @@ jieba_vim_rs_core = { path = "jieba_vim_rs_core" }
 
 [build-dependencies]
 pyo3-build-config = "0.22.5"
-manual-build-pyo3 = { git = "https://github.com/kkew3/expose-shared-library.git", tag = "0.1.2", version = "0.1.2" }
+manual-build-pyo3 = { git = "https://github.com/kkew3/manual-build-pyo3.git", tag = "0.1.2", version = "0.1.2" }
