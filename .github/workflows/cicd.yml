@@ -185,6 +185,16 @@ jobs:
           target: ${{ matrix.job.target }}
           toolchain: "${{ contains(matrix.job.target, 'windows-') && '1.77.2' || 'stable' }}"
 
+      # Somehow dtolnay/rust-toolchain does not install non-host targets
+      - name: Patch rust toolchain
+        shell: bash
+        run: |
+          case ${{ matrix.job.target }} in
+            aarch64-unknown-linux-gnu)
+              rustup install --force-non-host stable-aarch64-unknown-linux-gnu
+              ;;
+          esac
+
       - name: Show version information (Rust, cargo, gcc)
         shell: bash
         run: |
