@@ -24,7 +24,9 @@ jobs:
           toolchain: stable
       - name: Show version information
         shell: bash
-        run: rustup toolchain list
+        run: |
+          rustup toolchain list
+          rustup target list
 
   unit_test_integration_test:
     name: "Unit test and integration test for ${{ matrix.vim.dist }} @ ${{ matrix.vim.version }}"
