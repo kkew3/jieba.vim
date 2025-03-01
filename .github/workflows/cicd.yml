@@ -124,7 +124,7 @@ jobs:
           export VIM_BUNDLE_PATH="$GITHUB_WORKSPACE/vim_bundle"
           export VIM_BIN_NAME=${{ matrix.vim.dist }}
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_core"
-          cargo test -F verifiable_case
+          cargo test -F verifiable_case --release
       
       - name: Build
         run: |
@@ -144,6 +144,7 @@ jobs:
           pytest
 
   # Reference: https://github.com/sharkdp/fd/blob/master/.github/workflows/CICD.yml
+  # Reference: https://github.com/mlua-rs/mlua/blob/main/.github/workflows/main.yml
   build:
     name: Build for ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
@@ -157,57 +158,32 @@ jobs:
           # https://github.com/kkew3/jieba.vim/issues/8.
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-22.04
-            use-cross: true
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
-            use-cross: true
           - target: aarch64-apple-darwin
             os: macos-14
           - target: x86_64-pc-windows-msvc
             os: windows-2022
-    env:
-      BUILD_CMD: cargo
     steps:
       - uses: actions/checkout@v4
         with:
           path: jieba_vim
 
-      - name: Install prerequisites
+      - name: Install ARM compiler toolchain
         shell: bash
         run: |
           case ${{ matrix.job.target }} in
             aarch64-unknown-linux-gnu)
               sudo apt-get update
-              sudo apt-get install -y gcc-aarch64-linux-gnu
+              sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu libc6-dev-arm64-cross
               ;;
           esac
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.job.target }}
+          target: ${{ matrix.job.target }}
           toolchain: "${{ contains(matrix.job.target, 'windows-') && '1.77.2' || 'stable' }}"
-
-      # Somehow dtolnay/rust-toolchain does not install non-host targets
-      - name: Patch rust toolchain
-        shell: bash
-        run: |
-          case ${{ matrix.job.target }} in
-            aarch64-unknown-linux-gnu)
-              rustup install --force-non-host stable-aarch64-unknown-linux-gnu
-              ;;
-          esac
-
-      - name: Install cross
-        if: matrix.job.use-cross
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cross
-
-      - name: Overwrite build command env variable
-        if: matrix.job.use-cross
-        shell: bash
-        run: echo "BUILD_CMD=cross" >> $GITHUB_ENV
 
       - name: Show version information (Rust, cargo, gcc)
         shell: bash
@@ -216,16 +192,15 @@ jobs:
           rustup -V
           rustup toolchain list
           rustup default
+          rustup target list | grep installed
           cargo -V
           rustc -V
 
-      - name: Test and build
+      - name: Build
         shell: bash
         run: |
           export SKIP_EXPOSE_SHARED_LIBRARY_TO_PYTHON=1
-          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_test" && $BUILD_CMD test --release --target=${{ matrix.job.target }}
-          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_core" && $BUILD_CMD test --release --target=${{ matrix.job.target }}
-          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && $BUILD_CMD build --locked --release --target=${{ matrix.job.target }}
+          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && cargo build --locked --release --target=${{ matrix.job.target }}
 
       - name: Set cdylib name and path
         id: cdylib
