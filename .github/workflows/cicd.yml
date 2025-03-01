@@ -124,7 +124,7 @@ jobs:
           export VIM_BUNDLE_PATH="$GITHUB_WORKSPACE/vim_bundle"
           export VIM_BIN_NAME=${{ matrix.vim.dist }}
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_core"
-          cargo test -F verifiable_case
+          cargo test -F verifiable_case --release
       
       - name: Build
         run: |
