@@ -192,6 +192,7 @@ jobs:
           rustup -V
           rustup toolchain list
           rustup default
+          rustup target list | grep installed
           cargo -V
           rustc -V
 
