@@ -148,7 +148,6 @@ jobs:
   build:
     name: Build for ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
-    needs: unit_test_integration_test
     strategy:
       fail-fast: false
       matrix:
@@ -199,6 +198,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          test ! -f "$GITHUB_WORKSPACE/jieba_vim/rust_backend/Cargo.lock" || { ls -l "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && false; }
           export SKIP_EXPOSE_SHARED_LIBRARY_TO_PYTHON=1
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && cargo build --locked --release --target=${{ matrix.job.target }}
 
