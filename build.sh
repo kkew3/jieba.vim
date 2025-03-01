@@ -39,7 +39,7 @@ download_release() {
 }
 
 build_from_source() {
-    cd rust_backend && cargo build -r
+    cd rust_backend && cargo build -r -F expose-shared-library
 }
 
 if has git uname curl; then
