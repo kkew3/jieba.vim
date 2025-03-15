@@ -14,7 +14,7 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 
 特色一览：
 
-- 增强 vim word motions 使其能够处理汉字。
+- 增强 Vim word motions 使其能够处理汉字。
 - 测试丰富，覆盖各种边缘用例。
 - 使用 Rust + Python 编写，有速度保证。
 - 为主流平台提供预编译链接库，无需本地 Rust 开发环境。
@@ -131,10 +131,10 @@ That's why I develop this plugin.
 
 Features overview:
 
-- Augmented vim word motions for Chinese.
-- Backed by tests, covering edge cases.
-- Written in Rust + Python, providing fluent user experience.
-- No need for local Rust development environment on major OS and platforms.
+- Enhanced Vim word motions for Chinese characters.
+- Extensive testing covering various edge cases.
+- Built with Rust + Python for better performance.
+- Precompiled libraries available for major platforms, no local Rust environment required.
 
 ## Installation
 
