@@ -26,7 +26,7 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 对于 [vim-plug][6]，使用如下代码安装最新稳定版：
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.4', 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': './build.sh' }
 ```
 
 其中 `./build.sh` 用于下载预编译链接库，然后如果没有找到的话再尝试本地编译。
@@ -44,7 +44,7 @@ vim +"py3 print(sys.version)"
 ```lua
 {
     "kkew3/jieba.vim",
-    tag = "v1.0.4",
+    tag = "v1.0.5",
     build = "./build.sh",
     init = function()
       vim.g.jieba_vim_lazy = 1
@@ -144,7 +144,7 @@ This plugin was developed using Python3 + Rust.
 For [vim-plug][6], the latest stable version is installable using:
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.4', 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': './build.sh' }
 ```
 
 where `./build.sh` is used to download precompiled shared library.
@@ -162,7 +162,7 @@ For Neovim users, it can be installed using lazy.nvim:
 ```lua
 {
   "kkew3/jieba.vim",
-  tag = "v1.0.4",
+  tag = "v1.0.5",
   build = "./build.sh",
   init = function()
     vim.g.jieba_vim_lazy = 1
