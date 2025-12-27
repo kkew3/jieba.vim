@@ -8,6 +8,3 @@ dependencies = [
     "pytest (>=8.3.4,<9.0.0)",
     "pynvim (>=0.5.2,<0.6.0)",
 ]
-
-[tool.poetry]
-package-mode = false
