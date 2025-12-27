@@ -1,7 +1,7 @@
 [package]
 name = "jieba_vim_rs_core"
 version = "0.1.5"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 unic-emoji-char = "0.9"
