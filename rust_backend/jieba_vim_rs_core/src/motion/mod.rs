@@ -13,9 +13,9 @@
 // under the License.
 
 #[cfg(test)]
-use crate::token::jieba::KeywordCutter;
-#[cfg(test)]
 use crate::token::Tokenizer;
+#[cfg(test)]
+use crate::token::jieba::KeywordCutter;
 #[cfg(test)]
 use jieba_vim_rs_test::verified_case::cases::MotionOutput as TestMotionOutput;
 #[cfg(test)]

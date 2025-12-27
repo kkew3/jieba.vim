@@ -235,7 +235,7 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
 mod tests {
     use crate::token::isk::{IskParser, WordPredicate};
 
-    use super::{categorize_char, CharType, NonWordCharType, WordCharType};
+    use super::{CharType, NonWordCharType, WordCharType, categorize_char};
 
     #[test]
     fn test_categorize_char() {

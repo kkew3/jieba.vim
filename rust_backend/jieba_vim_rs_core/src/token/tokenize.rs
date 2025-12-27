@@ -16,9 +16,9 @@
 
 use crate::utils;
 
+use super::JiebaPlaceholder;
 use super::char::{self, CharType, NonWordCharType, WordCharType};
 use super::isk::WordPredicate;
-use super::JiebaPlaceholder;
 
 /// The tokenizer.
 pub struct Tokenizer<C> {
@@ -702,11 +702,7 @@ fn cut_hanzi_group_and_count_chars<C: JiebaPlaceholder>(
         .filter_map(|c| {
             let is_mark = char::is_combining_diacritical_mark(c);
             marks.push(is_mark);
-            if is_mark {
-                None
-            } else {
-                Some(c)
-            }
+            if is_mark { None } else { Some(c) }
         })
         .collect();
     let cut_char_counts0 = utils::chain_into_vec(
@@ -1020,12 +1016,12 @@ impl<C: JiebaPlaceholder> Tokenizer<C> {
 mod tests {
     use proptest::prelude::*;
 
-    use crate::token::jieba::KeywordCutter;
     use crate::token::JiebaPlaceholder;
+    use crate::token::jieba::KeywordCutter;
 
     use super::{
-        append_mark_to_cuts, CharGroupType, CharTokenGroup, Col, Token,
-        TokenType, Tokenizer, WordCharGroupType,
+        CharGroupType, CharTokenGroup, Col, Token, TokenType, Tokenizer,
+        WordCharGroupType, append_mark_to_cuts,
     };
 
     #[test]
@@ -2110,8 +2106,7 @@ mod tests {
 
         // Example from http://demo.danielmclaren.com/2015/diacriticism/.
         // i.e. "f̸̰̻̯̙̳́̍͗̕o͕̟̫ͮ͆̉̾̍̉̏o̵͖̪͇̪̥͗̈ͭ̕ B̶̬̣̜̱̜͉̾ͩ͌a͚̯̮͒ͬ̆̊̍͂̕r̹̥̟̘̱͙͊͗̀̓".
-        const SENT: &str =
-            "f\u{0330}\u{0338}\u{0315}\u{033b}\u{0301}\u{032f}\u{0319}\
+        const SENT: &str = "f\u{0330}\u{0338}\u{0315}\u{033b}\u{0301}\u{032f}\u{0319}\
             \u{030d}\u{0357}\u{0333}o\u{036e}\u{0355}\u{0346}\u{031f}\u{0309}\
             \u{033e}\u{032b}\u{030d}\u{0309}\u{030f}o\u{0357}\u{0356}\u{032a}\
             \u{0308}\u{0347}\u{032a}\u{0315}\u{036d}\u{0325}\u{0335} B\u{032c}\

@@ -23,7 +23,7 @@ use jieba_vim_rs_test::verified_case::cases::{
     XmapGeCase, XmapWCase,
 };
 use jieba_vim_rs_test::verified_case::{
-    verify_cases, Count, Mode, Motion, Operator,
+    Count, Mode, Motion, Operator, verify_cases,
 };
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;

@@ -17,9 +17,9 @@ use std::fs::File;
 use std::io::BufReader;
 
 use jieba_rs::Jieba;
+use jieba_vim_rs_core::BufferLike;
 use jieba_vim_rs_core::motion::{MotionOutput, WordMotion};
 use jieba_vim_rs_core::token::{JiebaPlaceholder, Tokenizer};
-use jieba_vim_rs_core::BufferLike;
 use pyo3::exceptions::{PyIOError, PyValueError};
 use pyo3::prelude::*;
 

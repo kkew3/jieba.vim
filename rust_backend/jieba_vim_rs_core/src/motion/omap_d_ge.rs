@@ -12,11 +12,11 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use crate::BufferLike;
 use crate::token::token_iter::{BackwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
-use crate::BufferLike;
 
-use super::{d_special, MotionOutput, WordMotion};
+use super::{MotionOutput, WordMotion, d_special};
 
 /// Test if a token is stoppable for `omap_d_ge`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
