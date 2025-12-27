@@ -478,7 +478,7 @@ impl TryFrom<CharSpec> for u8 {
     /// Convert `value` to `char`, treating '@' as a special case.
     fn try_from(value: CharSpec) -> Result<Self, Self::Error> {
         match value {
-            CharSpec::Number(num) => Ok(num.into()),
+            CharSpec::Number(num) => Ok(num),
             CharSpec::Char(ch) => {
                 if ch == '@' {
                     Err(AtSymbol)

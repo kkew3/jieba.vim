@@ -29,5 +29,5 @@ where
     I: IntoIterator<Item = T>,
     J: IntoIterator<Item = T>,
 {
-    i.into_iter().chain(j.into_iter()).collect()
+    i.into_iter().chain(j).collect()
 }

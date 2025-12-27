@@ -111,7 +111,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                     col = item.token.last_char1();
                     count -= 1;
                 } else if count == 1 && item.eol && it.peek().is_some() {
-                    if let None = item.token {
+                    if item.token.is_none() {
                         let next_item = it.next().unwrap()?;
                         lnum = next_item.lnum;
                         col = next_item.token.first_char();

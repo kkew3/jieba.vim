@@ -92,7 +92,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 if it.peek().is_none() && count > 0 {
                     col = item.token.first_char();
                     count -= 1;
-                    if let None = item.token {
+                    if item.token.is_none() {
                         prevent_change = true;
                     }
                 }
