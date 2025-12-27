@@ -184,14 +184,14 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
         SPACE!() => CharType::Space,
         COMBINING_DIACRITICAL_MARK!() => CharType::CombiningDiacriticalMark,
         c => match super::ascii_or(c) {
-            Ok(ascii) => {
+            Some(ascii) => {
                 if word_predicate.is_ascii_word(ascii) {
                     CharType::Word(WordCharType::Other)
                 } else {
                     CharType::NonWord(NonWordCharType::Other)
                 }
             }
-            Err(c) => match c {
+            None => match c {
                 HANZI!() => {
                     if word_predicate.is_unicode_alphabet_word() {
                         CharType::Word(WordCharType::Hanzi)

@@ -483,7 +483,7 @@ impl TryFrom<CharSpec> for u8 {
                 if ch == '@' {
                     Err(AtSymbol)
                 } else {
-                    Ok(super::ascii_or(ch).unwrap_or_else(|_| {
+                    Ok(super::ascii_or(ch).unwrap_or_else(|| {
                         panic!("CharSpec holds non-ASCII char: {}", ch)
                     }))
                 }

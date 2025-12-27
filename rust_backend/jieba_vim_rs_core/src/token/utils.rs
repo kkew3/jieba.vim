@@ -18,11 +18,11 @@ pub fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
 }
 
 /// Try to convert `c` to an ASCII. If failed, give back `c`.
-pub fn ascii_or(c: char) -> Result<u8, char> {
+pub fn ascii_or(c: char) -> Option<u8> {
     if c as u32 <= u8::MAX as u32 {
-        Ok(c as u8)
+        Some(c as u8)
     } else {
-        Err(c)
+        None
     }
 }
 
