@@ -183,7 +183,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           target: ${{ matrix.job.target }}
-          toolchain: "${{ contains(matrix.job.target, 'windows-') && '1.77.2' || 'stable' }}"
+          toolchain: stable
 
       - name: Show version information (Rust, cargo, gcc)
         shell: bash
