@@ -24,7 +24,7 @@ jobs:
           - dist: nvim
             version: v0.10.2
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: jieba_vim
       - uses: dtolnay/rust-toolchain@stable
@@ -169,7 +169,7 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: jieba_vim
 
