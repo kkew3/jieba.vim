@@ -46,12 +46,14 @@ def preview(preview_func):
     """
     vim.command('hi link JiebaPreview IncSearch')
     limit = get_preview_limit()
-    cursor_positions = preview_func(vim.current.buffer,
-                                    vim.current.window.cursor, limit)
+    cursor_positions = preview_func(
+        vim.current.buffer, vim.current.window.cursor, limit
+    )
     if cursor_positions:
         # build match pattern if there's any positions to highlight
-        match_pat = '|'.join('%{}c%{}l'.format(col + 1, row)
-                             for row, col in cursor_positions)
+        match_pat = '|'.join(
+            '%{}c%{}l'.format(col + 1, row) for row, col in cursor_positions
+        )
         vim.command('match JiebaPreview /\\v{}/'.format(match_pat))
     else:
         preview_cancel()
