@@ -1,7 +1,7 @@
 [package]
 name = "jieba_vim_rs_test"
 version = "0.1.4"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 once_cell = "1.20"
