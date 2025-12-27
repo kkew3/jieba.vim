@@ -712,7 +712,7 @@ fn cut_hanzi_group_and_count_chars<C: JiebaPlaceholder>(
             .into_iter()
             .map(|part| part.chars().count()),
     );
-    
+
     append_mark_to_cuts(&marks, &cut_char_counts0)
 }
 
