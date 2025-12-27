@@ -4,18 +4,10 @@ updates:
     directory: "/rust_backend"
     schedule:
       interval: "weekly"
-  - package-ecosystem: "cargo"
-    directory: "/rust_backend/jieba_vim_rs_core"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "cargo"
-    directory: "/rust_backend/jieba_vim_rs_test"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "cargo"
-    directory: "/rust_backend/jieba_vim_rs_test_macro"
-    schedule:
-      interval: "weekly"
+    groups:
+      rust-deps:
+        patterns:
+          - '*'
   - package-ecosystem: "pip"
     directory: "/test"
     schedule:
