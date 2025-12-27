@@ -2,7 +2,7 @@
 name = "jieba-vim-integration-test"
 version = "0.1.0"
 description = "Integration tests of jieba.vim."
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "jinja2==3.1.5",
     "pynvim==0.5.2",
