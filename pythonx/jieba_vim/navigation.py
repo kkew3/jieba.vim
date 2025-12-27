@@ -40,7 +40,7 @@ These names are dynamically defined in this module::
     - omap_gE
 """
 
-import vim
+import vim  # type: ignore
 
 from . import jieba_vim_rs
 

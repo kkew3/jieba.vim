@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import vim
+import vim  # type: ignore
 
 PREVIEW_MAX_LIMIT = 99999
 
