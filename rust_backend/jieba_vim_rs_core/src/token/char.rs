@@ -178,29 +178,20 @@ macro_rules! RIGHT_PUNC {
 
 // === END OF QUOTES FROM Thomas Roten ===
 
-/// Try to convert `c` to an ASCII. If failed, give back `c`.
-fn ascii_or(c: char) -> Result<u8, char> {
-    if c as u32 <= u8::MAX as u32 {
-        Ok(c as u8)
-    } else {
-        Err(c)
-    }
-}
-
 /// Categorize a char into [`CharType`], according to [`WordPredicate`].
 pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
     match c {
         SPACE!() => CharType::Space,
         COMBINING_DIACRITICAL_MARK!() => CharType::CombiningDiacriticalMark,
-        c => match ascii_or(c) {
-            Ok(ascii) => {
+        c => match super::ascii_or(c) {
+            Some(ascii) => {
                 if word_predicate.is_ascii_word(ascii) {
                     CharType::Word(WordCharType::Other)
                 } else {
                     CharType::NonWord(NonWordCharType::Other)
                 }
             }
-            Err(c) => match c {
+            None => match c {
                 HANZI!() => {
                     if word_predicate.is_unicode_alphabet_word() {
                         CharType::Word(WordCharType::Hanzi)

@@ -478,16 +478,14 @@ impl TryFrom<CharSpec> for u8 {
     /// Convert `value` to `char`, treating '@' as a special case.
     fn try_from(value: CharSpec) -> Result<Self, Self::Error> {
         match value {
-            CharSpec::Number(num) => Ok(num.into()),
+            CharSpec::Number(num) => Ok(num),
             CharSpec::Char(ch) => {
                 if ch == '@' {
                     Err(AtSymbol)
                 } else {
-                    if ch as u32 <= u8::MAX as u32 {
-                        Ok(ch as u8)
-                    } else {
+                    Ok(super::ascii_or(ch).unwrap_or_else(|| {
                         panic!("CharSpec holds non-ASCII char: {}", ch)
-                    }
+                    }))
                 }
             }
         }

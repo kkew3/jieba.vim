@@ -37,11 +37,11 @@ impl<'b, 'py> BufferLike for BoundWrapper<'b, 'py, PyAny> {
     type Error = PyErr;
 
     fn getline(&self, lnum: usize) -> Result<String, Self::Error> {
-        Ok(self.0.get_item(lnum - 1)?.extract::<String>()?)
+        self.0.get_item(lnum - 1)?.extract::<String>()
     }
 
     fn lines(&self) -> Result<usize, Self::Error> {
-        Ok(self.0.len()?)
+        self.0.len()
     }
 }
 
@@ -121,7 +121,7 @@ impl WordMotionWrapper {
             None => Jieba::new(),
             Some(path) => {
                 let mut reader = BufReader::new(
-                    File::open(path).map_err(|err| PyIOError::new_err(err))?,
+                    File::open(path).map_err(PyIOError::new_err)?,
                 );
                 Jieba::with_dict(&mut reader).map_err(|err| {
                     PyValueError::new_err(format!("jieba error: {}", err))
@@ -690,7 +690,7 @@ impl LazyWordMotionWrapper {
     pub fn new(isk_option: &str, path: Option<String>) -> PyResult<Self> {
         // Check if `path` is readable beforehand.
         if let Some(path) = &path {
-            File::open(path).map_err(|err| PyIOError::new_err(err))?;
+            File::open(path).map_err(PyIOError::new_err)?;
         }
         let jieba = LazyJiebaWrapper {
             path,
