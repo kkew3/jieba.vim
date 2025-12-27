@@ -12,4 +12,8 @@ updates:
     directory: "/test"
     schedule:
       interval: "weekly"
+    groups:
+      integration-test-deps:
+        patterns:
+          - '*'
     # pyproject.toml is supported for pip since dependabot v2
