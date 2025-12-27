@@ -12,9 +12,9 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use std::cell::RefCell;
 use std::fs::File;
 use std::io::BufReader;
+use std::sync::OnceLock;
 
 use jieba_rs::Jieba;
 use jieba_vim_rs_core::BufferLike;
@@ -55,14 +55,13 @@ impl JiebaPlaceholder for JiebaWrapper {
 
 struct LazyJiebaWrapper {
     path: Option<String>,
-    jieba: RefCell<Option<Jieba>>,
+    jieba: OnceLock<Jieba>,
 }
 
 impl JiebaPlaceholder for LazyJiebaWrapper {
     fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
         self.jieba
-            .borrow_mut()
-            .get_or_insert_with(|| match &self.path {
+            .get_or_init(|| match &self.path {
                 None => Jieba::new(),
                 Some(path) => {
                     let mut reader = BufReader::new(File::open(path).unwrap());
@@ -685,7 +684,7 @@ impl LazyWordMotionWrapper {
         }
         let jieba = LazyJiebaWrapper {
             path,
-            jieba: RefCell::new(None),
+            jieba: OnceLock::new(),
         };
         let tokenizer =
             Tokenizer::try_new(jieba, isk_option).map_err(|_| {
