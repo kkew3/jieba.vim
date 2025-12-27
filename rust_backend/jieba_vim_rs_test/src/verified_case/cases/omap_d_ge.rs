@@ -19,9 +19,9 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use super::super::vim_env::VimDistro;
 use super::super::Count;
-use super::{utils, MotionOutput, VerifiableCase, TEMPLATES};
+use super::super::vim_env::VimDistro;
+use super::{MotionOutput, TEMPLATES, VerifiableCase, utils};
 use crate::cursor_marker::{self, CursorMarker};
 
 #[derive(PartialEq, Clone, Serialize, Deserialize)]
@@ -61,11 +61,7 @@ impl OmapDGeCase {
     }
 
     fn motion_str(&self) -> &'static str {
-        if self.word {
-            "ge"
-        } else {
-            "gE"
-        }
+        if self.word { "ge" } else { "gE" }
     }
 }
 

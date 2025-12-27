@@ -20,7 +20,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use super::super::Count;
-use super::{utils, MotionOutput, VerifiableCase, TEMPLATES};
+use super::{MotionOutput, TEMPLATES, VerifiableCase, utils};
 use crate::cursor_marker::{self, CursorMarker};
 
 #[derive(PartialEq, Clone, Serialize, Deserialize)]
@@ -57,11 +57,7 @@ impl OmapCBCase {
     }
 
     fn motion_str(&self) -> &'static str {
-        if self.word {
-            "b"
-        } else {
-            "B"
-        }
+        if self.word { "b" } else { "B" }
     }
 }
 

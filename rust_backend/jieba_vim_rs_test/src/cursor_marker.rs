@@ -144,8 +144,8 @@ impl CursorMarker {
 #[cfg(test)]
 mod tests {
     use super::{
-        CursorMarker, CursorPosition, Error, CURSOR_AFTER_CHAR,
-        CURSOR_BEFORE_CHAR,
+        CURSOR_AFTER_CHAR, CURSOR_BEFORE_CHAR, CursorMarker, CursorPosition,
+        Error,
     };
 
     fn into_vec_string<I: IntoIterator<Item = &'static str>>(

@@ -14,8 +14,8 @@
 
 //! Token iterators.
 
-use crate::token::{JiebaPlaceholder, Token, Tokenizer};
 use crate::BufferLike;
+use crate::token::{JiebaPlaceholder, Token, Tokenizer};
 
 /// Item type yieled by token iterators.
 #[derive(Debug, PartialEq, Eq)]

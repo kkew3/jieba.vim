@@ -12,9 +12,9 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use crate::BufferLike;
 use crate::token::token_iter::{ForwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
-use crate::BufferLike;
 
 use super::{MotionOutput, WordMotion};
 

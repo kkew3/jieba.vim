@@ -19,8 +19,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use super::cases::VerifiableCase;
 use super::vim_env::{VimBundlePath, VimDistro};

@@ -12,8 +12,8 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::token::{self, JiebaPlaceholder, TokenLike, TokenType, Tokenizer};
 use crate::BufferLike;
+use crate::token::{self, JiebaPlaceholder, TokenLike, TokenType, Tokenizer};
 
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.

@@ -196,10 +196,6 @@ impl From<Option<u64>> for Count {
 
 impl Count {
     pub fn explicit(&self) -> u64 {
-        if self.0 == 0 {
-            1
-        } else {
-            self.0
-        }
+        if self.0 == 0 { 1 } else { self.0 }
     }
 }
