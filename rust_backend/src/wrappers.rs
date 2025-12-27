@@ -64,8 +64,18 @@ impl JiebaPlaceholder for LazyJiebaWrapper {
             .get_or_init(|| match &self.path {
                 None => Jieba::new(),
                 Some(path) => {
-                    let mut reader = BufReader::new(File::open(path).unwrap());
-                    Jieba::with_dict(&mut reader).unwrap()
+                    let mut reader = BufReader::new(
+                        File::open(path).unwrap_or_else(|err| {
+                            panic!(
+                                "failed to open file `{}` due to: {}",
+                                path, err
+                            )
+                        }),
+                    );
+                    Jieba::with_dict(&mut reader)
+                        .unwrap_or_else(|err| {
+                            panic!("failed to initialize jieba from file `{}` due to: {}", path, err)
+                        })
                 }
             })
             .cut(sentence, true)
