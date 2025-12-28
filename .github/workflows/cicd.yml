@@ -5,9 +5,11 @@ on:
   pull_request:
     branches:
       - rust
-  push:
-    tags:
-      - 'v*'
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 
 jobs:
   unit_test_integration_test:
@@ -125,17 +127,17 @@ jobs:
           export VIM_BIN_NAME=${{ matrix.vim.dist }}
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend/jieba_vim_rs_core"
           cargo test -F verifiable_case --release
-      
+
       - name: Build
         run: |
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend"
           cargo build --locked --release --features=expose-shared-library
-      
+
       - name: Install integration test dependencies
         run: |
           cd "$GITHUB_WORKSPACE/jieba_vim/test"
           pip install .
-      
+
       - name: Run integration tests
         run: |
           cd "$GITHUB_WORKSPACE/jieba_vim/test"
@@ -239,14 +241,25 @@ jobs:
         shell: bash
         run: |
           unset IS_RELEASE
-          if [[ ${{ github.ref }} =~ ^refs/tags/v[0-9].* ]]; then IS_RELEASE='true'; fi
+          unset TAG_NAME
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR title: $PR_TITLE"
+          if echo "$PR_TITLE" | grep -q '^Release: v'; then
+            IS_RELEASE="true"
+            TAG_NAME="$(echo "$PR_TITLE" | cut -c10-)"
+          fi
+          if [ -z "$TAG_NAME" ]; then
+            IS_RELEASE=
+          fi
           echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_OUTPUT
+          echo "RELEASE_TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
 
       - name: Publish cdylib
         uses: softprops/action-gh-release@v2
-        if: steps.is-release.outputs.IS_RELEASE
+        if: ${{ (steps.is-release.outputs.IS_RELEASE == 'true') && (github.event.pull_request.merged == true) }}
         with:
           files: |
             ${{ steps.package.outputs.PKG_PATH }}
+          tag_name: ${{ steps.is-release.outputs.RELEASE_TAG_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
