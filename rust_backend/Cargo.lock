@@ -298,7 +298,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "expose-shared-library",
  "jieba-rs",
@@ -309,7 +309,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_core"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "jieba_vim_rs_test",
  "jieba_vim_rs_test_macro",
