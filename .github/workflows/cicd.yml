@@ -24,7 +24,7 @@ jobs:
           - dist: nvim
             version: v0.10.2
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: jieba_vim
       - uses: dtolnay/rust-toolchain@stable
@@ -162,10 +162,14 @@ jobs:
             os: ubuntu-22.04
           - target: aarch64-apple-darwin
             os: macos-14
+          # macos-15-intel runner is only valid until August 2027. We will need
+          # to revert this change after that.
+          - target: x86_64-apple-darwin
+            os: macos-15-intel
           - target: x86_64-pc-windows-msvc
             os: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: jieba_vim
 
