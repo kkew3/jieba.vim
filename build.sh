@@ -11,7 +11,7 @@ has() {
 
 download_release() {
     curr_commit="$(git rev-parse HEAD)"
-    curr_tag="$(git describe --exact-match "$curr_commit" 2> /dev/null)"
+    curr_tag="$(git tag --points-at "$curr_commit" 2> /dev/null)"
     if [ -z "$curr_tag" ]; then
         return 1
     fi
