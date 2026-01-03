@@ -9,6 +9,9 @@ on:
       - opened
       - synchronize
       - reopened
+  push:
+    branches:
+      - rust
 
 jobs:
   unit_test_integration_test:
