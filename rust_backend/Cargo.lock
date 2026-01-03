@@ -309,7 +309,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_core"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "jieba_vim_rs_test",
  "jieba_vim_rs_test_macro",
