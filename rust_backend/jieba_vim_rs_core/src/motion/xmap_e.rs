@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -157,6 +157,14 @@ mod tests {
     #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
     #[vcase(name = "large_unnecessary_count", buffer = ["a{aa aaaa}"], count = 10293949403)]
     #[vcase(name = "large_unnecessary_count", buffer = ["aaa {aaaa}"], count = 10293949403)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "aa}a"], count = 1)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "   aa}a"], count = 1)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "", "   aa}a"], count = 1)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", " ", "   aa}a"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["aaa aaaa{}"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["aaa     {}"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 100)]
     mod motion_xcmap_e {}
 
     // Copied from xcmap_e above.
@@ -216,6 +224,14 @@ mod tests {
     #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
     #[vcase(name = "large_unnecessary_count", buffer = ["a{aa aaaa}"], count = 10293949403)]
     #[vcase(name = "large_unnecessary_count", buffer = ["aaa {aaaa}"], count = 10293949403)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "aa}a"], count = 1)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "   aa}a"], count = 1)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "", "   aa}a"], count = 1)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", " ", "   aa}a"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["aaa aaaa{}"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["aaa     {}"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 100)]
     mod motion_xlmap_e {}
 
     // Copied from xcmap_e above.
@@ -275,5 +291,13 @@ mod tests {
     #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
     #[vcase(name = "large_unnecessary_count", buffer = ["a{aa aaaa}"], count = 10293949403)]
     #[vcase(name = "large_unnecessary_count", buffer = ["aaa {aaaa}"], count = 10293949403)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "aa}a"], count = 1)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "   aa}a"], count = 1)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "", "   aa}a"], count = 1)]
+    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", " ", "   aa}a"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["aaa aaaa{}"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["aaa     {}"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 100)]
     mod motion_xbmap_e {}
 }

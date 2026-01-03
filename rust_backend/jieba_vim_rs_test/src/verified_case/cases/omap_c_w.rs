@@ -1,4 +1,4 @@
-// Copyright 2024 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -71,7 +71,7 @@ impl VerifiableCase for OmapCWCase {
 
         let ctx = minijinja::context!(buffer);
         TEMPLATES
-            .get_template("setup_omap")
+            .get_template("setup")
             .unwrap()
             .render_to_write(ctx, &mut writer)
             .unwrap();
