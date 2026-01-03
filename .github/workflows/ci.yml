@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI
 
 on:
   workflow_dispatch:
@@ -9,7 +9,6 @@ on:
       - opened
       - synchronize
       - reopened
-      - closed
 
 jobs:
   unit_test_integration_test:
@@ -206,60 +205,3 @@ jobs:
         shell: bash
         run: |
           cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && cargo build --locked --release --target=${{ matrix.job.target }}
-
-      - name: Set cdylib name and path
-        id: cdylib
-        shell: bash
-        run: |
-          LIB_NAME=jieba_vim_rs
-          case ${{ matrix.job.target }} in
-            *-linux-*)      CDYLIB_SUFFIX=".so";    CDYLIB_PREFIX="lib"; ;;
-            *-apple-darwin) CDYLIB_SUFFIX=".dylib"; CDYLIB_PREFIX="lib"; ;;
-            *-pc-windows-*) CDYLIB_SUFFIX=".dll";   CDYLIB_PREFIX="";    ;;
-          esac
-
-          CDYLIB_NAME=${CDYLIB_PREFIX}${LIB_NAME}${CDYLIB_SUFFIX}
-          LIB_PATH="$GITHUB_WORKSPACE/jieba_vim/rust_backend/target/${{ matrix.job.target }}/release/${CDYLIB_NAME}"
-          test -f "$LIB_PATH"
-
-          echo "CDYLIB_SUFFIX=$CDYLIB_SUFFIX" >> $GITHUB_OUTPUT
-          echo "LIB_PATH=$LIB_PATH" >> $GITHUB_OUTPUT
-
-      - name: Rename dylib
-        id: package
-        shell: bash
-        run: |
-          LIB_NAME=jieba_vim_rs
-          PKG_BASEDIR="$GITHUB_WORKSPACE/packages"
-          mkdir -p "$PKG_BASEDIR" && cd "$PKG_BASEDIR"
-          TO_NAME="${LIB_NAME}-${{ matrix.job.target }}${{ steps.cdylib.outputs.CDYLIB_SUFFIX }}"
-          cp "${{ steps.cdylib.outputs.LIB_PATH }}" "$TO_NAME"
-          echo "PKG_PATH=${PKG_BASEDIR}/${TO_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Check for release
-        id: is-release
-        shell: bash
-        run: |
-          unset IS_RELEASE
-          unset TAG_NAME
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          echo "PR title: $PR_TITLE"
-          if echo "$PR_TITLE" | grep -q '^Release: v'; then
-            IS_RELEASE="true"
-            TAG_NAME="$(echo "$PR_TITLE" | cut -c10-)"
-          fi
-          if [ -z "$TAG_NAME" ]; then
-            IS_RELEASE=
-          fi
-          echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_OUTPUT
-          echo "RELEASE_TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Publish cdylib
-        uses: softprops/action-gh-release@v2
-        if: ${{ (steps.is-release.outputs.IS_RELEASE == 'true') && (github.event.pull_request.merged == true) }}
-        with:
-          files: |
-            ${{ steps.package.outputs.PKG_PATH }}
-          tag_name: ${{ steps.is-release.outputs.RELEASE_TAG_NAME }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
