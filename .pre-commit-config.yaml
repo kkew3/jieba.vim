@@ -25,3 +25,9 @@ repos:
         language: system
         types: [rust]
         pass_filenames: false
+      - id: outdated-copyright-check
+        name: outdated copyright notice check
+        entry: uv run --locked --project dev_scripts dev_scripts/check_copyright.py
+        language: system
+        always_run: true
+        pass_filenames: true
