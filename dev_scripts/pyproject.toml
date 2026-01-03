@@ -1,0 +1,7 @@
+[project]
+name = "jieba-vim-dev-scripts"
+version = "0.1.0"
+description = "jieba.vim dev scripts"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
