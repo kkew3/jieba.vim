@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -34,11 +34,6 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ///   buffer, no further jump should be made.
     /// - If there is no previous word to the left of current cursor, jump to
     ///   the first character of the first token in the buffer.
-    ///
-    /// # Panics
-    ///
-    /// - If current cursor `col` is to the right of the last token in current
-    ///   line of the buffer.
     pub fn xmap_ge<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
@@ -57,7 +52,6 @@ mod tests {
     #[cfg(not(feature = "verifiable_case"))]
     use jieba_vim_rs_test_macro::verified_cases_dry_run as verified_cases;
 
-    // Copied from nmap_ge.
     #[verified_cases(
         mode = "xc",
         motion = "ge",
@@ -114,6 +108,9 @@ mod tests {
     #[vcase(name = "two_words_newline_one_word", buffer = ["aaaa aa}a", "", "  ", "{aaa"], count = 2)]
     #[vcase(name = "large_unnecessary_count", buffer = ["}{"], count = 10293949403)]
     #[vcase(name = "large_unnecessary_count", buffer = ["}aaa  aaa{aa"], count = 10293949403)]
+    #[vcase(name = "end_of_buffer", buffer = ["aaa aaa}a{"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["aa}a     {"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["   aaa}a", "     {"], count = 1)]
     mod motion_xcmap_ge {}
 
     // Copied from xcmap_ge above.
@@ -174,6 +171,9 @@ mod tests {
     #[vcase(name = "two_words_newline_one_word", buffer = ["aaaa aa}a", "", "  ", "{aaa"], count = 2)]
     #[vcase(name = "large_unnecessary_count", buffer = ["}{"], count = 10293949403)]
     #[vcase(name = "large_unnecessary_count", buffer = ["}aaa  aaa{aa"], count = 10293949403)]
+    #[vcase(name = "end_of_buffer", buffer = ["aaa aaa}a{"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["aa}a     {"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["   aaa}a", "     {"], count = 1)]
     mod motion_xlmap_ge {}
 
     // Copied from xcmap_ge above.
@@ -234,5 +234,8 @@ mod tests {
     #[vcase(name = "two_words_newline_one_word", buffer = ["aaaa aa}a", "", "  ", "{aaa"], count = 2)]
     #[vcase(name = "large_unnecessary_count", buffer = ["}{"], count = 10293949403)]
     #[vcase(name = "large_unnecessary_count", buffer = ["}aaa  aaa{aa"], count = 10293949403)]
+    #[vcase(name = "end_of_buffer", buffer = ["aaa aaa}a{"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["aa}a     {"], count = 1)]
+    #[vcase(name = "end_of_buffer", buffer = ["   aaa}a", "     {"], count = 1)]
     mod motion_xbmap_ge {}
 }
