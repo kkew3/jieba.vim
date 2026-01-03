@@ -1,6 +1,7 @@
 Execute:
-  call cursor({{ lnum_before }}, {{ col_before }})
+  call VeCursor({{ lnum_before }}, {{ col_before }})
   execute "normal! {{ v }}{{ count }}{{ motion }}" | execute "normal! mx\<Esc>"
+  set virtualedit=
   let g:groundtruth_lnum = line("'x")
   let g:groundtruth_col = col("'x")
 
