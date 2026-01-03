@@ -17,3 +17,11 @@ updates:
         patterns:
           - '*'
     # pyproject.toml is supported for pip since dependabot v2
+  - package-ecosystem: "pip"
+    directory: "/dev_scripts"
+    schedule:
+      interval: "monthly"
+    groups:
+      dev-scripts-deps:
+        patterns:
+          - '*'
