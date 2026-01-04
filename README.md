@@ -1,6 +1,7 @@
 # jieba.vim: Vim 的中文按词跳转插件
 
 [![ci](https://github.com/kkew3/jieba.vim/actions/workflows/ci.yml/badge.svg)](https://github.com/kkew3/jieba.vim/actions/workflows/ci.yml)
+[![coverage](https://codecov.io/github/kkew3/jieba.vim/graph/badge.svg?token=BL2JLM0FRG)](https://codecov.io/github/kkew3/jieba.vim)
 
 > 做最好的基于 jieba 的 Vim/Neovim 中文分词插件。
 
