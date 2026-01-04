@@ -147,6 +147,36 @@ jobs:
           export VIM_BIN_NAME=${{ matrix.vim.dist }}
           pytest
 
+  coverage:
+    name: Test coverage
+    runs-on: ubuntu-22.04
+    needs: unit_test_integration_test
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: jieba_vim
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-tarpaulin
+        shell: bash
+        run: cargo install cargo-tarpaulin
+      - name: Show cargo-tarpaulin version
+        shell: bash
+        run: cargo tarpaulin --version
+      - name: Run cargo-tarpaulin
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && \
+              cargo tarpaulin --release --out Xml \
+              --exclude-files 'jieba_vim_rs_test/*' \
+              --exclude-files 'jieba_vim_rs_test_macro/*' \
+              --exclude-files 'src/*' \
+              --packages jieba_vim_rs_core
+      - uses: codecov/codecov-action@v5
+        with:
+          directory: jieba_vim/rust_backend
+          token: ${{ secrets.CODECOV_TOKEN }}
+      
+
   # Reference: https://github.com/sharkdp/fd/blob/master/.github/workflows/CICD.yml
   # Reference: https://github.com/mlua-rs/mlua/blob/main/.github/workflows/main.yml
   build:
