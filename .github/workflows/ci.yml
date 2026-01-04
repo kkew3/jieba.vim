@@ -149,7 +149,7 @@ jobs:
 
   coverage:
     name: Test coverage
-    runs-on: macos-15-intel
+    runs-on: ubuntu-22.04
     needs: unit_test_integration_test
     steps:
       - uses: actions/checkout@v5
@@ -164,6 +164,8 @@ jobs:
         shell: bash
         run: |
           cargo tarpaulin --release --out Xml \
+              --engine Llvm \
+              --no-dead-code \
               --exclude-files 'jieba_vim_rs_test/*' \
               --exclude-files 'jieba_vim_rs_test_macro/*' \
               --exclude-files 'src/*' \
