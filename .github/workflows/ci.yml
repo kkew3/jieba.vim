@@ -153,8 +153,6 @@ jobs:
     needs: unit_test_integration_test
     steps:
       - uses: actions/checkout@v5
-        with:
-          path: jieba_vim
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-tarpaulin
         shell: bash
@@ -165,15 +163,15 @@ jobs:
       - name: Run cargo-tarpaulin
         shell: bash
         run: |
-          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && \
-              cargo tarpaulin --release --out Xml \
+          cargo tarpaulin --release --out Xml \
               --exclude-files 'jieba_vim_rs_test/*' \
               --exclude-files 'jieba_vim_rs_test_macro/*' \
               --exclude-files 'src/*' \
-              --packages jieba_vim_rs_core
+              --packages jieba_vim_rs_core \
+              --manifest-path rust_backend/Cargo.toml
       - uses: codecov/codecov-action@v5
         with:
-          files: jieba_vim/rust_backend/cobertura.xml
+          files: rust_backend/cobertura.xml
           disable_search: true
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
