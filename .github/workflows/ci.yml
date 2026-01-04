@@ -173,7 +173,8 @@ jobs:
               --packages jieba_vim_rs_core
       - uses: codecov/codecov-action@v5
         with:
-          directory: jieba_vim/rust_backend
+          files: jieba_vim/rust_backend/cobertura.xml
+          disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
       
 
