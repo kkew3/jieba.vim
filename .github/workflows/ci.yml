@@ -149,7 +149,7 @@ jobs:
 
   coverage:
     name: Test coverage
-    runs-on: ubuntu-22.04
+    runs-on: macos-15-intel
     needs: unit_test_integration_test
     steps:
       - uses: actions/checkout@v5
