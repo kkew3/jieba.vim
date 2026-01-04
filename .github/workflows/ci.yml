@@ -27,6 +27,8 @@ jobs:
             version: v9.1.0
           - dist: nvim
             version: v0.10.2
+          - dist: nvim
+            version: v0.11.5
     steps:
       - uses: actions/checkout@v5
         with:
@@ -93,9 +95,17 @@ jobs:
               sudo apt-get update
               sudo apt-get install -y curl tar
               cd "$GITHUB_WORKSPACE"
+              case ${{ matrix.vim.version }} in
+                v0.10.2)
+                  TARBALL_NAME=nvim-linux64
+                  ;;
+                v0.11.5)
+                  TARBALL_NAME=nvim-linux-x86_64
+                  ;;
+              esac
               mkdir vim
               # Extract nvim to "vim", so that it's easier to cache the result.
-              curl -fsSL https://github.com/neovim/neovim/releases/download/${{ matrix.vim.version }}/nvim-linux64.tar.gz | tar xzf - --strip-components=1 -C vim
+              curl -fsSL https://github.com/neovim/neovim/releases/download/${{ matrix.vim.version }}/${TARBALL_NAME}.tar.gz | tar xzf - --strip-components=1 -C vim
               echo "$GITHUB_WORKSPACE/vim/bin" >> $GITHUB_PATH
               ;;
           esac
