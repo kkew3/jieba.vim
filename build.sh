@@ -39,7 +39,13 @@ download_release() {
 }
 
 build_from_source() {
-    cd rust_backend && cargo build -r -F expose-shared-library
+    local color_when=
+    if [ -n "$VIMRUNTIME" ]; then
+        color_when=never
+    else
+        color_when=auto
+    fi
+    cd rust_backend && cargo build -r -F expose-shared-library --color=$color_when
 }
 
 if has git uname curl; then
