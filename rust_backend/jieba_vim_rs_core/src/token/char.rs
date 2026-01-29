@@ -1,4 +1,4 @@
-// Copyright 2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2025-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -185,6 +185,8 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
         COMBINING_DIACRITICAL_MARK!() => CharType::CombiningDiacriticalMark,
         c => match super::ascii_or(c) {
             Some(ascii) => {
+                dbg!(ascii, word_predicate.is_ascii_word(ascii));
+                dbg!(word_predicate);
                 if word_predicate.is_ascii_word(ascii) {
                     CharType::Word(WordCharType::Other)
                 } else {
@@ -224,16 +226,14 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
 
 #[cfg(test)]
 mod tests {
-    use crate::token::isk::{IskParser, WordPredicate};
+    use crate::token::isk::WordPredicate;
 
     use super::{CharType, NonWordCharType, WordCharType, categorize_char};
 
     #[test]
     fn test_categorize_char() {
-        let isk_parser = IskParser::new();
-
         // Empty iskeyword.
-        let wp = WordPredicate::try_from_isk(&isk_parser, "").unwrap();
+        let wp = WordPredicate::from_isk_opt("").unwrap();
         assert!(matches!(
             categorize_char('a', &wp),
             CharType::NonWord(NonWordCharType::Other)
@@ -284,7 +284,7 @@ mod tests {
         ));
 
         // Lowercase ASCII iskeyword.
-        let wp = WordPredicate::try_from_isk(&isk_parser, "a-z").unwrap();
+        let wp = WordPredicate::from_isk_opt("a-z").unwrap();
         assert!(matches!(
             categorize_char('a', &wp),
             CharType::Word(WordCharType::Other)
@@ -335,8 +335,7 @@ mod tests {
         ));
 
         // Lowercase ASCII, digits and 汉字 iskeyword.
-        let wp =
-            WordPredicate::try_from_isk(&isk_parser, "@,^A-Z,48-57").unwrap();
+        let wp = WordPredicate::from_isk_opt("@,^A-Z,48-57").unwrap();
         assert!(matches!(
             categorize_char('a', &wp),
             CharType::Word(WordCharType::Other)
@@ -387,7 +386,7 @@ mod tests {
         ));
 
         // Digits and '>' iskeyword.
-        let wp = WordPredicate::try_from_isk(&isk_parser, "48-57,>").unwrap();
+        let wp = WordPredicate::from_isk_opt("48-57,>").unwrap();
         assert!(matches!(
             categorize_char('a', &wp),
             CharType::NonWord(NonWordCharType::Other)
