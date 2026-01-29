@@ -2,7 +2,7 @@ repos:
   - repo: https://github.com/google/vimdoc
     rev: v0.7.1
     hooks:
-    - id: vimdoc
+      - id: vimdoc
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
     rev: v0.14.10
