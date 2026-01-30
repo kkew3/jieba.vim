@@ -347,6 +347,13 @@ mod tests {
             247..=247
         );
 
+        let s = get_ascii_set("^@")?;
+        assert_not_contains!(s, 0..=255);
+
+        let s = get_ascii_set("a-z,48-57,^@")?;
+        assert_contains!(s, 48..=57);
+        assert_not_contains!(s, 0..=47, 58..=255);
+
         let s = get_ascii_set("@-@")?;
         assert_contains!(s, b'@'..=b'@');
         assert_not_contains!(s, 0..=63, 65..=255);
