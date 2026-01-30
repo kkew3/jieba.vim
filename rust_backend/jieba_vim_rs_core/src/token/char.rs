@@ -185,8 +185,6 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
         COMBINING_DIACRITICAL_MARK!() => CharType::CombiningDiacriticalMark,
         c => match super::ascii_or(c) {
             Some(ascii) => {
-                dbg!(ascii, word_predicate.is_ascii_word(ascii));
-                dbg!(word_predicate);
                 if word_predicate.is_ascii_word(ascii) {
                     CharType::Word(WordCharType::Other)
                 } else {
