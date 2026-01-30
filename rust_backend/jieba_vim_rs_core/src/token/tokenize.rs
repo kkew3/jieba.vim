@@ -1,4 +1,4 @@
-// Copyright 2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2025-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -13,8 +13,6 @@
 // under the License.
 
 //! This module defines the tokens, and the tokenizer.
-
-use crate::utils;
 
 use super::JiebaPlaceholder;
 use super::char::{self, CharType, NonWordCharType, WordCharType};
@@ -515,6 +513,26 @@ impl<C> Tokenizer<C> {
     }
 }
 
+fn stack_merge<T, U, F>(elements: Vec<T>, mut rule_func: F) -> Vec<U>
+where
+    F: FnMut(Option<U>, T) -> Vec<U>,
+{
+    let mut stack: Vec<U> = vec![];
+    for e in elements {
+        let mut merged = rule_func(stack.pop(), e);
+        stack.append(&mut merged);
+    }
+    stack
+}
+
+fn chain_into_vec<T, I, J>(i: I, j: J) -> Vec<T>
+where
+    I: IntoIterator<Item = T>,
+    J: IntoIterator<Item = T>,
+{
+    i.into_iter().chain(j).collect()
+}
+
 /// Group contiguous [`CharToken`]s of compatible major class into
 /// [`CharTokenGroup`]s, and insert implicit whitespaces in between as needed.
 /// It's guaranteed that the last item of the returned Vec is a
@@ -528,9 +546,7 @@ fn group_chars_rule(
         Some(mut group) => match &mut group {
             MaybeImplicitCharTokenGroup::CharTokenGroup(cg) => {
                 match cg.push(c) {
-                    Err(joined) => {
-                        utils::chain_into_vec([group], joined.into_vec())
-                    }
+                    Err(joined) => chain_into_vec([group], joined.into_vec()),
                     Ok(()) => vec![group],
                 }
             }
@@ -544,7 +560,7 @@ fn group_chars_rule(
 /// See [`group_chars_rule`] for details. It's guaranteed that the returned Vec
 /// never starts or ends with an [`ImplicitWhitespace`].
 fn group_chars(chars: Vec<CharToken>) -> Vec<MaybeImplicitCharTokenGroup> {
-    utils::stack_merge(chars, group_chars_rule)
+    stack_merge(chars, group_chars_rule)
 }
 
 /// If the first [`CharTokenGroup`] is of type
@@ -575,7 +591,7 @@ fn convert_first_cdm_group_rule(
 fn convert_first_cdm_group(
     groups: Vec<MaybeImplicitCharTokenGroup>,
 ) -> Vec<MaybeImplicitCharTokenGroup> {
-    utils::stack_merge(groups, convert_first_cdm_group_rule)
+    stack_merge(groups, convert_first_cdm_group_rule)
 }
 
 /// If the first [`CharTokenGroup`] is of type
@@ -601,7 +617,7 @@ fn convert_first_cdm_group_rule2(
 fn convert_first_cdm_group2(
     groups: Vec<CharTokenGroup>,
 ) -> Vec<CharTokenGroup> {
-    utils::stack_merge(groups, convert_first_cdm_group_rule2)
+    stack_merge(groups, convert_first_cdm_group_rule2)
 }
 
 impl<C> Tokenizer<C> {
@@ -680,7 +696,7 @@ fn insert_implicit_whitespace_in_cut_result_rule(
 fn insert_implicit_whitespace_in_cut_result(
     groups: Vec<CharTokenGroup>,
 ) -> Vec<MaybeImplicitCharTokenGroup> {
-    utils::stack_merge(groups, insert_implicit_whitespace_in_cut_result_rule)
+    stack_merge(groups, insert_implicit_whitespace_in_cut_result_rule)
 }
 
 /// Assuming `group.ty` is [`WordCharGroupType::Hanzi`], this function goes
@@ -705,7 +721,7 @@ fn cut_hanzi_group_and_count_chars<C: JiebaPlaceholder>(
             if is_mark { None } else { Some(c) }
         })
         .collect();
-    let cut_char_counts0 = utils::chain_into_vec(
+    let cut_char_counts0 = chain_into_vec(
         [0],
         jieba
             .cut_hmm(&group_string_no_marks)
@@ -798,9 +814,7 @@ fn cut_hanzi_rule<C: JiebaPlaceholder>(
     use WordCharGroupType as W;
     match group {
         // If `group` is an implicit whitespace, return as is.
-        ImplicitWhitespace(iw) => {
-            utils::chain_into_vec(prev_group, [iw.into()])
-        }
+        ImplicitWhitespace(iw) => chain_into_vec(prev_group, [iw.into()]),
         CharTokenGroup(group) => match group.ty {
             Word(W::Hanzi) => {
                 let n_chars =
@@ -816,14 +830,14 @@ fn cut_hanzi_rule<C: JiebaPlaceholder>(
                 } else {
                     sub_groups
                 };
-                utils::chain_into_vec(
+                chain_into_vec(
                     prev_group,
                     insert_implicit_whitespace_in_cut_result(sub_groups),
                 )
             }
 
             // Otherwise, return as is.
-            _ => utils::chain_into_vec(prev_group, [group.into()]),
+            _ => chain_into_vec(prev_group, [group.into()]),
         },
     }
 }
@@ -834,7 +848,7 @@ fn cut_hanzi<C: JiebaPlaceholder>(
     line: &str,
     tokenizer: &Tokenizer<C>,
 ) -> Vec<MaybeImplicitCharTokenGroup> {
-    utils::stack_merge(groups, |prev_group, group| {
+    stack_merge(groups, |prev_group, group| {
         cut_hanzi_rule(prev_group, group, line, tokenizer)
     })
 }
@@ -916,14 +930,14 @@ fn remove_implicit_whitespace_rule(
         // Remove this implicit whitespace.
         ImplicitWhitespace(_) => prev_group.into_iter().collect(),
         // Otherwise, return as is.
-        CharTokenGroup(group) => utils::chain_into_vec(prev_group, [group]),
+        CharTokenGroup(group) => chain_into_vec(prev_group, [group]),
     }
 }
 
 fn remove_implicit_whitespace(
     groups: Vec<MaybeImplicitCharTokenGroup>,
 ) -> Vec<CharTokenGroup> {
-    utils::stack_merge(groups, remove_implicit_whitespace_rule)
+    stack_merge(groups, remove_implicit_whitespace_rule)
 }
 
 impl<C: JiebaPlaceholder> Tokenizer<C> {
@@ -977,7 +991,7 @@ fn concat_nonspace_groups_rule(
 fn concat_nonspace_groups(
     groups: Vec<MaybeImplicitCharTokenGroup>,
 ) -> Vec<MaybeImplicitCharTokenGroup> {
-    utils::stack_merge(groups, concat_nonspace_groups_rule)
+    stack_merge(groups, concat_nonspace_groups_rule)
 }
 
 impl<C: JiebaPlaceholder> Tokenizer<C> {
