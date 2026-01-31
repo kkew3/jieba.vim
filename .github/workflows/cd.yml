@@ -135,5 +135,6 @@ jobs:
           files: |
             ${{ steps.package.outputs.PKG_PATH }}
           tag_name: ${{ needs.check-for-release.outputs.release-tag-name }}
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
