@@ -23,11 +23,13 @@ jobs:
         run: |
           unset IS_RELEASE
           unset TAG_NAME
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          echo "PR title: $PR_TITLE"
-          if echo "$PR_TITLE" | grep -q '^Release: v'; then
+          cat <<EOF > PR_TITLE
+          ${{ github.event.pull_request.title }}
+          EOF
+          cat PR_TITLE
+          if grep -q '^Release: v' PR_TITLE; then
             IS_RELEASE="true"
-            TAG_NAME="$(echo "$PR_TITLE" | cut -c10-)"
+            TAG_NAME="$(cat PR_TITLE | cut -c10-)"
           fi
           if [ -z "$TAG_NAME" ]; then
             IS_RELEASE=
