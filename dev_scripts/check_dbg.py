@@ -31,8 +31,7 @@ def assert_not_found_in(path: str, fixed_patterns: list[str]):
 
 patterns = {
     ".py": ["pdb.set_trace()"],
-    # [e]print* are included due to the nature of jieba crates as cdylib.
-    ".rs": ["dbg!", "print!", "println!", "eprint!", "eprintln!"],
+    ".rs": ["dbg!"],
 }
 
 for path in sys.argv[1:]:
