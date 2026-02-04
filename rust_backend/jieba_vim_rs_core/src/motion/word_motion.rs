@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,10 +12,31 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::token::Tokenizer;
+use crate::BufferLike;
+use crate::token::{JiebaPlaceholder, Tokenizer};
 
 pub struct WordMotion<C> {
     pub(super) tokenizer: Tokenizer<C>,
+}
+
+pub type Position = [i32; 4];
+pub type CursorPosition = [i32; 5];
+
+pub struct NmapOutput {
+    pub cursor: CursorPosition,
+}
+
+pub struct XmapOutput {
+    pub langle: Position,
+    pub rangle: Position,
+    pub visualmode: String,
+}
+
+pub struct OmapOutput {
+    pub cursor: CursorPosition,
+    pub langle: Position,
+    pub rangle: Position,
+    pub prevent_change: String,
 }
 
 impl<C> WordMotion<C> {
@@ -25,5 +46,42 @@ impl<C> WordMotion<C> {
 
     pub fn get_tokenizer_mut(&mut self) -> &mut Tokenizer<C> {
         &mut self.tokenizer
+    }
+}
+
+impl<C: JiebaPlaceholder> WordMotion<C> {
+    pub fn nmap<B: BufferLike + ?Sized>(
+        &mut self,
+        buffer: &B,
+        mode: &str,
+        motion: &str,
+        cursor: CursorPosition,
+        count: u64,
+    ) -> NmapOutput {
+        todo!()
+    }
+
+    pub fn xmap<B: BufferLike + ?Sized>(
+        &mut self,
+        buffer: &B,
+        mode: &str,
+        motion: &str,
+        visual_begin: Position,
+        visual_end: Position,
+        count: u64,
+    ) -> XmapOutput {
+        todo!()
+    }
+
+    pub fn omap<B: BufferLike + ?Sized>(
+        &mut self,
+        buffer: &B,
+        mode: &str,
+        motion: &str,
+        cursor: CursorPosition,
+        count: u64,
+        operator: &str,
+    ) -> OmapOutput {
+        todo!()
     }
 }
