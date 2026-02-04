@@ -53,7 +53,6 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn nmap<B: BufferLike + ?Sized>(
         &mut self,
         buffer: &B,
-        mode: &str,
         motion: &str,
         cursor: CursorPosition,
         count: u64,
@@ -64,7 +63,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn xmap<B: BufferLike + ?Sized>(
         &mut self,
         buffer: &B,
-        mode: &str,
+        visualmode: &str,
         motion: &str,
         visual_begin: Position,
         visual_end: Position,
@@ -76,7 +75,6 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn omap<B: BufferLike + ?Sized>(
         &mut self,
         buffer: &B,
-        mode: &str,
         motion: &str,
         cursor: CursorPosition,
         count: u64,
