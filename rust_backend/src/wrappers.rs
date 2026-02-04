@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -18,10 +18,13 @@ use std::sync::OnceLock;
 
 use jieba_rs::Jieba;
 use jieba_vim_rs_core::BufferLike;
-use jieba_vim_rs_core::motion::{MotionOutput, WordMotion};
+use jieba_vim_rs_core::motion::{
+    NmapOutput, OmapOutput, WordMotion, XmapOutput,
+};
 use jieba_vim_rs_core::token::{JiebaPlaceholder, Tokenizer};
 use pyo3::exceptions::{PyIOError, PyValueError};
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
 use crate::preview;
 
@@ -82,25 +85,65 @@ impl JiebaPlaceholder for LazyJiebaWrapper {
     }
 }
 
-#[pyclass]
-#[pyo3(name = "MotionOutput")]
-pub struct MotionOutputWrapper(MotionOutput);
+pub struct NmapOutputWrapper(NmapOutput);
 
-#[pymethods]
-impl MotionOutputWrapper {
-    #[getter]
-    pub fn cursor(&self) -> (usize, usize) {
-        self.0.new_cursor_pos
+impl<'py> IntoPyObject<'py> for NmapOutputWrapper {
+    type Target = PyDict;
+    type Output = Bound<'py, Self::Target>;
+    type Error = PyErr;
+
+    fn into_pyobject(
+        self,
+        py: Python<'py>,
+    ) -> Result<Self::Output, Self::Error> {
+        let dict = PyDict::new(py);
+        let [a, b, c, d, e] = self.0.cursor;
+        dict.set_item("cursor", vec![a, b, c, d, e])?;
+        Ok(dict)
     }
+}
 
-    #[getter]
-    pub fn d_special(&self) -> bool {
-        self.0.d_special
+pub struct XmapOutputWrapper(XmapOutput);
+
+impl<'py> IntoPyObject<'py> for XmapOutputWrapper {
+    type Target = PyDict;
+    type Output = Bound<'py, Self::Target>;
+    type Error = PyErr;
+
+    fn into_pyobject(
+        self,
+        py: Python<'py>,
+    ) -> Result<Self::Output, Self::Error> {
+        let dict = PyDict::new(py);
+        let [la, lb, lc, ld] = self.0.langle;
+        let [ra, rb, rc, rd] = self.0.rangle;
+        dict.set_item("langle", vec![la, lb, lc, ld])?;
+        dict.set_item("rangle", vec![ra, rb, rc, rd])?;
+        dict.set_item("visualmode", self.0.visualmode)?;
+        Ok(dict)
     }
+}
 
-    #[getter]
-    pub fn prevent_change(&self) -> bool {
-        self.0.prevent_change
+pub struct OmapOutputWrapper(OmapOutput);
+
+impl<'py> IntoPyObject<'py> for OmapOutputWrapper {
+    type Target = PyDict;
+    type Output = Bound<'py, Self::Target>;
+    type Error = PyErr;
+
+    fn into_pyobject(
+        self,
+        py: Python<'py>,
+    ) -> Result<Self::Output, Self::Error> {
+        let dict = PyDict::new(py);
+        let [a, b, c, d, e] = self.0.cursor;
+        let [la, lb, lc, ld] = self.0.langle;
+        let [ra, rb, rc, rd] = self.0.rangle;
+        dict.set_item("cursor", vec![a, b, c, d, e])?;
+        dict.set_item("langle", vec![la, lb, lc, ld])?;
+        dict.set_item("rangle", vec![ra, rb, rc, rd])?;
+        dict.set_item("prevent_change", self.0.prevent_change)?;
+        Ok(dict)
     }
 }
 
@@ -152,412 +195,83 @@ impl WordMotionWrapper {
             })
     }
 
-    pub fn nmap_w(
-        &self,
+    pub fn nmap(
+        &mut self,
         buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
+        motion: &str,
+        cursor: Vec<usize>,
         count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_w(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn nmap_W(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_w(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn xmap_w(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_w(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn xmap_W(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_w(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn omap_w(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "c" {
-            Ok(MotionOutputWrapper(self.wm.omap_c_w(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_w(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
+    ) -> PyResult<NmapOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
         }
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(NmapOutputWrapper(self.wm.nmap(
+            &BoundWrapper(buffer),
+            motion,
+            cursor_arr,
+            count,
+        )?))
     }
 
-    #[allow(non_snake_case)]
-    pub fn omap_W(
-        &self,
+    pub fn xmap(
+        &mut self,
         buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
+        visualmode: &str,
+        motion: &str,
+        visual_begin: Vec<usize>,
+        visual_end: Vec<usize>,
         count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "c" {
-            Ok(MotionOutputWrapper(self.wm.omap_c_w(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_w(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
+    ) -> PyResult<XmapOutputWrapper> {
+        if visual_begin.len() != 4 {
+            return Err(PyValueError::new_err(
+                "visual_begin must contain exactly 4 elements",
+            ));
         }
-    }
-
-    pub fn nmap_e(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_e(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn nmap_E(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_e(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn xmap_e(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_e(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn xmap_E(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_e(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn omap_e(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "d" {
-            Ok(MotionOutputWrapper(self.wm.omap_d_e(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_e(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
+        if visual_end.len() != 4 {
+            return Err(PyValueError::new_err(
+                "visual_end must contain exactly 4 elements",
+            ));
         }
+        let mut visual_begin_arr = [0usize; 4];
+        visual_begin_arr.copy_from_slice(&visual_begin);
+        let mut visual_end_arr = [0usize; 4];
+        visual_end_arr.copy_from_slice(&visual_end);
+        Ok(XmapOutputWrapper(self.wm.xmap(
+            &BoundWrapper(buffer),
+            visualmode,
+            motion,
+            visual_begin_arr,
+            visual_end_arr,
+            count,
+        )?))
     }
 
-    #[allow(non_snake_case)]
-    pub fn omap_E(
-        &self,
+    pub fn omap(
+        &mut self,
         buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
+        motion: &str,
+        cursor: Vec<usize>,
+        count: u64,
         operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "d" {
-            Ok(MotionOutputWrapper(self.wm.omap_d_e(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_e(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
+    ) -> PyResult<OmapOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
         }
-    }
-
-    pub fn nmap_b(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_b(
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(OmapOutputWrapper(self.wm.omap(
             &BoundWrapper(buffer),
-            cursor_pos,
+            motion,
+            cursor_arr,
             count,
-            true,
+            operator,
         )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn nmap_B(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn xmap_b(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn xmap_B(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn omap_b(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.omap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn omap_B(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.omap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn nmap_ge(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_ge(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn nmap_gE(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_ge(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn xmap_ge(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_ge(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn xmap_gE(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_ge(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn omap_ge(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "d" {
-            Ok(MotionOutputWrapper(self.wm.omap_d_ge(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_ge(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
-        }
-    }
-
-    #[allow(non_snake_case)]
-    pub fn omap_gE(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "d" {
-            Ok(MotionOutputWrapper(self.wm.omap_d_ge(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_ge(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
-        }
     }
 
     pub fn preview_nmap_w(
@@ -720,412 +434,83 @@ impl LazyWordMotionWrapper {
             })
     }
 
-    pub fn nmap_w(
-        &self,
+    pub fn nmap(
+        &mut self,
         buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
+        motion: &str,
+        cursor: Vec<usize>,
         count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_w(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn nmap_W(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_w(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn xmap_w(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_w(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn xmap_W(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_w(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn omap_w(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "c" {
-            Ok(MotionOutputWrapper(self.wm.omap_c_w(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_w(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
+    ) -> PyResult<NmapOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
         }
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(NmapOutputWrapper(self.wm.nmap(
+            &BoundWrapper(buffer),
+            motion,
+            cursor_arr,
+            count,
+        )?))
     }
 
-    #[allow(non_snake_case)]
-    pub fn omap_W(
-        &self,
+    pub fn xmap(
+        &mut self,
         buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
+        visualmode: &str,
+        motion: &str,
+        visual_begin: Vec<usize>,
+        visual_end: Vec<usize>,
         count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "c" {
-            Ok(MotionOutputWrapper(self.wm.omap_c_w(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_w(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
+    ) -> PyResult<XmapOutputWrapper> {
+        if visual_begin.len() != 4 {
+            return Err(PyValueError::new_err(
+                "visual_begin must contain exactly 4 elements",
+            ));
         }
-    }
-
-    pub fn nmap_e(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_e(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn nmap_E(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_e(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn xmap_e(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_e(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn xmap_E(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_e(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn omap_e(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "d" {
-            Ok(MotionOutputWrapper(self.wm.omap_d_e(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_e(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
+        if visual_end.len() != 4 {
+            return Err(PyValueError::new_err(
+                "visual_end must contain exactly 4 elements",
+            ));
         }
+        let mut visual_begin_arr = [0usize; 4];
+        visual_begin_arr.copy_from_slice(&visual_begin);
+        let mut visual_end_arr = [0usize; 4];
+        visual_end_arr.copy_from_slice(&visual_end);
+        Ok(XmapOutputWrapper(self.wm.xmap(
+            &BoundWrapper(buffer),
+            visualmode,
+            motion,
+            visual_begin_arr,
+            visual_end_arr,
+            count,
+        )?))
     }
 
-    #[allow(non_snake_case)]
-    pub fn omap_E(
-        &self,
+    pub fn omap(
+        &mut self,
         buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
+        motion: &str,
+        cursor: Vec<usize>,
+        count: u64,
         operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "d" {
-            Ok(MotionOutputWrapper(self.wm.omap_d_e(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_e(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
+    ) -> PyResult<OmapOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
         }
-    }
-
-    pub fn nmap_b(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_b(
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(OmapOutputWrapper(self.wm.omap(
             &BoundWrapper(buffer),
-            cursor_pos,
+            motion,
+            cursor_arr,
             count,
-            true,
+            operator,
         )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn nmap_B(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn xmap_b(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn xmap_B(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn omap_b(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.omap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn omap_B(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.omap_b(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn nmap_ge(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_ge(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn nmap_gE(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.nmap_ge(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn xmap_ge(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_ge(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            true,
-        )?))
-    }
-
-    #[allow(non_snake_case)]
-    pub fn xmap_gE(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        Ok(MotionOutputWrapper(self.wm.xmap_ge(
-            &BoundWrapper(buffer),
-            cursor_pos,
-            count,
-            false,
-        )?))
-    }
-
-    pub fn omap_ge(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "d" {
-            Ok(MotionOutputWrapper(self.wm.omap_d_ge(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_ge(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                true,
-            )?))
-        }
-    }
-
-    #[allow(non_snake_case)]
-    pub fn omap_gE(
-        &self,
-        buffer: &Bound<'_, PyAny>,
-        cursor_pos: (usize, usize),
-        operator: &str,
-        count: u64,
-    ) -> PyResult<MotionOutputWrapper> {
-        if operator == "d" {
-            Ok(MotionOutputWrapper(self.wm.omap_d_ge(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
-        } else {
-            Ok(MotionOutputWrapper(self.wm.omap_ge(
-                &BoundWrapper(buffer),
-                cursor_pos,
-                count,
-                false,
-            )?))
-        }
     }
 
     pub fn preview_nmap_w(
