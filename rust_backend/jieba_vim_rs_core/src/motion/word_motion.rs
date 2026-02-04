@@ -19,8 +19,8 @@ pub struct WordMotion<C> {
     pub(super) tokenizer: Tokenizer<C>,
 }
 
-pub type Position = [i32; 4];
-pub type CursorPosition = [i32; 5];
+pub type Position = [u64; 4];
+pub type CursorPosition = [u64; 5];
 
 pub struct NmapOutput {
     pub cursor: CursorPosition,
@@ -56,7 +56,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         motion: &str,
         cursor: CursorPosition,
         count: u64,
-    ) -> NmapOutput {
+    ) -> Result<NmapOutput, B::Error> {
         todo!()
     }
 
@@ -68,7 +68,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         visual_begin: Position,
         visual_end: Position,
         count: u64,
-    ) -> XmapOutput {
+    ) -> Result<XmapOutput, B::Error> {
         todo!()
     }
 
@@ -79,7 +79,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         cursor: CursorPosition,
         count: u64,
         operator: &str,
-    ) -> OmapOutput {
+    ) -> Result<OmapOutput, B::Error> {
         todo!()
     }
 }
