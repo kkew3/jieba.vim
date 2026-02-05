@@ -159,7 +159,7 @@ impl WordMotionWrapper {
     /// dictionary path.
     #[new]
     #[pyo3(signature = (isk_option, path=None))]
-    pub fn new(isk_option: &str, path: Option<&str>) -> PyResult<Self> {
+    pub fn new(isk_option: &[u8], path: Option<&str>) -> PyResult<Self> {
         let jieba = match path {
             None => Jieba::new(),
             Some(path) => {
@@ -175,7 +175,7 @@ impl WordMotionWrapper {
             .map_err(|_| {
                 PyValueError::new_err(format!(
                     "failed to parse isk: {}",
-                    isk_option
+                    unsafe { std::str::from_utf8_unchecked(isk_option) }
                 ))
             })?;
         Ok(Self {
@@ -183,14 +183,14 @@ impl WordMotionWrapper {
         })
     }
 
-    pub fn set_isk(&mut self, isk_option: &str) -> PyResult<()> {
+    pub fn set_isk(&mut self, isk_option: &[u8]) -> PyResult<()> {
         self.wm
             .get_tokenizer_mut()
             .try_set_word_predicate(isk_option)
             .map_err(|_| {
                 PyValueError::new_err(format!(
                     "failed to parse isk: {}",
-                    isk_option
+                    unsafe { std::str::from_utf8_unchecked(isk_option) }
                 ))
             })
     }
@@ -313,7 +313,7 @@ pub struct LazyWordMotionWrapper {
 impl LazyWordMotionWrapper {
     #[new]
     #[pyo3(signature = (isk_option, path=None))]
-    pub fn new(isk_option: &str, path: Option<String>) -> PyResult<Self> {
+    pub fn new(isk_option: &[u8], path: Option<String>) -> PyResult<Self> {
         // Check if `path` is readable beforehand.
         if let Some(path) = &path {
             File::open(path).map_err(PyIOError::new_err)?;
@@ -326,7 +326,7 @@ impl LazyWordMotionWrapper {
             Tokenizer::try_new(jieba, isk_option).map_err(|_| {
                 PyValueError::new_err(format!(
                     "failed to parse isk: {}",
-                    isk_option
+                    unsafe { std::str::from_utf8_unchecked(isk_option) }
                 ))
             })?;
         Ok(Self {
@@ -334,14 +334,14 @@ impl LazyWordMotionWrapper {
         })
     }
 
-    pub fn set_isk(&mut self, isk_option: &str) -> PyResult<()> {
+    pub fn set_isk(&mut self, isk_option: &[u8]) -> PyResult<()> {
         self.wm
             .get_tokenizer_mut()
             .try_set_word_predicate(isk_option)
             .map_err(|_| {
                 PyValueError::new_err(format!(
                     "failed to parse isk: {}",
-                    isk_option
+                    unsafe { std::str::from_utf8_unchecked(isk_option) }
                 ))
             })
     }
