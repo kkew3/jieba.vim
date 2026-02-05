@@ -103,9 +103,9 @@ impl<'py> IntoPyObject<'py> for NmapOutputWrapper {
     }
 }
 
-pub struct XmapOutputWrapper(XmapOutput);
+pub struct XmapOutputWrapper<'a>(XmapOutput<'a>);
 
-impl<'py> IntoPyObject<'py> for XmapOutputWrapper {
+impl<'a, 'py> IntoPyObject<'py> for XmapOutputWrapper<'a> {
     type Target = PyDict;
     type Output = Bound<'py, Self::Target>;
     type Error = PyErr;
@@ -198,7 +198,7 @@ impl WordMotionWrapper {
     pub fn nmap(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        motion: &str,
+        motion: &[u8],
         cursor: Vec<usize>,
         count: u64,
     ) -> PyResult<NmapOutputWrapper> {
@@ -217,15 +217,15 @@ impl WordMotionWrapper {
         )?))
     }
 
-    pub fn xmap(
+    pub fn xmap<'a>(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        visualmode: &str,
-        motion: &str,
+        visualmode: &'a [u8],
+        motion: &[u8],
         visual_begin: Vec<usize>,
         visual_end: Vec<usize>,
         count: u64,
-    ) -> PyResult<XmapOutputWrapper> {
+    ) -> PyResult<XmapOutputWrapper<'a>> {
         if visual_begin.len() != 4 {
             return Err(PyValueError::new_err(
                 "visual_begin must contain exactly 4 elements",
@@ -253,10 +253,10 @@ impl WordMotionWrapper {
     pub fn omap(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        motion: &str,
+        motion: &[u8],
         cursor: Vec<usize>,
         count: u64,
-        operator: &str,
+        operator: &[u8],
     ) -> PyResult<OmapOutputWrapper> {
         if cursor.len() != 5 {
             return Err(PyValueError::new_err(
@@ -277,7 +277,7 @@ impl WordMotionWrapper {
     pub fn preview_nmap(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        motion: &str,
+        motion: &[u8],
         cursor: Vec<usize>,
         preview_limit: usize,
     ) -> PyResult<Vec<(usize, usize)>> {
@@ -349,7 +349,7 @@ impl LazyWordMotionWrapper {
     pub fn nmap(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        motion: &str,
+        motion: &[u8],
         cursor: Vec<usize>,
         count: u64,
     ) -> PyResult<NmapOutputWrapper> {
@@ -368,15 +368,15 @@ impl LazyWordMotionWrapper {
         )?))
     }
 
-    pub fn xmap(
+    pub fn xmap<'a>(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        visualmode: &str,
-        motion: &str,
+        visualmode: &'a [u8],
+        motion: &[u8],
         visual_begin: Vec<usize>,
         visual_end: Vec<usize>,
         count: u64,
-    ) -> PyResult<XmapOutputWrapper> {
+    ) -> PyResult<XmapOutputWrapper<'a>> {
         if visual_begin.len() != 4 {
             return Err(PyValueError::new_err(
                 "visual_begin must contain exactly 4 elements",
@@ -404,10 +404,10 @@ impl LazyWordMotionWrapper {
     pub fn omap(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        motion: &str,
+        motion: &[u8],
         cursor: Vec<usize>,
         count: u64,
-        operator: &str,
+        operator: &[u8],
     ) -> PyResult<OmapOutputWrapper> {
         if cursor.len() != 5 {
             return Err(PyValueError::new_err(
@@ -428,7 +428,7 @@ impl LazyWordMotionWrapper {
     pub fn preview_nmap(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        motion: &str,
+        motion: &[u8],
         cursor: Vec<usize>,
         preview_limit: usize,
     ) -> PyResult<Vec<(usize, usize)>> {
