@@ -95,8 +95,11 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         motion: &[u8],
         visual_begin: Position,
         visual_end: Position,
-        count: u64,
+        mut count: u64,
     ) -> Result<XmapOutput<'a>, B::Error> {
+        if count == 0 {
+            count = 1;
+        }
         let [_, ve_lnum, ve_col, _] = visual_end;
         let ve_col_m1 = ve_col - 1;
         let (ve_lnum, ve_col_m1) = match motion {
@@ -151,9 +154,12 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         buffer: &B,
         motion: &[u8],
         cursor: CursorPosition,
-        count: u64,
+        mut count: u64,
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
+        if count == 0 {
+            count = 1;
+        }
         let [_, lnum, col, _, _] = cursor;
         let col_m1 = col - 1;
         let output = match (motion, operator) {
