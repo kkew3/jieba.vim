@@ -12,8 +12,6 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use std::borrow::Cow;
-
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, Tokenizer};
 
@@ -32,7 +30,7 @@ pub struct NmapOutput {
 pub struct XmapOutput<'a> {
     pub langle: Position,
     pub rangle: Position,
-    pub visualmode: Cow<'a, [u8]>,
+    pub visualmode: &'a [u8],
     pub prevent_change: &'static [u8],
 }
 
@@ -141,7 +139,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         Ok(XmapOutput {
             langle: visual_begin,
             rangle: [0, ve_lnum, ve_col_m1 + 1, 0],
-            visualmode: visualmode.into(),
+            visualmode,
             prevent_change: b"0",
         })
     }
