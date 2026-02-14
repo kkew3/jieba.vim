@@ -26,12 +26,14 @@ pub type CursorPosition = [usize; 5];
 
 pub struct NmapOutput {
     pub cursor: CursorPosition,
+    pub prevent_change: &'static [u8],
 }
 
 pub struct XmapOutput<'a> {
     pub langle: Position,
     pub rangle: Position,
     pub visualmode: Cow<'a, [u8]>,
+    pub prevent_change: &'static [u8],
 }
 
 pub struct OmapOutput {
@@ -82,6 +84,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         };
         Ok(NmapOutput {
             cursor: [0, lnum, col_m1 + 1, 0, col_m1 + 1],
+            prevent_change: b"0",
         })
     }
 
@@ -139,6 +142,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             langle: visual_begin,
             rangle: [0, ve_lnum, ve_col_m1 + 1, 0],
             visualmode: visualmode.into(),
+            prevent_change: b"0",
         })
     }
 
