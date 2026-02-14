@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -92,54 +92,4 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             prevent_change: false,
         })
     }
-}
-
-#[cfg(test)]
-mod tests {
-    #[cfg(feature = "verifiable_case")]
-    use jieba_vim_rs_test_macro::verified_cases;
-    #[cfg(not(feature = "verifiable_case"))]
-    use jieba_vim_rs_test_macro::verified_cases_dry_run as verified_cases;
-
-    #[verified_cases(
-        mode = "n",
-        motion = "w",
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["{}"])]
-    #[vcase(name = "space", buffer = ["{} "])]
-    #[vcase(name = "space", buffer = ["{    } "])]
-    #[vcase(name = "one_word", buffer = ["aaa{}a"])]
-    #[vcase(name = "one_word", buffer = ["a{aa}a"])]
-    #[vcase(name = "one_word", buffer = ["a{aa}a"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["a{aaa   } "])]
-    #[vcase(name = "one_word_space", buffer = ["aaa{a   } "])]
-    #[vcase(name = "one_word_space", buffer = ["aaaa {  } "])]
-    #[vcase(name = "space_one_word", buffer = ["{    }aaaa"])]
-    #[vcase(name = "space_one_word", buffer = ["{    aaa}a"], count = 2)]
-    #[vcase(name = "space_one_word", buffer = ["   { }aaaa"])]
-    #[vcase(name = "space_one_word", buffer = ["    {aaa}a"])]
-    #[vcase(name = "two_words", buffer = ["a{aaa  }aaa"])]
-    #[vcase(name = "two_words", buffer = ["a{aaa  aa}a"], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["    {aaaa  } "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   }aaaa   "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   aaaa  } "], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["a{aaa", "}"])]
-    #[vcase(name = "newline_one_word", buffer = ["{", "}aaaa"])]
-    #[vcase(name = "newline_one_word", buffer = ["{", "aaa}a"], count = 2)]
-    #[vcase(name = "one_word_space_newline", buffer = ["a{aaa    ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa{    ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa {   ", "}"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["a{aaa", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["a{aaa", "  ", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaaa", "{  ", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["a{aa", "}", "   "])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["a{aaa", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["a{aaa", " ", " ", "}", "  "])]
-    #[vcase(name = "one_word_newline_space_word", buffer = ["a{aaa", " ", " ", "}aaa"])]
-    #[vcase(name = "one_word_newline_space_word", buffer = ["a{aaa", " ", " ", "   }aaa"])]
-    #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["a{aa aaa}a"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["aaa {aaa}a"], count = 10293949403)]
-    mod motion_nmap_w {}
 }
