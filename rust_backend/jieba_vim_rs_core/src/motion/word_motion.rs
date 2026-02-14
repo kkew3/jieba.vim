@@ -38,6 +38,7 @@ pub struct OmapOutput {
     pub cursor: CursorPosition,
     pub langle: Position,
     pub rangle: Position,
+    pub visualmode: &'static [u8],
     pub prevent_change: &'static [u8],
 }
 
@@ -221,6 +222,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             cursor: [0, next_lnum, next_col_m1 + 1, 0, next_col_m1 + 1],
             langle: [0, langle_lnum, langle_col_m1 + 1, 0],
             rangle: [0, rangle_lnum, rangle_col_m1 + 1, 0],
+            visualmode: b"v",
             prevent_change,
         })
     }
