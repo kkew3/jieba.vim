@@ -16,7 +16,7 @@ use crate::BufferLike;
 use crate::token::token_iter::{ForwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 
-use super::{MotionOutput, WordMotion};
+use super::{Position, WordMotion, XmapOutput};
 
 /// Test if a token is stoppable for `xmap_w`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
@@ -53,14 +53,18 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     /// - If there is no next word to the right of current cursor, jump to one
     ///   character to the right of the last character of the last token in the
     ///   buffer.
-    pub fn xmap_w<B: BufferLike + ?Sized>(
+    pub fn xmap_w<'a, B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: (usize, usize),
+        visualmode: &'a [u8],
+        visual_begin: Position,
+        visual_end: Position,
         mut count: u64,
         word: bool,
-    ) -> Result<MotionOutput, B::Error> {
-        let (mut lnum, mut col) = cursor_pos;
+    ) -> Result<XmapOutput<'a>, B::Error> {
+        let [bufnum, lnum_orig, col_p1_orig, off] = visual_end;
+        let mut lnum = lnum_orig;
+        let mut col = col_p1_orig - 1;
         let mut it = ForwardTokenIterator::new(
             buffer,
             &self.tokenizer,
@@ -87,10 +91,17 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 }
             }
         }
-        Ok(MotionOutput {
-            new_cursor_pos: (lnum, col),
-            d_special: false,
-            prevent_change: false,
+        let col_p1 = col + 1;
+        let prevent_change = if (lnum, col_p1) != (lnum_orig, col_p1_orig) {
+            b"0"
+        } else {
+            b"1"
+        };
+        Ok(XmapOutput {
+            langle: visual_begin,
+            rangle: [bufnum, lnum, col_p1, off],
+            visualmode,
+            prevent_change,
         })
     }
 }

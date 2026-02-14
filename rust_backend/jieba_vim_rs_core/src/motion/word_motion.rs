@@ -100,18 +100,19 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         if count == 0 {
             count = 1;
         }
+        if motion[0] == b'w' || motion[0] == b'W' {
+            return self.xmap_w(
+                buffer,
+                visualmode,
+                visual_begin,
+                visual_end,
+                count,
+                motion[0] == b'w',
+            );
+        }
         let [_, ve_lnum, ve_col, _] = visual_end;
         let ve_col_m1 = ve_col - 1;
         let (ve_lnum, ve_col_m1) = match motion {
-            b"w" | b"W" => {
-                self.xmap_w(
-                    buffer,
-                    (ve_lnum, ve_col_m1),
-                    count,
-                    motion[0] == b'w',
-                )?
-                .new_cursor_pos
-            }
             b"b" | b"B" => {
                 self.xmap_b(
                     buffer,
