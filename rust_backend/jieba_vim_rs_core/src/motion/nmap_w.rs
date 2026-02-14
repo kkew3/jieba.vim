@@ -16,7 +16,7 @@ use crate::BufferLike;
 use crate::token::token_iter::{ForwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 
-use super::{MotionOutput, WordMotion};
+use super::{CursorPosition, NmapOutput, WordMotion};
 
 /// Test if a token is stoppable for `nmap_w`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
@@ -59,11 +59,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn nmap_w<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: (usize, usize),
+        cursor: CursorPosition,
         mut count: u64,
         word: bool,
-    ) -> Result<MotionOutput, B::Error> {
-        let (mut lnum, mut col) = cursor_pos;
+    ) -> Result<NmapOutput, B::Error> {
+        let [bufnum, lnum_orig, col_p1_orig, off, _] = cursor;
+        let mut lnum = lnum_orig;
+        let mut col = col_p1_orig - 1;
         let mut it = ForwardTokenIterator::new(
             buffer,
             &self.tokenizer,
@@ -86,10 +88,17 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 }
             }
         }
-        Ok(MotionOutput {
-            new_cursor_pos: (lnum, col),
-            d_special: false,
-            prevent_change: false,
+        let col_p1 = col + 1;
+        let prevent_change = if (lnum, col_p1) != (lnum_orig, col_p1_orig)
+            || (buffer.lines()? == 1 && buffer.getline(1)?.is_empty())
+        {
+            b"0"
+        } else {
+            b"1"
+        };
+        Ok(NmapOutput {
+            cursor: [bufnum, lnum, col_p1, off, col_p1],
+            prevent_change,
         })
     }
 }

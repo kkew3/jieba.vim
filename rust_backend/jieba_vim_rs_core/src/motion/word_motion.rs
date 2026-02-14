@@ -57,15 +57,17 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         buffer: &B,
         motion: &[u8],
         cursor: CursorPosition,
-        count: u64,
+        mut count: u64,
     ) -> Result<NmapOutput, B::Error> {
+        if count == 0 {
+            count = 1;
+        }
         let [_, lnum, col, _, _] = cursor;
         let col_m1 = col - 1;
+        if motion[0] == b'w' || motion[0] == b'W' {
+            return self.nmap_w(buffer, cursor, count, motion[0] == b'w');
+        }
         let (lnum, col_m1) = match motion {
-            b"w" | b"W" => {
-                self.nmap_w(buffer, (lnum, col_m1), count, motion[0] == b'w')?
-                    .new_cursor_pos
-            }
             b"b" | b"B" => {
                 self.nmap_b(buffer, (lnum, col_m1), count, motion[0] == b'b')?
                     .new_cursor_pos

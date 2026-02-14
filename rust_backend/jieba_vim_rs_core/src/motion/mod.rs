@@ -39,6 +39,7 @@ mod xmap_e;
 mod xmap_ge;
 mod xmap_w;
 
+use word_motion::{CursorPosition, Position};
 pub use word_motion::{NmapOutput, OmapOutput, WordMotion, XmapOutput};
 
 /// The motion return type.
