@@ -99,6 +99,7 @@ impl<'py> IntoPyObject<'py> for NmapOutputWrapper {
         let dict = PyDict::new(py);
         let [a, b, c, d, e] = self.0.cursor;
         dict.set_item("cursor", vec![a, b, c, d, e])?;
+        dict.set_item("prevent_change", self.0.prevent_change)?;
         Ok(dict)
     }
 }
@@ -120,6 +121,7 @@ impl<'a, 'py> IntoPyObject<'py> for XmapOutputWrapper<'a> {
         dict.set_item("langle", vec![la, lb, lc, ld])?;
         dict.set_item("rangle", vec![ra, rb, rc, rd])?;
         dict.set_item("visualmode", self.0.visualmode)?;
+        dict.set_item("prevent_change", self.0.prevent_change)?;
         Ok(dict)
     }
 }
@@ -143,6 +145,7 @@ impl<'py> IntoPyObject<'py> for OmapOutputWrapper {
         dict.set_item("langle", vec![la, lb, lc, ld])?;
         dict.set_item("rangle", vec![ra, rb, rc, rd])?;
         dict.set_item("prevent_change", self.0.prevent_change)?;
+        dict.set_item("visualmode", self.0.visualmode)?;
         Ok(dict)
     }
 }
