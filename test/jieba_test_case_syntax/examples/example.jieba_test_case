@@ -1,0 +1,28 @@
+#V 1
+
+?!has:nvim
+?version:900
+
+H 6be7b7cd41a6d854a442dff4c3ea3eac9e3cd5f8 two words {{{
+X u
+M n
+P K | C
+Q |
+B0 |abc·def␊
+K w
+B1 abc·|def␊
+// }}}
+
+H a7b2f6e681098930f3f837cfa98d0ef99eee3f21 {{{
+X ui
+M V
+P K [ ] C
+Q < > visualmode=v
+B0 a[]bc·def␊
+C 1
+K iw
+B1 <[ab|]>c·def␊
+S1 visualmode()=v
+// }}}
+
+// vim: foldmethod=marker
