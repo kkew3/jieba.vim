@@ -1,4 +1,4 @@
-// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,10 +12,14 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-mod buffer;
-pub mod motion;
-mod position;
-pub mod token;
+//! Positions in a buffer.
 
-pub use buffer::BufferLike;
-pub use position::{CursorPositionCurswant, Position};
+/// The 4-element list of numbers \[0, lnum, col, off] as returned by Vim's
+/// `getpos(...)` where ... equals `.` or `'{local_mark}``. `lnum` and `col` are
+/// indexed from 1. `off` is indexed from 0.
+pub type Position = [usize; 4];
+
+/// The 5-element list of numbers \[0, lnum, col, off, curswant] as returned by
+/// Vim's `getcurpos()`. `lnum`, `col` and `curswant` are indexed from 1. `off`
+/// is indexed from 0.
+pub type CursorPositionCurswant = [usize; 5];
