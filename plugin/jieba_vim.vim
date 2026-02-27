@@ -174,10 +174,11 @@ endfunction
 
 function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     execute "normal! \<Esc>"
+    let l:orig_curpos = getcurpos()
     if a:model_funcname !=# ""
-        let l:result_dict = function(a:model_funcname)(a:motion, getcurpos(), a:count, a:operator)
+        let l:result_dict = function(a:model_funcname)(a:motion, l:orig_curpos, a:count, a:operator)
     else
-        let l:result_dict = JiebaModelOmap(a:motion, getcurpos(), a:count, a:operator)
+        let l:result_dict = JiebaModelOmap(a:motion, l:orig_curpos, a:count, a:operator)
     endif
     call setpos(".", l:result_dict["langle"])
     " This no-op line effectively sets an undoable checkpoint such that |u|
@@ -244,7 +245,12 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
 
         " Land the cursor to potentially a new position.
         call setpos(".", l:result_dict["cursor"])
-        
+
+        " Special treatment of d-special in nvim.
+        if has("nvim") && a:operator ==# "d" && l:result_dict["visualmode"] ==# "V"
+            call cursor(0, virtcol2col(l:orig_curpos[4]))
+        endif
+
         " Special treatment to |c| which needs to drop the user in insert mode.
         if a:operator ==# "c" && a:repeat == 0
             if l:result_dict["cursor"][2] >= col("$")
