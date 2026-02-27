@@ -1,0 +1,79 @@
+name: Test setup vim/nvim
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev/setup-vim-gh-actions
+
+jobs:
+  test_setup_vim_nvim:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        vim:
+          - distr: vim
+            version: v8.2.0000
+            glue-lang: py39
+          - distr: vim
+            version: v9.1.0000
+            glue-lang: py39
+          - distr: vim
+            version: v8.2.0000
+            glue-lang: lua51
+          - distr: vim
+            version: v9.1.0000
+            glue-lang: lua51
+          - distr: nvim
+            version: v0.11.5
+            glue-lang: py39
+          - distr: nvim
+            version: v0.11.5
+            glue-lang: lua51
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-vim
+        with:
+          vim-distr: ${{ matrix.vim.distr }}
+          vim-version: ${{ matrix.vim.version }}
+          glue-lang: ${{ matrix.vim.glue-lang }}
+      - name: Check vim/nvim location
+        shell: bash
+        run: |
+          which vim 2> /dev/null || true
+          which nvim 2> /dev/null || true
+      - name: Write test file
+        shell: bash
+        run: |
+          cat <<EOF > test.vim
+          if "${{ matrix.vim.glue-lang }}" ==# "py39"
+            if has("nvim")
+              let g:python3_host_prog = trim(system("which python3.9"))
+            endif
+            if !has("python3")
+              echoerr "+python3 is unavailable"
+              cquit
+              finish
+            endif
+          elseif "${{ matrix.vim.glue-lang }}" ==# "lua51" && !has("nvim")
+            if !has("lua")
+              echoerr "+lua is unavailable"
+              cquit
+              finish
+            endif
+          endif
+          quit
+          EOF
+          cat test.vim
+      - name: Run test
+        shell: bash
+        run: |
+          case ${{ matrix.vim.distr }} in
+            vim)
+              vim -es -S test.vim
+              ;;
+            nvim)
+              nvim --headless -S test.vim
+              ;;
+          esac
