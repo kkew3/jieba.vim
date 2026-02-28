@@ -1,0 +1,468 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  push:
+    branches:
+      - rust
+      - dev/rust
+
+jobs:
+  build-metatest-binary:
+    name: Build jieba_vim_rs_metatest binary for use in later jobs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build meta-test binary
+        shell: bash
+        run: cargo install --locked --path rust_backend/jieba_vim_rs_metatest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jieba-metatest-binary
+          path: ~/.cargo/bin/jieba_vim_rs_metatest
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          overwrite: true
+
+  bootstrap-case-template-expansion:
+    name: Expand bootstrap test case jinja2 templates
+    runs-on: ubuntu-24.04
+    needs: build-metatest-binary
+    steps:
+      # Prepare necessary binaries.
+      - name: Cache minijinja-cli
+        id: cache-minijinja-cli
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/bin/minijinja-cli
+          key: minijinja-cli
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.cache-minijinja-cli.outputs.cache-hit != 'true'
+      - name: Install minijinja-cli
+        if: steps.cache-minijinja-cli.outputs.cache-hit != 'true'
+        shell: bash
+        run: cargo install minijinja-cli
+      - name: Add ~/.cargo/bin to PATH
+        if: steps.cache-minijinja-cli.outputs.cache-hit == 'true'
+        shell: bash
+        run: echo ~/.cargo/bin >> $GITHUB_PATH
+      - name: Get prebuilt jieba_vim_rs_metatest binary
+        uses: actions/download-artifact@v5
+        with:
+          name: jieba-metatest-binary
+          path: ~/.cargo/bin
+
+      # Do the job.
+      - uses: actions/checkout@v6
+      - name: Expand bootstrap case template
+        shell: bash
+        run: make -C test/cases/bootstrap
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-test-cases
+          path: test/cases/bootstrap/*.jieba_test_case
+          retention-days: 5
+
+  build-jieba-vim-cdylib-python:
+    name: Build jieba.vim cdylib required in bootstrap case verification (+python3)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        shell: bash
+        run: |
+          cargo build --manifest-path rust_backend/Cargo.toml --locked -r
+          mv rust_backend/target/release/libjieba_vim_rs.so jieba_vim_rs.so
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jieba-vim-cdylib-python
+          path: jieba_vim_rs.so
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  bootstrap-case-verification:
+    name: >
+      Bootstrap case verification for
+      ${{ matrix.vim.distr }}@${{ matrix.vim.version }}
+      +${{ matrix.glue-lang }}
+    runs-on: ubuntu-24.04
+    needs:
+      - build-metatest-binary
+      - bootstrap-case-template-expansion
+      - build-jieba-vim-cdylib-python
+    strategy:
+      fail-fast: false
+      matrix:
+        glue-lang:
+          - py39
+        vim:
+          - distr: vim
+            version: v9.1.0000
+          - distr: nvim
+            version: v0.11.5
+    steps:
+      # Prepare env.
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-vim
+        with:
+          vim-distr: ${{ matrix.vim.distr }}
+          vim-version: ${{ matrix.vim.version }}
+          glue-lang: ${{ matrix.glue-lang }}
+      - name: Add ~/.cargo/bin to PATH
+        shell: bash
+        run: echo ~/.cargo/bin >> $GITHUB_PATH
+      - name: Get prebuilt jieba_vim_rs_metatest binary
+        uses: actions/download-artifact@v5
+        with:
+          name: jieba-metatest-binary
+          path: ~/.cargo/bin
+      - name: Get bootstrap test cases
+        uses: actions/download-artifact@v5
+        with:
+          name: bootstrap-test-cases
+          path: test/cases/bootstrap
+      - name: Get jieba.vim cdylib for +python3
+        if: matrix.glue-lang == 'py39'
+        uses: actions/download-artifact@v5
+        with:
+          name: jieba-vim-cdylib-python
+          path: pythonx/jieba_vim
+      - name: Write vimrc
+        uses: DamianReeves/write-file-action@v1.3
+        with:
+          path: vimrc
+          write-mode: overwrite
+          contents: |
+            if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
+              let g:python3_host_prog = trim(system("which python3.9"))
+            endif
+            if !has("mksession")
+              echoerr "+mksession is required to run the tests"
+              cquit
+              finish
+            endif
+            if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
+              echoerr "+python3 is required to run the tests"
+              cquit
+              finish
+            endif
+            set nocompatible
+            set sessionoptions=globals
+            set rtp+=${{ env.GITHUB_WORKSPACE }}
+            filetype plugin indent on
+
+      # Do the job.
+      - name: Run bootstrap case verification
+        id: run-bootstrap-case-verification
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p test/cases/bootstrapped
+          OUTPUT_TEST_CASE=${{ matrix.vim.distr }}_${{ matrix.vim.version }}_${{ matrix.glue-lang }}.jieba_test_case
+          case ${{ matrix.vim.distr }} in
+            vim)
+              jieba_vim_rs_metatest bootstrap \
+                --rc vimrc -v vim \
+                -d bootstrap_verification \
+                -o test/cases/bootstrapped/$OUTPUT_TEST_CASE \
+                test/cases/bootstrap/*.jieba_test_case
+              ;;
+            nvim)
+              jieba_vim_rs_metatest bootstrap \
+                --rc vimrc -v nvim --neovim \
+                -d bootstrap_verification \
+                -o test/cases/bootstrapped/$OUTPUT_TEST_CASE \
+                test/cases/bootstrap/*.jieba_test_case
+              ;;
+          esac
+          echo "output_test_case=test/cases/bootstrapped/$OUTPUT_TEST_CASE" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootstrapped-test-case-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          path: ${{ steps.run-bootstrap-case-verification.outputs.output_test_case }}
+          retention-days: 5
+      - name: Indicate whether bootstrap case verification has failed
+        uses: DamianReeves/write-file-action@v1.3
+        with:
+          path: bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}.txt
+          write-mode: overwrite
+          contents: |
+            ${{ steps.run-bootstrap-case-verification.outcome == 'failure' && 'failure' || 'success' }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.glue-lang }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          path: bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}.txt
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  report-bootstrap-case-verification-states:
+    name: Report bootstrap case verification states
+    runs-on: ubuntu-24.04
+    needs: bootstrap-case-verification
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: bootstrap-success-*.txt
+          merge-multiple: true
+      - name: Report failures
+        shell: bash
+        run: |
+          ! cat bootstrap-success-*.txt | grep '^failure '
+
+  unit-case-verification:
+    name: >
+      Unit case verification for
+      ${{ matrix.vim.distr }}@${{ matrix.vim.version }}
+      +${{ matrix.glue-lang }}
+    runs-on: ubuntu-24.04
+    needs:
+      - build-metatest-binary
+      - bootstrap-case-verification
+    strategy:
+      fail-fast: false
+      matrix:
+        glue-lang:
+          - py39
+        vim:
+          - distr: vim
+            version: v8.2.0000
+          - distr: vim
+            version: v9.1.0000
+          - distr: nvim
+            version: v0.10.2
+          - distr: nvim
+            version: v0.11.5
+    steps:
+      # Prepare env.
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-vim
+        with:
+          vim-distr: ${{ matrix.vim.distr }}
+          vim-version: ${{ matrix.vim.version }}
+          glue-lang: ${{ matrix.glue-lang }}
+      - name: Add ~/.cargo/bin to PATH
+        shell: bash
+        run: echo ~/.cargo/bin >> $GITHUB_PATH
+      - name: Get prebuilt jieba_vim_rs_metatest binary
+        uses: actions/download-artifact@v5
+        with:
+          name: jieba-metatest-binary
+          path: ~/.cargo/bin
+      - name: Get bootstrapped jieba test cases
+        uses: actions/download-artifact@v5
+        with:
+          path: test/cases/bootstrapped
+          pattern: bootstrapped-test-case-*
+          merge-multiple: true
+      - name: Write vimrc
+        uses: DamianReeves/write-file-action@v1.3
+        with:
+          path: vimrc
+          write-mode: overwrite
+          contents: |
+            if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
+              let g:python3_host_prog = trim(system("which python3.9"))
+            endif
+            if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
+              echoerr "+python3 is required to run the tests"
+              cquit
+              finish
+            endif
+            set nocompatible
+            set rtp+=${{ env.GITHUB_WORKSPACE }}
+            filetype plugin indent on
+
+      # Do the job.
+      - name: Run unit case verification
+        shell: bash
+        run: |
+          case ${{ matrix.vim.distr }} in
+            vim)
+              jieba_vim_rs_metatest verify-unit \
+                --rc vimrc -v vim \
+                -n vim-${{ matrix.vim.version }}_${{ matrix.glue-lang }} \
+                -d unit_verification \
+                test/cases/*.jieba_test_case \
+                test/cases/bootstrapped/*.jieba_test_case
+              ;;
+            nvim)
+              jieba_vim_rs_metatest verify-unit \
+                --rc vimrc -v nvim --neovim \
+                -n nvim-${{ matrix.vim.version }}_${{ matrix.glue-lang }} \
+                -d unit_verification \
+                test/cases/*.jieba_test_case \
+                test/cases/bootstrapped/*.jieba_test_case
+                ;;
+          esac
+      - name: Generate rust core tests
+        shell: bash
+        run: |
+          mkdir -p rust_backend/jieba_vim_rs_core/tests
+          jieba_vim_rs_metatest gen-unit \
+            -d unit_verification \
+            -t rust_backend/jieba_vim_rs_core/tests
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-core-test-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          path: rust_backend/jieba_vim_rs_core/tests/${{ matrix.vim.distr }}-${{ matrix.vim.version }}_${{ matrix.glue-lang }}.rs
+          retention-days: 5
+
+  commit_changes:
+    name: Collect artifacts and commit changes
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    needs:
+      - bootstrap-case-template-expansion
+      - bootstrap-case-verification
+      - unit-case-verification
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
+      - name: Get expanded bootstrap templates
+        uses: actions/download-artifact@v5
+        with:
+          name: bootstrap-test-cases
+          path: test/cases/bootstrap
+      - name: Get bootstrapped jieba test cases
+        uses: actions/download-artifact@v5
+        with:
+          path: test/cases/bootstrapped
+          pattern: bootstrapped-test-case-*
+          merge-multiple: true
+      - name: Get rust core tests
+        uses: actions/download-artifact@v5
+        with:
+          path: rust_backend/jieba_vim_rs_core/tests
+          pattern: rust-core-test-*
+          merge-multiple: true
+      - name: Commit the changes
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: Update tests
+          file_pattern: >
+            test/cases/bootstrap/*.jieba_test_case
+            test/cases/bootstrapped/*.jieba_test_case
+            rust_backend/jieba_vim_rs_core/tests/vim-*.rs
+            rust_backend/jieba_vim_rs_core/tests/nvim-*.rs
+
+  rust-core-test:
+    name: Run rust core tests
+    runs-on: ubuntu-24.04
+    needs: unit-case-verification
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v5
+        with:
+          path: rust_backend/jieba_vim_rs_core/tests
+          pattern: rust-core-test-*
+          merge-multiple: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build and run tests
+        shell: bash
+        run: |
+          cargo test -r --manifest-path rust_backend/jieba_vim_rs_test/Cargo.toml
+          cargo test -r --manifest-path rust_backend/jieba_vim_rs_core/Cargo.toml
+
+  coverage:
+    name: Test coverage
+    runs-on: ubuntu-24.04
+    needs: rust-core-test
+    steps:
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo-tarpaulin
+        id: cache-cargo-tarpaulin
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/bin/cargo-tarpaulin
+          key: cargo-tarpaulin
+      - name: Install cargo-tarpaulin
+        if: steps.cache-cargo-tarpaulin.outputs.cache-hit != 'true'
+        shell: bash
+        run: cargo install cargo-tarpaulin
+      - name: Show cargo-tarpaulin version
+        shell: bash
+        run: cargo tarpaulin --version
+      - name: Run cargo-tarpaulin
+        shell: bash
+        run: |
+          cargo tarpaulin --release --out Xml \
+            --engine Llvm \
+            --no-dead-code \
+            --manifest-path rust_backend/Cargo.toml \
+            --exclude-files 'jieba_vim_rs_test/*' \
+            --exclude-files 'jieba_vim_rs_test_macro/*' \
+            --exclude-files 'jieba_vim_rs_metatest/*' \
+            --exclude-files 'src/*' \
+            --packages jieba_vim_rs_core
+      - uses: codecov/codecov-action@v5
+        with:
+          files: rust_backend/cobertura.xml
+          disable_search: true
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    name: Build for ${{ matrix.job.target }}
+    runs-on: ${{ matrix.job.os }}
+    needs: rust-core-test
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          # This is enabled because wall time check in unit tests has been
+          # removed. But the issue might not be resolved yet. See more at
+          # https://github.com/kkew3/jieba.vim/issues/8.
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-22.04
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+          - target: aarch64-apple-darwin
+            os: macos-14
+          # macos-15-intel runner is only valid until August 2027. We will need
+          # to revert this change after that.
+          - target: x86_64-apple-darwin
+            os: macos-15-intel
+          - target: x86_64-pc-windows-msvc
+            os: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install ARM compiler toolchain
+        if: matrix.job.target == 'aarch64-unknown-linux-gnu'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.job.target }}
+          toolchain: stable
+      - name: Show version information (Rust, cargo, gcc)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          rustup target list | grep installed
+          cargo -V
+          rustc -V
+      - name: Build
+        shell: bash
+        run: |
+          cargo build --locked -r \
+            --target=${{ matrix.job.target }} \
+            --manifest-path rust_backend/Cargo.toml
