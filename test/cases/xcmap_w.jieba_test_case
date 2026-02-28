@@ -1,0 +1,334 @@
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy
+// of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+// Best viewed in Vim.
+
+#V 3
+
+#M v
+#X u
+#K w
+#Q < > visualmode=v prevent_change=0
+
+// Buffer: []␊ <<<
+#B0 []␊
+
+H 12862b2869c53cea3f5689b509ff7ec19d93a9da0203ac790942cf9a
+Q < > visualmode=v prevent_change=1
+C 1
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+H 54269871f73c005afafd2ba18f5708684985771ff79fb4e4012873d5
+Q < > visualmode=v prevent_change=1
+C 2
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+H 3e214668e62fd568e53f89d9a1431a45faee250098c86f8cc43be06d
+Q < > visualmode=v prevent_change=1
+C 10293949403
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: []···␊ <<<
+#B0 []···␊
+
+H 992c0d564c2b01b63486458b01629760fc055e209cac35e6c2030d1f
+C 1
+Bo <···>␊
+B1 [···]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: []abcd␊ <<<
+#B0 []abcd␊
+
+H dc14317754063ee08099fba136b7403c8cb013da9b1cb8a5286c6157
+C 1
+Bo <abcd>␊
+B1 [abcd]␊
+S1 visualmode()=v
+
+H 78b48acf5b8f40eb6ff1f3728a2548f3f92fdf49472dd4c2162c8435
+C 10293949403
+Bo <abcd>␊
+B1 [abcd]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: abc[]d␊ <<<
+#B0 abc[]d␊
+
+H 5150de11d4946ebd3d0d4ae9d9c359f4f4e2b36c7729fe53a2936b78
+C 1
+Bo abc<d>␊
+B1 abc[d]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: ]abc[d␊ <<<
+#B0 ]abc[d␊
+
+H fa3db96df59410e16f0f6862f67ad484117b95429d6659c44854dfef
+C 1
+Bo abc<d>␊
+B1 abc[d]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: abc[d]␊ <<<
+#B0 abc[d]␊
+
+H 78b68161cec6cf6c267bc7086e52d2892b02a44e8ed41ca68be7c5f0
+Q < > visualmode=v prevent_change=1
+C 1
+Bo abc<d>␊
+B1 abc[d]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: []abcd·····␊ <<<
+#B0 []abcd·····␊
+
+H 088e25524a1f69a6ab5333702e43c0f90da6a0b20aeb6552e7b751b3
+C 1
+Bo <abcd·····>␊
+B1 [abcd·····]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: abcd··[]···␊ <<<
+#B0 abcd··[]···␊
+
+H c9c161d14c4e0fb2a7908fb76808d4c273e6d300aad25e8df5e033a9
+C 1
+Bo abcd··<···>␊
+B1 abcd··[···]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: []·····abcd␊ <<<
+#B0 []·····abcd␊
+
+H 8e562987fbd6e98a330652d18f3e99b218a2940536e4cd3f7358869f
+C 1
+Bo <·····>abcd␊
+B1 [·····]abcd␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: ··[]···abcd␊ <<<
+#B0 ··[]···abcd␊
+
+H b2725bed22b2536e070821727fd376739263e5a4d1682446a7ad67a8
+C 1
+Bo ··<···>abcd␊
+B1 ··[···]abcd␊
+S1 visualmode()=v
+
+H 482fccca086f7f1575c971b15fbbcad0662515b514e3c0bf6f70a4d6
+C 2
+Bo ··<···abcd>␊
+B1 ··[···abcd]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: ··[]···abcde····␊ <<<
+#B0 ··[]···abcde····␊
+
+H b88aed1cd07da0814d92622cfe6fa0477a5dc978d441bf67094965d0
+C 1
+Bo ··<···>abcde····␊
+B1 ··[···]abcde····␊
+S1 visualmode()=v
+
+H d17b40d998b30244403ea1c74e195692c5328f83e27a2ca3e8cbce75
+C 2
+Bo ··<···abcde····>␊
+B1 ··[···abcde····]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: a[]bcd␊␊ <<<
+#B0 a[]bcd␊␊
+
+H cf37c76b9b729e62c34c05874494aeca1ceaa7a6bf65bdc5fb6d9d59
+C 1
+Bo a<bcd␊>␊
+B1 a[bcd␊]␊
+S1 visualmode()=v
+
+H 69c454b2d38af4bf7fddeebf467288cce38dcc5ee947eace1a1ade8b
+C 2
+Bo a<bcd␊>␊
+B1 a[bcd␊]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: a[]bcd····␊␊ <<<
+#B0 a[]bcd····␊␊
+
+H b1e34716769118b1101c1af03abb5ae9a9e8994f64545cbd061f1976
+C 1
+Bo a<bcd····␊>␊
+B1 a[bcd····␊]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: abcd[]····␊␊ <<<
+#B0 abcd[]····␊␊
+
+H 968580acd8e69b3d91e9211cc7edc761a94a2a86039fdac98677afcc
+C 1
+Bo abcd<····␊>␊
+B1 abcd[····␊]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: []abcd␊·····␊ <<<
+#B0 []abcd␊·····␊
+
+H 298b140caa4c294ed35ec30740113f7f5a872cc75defec96ad682aec
+C 1
+Bo <abcd␊·····>␊
+B1 [abcd␊·····]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: []abcd··␊····␊ <<<
+#B0 []abcd··␊····␊
+
+H 312ca629a03eb1b1c0c6ae900cbb82793a735a46adb6f7ab852d782b
+C 1
+Bo <abcd··␊····>␊
+B1 [abcd··␊····]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: a[]bcd␊·␊␊ <<<
+#B0 a[]bcd␊·␊␊
+
+H 1b40aafd8e8f8dbd9e6ef2942b1d4217e899fe909ae82d8c3a463755
+C 1
+Bo a<bcd␊·␊>␊
+B1 a[bcd␊·␊]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: a[]bcd␊·␊·␊␊··␊ <<<
+#B0 a[]bcd␊·␊·␊␊··␊
+
+H c73008988c121ae44f93faa7fb09f6087a10c02c0c907217fef07d03
+C 1
+Bo a<bcd␊·␊·␊>␊··␊
+B1 a[bcd␊·␊·␊]␊··␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: a[]bcd␊·␊·␊efg␊ <<<
+#B0 a[]bcd␊·␊·␊efg␊
+
+H 69857cb1f1e715ce181e2eb2c3bf5a33cb8ab5088bf38d4055508bfe
+C 1
+Bo a<bcd␊·␊·␊>efg␊
+B1 a[bcd␊·␊·␊]efg␊
+S1 visualmode()=v
+
+H 1cba4140e70f35d5eb22b006d3ec9e6af6da7c031bb1ebf2faf0d6c1
+C 2
+Bo a<bcd␊·␊·␊efg>␊
+B1 a[bcd␊·␊·␊efg]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: a[]bcd␊·␊·␊···efg␊ <<<
+#B0 a[]bcd␊·␊·␊···efg␊
+
+H 13050f431b648bca758ff732f36588d6ef44849772da55604ad6ffd7
+C 1
+Bo a<bcd␊·␊·␊···>efg␊
+B1 a[bcd␊·␊·␊···]efg␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: abc[d]␊efg␊ <<<
+#B0 abc[d]␊efg␊
+
+H 11fedc52a88693fe3b20aeba98eca8ce80d399df2445ce28bfbbe4d5
+C 1
+Bo abc<d␊>efg␊
+B1 abc[d␊]efg␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: abc[d]␊···efg␊ <<<
+#B0 abc[d]␊···efg␊
+
+H 2c40a2035e2acf7285c483bf0ebb75f6eddd95823107fc01a3270bdd
+C 1
+Bo abc<d␊···>efg␊
+B1 abc[d␊···]efg␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: abc[d]␊␊···efg␊ <<<
+#B0 abc[d]␊␊···efg␊
+
+H c87a365b498127deccdef0e484f4ec7d592772286379cbf8938465a8
+C 1
+Bo abc<d␊>␊···efg␊
+B1 abc[d␊]␊···efg␊
+S1 visualmode()=v
+
+H 7909be86b2959336d77f3958d6c1b033f9bfd965384d78569c6ba091
+C 2
+Bo abc<d␊␊···>efg␊
+B1 abc[d␊␊···]efg␊
+S1 visualmode()=v
+
+H a1cbf8c42dc23bce1fad13c57bfa8774e3f01e89b2c92f884b9464bf
+C 10293949403
+Bo abc<d␊␊···efg>␊
+B1 abc[d␊␊···efg]␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: abc[d]␊·␊·␊·efg␊ <<<
+#B0 abc[d]␊·␊·␊·efg␊
+
+H 04634f317c4fb2cbec4c686e1196280799c00ef396336444d8d832b6
+C 1
+Bo abc<d␊·␊·␊·>efg␊
+B1 abc[d␊·␊·␊·]efg␊
+S1 visualmode()=v
+
+// >>>
+// Buffer: abc[d␊·␊·␊·efg]␊ <<<
+#B0 abc[d␊·␊·␊·efg]␊
+
+H f537722a5597a343bad46a05c2b4465ed81809112da1575ea5607184
+C 1
+Q < > visualmode=v prevent_change=1
+Bo abc<d␊·␊·␊·efg>␊
+B1 abc[d␊·␊·␊·efg]␊
+S1 visualmode()=v
+
+// >>>
+
+// vim: foldmethod=marker foldmarker=<<<,>>> foldlevel=0

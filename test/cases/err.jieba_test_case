@@ -1,0 +1,30 @@
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy
+// of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+// This file contains failed test cases in bootstrap verification.
+// Best viewed in Vim.
+
+H c5fecc2f2d4d97c1080f86aaf0bc1afbba9de6d0b62d0602d802b686
+X u
+M o
+K w
+O d
+R a
+B0 abc|de␊
+C 0
+Q | \ < > prevent_change=0 visualmode=v
+Bp abc<d>e␊
+Bo ab|c␊
+B1 ab|c␊
+S1 "a=de
