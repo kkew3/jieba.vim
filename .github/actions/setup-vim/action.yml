@@ -1,0 +1,67 @@
+name: Setup vim/nvim
+inputs:
+  vim-distr:
+    description: 'The vim/nvim distribution name (either "vim" or "nvim")'
+    required: true
+  vim-version:
+    description: 'The vim/nvim version'
+    required: true
+  glue-lang:
+    description: 'The glue language (either "py39" or "lua51")'
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.9'
+      if: ${{ inputs.glue-lang == 'py39' }}
+    - name: Install pynvim
+      shell: bash
+      run: pip install pynvim
+      if: ${{ inputs.glue-lang == 'py39' && inputs.vim-distr == 'nvim' }}
+    - name: Setup lua
+      uses: leafo/gh-actions-lua@master
+      with:
+        luaVersion: '5.1'
+      if: ${{ inputs.glue-lang == 'lua51' }}
+    - name: Copy lua libs and includes to /usr
+      shell: bash
+      run: |
+        sudo cp -r .lua/include/* /usr/include
+        sudo cp -r .lua/lib/* /usr/lib
+      if: ${{ inputs.glue-lang == 'lua51' }}
+    - name: Setup vim (+python3)
+      uses: rhysd/action-setup-vim@v1
+      with:
+        version: ${{ inputs.vim-version }}
+        neovim: false
+        configure-args: >
+          --with-features=huge
+          --enable-fail-if-missing
+          --enable-largefile
+          --enable-multibyte
+          --enable-python3interp
+          --enable-gui=no
+          --with-python3-command=python3.9
+      if: ${{ inputs.glue-lang == 'py39' && inputs.vim-distr == 'vim' }}
+    - name: Setup vim (+lua)
+      uses: rhysd/action-setup-vim@v1
+      with:
+        version: ${{ inputs.vim-version }}
+        neovim: false
+        configure-args: >
+          --with-features=huge
+          --enable-fail-if-missing
+          --enable-largefile
+          --enable-multibyte
+          --enable-luainterp
+          --enable-gui=no
+      if: ${{ inputs.glue-lang == 'lua51' && inputs.vim-distr == 'vim' }}
+    - name: Setup nvim
+      uses: rhysd/action-setup-vim@v1
+      with:
+        version: ${{ inputs.vim-version }}
+        neovim: true
+      if: ${{ inputs.vim-distr == 'nvim' }}
