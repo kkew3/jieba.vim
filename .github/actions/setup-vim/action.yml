@@ -1,4 +1,5 @@
 name: Setup vim/nvim
+description: Setup vim/nvim with +python3/+lua enabled
 inputs:
   vim-distr:
     description: 'The vim/nvim distribution name (either "vim" or "nvim")'
