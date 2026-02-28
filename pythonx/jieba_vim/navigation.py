@@ -1,4 +1,4 @@
-# Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+# Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy
@@ -11,361 +11,77 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-"""
-These names are dynamically defined in this module::
-
-    - nmap_w
-    - nmap_W
-    - xmap_w
-    - xmap_W
-    - omap_w
-    - omap_W
-    - nmap_e
-    - nmap_E
-    - xmap_e
-    - xmap_E
-    - omap_e
-    - omap_E
-    - nmap_b
-    - nmap_B
-    - xmap_b
-    - xmap_B
-    - omap_b
-    - omap_B
-    - nmap_ge
-    - nmap_gE
-    - xmap_ge
-    - xmap_gE
-    - omap_ge
-    - omap_gE
-"""
-
-import vim  # type: ignore
 
 from . import jieba_vim_rs
 
 word_motion = None
 
 
-def upperbound_count(count):
-    """
-    Upperbound the count at 2**64-1. This assumes the use of u64 type for
-    count.
-    """
-    return min(18446744073709551615, count)
+def as_bytes(s):
+    if isinstance(s, str):
+        return s.encode("utf-8")
+    return s
 
 
-def get_register_value(register):
-    # The register is quoted by single quotes because no register is named `'`.
-    return vim.eval("getreg('{}')".format(register))
+def ints(arr):
+    return [int(x) for x in arr]
 
 
-def set_register_value(register, value):
-    # First escape backslashes and double quotes.
-    value = value.replace('\\', '\\\\').replace('"', '\\"')
-    vim.command("call setreg('{}', \"{}\")".format(register, value))
+def init_word_motion(user_dict, isk, lazy):
+    """Return error message. Empty error message means no error."""
+    if not user_dict:
+        user_dict = None
+    isk = as_bytes(isk)
+    lazy = bool(int(lazy))
 
-
-def _init_word_motion():
     global word_motion
     if word_motion is not None:
-        return
-    user_dict = vim.eval('g:jieba_vim_user_dict') or None
-    isk = vim.eval('&iskeyword')
+        return ""
     try:
-        if int(vim.eval('g:jieba_vim_lazy')):
+        if lazy:
             word_motion = jieba_vim_rs.LazyWordMotion(isk, user_dict)
         else:
             word_motion = jieba_vim_rs.WordMotion(isk, user_dict)
     except (IOError, ValueError):
-        vim.command(
-            'echoerr "jieba.vim: failed to load user dict: {}"'.format(
-                user_dict
-            )
-        )
+        return f"jieba.vim: failed to load user dict: {user_dict}"
 
 
-_init_word_motion()
+def nmap(buffer, motion, cursor, count):
+    # We have to do these type conversion because `vim.eval("a:000")` syntax
+    # in jieba_vim.vim converts all values to str. For example, `cursor` should
+    # be a list of 4 or 5 ints, but we will receive a list of strings.
+    motion = as_bytes(motion)
+    cursor = ints(cursor)
+    count = int(count)
+    return word_motion.nmap(buffer, motion, cursor, count)
 
 
-def update_isk():
-    isk = vim.eval('&iskeyword')
+def xmap(buffer, visualmode, motion, visual_begin, visual_end, count):
+    visualmode = as_bytes(visualmode)
+    motion = as_bytes(motion)
+    visual_begin = ints(visual_begin)
+    visual_end = ints(visual_end)
+    count = int(count)
+    return word_motion.xmap(
+        buffer, visualmode, motion, visual_begin, visual_end, count
+    )
+
+
+def omap(buffer, motion, cursor, count, operator):
+    motion = as_bytes(motion)
+    cursor = ints(cursor)
+    count = int(count)
+    operator = as_bytes(operator)
+    return word_motion.omap(buffer, motion, cursor, count, operator)
+
+
+def preview_nmap(buffer, motion, cursor, preview_limit):
+    motion = as_bytes(motion)
+    cursor = ints(cursor)
+    preview_limit = int(preview_limit)
+    return word_motion.preview_nmap(buffer, motion, cursor, preview_limit)
+
+
+def update_isk(isk):
+    isk = as_bytes(isk)
     word_motion.set_isk(isk)
-
-
-def _vim_wrapper_factory_n(motion_name):
-    fun_name = 'nmap_' + motion_name
-
-    def _motion_wrapper(count):
-        count = upperbound_count(count)
-        method = getattr(word_motion, fun_name)
-        output = method(vim.current.buffer, vim.current.window.cursor, count)
-        vim.current.window.cursor = output.cursor
-
-    return {fun_name: _motion_wrapper}
-
-
-def _vim_wrapper_factory_x(motion_name):
-    fun_name = 'xmap_' + motion_name
-
-    def _motion_wrapper(count):
-        count = upperbound_count(count)
-        method = getattr(word_motion, fun_name)
-        virtualedit_config = vim.eval('&virtualedit')
-        vim.command('set virtualedit=onemore')
-        # Handle the case where cursor is one character after the last
-        # character of the buffer in visual mode.
-        #
-        # FIXME Current handling does not cover every edge case, especially
-        # the case where the cursor is at the last character of the buffer in
-        # visual line mode. I'm aware of it, and intentionally mark
-        # test/cases/xmap_ge_eol.vader.j2 as IGNORED. Generally speaking, the
-        # failed case (which involves motion `ge` in visual line mode) does not
-        # have severe impact to users, as `ge` is rarely used. Some plugins,
-        # e.g. preservim/vim-markdown, even remaps it to certain plugin
-        # function. Therefore, this might be fixed in the future, but with a
-        # relatively low priority.
-        line, col = vim.current.window.cursor
-        # True if the cursor needs repositioning. This condition is neither
-        # sufficient nor necessary, meaning that there will be false positives.
-        # Note, however, that without the fourth clause `visualmode() != "V"`,
-        # the condition becomes necessary. The fourth clause is added to reduce
-        # the number of false positives.
-        need_reposition_cursor = bool(
-            int(
-                vim.eval(
-                    '''line("'>") == line("$") '''
-                    '''&& col("'>") == col("$") '''
-                    '''&& line(".") == line("'>") '''
-                    '''&& visualmode() != "V"'''
-                )
-            )
-        )
-        col_gt = int(vim.eval('''col("'>")''')) - 1
-        if motion_name in ('ge', 'gE') and need_reposition_cursor:
-            # Reposition the cursor to (line, col_gt).
-            output = method(vim.current.buffer, (line, col_gt), count)
-            # Since `ge` should move cursor backward, if the cursor results
-            # in a position after the previous position, it means the
-            # repositioning is a false positive. We will then rerun the
-            # function without repositioning to find the output cursor.
-            if output.cursor[0] == line and output.cursor[1] > col:
-                output = method(vim.current.buffer, (line, col), count)
-        else:
-            output = method(vim.current.buffer, (line, col), count)
-        vim.current.window.cursor = output.cursor
-        # The `m>gv` trick reference:
-        # https://github.com/svermeulen/vim-NotableFt/blob/01732102c1d8c7b7bd6e221329e37685aa4ab41a/plugin/NotableFt.vim#L32
-        vim.command('normal! m>gv')
-        vim.command('set virtualedit={}'.format(virtualedit_config))
-
-    return {fun_name: _motion_wrapper}
-
-
-def _vim_wrapper_factory_omap_w(motion_name):
-    assert motion_name in ['w', 'W']
-    fun_name = 'omap_' + motion_name
-
-    def _motion_wrapper(register, operator, count):
-        vim.command(
-            'silent! call repeat#setreg("\\<Plug>(Jieba_internal_o_{})", \'{}\')'.format(
-                motion_name, register
-            )
-        )
-        count = upperbound_count(count)
-        method = getattr(word_motion, fun_name)
-        virtualedit_config = vim.eval('&virtualedit')
-        output = method(
-            vim.current.buffer, vim.current.window.cursor, operator, count
-        )
-        col_before = vim.current.window.cursor[1]
-        vim.command('set virtualedit=onemore')
-        # `output.cursor[1] + 1` because vim column starts from 1 whereas vim
-        # python api column starts from 0.
-        vim.command(
-            '''execute 'silent normal! "{}{}:call cursor({}, {})' . "\\<CR>"'''.format(
-                register, operator, output.cursor[0], output.cursor[1] + 1
-            )
-        )
-        if operator == 'c':
-            # Running `c` in `normal!` as above will shift the cursor one more
-            # character to the left; so we need to shift back one character.
-            if col_before > 0:
-                vim.command('normal! l')
-            vim.command('startinsert')
-        vim.command('set virtualedit={}'.format(virtualedit_config))
-        vim.command(
-            'silent! call repeat#set("\\<Plug>(Jieba_internal_o_{})", {})'.format(
-                motion_name, count
-            )
-        )
-
-    return {fun_name: _motion_wrapper}
-
-
-def _vim_wrapper_factory_omap_e(motion_name):
-    assert motion_name in ['e', 'E']
-    fun_name = 'omap_' + motion_name
-
-    def _motion_wrapper(register, operator, count):
-        vim.command(
-            'silent! call repeat#setreg("\\<Plug>(Jieba_internal_o_{})", \'{}\')'.format(
-                motion_name, register
-            )
-        )
-        count = upperbound_count(count)
-        method = getattr(word_motion, fun_name)
-        virtualedit_config = vim.eval('&virtualedit')
-        output = method(
-            vim.current.buffer, vim.current.window.cursor, operator, count
-        )
-        line_before = vim.current.window.cursor[0]
-        col_before = vim.current.window.cursor[1]
-        # This will be used in d-special case below.
-        chars_before_cursor = vim.current.buffer[line_before - 1][:col_before]
-        vim.command('set virtualedit=onemore')
-        # `output.cursor[1] + 1` because vim column starts from 1 whereas vim
-        # python api column starts from 0.
-        vim.command(
-            '''execute 'silent normal! "{}{}v:call cursor({}, {})' . "\\<CR>"'''.format(
-                register, operator, output.cursor[0], output.cursor[1] + 1
-            )
-        )
-        reg_value = get_register_value(register)
-        if operator == 'c':
-            # Running `c` in `normal!` as above will shift the cursor one more
-            # character to the left; so we need to shift back one character.
-            if col_before:
-                vim.command('normal! l')
-            vim.command('startinsert')
-        elif operator == 'd' and output.d_special:
-            vim.command('normal! "{}dd'.format(register))
-            # `reg_value2` consists of `chars_before_cursor` and the rest. We
-            # need this order: `chars_before_cursor`, `reg_value`, the rest.
-            reg_value2 = get_register_value(register)
-            reg_value = (
-                chars_before_cursor + reg_value + reg_value2[col_before:]
-            )
-            set_register_value(register, reg_value)
-            # We don't need this block because somehow having
-            # virtualedit=onemore overcomes the cursor position issue.
-            # if int(vim.eval('has("nvim")')):
-            #    vim.command("""execute 'silent call cursor(line("."), {})'"""
-            #                .format(col_before + 1))
-        vim.command('set virtualedit={}'.format(virtualedit_config))
-        vim.command(
-            'silent! call repeat#set("\\<Plug>(Jieba_internal_o_{})", {})'.format(
-                motion_name, count
-            )
-        )
-
-    return {fun_name: _motion_wrapper}
-
-
-def _vim_wrapper_factory_omap_b(motion_name):
-    assert motion_name in ['b', 'B']
-    fun_name = 'omap_' + motion_name
-
-    def _motion_wrapper(register, operator, count):
-        vim.command(
-            'silent! call repeat#setreg("\\<Plug>(Jieba_internal_o_{})", \'{}\')'.format(
-                motion_name, register
-            )
-        )
-        count = upperbound_count(count)
-        method = getattr(word_motion, fun_name)
-        output = method(vim.current.buffer, vim.current.window.cursor, count)
-        if output.prevent_change:
-            vim.current.window.cursor = output.cursor
-        else:
-            # `output.cursor[1] + 1` because vim column starts from 1 whereas
-            # vim python api column starts from 0.
-            vim.command(
-                '''execute 'silent normal! "{}{}:call cursor({}, {})' . "\\<CR>"'''.format(
-                    register, operator, output.cursor[0], output.cursor[1] + 1
-                )
-            )
-            if operator == 'c':
-                # Running `c` in `normal!` as above will shift the cursor one
-                # more character to the left; so we need to shift back one
-                # character.
-                if output.cursor[1] > 0:
-                    vim.command('normal! l')
-                vim.command('startinsert')
-        vim.command(
-            'silent! call repeat#set("\\<Plug>(Jieba_internal_o_{})", {})'.format(
-                motion_name, count
-            )
-        )
-
-    return {fun_name: _motion_wrapper}
-
-
-def _vim_wrapper_factory_omap_ge(motion_name):
-    assert motion_name in ['ge', 'gE']
-    fun_name = 'omap_' + motion_name
-
-    def _motion_wrapper(register, operator, count):
-        vim.command(
-            'silent! call repeat#setreg("\\<Plug>(Jieba_internal_o_{})", \'{}\')'.format(
-                motion_name, register
-            )
-        )
-        count = upperbound_count(count)
-        method = getattr(word_motion, fun_name)
-        output = method(
-            vim.current.buffer, vim.current.window.cursor, operator, count
-        )
-        col_before = vim.current.window.cursor[1]
-        if output.prevent_change:
-            vim.current.window.cursor = output.cursor
-        else:
-            # `output.cursor[1] + 1` because vim column starts from 1 whereas
-            # vim python api column starts from 0.
-            vim.command(
-                '''execute 'silent normal! "{}{}v:call cursor({}, {})' . "\\<CR>"'''.format(
-                    register, operator, output.cursor[0], output.cursor[1] + 1
-                )
-            )
-            reg_value = get_register_value(register)
-            if operator == 'c':
-                # Running `c` in `normal!` as above will shift the cursor one
-                # more character to the left; so we need to shift back one
-                # character.
-                if output.cursor[1] > 0:
-                    vim.command('normal! l')
-                vim.command('startinsert')
-            elif operator == 'd' and output.d_special:
-                vim.command('normal! "{}dd'.format(register))
-                reg_value += get_register_value(register)
-                set_register_value(register, reg_value)
-                if int(vim.eval('has("nvim")')):
-                    vim.command(
-                        '''execute "silent call cursor(line('.'), {})"'''.format(
-                            col_before + 1
-                        )
-                    )
-        vim.command(
-            'silent! call repeat#set("\\<Plug>(Jieba_internal_o_{})", {})'.format(
-                motion_name, count
-            )
-        )
-
-    return {fun_name: _motion_wrapper}
-
-
-def _define_functions():
-    for mo in ['w', 'W', 'e', 'E', 'b', 'B', 'ge', 'gE']:
-        globals().update(_vim_wrapper_factory_n(mo))
-        globals().update(_vim_wrapper_factory_x(mo))
-        if mo in ['e', 'E']:
-            globals().update(_vim_wrapper_factory_omap_e(mo))
-        elif mo in ['b', 'B']:
-            globals().update(_vim_wrapper_factory_omap_b(mo))
-        elif mo in ['ge', 'gE']:
-            globals().update(_vim_wrapper_factory_omap_ge(mo))
-        else:
-            globals().update(_vim_wrapper_factory_omap_w(mo))
-
-
-_define_functions()
