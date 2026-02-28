@@ -3,6 +3,7 @@ members = [
     "jieba_vim_rs_core",
     "jieba_vim_rs_test",
     "jieba_vim_rs_test_macro",
+    "jieba_vim_rs_metatest",
 ]
 
 [package]

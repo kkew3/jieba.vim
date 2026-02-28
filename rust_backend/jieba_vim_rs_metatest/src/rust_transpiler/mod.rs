@@ -1,4 +1,4 @@
-// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,6 +12,20 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-pub mod cursor_marker;
-pub mod keyword_cutter;
-pub mod verified_case;
+pub mod rust_test;
+
+use std::io::{self, Write};
+
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("io error: {0}")]
+    Io(#[from] io::Error),
+    #[error("rust transpiling error: {0}")]
+    Transpile(String),
+}
+
+pub trait ToRust {
+    fn to_rust<W: Write>(&self, stream: &mut W) -> Result<(), Error>;
+}

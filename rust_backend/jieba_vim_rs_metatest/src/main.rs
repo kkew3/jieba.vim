@@ -1,4 +1,4 @@
-// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,6 +12,16 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-pub mod cursor_marker;
-pub mod keyword_cutter;
-pub mod verified_case;
+use clap::Parser;
+use jieba_vim_rs_metatest::{Cli, Command};
+
+fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+    match cli.command {
+        Command::Check(check) => check.run()?,
+        Command::VerifyUnit(verify_unit) => verify_unit.run()?,
+        Command::GenUnit(gen_unit) => gen_unit.run()?,
+        Command::Bootstrap(bootstrap) => bootstrap.run()?,
+    }
+    Ok(())
+}
