@@ -226,7 +226,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v5
         with:
-          pattern: bootstrap-success-*.txt
+          pattern: bootstrap-success-*
           merge-multiple: true
       - name: Report failures
         shell: bash
