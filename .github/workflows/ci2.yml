@@ -155,12 +155,12 @@ jobs:
             endif
             if !has("mksession")
               echoerr "+mksession is required to run the tests"
-              cquit
+              cquit 10
               finish
             endif
             if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
               echoerr "+python3 is required to run the tests"
-              cquit
+              cquit 11
               finish
             endif
             set nocompatible
@@ -306,7 +306,7 @@ jobs:
             endif
             if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
               echoerr "+python3 is required to run the tests"
-              cquit
+              cquit 11
               finish
             endif
             set nocompatible
