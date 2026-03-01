@@ -58,6 +58,9 @@ jobs:
         with:
           name: jieba-metatest-binary
           path: ~/.cargo/bin
+      - name: Recover file modes due to download-artifact's limitation
+        shell: bash
+        run: chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
 
       # Do the job.
       - uses: actions/checkout@v6
@@ -136,6 +139,11 @@ jobs:
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
+      - name: Recover file modes due to download-artifact's limitation
+        shell: bash
+        run: |
+          chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
+          chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
       - name: Write vimrc
         uses: DamianReeves/write-file-action@v1.3
         with:
@@ -264,6 +272,9 @@ jobs:
           path: test/cases/bootstrapped
           pattern: bootstrapped-test-case-*
           merge-multiple: true
+      - name: Recover file modes due to download-artifact's limitation
+        shell: bash
+        run: chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
       - name: Write vimrc
         uses: DamianReeves/write-file-action@v1.3
         with:
