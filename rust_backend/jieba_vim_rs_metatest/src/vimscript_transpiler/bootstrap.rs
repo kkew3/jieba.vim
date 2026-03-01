@@ -400,7 +400,7 @@ impl ToVimscript for CustomRun {
     fn to_vimscript(&self, stream: &mut Vec<u8>) -> TranspilingResult {
         // Load session.
         stream.extend(
-            br#"execute "source " . expand("%:p:h") . "/Session.vim"
+            br#"silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 "#,
         );
