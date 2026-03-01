@@ -172,7 +172,7 @@ jobs:
         run: |
           case ${{ matrix.vim.distr }} in
             vim)
-              vim -e -u vimrc -cq
+              vim -es -u vimrc -cq
               ;;
             nvim)
               nvim --headless -u vimrc -cq
@@ -317,7 +317,7 @@ jobs:
         run: |
           case ${{ matrix.vim.distr }} in
             vim)
-              vim -e -u vimrc -cq
+              vim -es -u vimrc -cq
               ;;
             nvim)
               nvim --headless -u vimrc -cq
