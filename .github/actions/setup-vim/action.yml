@@ -40,7 +40,7 @@ runs:
         key: ${{ inputs.vim-distr }}-${{ inputs.vim-version }}-${{ inputs.glue-lang }}
         path: ~/vim
     - name: Compile and install vim
-      if: ${{ inputs.vim-distr == 'vim' && steps.cache-vim.outputs.cache-hit == 'false' }}
+      if: ${{ inputs.vim-distr == 'vim' && steps.cache-vim.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
         sudo apt-get update
@@ -73,7 +73,7 @@ runs:
         esac
         make && make install
     - name: Compile and install nvim
-      if: ${{ inputs.vim-distr == 'nvim' && steps.cache-vim.outputs.cache-hit == 'false' }}
+      if: ${{ inputs.vim-distr == 'nvim' && steps.cache-vim.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
         sudo apt-get update
