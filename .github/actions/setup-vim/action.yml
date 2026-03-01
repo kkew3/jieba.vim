@@ -110,6 +110,18 @@ runs:
         curl -fSL https://github.com/neovim/neovim/releases/download/${{ inputs.vim-version }}/${TARBALL_NAME}.tar.gz \
           | tar xzf - --strip-components=1 -C ~/vim
         echo "$HOME/vim/bin" >> $GITHUB_PATH
+    - name: Add vim/nvim to PATH
+      if: ${{ steps.cache-vim.outputs.cache-hit == 'true' }}
+      shell: bash
+      run: |
+        case ${{ inputs.vim-distr }} in
+          vim)
+            echo "$HOME/vim/prefix/bin" >> $GITHUB_PATH
+            ;;
+          nvim)
+            echo "$HOME/vim/bin" >> $GITHUB_PATH
+            ;;
+        esac
     - name: Print vim/nvim version
       shell: bash
       run: ${{ inputs.vim-distr }} --version
