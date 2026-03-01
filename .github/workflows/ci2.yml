@@ -235,6 +235,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - build-metatest-binary
+      - build-jieba-vim-cdylib-python
       - bootstrap-case-verification
     strategy:
       fail-fast: false
@@ -272,9 +273,17 @@ jobs:
           path: test/cases/bootstrapped
           pattern: bootstrapped-test-case-*
           merge-multiple: true
+      - name: Get jieba.vim cdylib for +python3
+        if: matrix.glue-lang == 'py39'
+        uses: actions/download-artifact@v5
+        with:
+          name: jieba-vim-cdylib-python
+          path: pythonx/jieba_vim
       - name: Recover file modes due to download-artifact's limitation
         shell: bash
-        run: chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
+        run: |
+          chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
+          chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
       - name: Write vimrc
         uses: DamianReeves/write-file-action@v1.3
         with:
