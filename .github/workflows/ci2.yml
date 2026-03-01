@@ -118,9 +118,9 @@ jobs:
       - name: Debugging checkout directory
         shell: bash
         run: |
-          ls -F ${{ env.GITHUB_WORKSPACE }}
-          ls -F ${{ env.GITHUB_WORKSPACE }}/plugin
-          test -f ${{ env.GITHUB_WORKSPACE }}/plugin/jieba_vim.vim
+          ls -F ${{ github.workspace }}
+          ls -F ${{ github.workspace }}/plugin
+          test -f ${{ github.workspace }}/plugin/jieba_vim.vim
       - uses: ./.github/actions/setup-vim
         with:
           vim-distr: ${{ matrix.vim.distr }}
@@ -171,7 +171,7 @@ jobs:
             endif
             set nocompatible
             set sessionoptions=globals
-            set rtp+=${{ env.GITHUB_WORKSPACE }}
+            set rtp+=${{ github.workspace }}
             filetype plugin indent on
 
       # Do the job.
@@ -296,7 +296,7 @@ jobs:
               finish
             endif
             set nocompatible
-            set rtp+=${{ env.GITHUB_WORKSPACE }}
+            set rtp+=${{ github.workspace }}
             filetype plugin indent on
 
       # Do the job.
