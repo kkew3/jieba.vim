@@ -72,7 +72,7 @@ runs:
               --enable-multibyte \
               --enable-python3interp \
               --with-python3-command=python3.11 \
-              --with-python3-config-dir="$(python3.11-config --configdir)" \
+              --with-python3-stable-abi=3.11 \
               --prefix="$HOME/vim/prefix"
             ;;
           lua51-*)
