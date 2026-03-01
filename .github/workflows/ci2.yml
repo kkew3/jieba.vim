@@ -147,25 +147,38 @@ jobs:
         run: |
           chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
           chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
+      - name: Write vimrc
+        uses: DamianReeves/write-file-action@v1.3
+        with:
+          path: vimrc
+          write-mode: overwrite
+          contents: |
+            if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
+              let g:python3_host_prog = trim(system("which python3.9"))
+            endif
+            if !has("mksession")
+              echoerr "+mksession is required to run the tests"
+              cquit 10
+              finish
+            endif
+            if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
+              echoerr "+python3 is required to run the tests"
+              cquit 11
+              finish
+            endif
+            set nocompatible
+            set sessionoptions=globals
+            set rtp+=${{ github.workspace }}
+            filetype plugin indent on
       - name: Vim sanity check
         shell: bash
         run: |
-          echo Writing empty vimrc
-          echo -n > vimrc
-          echo Running which
-          which vim
-          echo Testing executable
-          test -x $(which vim)
-          echo Checking vim version
-          vim --version
-          echo Checking vim empty command
-          vim -es -cq
           case ${{ matrix.vim.distr }} in
             vim)
-              vim -es -u vimrc -cq
+              vim -es -u NONE -S vimrc -cq
               ;;
             nvim)
-              nvim --headless -u vimrc -cq
+              nvim --headless -u NONE -S vimrc -cq
               ;;
           esac
           false
