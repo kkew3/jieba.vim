@@ -144,15 +144,10 @@ jobs:
         run: |
           chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
           chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
-      - name: Write vimrc
-        uses: DamianReeves/write-file-action@v1.3
-        with:
-          path: vimrc
-          write-mode: overwrite
-          contents: ''
       - name: Vim sanity check
         shell: bash
         run: |
+          echo -n > vimrc
           case ${{ matrix.vim.distr }} in
             vim)
               vim -es -u vimrc -cq
