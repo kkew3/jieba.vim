@@ -176,6 +176,7 @@ jobs:
         run: |
           mkdir -p test/cases/bootstrapped
           OUTPUT_TEST_CASE=${{ matrix.vim.distr }}_${{ matrix.vim.version }}_${{ matrix.glue-lang }}.jieba_test_case
+          echo "output_test_case=test/cases/bootstrapped/$OUTPUT_TEST_CASE" >> "$GITHUB_OUTPUT"
           case ${{ matrix.vim.distr }} in
             vim)
               jieba_vim_rs_metatest bootstrap \
@@ -192,7 +193,6 @@ jobs:
                 test/cases/bootstrap/*.jieba_test_case
               ;;
           esac
-          echo "output_test_case=test/cases/bootstrapped/$OUTPUT_TEST_CASE" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: bootstrapped-test-case-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
