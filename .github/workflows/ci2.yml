@@ -147,7 +147,14 @@ jobs:
       - name: Vim sanity check
         shell: bash
         run: |
+          echo Writing empty vimrc
           echo -n > vimrc
+          echo Running which
+          which vim
+          echo Testing executable
+          test -x $(which vim)
+          echo Checking vim empty command
+          vim -es -cq
           case ${{ matrix.vim.distr }} in
             vim)
               vim -es -u vimrc -cq
