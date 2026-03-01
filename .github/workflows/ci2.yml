@@ -149,10 +149,7 @@ jobs:
         with:
           path: vimrc
           write-mode: overwrite
-          contents: |
-            if !has("python3")
-              cquit 11
-            endif
+          contents: ''
       - name: Vim sanity check
         shell: bash
         run: |
