@@ -178,9 +178,6 @@ jobs:
               nvim --headless -u vimrc -cq < /dev/null
               ;;
           esac
-      - name: Debugging
-        shell: bash
-        run: 'false'
 
       # Do the job.
       - name: Run bootstrap case verification
