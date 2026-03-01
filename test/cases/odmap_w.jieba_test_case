@@ -142,7 +142,9 @@ S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 // Buffer: |␊···abcd␊······␊ <<<
 #B0 |␊···abcd␊······␊
 
-H 8c01f36ec1b060db8c0237a9e40593ea84096b31f56973d784804632
+// d-special
+H 3607984e3eb3c7ce1af8e0da3216ebd8fae0e75303b88bd0c729b16a
+Q | \ < > prevent_change=0 visualmode=V
 C 2
 Bp <␊···abcd>␊······␊
 Bo ·····|·␊
