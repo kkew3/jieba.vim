@@ -167,6 +167,17 @@ jobs:
             set sessionoptions=globals
             set rtp+=${{ github.workspace }}
             filetype plugin indent on
+      - name: Vim sanity check
+        shell: bash
+        run: |
+          case ${{ matrix.vim.distr }} in
+            vim)
+              vim -es -u vimrc -cq
+              ;;
+            nvim)
+              nvim --headless -u vimrc -cq
+              ;;
+          esac
 
       # Do the job.
       - name: Run bootstrap case verification
@@ -301,6 +312,17 @@ jobs:
             set nocompatible
             set rtp+=${{ github.workspace }}
             filetype plugin indent on
+      - name: Vim sanity check
+        shell: bash
+        run: |
+          case ${{ matrix.vim.distr }} in
+            vim)
+              vim -es -u vimrc -cq
+              ;;
+            nvim)
+              nvim --headless -u vimrc -cq
+              ;;
+          esac
 
       # Do the job.
       - name: Run unit case verification
