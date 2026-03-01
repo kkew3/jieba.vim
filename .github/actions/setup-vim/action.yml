@@ -33,36 +33,50 @@ runs:
         sudo cp -r .lua/include/* /usr/include
         sudo cp -r .lua/lib/* /usr/lib
       if: ${{ inputs.glue-lang == 'lua51' }}
-    - name: Setup vim (+python3)
-      uses: rhysd/action-setup-vim@v1
+    - name: Checkout vim
+      if: ${{ inputs.vim-distr == 'vim' }}
+      uses: actions/checkout@v6
       with:
-        version: ${{ inputs.vim-version }}
-        neovim: false
-        configure-args: >
-          --with-features=huge
-          --enable-fail-if-missing
-          --enable-largefile
-          --enable-multibyte
-          --enable-python3interp
-          --enable-gui=no
-          --with-python3-command=python3.9
-      if: ${{ inputs.glue-lang == 'py39' && inputs.vim-distr == 'vim' }}
-    - name: Setup vim (+lua)
-      uses: rhysd/action-setup-vim@v1
-      with:
-        version: ${{ inputs.vim-version }}
-        neovim: false
-        configure-args: >
-          --with-features=huge
-          --enable-fail-if-missing
-          --enable-largefile
-          --enable-multibyte
-          --enable-luainterp
-          --enable-gui=no
-      if: ${{ inputs.glue-lang == 'lua51' && inputs.vim-distr == 'vim' }}
+        repository: vim/vim
+        ref: ${{ inputs.vim-version }}
+        path: ~/vim
+    - name: Compile and install vim to PATH
+      if: ${{ inputs.vim-distr == 'vim' }}
+      working-directory: ~/vim
+      shell: bash
+      run: |
+        case ${{ inputs.glue-lang }} in
+          py39)
+            LDFLAGS=-rdynamic ./configure \
+              --with-features=huge \
+              --enable-fail-if-missing \
+              --enable-largefile \
+              --enable-multibyte \
+              --enable-python3interp \
+              --with-python3-command=python3.9 \
+              --with-python3-stable-abi=3.9 \
+              --enable-gui=no \
+              --prefix="$HOME/vim/prefix"
+            ;;
+          lua51)
+            LDFLAGS=-rdynamic ./configure \
+              --with-features=huge \
+              --enable-fail-if-missing \
+              --enable-largefile \
+              --enable-multibyte \
+              --enable-luainterp
+              --enable-gui=no \
+              --prefix="$HOME/vim/prefix"
+            ;;
+        esac
+        make -j4 && make install
+        echo "$HOME/vim/prefix/bin" >> $GITHUB_PATH
     - name: Setup nvim
       uses: rhysd/action-setup-vim@v1
       with:
         version: ${{ inputs.vim-version }}
         neovim: true
       if: ${{ inputs.vim-distr == 'nvim' }}
+    - name: Print vim/nvim version
+      shell: bash
+      run: ${{ inputs.vim-distr }} --version

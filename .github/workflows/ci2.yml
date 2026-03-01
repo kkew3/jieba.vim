@@ -120,9 +120,6 @@ jobs:
           vim-distr: ${{ matrix.vim.distr }}
           vim-version: ${{ matrix.vim.version }}
           glue-lang: ${{ matrix.glue-lang }}
-      - name: Print vim version
-        shell: bash
-        run: ${{ matrix.vim.distr }} --version
       - name: Add ~/.cargo/bin to PATH
         shell: bash
         run: echo ~/.cargo/bin >> $GITHUB_PATH
@@ -274,9 +271,6 @@ jobs:
           vim-distr: ${{ matrix.vim.distr }}
           vim-version: ${{ matrix.vim.version }}
           glue-lang: ${{ matrix.glue-lang }}
-      - name: Print vim version
-        shell: bash
-        run: ${{ matrix.vim.distr }} --version
       - name: Add ~/.cargo/bin to PATH
         shell: bash
         run: echo ~/.cargo/bin >> $GITHUB_PATH
