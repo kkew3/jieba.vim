@@ -15,6 +15,7 @@
 // Best viewed in Vim.
 
 #V 3
+?!has:nvim
 
 #M o
 #X u
@@ -26,7 +27,7 @@
 // Buffer: |␊ <<<
 #B0 |␊
 
-H 6cada7834a7805e4ed385de875f31e0ba154c095b51e53e526e70065
+H eff464fb67b28ce0d4d2e332574c68f8e34290264f8afdfa46c69058
 C 1
 Bp <>␊
 Bo |␊
@@ -36,14 +37,14 @@ B1 |␊
 // Buffer: |······␊ <<<
 #B0 |······␊
 
-H b1af088c9dc06f5ca5bfbaa5d3c0a2560a92f766d24ffb9e449c16ab
+H d074a9ae8c2d202e384b62a0610dbc75161d574710ecfc68d264303c
 C 1
 Bp <·····>·␊
 Bo |␊
 B1 |␊
 S1 "a=\<Space>\<Space>\<Space>\<Space>\<Space>\<Space>
 
-H 91a4c46fa65d0fb4eb614018bd6990a7e625f11f3b2520f948712390
+H c420a9092c7354bf89945603bbb9bbcb7b23c85c400e955716253a00
 C 10293949403
 Bp <·····>·␊
 Bo |␊
@@ -54,7 +55,7 @@ S1 "a=\<Space>\<Space>\<Space>\<Space>\<Space>\<Space>
 // Buffer: ··|····␊ <<<
 #B0 ··|····␊
 
-H c0d272e6f75e6013a48e7de4c852a8f8651dbf247bba77e71bb63f35
+H 0d8915939e7a875257c545577c6f6be5fd3e47948820bc13e67cdaf8
 C 1
 Bp ··<···>·␊
 Bo ·|·␊
@@ -65,7 +66,7 @@ S1 "a=\<Space>\<Space>\<Space>\<Space>
 // Buffer: |␊␊ <<<
 #B0 |␊␊
 
-H 4cdcc322f9e6557e79781e637fbe377debc8b3441bce79a40bc5a887
+H 2e48878e789e89cbdec64e3a7bd94a361733ea7ee438c64178aa83be
 C 1
 Bp <>␊␊
 Bo |␊
@@ -76,7 +77,7 @@ S1 "a=\<Newline>
 // Buffer: ··|····␊␊ <<<
 #B0 ··|····␊␊
 
-H fdd5dcb979bb03c8027e8c6f2500f57eb0feb38a18f8f450f75f5dea
+H f1c8ff7972854262d9ae5b10d6017fbfa44ac7b8e248669d516394a7
 C 1
 Bp ··<···>·␊␊
 Bo ·|·␊␊
@@ -87,7 +88,7 @@ S1 "a=\<Space>\<Space>\<Space>\<Space>
 // Buffer: ··|····␊··␊ <<<
 #B0 ··|····␊··␊
 
-H 912bac947a96762d4a71e324c4c6dae36ab4f23cf7c804ef1b0da2f2
+H 1605a5ffa5d509d54f2834587a5dc5116e43aa4526f35f65e54a398c
 C 1
 Bp ··<···>·␊··␊
 Bo ·|·␊··␊
@@ -98,7 +99,7 @@ S1 "a=\<Space>\<Space>\<Space>\<Space>
 // Buffer: |␊······␊␊ <<<
 #B0 |␊······␊␊
 
-H 15fb430909d8f214b9299ed9e7d266d799c3b1b8a2cb7374d9cecbbe
+H 6e70ecf32b14e1c4a111aab8c79d80096e276bc2cb85c670d07ae4ff
 C 1
 Bp <>␊······␊␊
 Bo ·····|·␊␊
@@ -109,7 +110,7 @@ S1 "a=\<Newline>
 // Buffer: |␊···abcd␊␊ <<<
 #B0 |␊···abcd␊␊
 
-H 5a0d0ff8748810b37fe71a9879b2dbe4772845f74eb0f466c85f1f8f
+H 2aaef08602951d1946d055d4174ab56a682bbb3fbefa9100a485f0f6
 C 1
 Bp <>␊···abcd␊␊
 Bo ···|abcd␊␊
@@ -117,7 +118,7 @@ B1 ···|abcd␊␊
 S1 "a=\<Newline>
 
 // d-special
-H 3e3286da18bc55f35d7abcc52382cf25b85475932e7b53b4043f8b29
+H 09a4e1ae715d8a8b657741c2ce71a8620a0a31d62687be7a7411edd6
 Q | \ < > prevent_change=0 visualmode=V
 C 2
 Bp <␊···abcd>␊␊
@@ -130,7 +131,7 @@ S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 #B0 |␊···abcd␊
 
 // d-special
-H bf0521d65d0d135778eb325dc50983c576003a2f514a2b07c2760359
+H 64eaeef8e77814bff15fcb065fcd23ca80eb8b51c1f14efc92e32740
 Q | \ < > prevent_change=0 visualmode=V
 C 2
 Bp <␊···abcd>␊
@@ -143,7 +144,7 @@ S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 #B0 |␊···abcd␊······␊
 
 // d-special
-H 3607984e3eb3c7ce1af8e0da3216ebd8fae0e75303b88bd0c729b16a
+H e045074ead88095b110cca6565bde1dc2d981ca9535c2311c425cb80
 Q | \ < > prevent_change=0 visualmode=V
 C 2
 Bp <␊···abcd>␊······␊
@@ -155,7 +156,7 @@ S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 // Buffer: |␊···abcd␊······efg␊ <<<
 #B0 |␊···abcd␊······efg␊
 
-H a997c2c08dcfa970e68b1de8d5f85862a50b3b4c081c9d79741eddc1
+H c5b6479f8b77261426ea8846e93f6c532950988647215c0d59571006
 C 2
 Bp <␊···abcd>␊······efg␊
 Bo ······|efg␊
@@ -166,7 +167,7 @@ S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 // Buffer: |␊···abcd␊··␊·␊···efg␊ <<<
 #B0 |␊···abcd␊··␊·␊···efg␊
 
-H 7444f56cd6d5d31d5525acac18196906c6aba8a91e9ae413134f3252
+H ff8e551260f6a64d3825a6055cfc3de7e64a5d87ebefd6ea9f8c044e
 C 2
 Bp <␊···abcd>␊··␊·␊···efg␊
 Bo ·|·␊·␊···efg␊
@@ -174,7 +175,7 @@ B1 ·|·␊·␊···efg␊
 S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 
 // d-special
-H 58de8a2e85be2f1b0bcde7436c22023af608c43cb574b1d771513b55
+H 9376aa7484a2d0775d9ce7286ef702070ad2348562ac6277e44d2dcd
 Q | \ < > prevent_change=0 visualmode=V
 C 3
 Bp <␊···abcd␊··␊·␊···efg>␊
