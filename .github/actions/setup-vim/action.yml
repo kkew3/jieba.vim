@@ -33,8 +33,14 @@ runs:
         sudo cp -r .lua/include/* /usr/include
         sudo cp -r .lua/lib/* /usr/lib
       if: ${{ inputs.glue-lang == 'lua51' }}
+    - name: Cache vim/nvim directory
+      id: cache-vim
+      uses: actions/cache@v5
+      with:
+        key: ${{ inputs.vim-distr }}-${{ inputs.vim-version }}-${{ inputs.glue-lang }}
+        path: ~/vim
     - name: Compile and install vim
-      if: ${{ inputs.vim-distr == 'vim' }}
+      if: ${{ inputs.vim-distr == 'vim' && steps.cache-vim.outputs.cache-hit == 'false' }}
       shell: bash
       run: |
         sudo apt-get update
@@ -67,6 +73,7 @@ runs:
         esac
         make && make install
     - name: Compile and install nvim
+      if: ${{ inputs.vim-distr == 'nvim' && steps.cache-vim.outputs.cache-hit == 'false' }}
       shell: bash
       run: |
         sudo apt-get update
@@ -75,7 +82,6 @@ runs:
         cd ~/vim && git checkout ${{ inputs.vim-version }}
         make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$HOME/vim/prefix"
         make install
-      if: ${{ inputs.vim-distr == 'nvim' }}
     - name: Add vim/nvim to PATH
       shell: bash
       run: |
