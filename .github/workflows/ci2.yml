@@ -58,6 +58,9 @@ jobs:
         with:
           name: jieba-metatest-binary
           path: ~/.cargo/bin
+      - name: Recover file modes due to download-artifact's limitation
+        shell: bash
+        run: chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
 
       # Do the job.
       - uses: actions/checkout@v6
@@ -136,6 +139,11 @@ jobs:
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
+      - name: Recover file modes due to download-artifact's limitation
+        shell: bash
+        run: |
+          chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
+          chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
       - name: Write vimrc
         uses: DamianReeves/write-file-action@v1.3
         with:
@@ -147,18 +155,29 @@ jobs:
             endif
             if !has("mksession")
               echoerr "+mksession is required to run the tests"
-              cquit
+              cquit 10
               finish
             endif
             if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
               echoerr "+python3 is required to run the tests"
-              cquit
+              cquit 11
               finish
             endif
             set nocompatible
             set sessionoptions=globals
-            set rtp+=${{ env.GITHUB_WORKSPACE }}
+            set rtp+=${{ github.workspace }}
             filetype plugin indent on
+      - name: Vim sanity check
+        shell: bash
+        run: |
+          case ${{ matrix.vim.distr }} in
+            vim)
+              vim -es -u vimrc -cq < /dev/null
+              ;;
+            nvim)
+              nvim --headless -u vimrc -cq < /dev/null
+              ;;
+          esac
 
       # Do the job.
       - name: Run bootstrap case verification
@@ -168,6 +187,7 @@ jobs:
         run: |
           mkdir -p test/cases/bootstrapped
           OUTPUT_TEST_CASE=${{ matrix.vim.distr }}_${{ matrix.vim.version }}_${{ matrix.glue-lang }}.jieba_test_case
+          echo "output_test_case=test/cases/bootstrapped/$OUTPUT_TEST_CASE" >> "$GITHUB_OUTPUT"
           case ${{ matrix.vim.distr }} in
             vim)
               jieba_vim_rs_metatest bootstrap \
@@ -184,7 +204,6 @@ jobs:
                 test/cases/bootstrap/*.jieba_test_case
               ;;
           esac
-          echo "output_test_case=test/cases/bootstrapped/$OUTPUT_TEST_CASE" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: bootstrapped-test-case-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
@@ -212,7 +231,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v5
         with:
-          pattern: bootstrap-success-*.txt
+          pattern: bootstrap-success-*
           merge-multiple: true
       - name: Report failures
         shell: bash
@@ -227,6 +246,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - build-metatest-binary
+      - build-jieba-vim-cdylib-python
       - bootstrap-case-verification
     strategy:
       fail-fast: false
@@ -264,6 +284,17 @@ jobs:
           path: test/cases/bootstrapped
           pattern: bootstrapped-test-case-*
           merge-multiple: true
+      - name: Get jieba.vim cdylib for +python3
+        if: matrix.glue-lang == 'py39'
+        uses: actions/download-artifact@v5
+        with:
+          name: jieba-vim-cdylib-python
+          path: pythonx/jieba_vim
+      - name: Recover file modes due to download-artifact's limitation
+        shell: bash
+        run: |
+          chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
+          chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
       - name: Write vimrc
         uses: DamianReeves/write-file-action@v1.3
         with:
@@ -275,12 +306,23 @@ jobs:
             endif
             if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
               echoerr "+python3 is required to run the tests"
-              cquit
+              cquit 11
               finish
             endif
             set nocompatible
-            set rtp+=${{ env.GITHUB_WORKSPACE }}
+            set rtp+=${{ github.workspace }}
             filetype plugin indent on
+      - name: Vim sanity check
+        shell: bash
+        run: |
+          case ${{ matrix.vim.distr }} in
+            vim)
+              vim -es -u vimrc -cq < /dev/null
+              ;;
+            nvim)
+              nvim --headless -u vimrc -cq < /dev/null
+              ;;
+          esac
 
       # Do the job.
       - name: Run unit case verification

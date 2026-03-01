@@ -33,36 +33,59 @@ runs:
         sudo cp -r .lua/include/* /usr/include
         sudo cp -r .lua/lib/* /usr/lib
       if: ${{ inputs.glue-lang == 'lua51' }}
-    - name: Setup vim (+python3)
-      uses: rhysd/action-setup-vim@v1
+    - name: Cache vim/nvim directory
+      id: cache-vim
+      uses: actions/cache@v5
       with:
-        version: ${{ inputs.vim-version }}
-        neovim: false
-        configure-args: >
-          --with-features=huge
-          --enable-fail-if-missing
-          --enable-largefile
-          --enable-multibyte
-          --enable-python3interp
-          --enable-gui=no
-          --with-python3-command=python3.9
-      if: ${{ inputs.glue-lang == 'py39' && inputs.vim-distr == 'vim' }}
-    - name: Setup vim (+lua)
-      uses: rhysd/action-setup-vim@v1
-      with:
-        version: ${{ inputs.vim-version }}
-        neovim: false
-        configure-args: >
-          --with-features=huge
-          --enable-fail-if-missing
-          --enable-largefile
-          --enable-multibyte
-          --enable-luainterp
-          --enable-gui=no
-      if: ${{ inputs.glue-lang == 'lua51' && inputs.vim-distr == 'vim' }}
-    - name: Setup nvim
-      uses: rhysd/action-setup-vim@v1
-      with:
-        version: ${{ inputs.vim-version }}
-        neovim: true
-      if: ${{ inputs.vim-distr == 'nvim' }}
+        key: ${{ inputs.vim-distr }}-${{ inputs.vim-version }}-${{ inputs.glue-lang }}
+        path: ~/vim
+    - name: Compile and install vim
+      if: ${{ inputs.vim-distr == 'vim' && steps.cache-vim.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends git make clang libtool-bin
+        git clone https://github.com/vim/vim.git ~/vim
+        cd ~/vim && git checkout ${{ inputs.vim-version }}
+        case ${{ inputs.glue-lang }} in
+          py39)
+            LDFLAGS=-rdynamic ./configure \
+              --with-features=huge \
+              --enable-fail-if-missing \
+              --enable-largefile \
+              --enable-multibyte \
+              --enable-python3interp \
+              --with-python3-command=python3.9 \
+              --with-python3-stable-abi=3.9 \
+              --enable-gui=no \
+              --prefix="$HOME/vim/prefix"
+            ;;
+          lua51)
+            LDFLAGS=-rdynamic ./configure \
+              --with-features=huge \
+              --enable-fail-if-missing \
+              --enable-largefile \
+              --enable-multibyte \
+              --enable-luainterp
+              --enable-gui=no \
+              --prefix="$HOME/vim/prefix"
+            ;;
+        esac
+        make && make install
+    - name: Compile and install nvim
+      if: ${{ inputs.vim-distr == 'nvim' && steps.cache-vim.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends git make clang libtool-bin cmake
+        git clone https://github.com/neovim/neovim ~/vim
+        cd ~/vim && git checkout ${{ inputs.vim-version }}
+        make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$HOME/vim/prefix"
+        make install
+    - name: Add vim/nvim to PATH
+      shell: bash
+      run: |
+        echo "$HOME/vim/prefix/bin" >> $GITHUB_PATH
+    - name: Print vim/nvim version
+      shell: bash
+      run: ${{ inputs.vim-distr }} --version

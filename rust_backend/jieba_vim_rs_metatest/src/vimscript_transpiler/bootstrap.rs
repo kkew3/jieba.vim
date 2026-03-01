@@ -386,7 +386,7 @@ let g:JiebaTestGroundtruthVisualEnd = json_encode(getpos("'b"))
         stream.extend(
             br#"
 execute "mksession! " . expand("%:p:h") . "/Session.vim"
-xit
+silent xit
 "#,
         );
 
@@ -400,7 +400,7 @@ impl ToVimscript for CustomRun {
     fn to_vimscript(&self, stream: &mut Vec<u8>) -> TranspilingResult {
         // Load session.
         stream.extend(
-            br#"execute "source " . expand("%:p:h") . "/Session.vim"
+            br#"silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 "#,
         );
@@ -640,7 +640,7 @@ impl ToVimscript for CustomRun {
             }
             VimCommand::new("endif", ()).flush(i, stream)?;
         }
-        stream.extend(b"\nxit\n");
+        stream.extend(b"\nsilent xit\n");
 
         Ok(())
     }
