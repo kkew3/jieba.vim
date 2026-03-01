@@ -248,7 +248,7 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
 
         " Special treatment of d-special in nvim.
         if has("nvim") && a:operator ==# "d" && l:result_dict["visualmode"] ==# "V"
-            call cursor(0, virtcol2col(l:orig_curpos[4]))
+            call cursor(0, virtcol2col(0, line("."), l:orig_curpos[4]))
         endif
 
         " Special treatment to |c| which needs to drop the user in insert mode.
