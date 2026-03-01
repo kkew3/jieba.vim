@@ -1,0 +1,6 @@
+// This file is intended left empty, so that we can do
+//
+//     git add test/cases/bootstrap/*.jieba_test_case
+//
+// without git-add reporting error like "pathspec 'x' did not match any files".
+// See the CI pipeline under .github/ directory for details.

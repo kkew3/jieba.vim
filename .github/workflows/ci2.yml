@@ -106,7 +106,7 @@ jobs:
       fail-fast: false
       matrix:
         glue-lang:
-          - py39
+          - py311
         vim:
           - distr: vim
             version: v9.1.0000
@@ -134,7 +134,7 @@ jobs:
           name: bootstrap-test-cases
           path: test/cases/bootstrap
       - name: Get jieba.vim cdylib for +python3
-        if: matrix.glue-lang == 'py39'
+        if: matrix.glue-lang == 'py311'
         uses: actions/download-artifact@v5
         with:
           name: jieba-vim-cdylib-python
@@ -148,15 +148,15 @@ jobs:
         shell: bash
         run: |
           cat <<EOF > vimrc
-          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
-            let g:python3_host_prog = trim(system("which python3.9"))
+          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py311"
+            let g:python3_host_prog = trim(system("which python3.11"))
           endif
           if !has("mksession")
             echoerr "+mksession is required to run the tests"
             cquit 10
             finish
           endif
-          if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
+          if "${{ matrix.glue-lang }}" ==# "py311" && !has("python3")
             echoerr "+python3 is required to run the tests"
             cquit 11
             finish
@@ -253,10 +253,10 @@ jobs:
       fail-fast: false
       matrix:
         glue-lang:
-          - py39
+          - py311
         vim:
           - distr: vim
-            version: v8.2.0000
+            version: v8.2.2876
           - distr: vim
             version: v9.1.0000
           - distr: nvim
@@ -286,7 +286,7 @@ jobs:
           pattern: bootstrapped-test-case-*
           merge-multiple: true
       - name: Get jieba.vim cdylib for +python3
-        if: matrix.glue-lang == 'py39'
+        if: matrix.glue-lang == 'py311'
         uses: actions/download-artifact@v5
         with:
           name: jieba-vim-cdylib-python
@@ -300,10 +300,10 @@ jobs:
         shell: bash
         run: |
           cat <<EOF > vimrc
-          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
-            let g:python3_host_prog = trim(system("which python3.9"))
+          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py311"
+            let g:python3_host_prog = trim(system("which python3.11"))
           endif
-          if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
+          if "${{ matrix.glue-lang }}" ==# "py311" && !has("python3")
             echoerr "+python3 is required to run the tests"
             cquit 11
             finish
@@ -326,13 +326,15 @@ jobs:
 
       # Do the job.
       - name: Run unit case verification
+        id: run-unit-case-verification
         shell: bash
         run: |
+          SAFE_VERSION="$(echo "${{ matrix.vim.version }}" | tr . _)"
           case ${{ matrix.vim.distr }} in
             vim)
               jieba_vim_rs_metatest verify-unit \
                 --rc vimrc -v vim \
-                -n vim-${{ matrix.vim.version }}_${{ matrix.glue-lang }} \
+                -n vim_${SAFE_VERSION}_${{ matrix.glue-lang }} \
                 -d unit_verification \
                 test/cases/*.jieba_test_case \
                 test/cases/bootstrapped/*.jieba_test_case
@@ -340,12 +342,13 @@ jobs:
             nvim)
               jieba_vim_rs_metatest verify-unit \
                 --rc vimrc -v nvim --neovim \
-                -n nvim-${{ matrix.vim.version }}_${{ matrix.glue-lang }} \
+                -n nvim_${SAFE_VERSION}_${{ matrix.glue-lang }} \
                 -d unit_verification \
                 test/cases/*.jieba_test_case \
                 test/cases/bootstrapped/*.jieba_test_case
                 ;;
           esac
+          echo "safe_version=${SAFE_VERSION}" >> "$GITHUB_OUTPUT"
       - name: Generate rust core tests
         shell: bash
         run: |
@@ -357,7 +360,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: rust-core-test-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
-          path: rust_backend/jieba_vim_rs_core/tests/${{ matrix.vim.distr }}-${{ matrix.vim.version }}_${{ matrix.glue-lang }}.rs
+          path: rust_backend/jieba_vim_rs_core/tests/${{ matrix.vim.distr }}_${{ steps.run-unit-case-verification.outputs.safe_version }}_${{ matrix.glue-lang }}.rs
           retention-days: 5
 
   commit_changes:
@@ -398,8 +401,7 @@ jobs:
           file_pattern: >
             test/cases/bootstrap/*.jieba_test_case
             test/cases/bootstrapped/*.jieba_test_case
-            rust_backend/jieba_vim_rs_core/tests/vim-*.rs
-            rust_backend/jieba_vim_rs_core/tests/nvim-*.rs
+            rust_backend/jieba_vim_rs_core/tests/*.rs
 
   rust-core-test:
     name: Run rust core tests
