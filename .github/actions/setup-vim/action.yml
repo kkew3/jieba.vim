@@ -33,7 +33,7 @@ runs:
         sudo cp -r .lua/include/* /usr/include
         sudo cp -r .lua/lib/* /usr/lib
       if: ${{ inputs.glue-lang == 'lua51' }}
-    - name: Compile and install vim to PATH
+    - name: Compile and install vim
       if: ${{ inputs.vim-distr == 'vim' }}
       shell: bash
       run: |
@@ -65,14 +65,21 @@ runs:
               --prefix="$HOME/vim/prefix"
             ;;
         esac
-        make -j4 && make install
-        echo "$HOME/vim/prefix/bin" >> $GITHUB_PATH
-    - name: Setup nvim
-      uses: rhysd/action-setup-vim@v1
-      with:
-        version: ${{ inputs.vim-version }}
-        neovim: true
+        make && make install
+    - name: Compile and install nvim
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends git make clang libtool-bin cmake
+        git clone https://github.com/neovim/neovim ~/vim
+        cd ~/vim && git checkout ${{ inputs.vim-version }}
+        make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$HOME/vim/prefix"
+        make install
       if: ${{ inputs.vim-distr == 'nvim' }}
+    - name: Add vim/nvim to PATH
+      shell: bash
+      run: |
+        echo "$HOME/vim/prefix/bin" >> $GITHUB_PATH
     - name: Print vim/nvim version
       shell: bash
       run: ${{ inputs.vim-distr }} --version
