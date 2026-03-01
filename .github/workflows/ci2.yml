@@ -150,23 +150,9 @@ jobs:
           path: vimrc
           write-mode: overwrite
           contents: |
-            if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
-              let g:python3_host_prog = trim(system("which python3.9"))
-            endif
-            if !has("mksession")
-              echoerr "+mksession is required to run the tests"
-              cquit 10
-              finish
-            endif
-            if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
-              echoerr "+python3 is required to run the tests"
+            if !has("python3")
               cquit 11
-              finish
             endif
-            set nocompatible
-            set sessionoptions=globals
-            set rtp+=${{ github.workspace }}
-            filetype plugin indent on
       - name: Vim sanity check
         shell: bash
         run: |
@@ -178,6 +164,7 @@ jobs:
               nvim --headless -u vimrc -cq
               ;;
           esac
+          false
 
       # Do the job.
       - name: Run bootstrap case verification
