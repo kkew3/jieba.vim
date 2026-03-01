@@ -106,7 +106,7 @@ jobs:
       fail-fast: false
       matrix:
         glue-lang:
-          - py39
+          - py311
         vim:
           - distr: vim
             version: v9.1.0000
@@ -134,7 +134,7 @@ jobs:
           name: bootstrap-test-cases
           path: test/cases/bootstrap
       - name: Get jieba.vim cdylib for +python3
-        if: matrix.glue-lang == 'py39'
+        if: matrix.glue-lang == 'py311'
         uses: actions/download-artifact@v5
         with:
           name: jieba-vim-cdylib-python
@@ -148,15 +148,15 @@ jobs:
         shell: bash
         run: |
           cat <<EOF > vimrc
-          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
-            let g:python3_host_prog = trim(system("which python3.9"))
+          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py311"
+            let g:python3_host_prog = trim(system("which python3.11"))
           endif
           if !has("mksession")
             echoerr "+mksession is required to run the tests"
             cquit 10
             finish
           endif
-          if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
+          if "${{ matrix.glue-lang }}" ==# "py311" && !has("python3")
             echoerr "+python3 is required to run the tests"
             cquit 11
             finish
@@ -253,7 +253,7 @@ jobs:
       fail-fast: false
       matrix:
         glue-lang:
-          - py39
+          - py311
         vim:
           - distr: vim
             version: v8.2.0000
@@ -286,7 +286,7 @@ jobs:
           pattern: bootstrapped-test-case-*
           merge-multiple: true
       - name: Get jieba.vim cdylib for +python3
-        if: matrix.glue-lang == 'py39'
+        if: matrix.glue-lang == 'py311'
         uses: actions/download-artifact@v5
         with:
           name: jieba-vim-cdylib-python
@@ -300,10 +300,10 @@ jobs:
         shell: bash
         run: |
           cat <<EOF > vimrc
-          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
-            let g:python3_host_prog = trim(system("which python3.9"))
+          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py311"
+            let g:python3_host_prog = trim(system("which python3.11"))
           endif
-          if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
+          if "${{ matrix.glue-lang }}" ==# "py311" && !has("python3")
             echoerr "+python3 is required to run the tests"
             cquit 11
             finish
