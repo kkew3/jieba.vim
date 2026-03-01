@@ -353,6 +353,7 @@ jobs:
           jieba_vim_rs_metatest gen-unit \
             -d unit_verification \
             -t rust_backend/jieba_vim_rs_core/tests
+          cargo fmt --manifest-path rust_backend/jieba_vim_rs_core/Cargo.toml
       - uses: actions/upload-artifact@v4
         with:
           name: rust-core-test-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
