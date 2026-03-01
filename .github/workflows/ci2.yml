@@ -145,28 +145,27 @@ jobs:
           chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
           chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
       - name: Write vimrc
-        uses: DamianReeves/write-file-action@v1.3
-        with:
-          path: vimrc
-          write-mode: overwrite
-          contents: |
-            if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
-              let g:python3_host_prog = trim(system("which python3.9"))
-            endif
-            if !has("mksession")
-              echoerr "+mksession is required to run the tests"
-              cquit 10
-              finish
-            endif
-            if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
-              echoerr "+python3 is required to run the tests"
-              cquit 11
-              finish
-            endif
-            set nocompatible
-            set sessionoptions=globals
-            set rtp+=${{ github.workspace }}
-            filetype plugin indent on
+        shell: bash
+        run: |
+          cat <<EOF > vimrc
+          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
+            let g:python3_host_prog = trim(system("which python3.9"))
+          endif
+          if !has("mksession")
+            echoerr "+mksession is required to run the tests"
+            cquit 10
+            finish
+          endif
+          if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
+            echoerr "+python3 is required to run the tests"
+            cquit 11
+            finish
+          endif
+          set nocompatible
+          set sessionoptions=globals
+          set rtp+=${{ github.workspace }}
+          filetype plugin indent on
+          EOF
       - name: Vim sanity check
         shell: bash
         run: |
@@ -210,16 +209,18 @@ jobs:
           path: ${{ steps.run-bootstrap-case-verification.outputs.output_test_case }}
           retention-days: 5
       - name: Indicate whether bootstrap case verification has failed
-        uses: DamianReeves/write-file-action@v1.3
-        with:
-          path: bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}.txt
-          write-mode: overwrite
-          contents: |
-            ${{ steps.run-bootstrap-case-verification.outcome == 'failure' && 'failure' || 'success' }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.glue-lang }}
+        id: indicate-state
+        shell: bash
+        run: |
+          TOFILE=bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}.txt
+          echo "tofile=$TOFILE" >> "$GITHUB_OUTPUT"
+          cat <<EOF > "$TOFILE"
+          ${{ steps.run-bootstrap-case-verification.outcome == 'failure' && 'failure' || 'success' }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.glue-lang }}
+          EOF
       - uses: actions/upload-artifact@v4
         with:
           name: bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
-          path: bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}.txt
+          path: ${{ steps.indicate-state.outputs.tofile }}
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
@@ -296,22 +297,21 @@ jobs:
           chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
           chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
       - name: Write vimrc
-        uses: DamianReeves/write-file-action@v1.3
-        with:
-          path: vimrc
-          write-mode: overwrite
-          contents: |
-            if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
-              let g:python3_host_prog = trim(system("which python3.9"))
-            endif
-            if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
-              echoerr "+python3 is required to run the tests"
-              cquit 11
-              finish
-            endif
-            set nocompatible
-            set rtp+=${{ github.workspace }}
-            filetype plugin indent on
+        shell: bash
+        run: |
+          cat <<EOF > vimrc
+          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py39"
+            let g:python3_host_prog = trim(system("which python3.9"))
+          endif
+          if "${{ matrix.glue-lang }}" ==# "py39" && !has("python3")
+            echoerr "+python3 is required to run the tests"
+            cquit 11
+            finish
+          endif
+          set nocompatible
+          set rtp+=${{ github.workspace }}
+          filetype plugin indent on
+          EOF
       - name: Vim sanity check
         shell: bash
         run: |
