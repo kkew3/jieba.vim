@@ -391,6 +391,11 @@ jobs:
           path: rust_backend/jieba_vim_rs_core/tests
           pattern: rust-core-test-*
           merge-multiple: true
+      - name: Debugging
+        shell: bash
+        run: |
+          ls -F test/cases test/cases/bootstrap test/cases/bootstrapped
+          find test/cases -name '*.jieba_test_case'
       - name: Commit the changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
