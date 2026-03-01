@@ -115,6 +115,12 @@ jobs:
     steps:
       # Prepare env.
       - uses: actions/checkout@v6
+      - name: Debugging checkout directory
+        shell: bash
+        run: |
+          ls -F ${{ env.GITHUB_WORKSPACE }}
+          ls -F ${{ env.GITHUB_WORKSPACE }}/plugin
+          test -f ${{ env.GITHUB_WORKSPACE }}/plugin/jieba_vim.vim
       - uses: ./.github/actions/setup-vim
         with:
           vim-distr: ${{ matrix.vim.distr }}
