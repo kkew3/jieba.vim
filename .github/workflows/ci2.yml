@@ -144,6 +144,8 @@ jobs:
         run: |
           chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
           chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
+      - uses: fawazahmed0/action-debug-vscode@main
+        if: matrix.vim.distr == 'vim'
       - name: Vim sanity check
         shell: bash
         run: |
