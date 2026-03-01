@@ -175,10 +175,10 @@ jobs:
         run: |
           case ${{ matrix.vim.distr }} in
             vim)
-              vim -es -u NONE -S vimrc -cq
+              vim -es -u vimrc -cq < /dev/null
               ;;
             nvim)
-              nvim --headless -u NONE -S vimrc -cq
+              nvim --headless -u vimrc -cq < /dev/null
               ;;
           esac
           false
@@ -324,10 +324,10 @@ jobs:
         run: |
           case ${{ matrix.vim.distr }} in
             vim)
-              vim -es -u vimrc -cq
+              vim -es -u vimrc -cq < /dev/null
               ;;
             nvim)
-              nvim --headless -u vimrc -cq
+              nvim --headless -u vimrc -cq < /dev/null
               ;;
           esac
 
