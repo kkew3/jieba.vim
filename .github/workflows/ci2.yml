@@ -256,7 +256,7 @@ jobs:
           - py311
         vim:
           - distr: vim
-            version: v8.2.2876
+            version: v8.2.0000
           - distr: vim
             version: v9.1.0000
           - distr: nvim
