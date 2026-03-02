@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -15,7 +15,24 @@
 //! Token iterators.
 
 use crate::BufferLike;
-use crate::token::{JiebaPlaceholder, Token, Tokenizer};
+use crate::token::{JiebaPlaceholder, Token, TokenLike, Tokenizer};
+
+/// Get the index of the token in `tokens` that covers `col`. Return `None` if
+/// `col` is to the right of the last token.
+pub fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
+    use std::cmp::Ordering;
+    tokens
+        .binary_search_by(|tok| {
+            if col < tok.first_char() {
+                Ordering::Greater
+            } else if col >= tok.last_char1() {
+                Ordering::Less
+            } else {
+                Ordering::Equal
+            }
+        })
+        .ok()
+}
 
 /// Item type yieled by token iterators.
 #[derive(Debug, PartialEq, Eq)]
@@ -75,8 +92,7 @@ where
         word: bool,
     ) -> Result<Self, B::Error> {
         let tokens = tokenizer.parse_str(&buffer.getline(lnum)?, word);
-        let token_index =
-            super::index_tokens(&tokens, col).unwrap_or(tokens.len());
+        let token_index = index_tokens(&tokens, col).unwrap_or(tokens.len());
         let cursor =
             (col == 0 && tokens.is_empty()) || token_index < tokens.len();
         let lines = buffer.lines()?;
@@ -206,7 +222,7 @@ where
         word: bool,
     ) -> Result<Self, B::Error> {
         let tokens = tokenizer.parse_str(&buffer.getline(lnum)?, word);
-        let token_index = super::index_tokens(&tokens, col);
+        let token_index = index_tokens(&tokens, col);
         let cursor = (col == 0 && tokens.is_empty()) || token_index.is_some();
         // One past the cursor token index.
         let token_index = token_index.map(|i| i + 1).unwrap_or(tokens.len());
@@ -306,9 +322,15 @@ where
 mod tests {
     use super::{
         BackwardTokenIterator, ForwardTokenIterator, TokenIteratorItem,
+        index_tokens,
     };
     use crate::token::jieba::KeywordCutter;
     use crate::token::{Token, TokenType, Tokenizer};
+
+    #[test]
+    fn test_index_tokens() {
+        assert_eq!(index_tokens(&[], 0), None);
+    }
 
     mod test_forward_token_iterator {
         use super::*;

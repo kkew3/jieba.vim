@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -13,9 +13,9 @@
 // under the License.
 
 use crate::BufferLike;
-use crate::token::token_iter::{BackwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 
+use super::token_iter::{BackwardTokenIterator, TokenIteratorItem};
 use super::{MotionOutput, WordMotion, d_special};
 
 /// Test if a token is stoppable for `omap_d_ge`.

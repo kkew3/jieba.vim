@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -13,7 +13,9 @@
 // under the License.
 
 use crate::BufferLike;
-use crate::token::{self, JiebaPlaceholder, TokenLike, TokenType, Tokenizer};
+use crate::token::{JiebaPlaceholder, TokenLike, TokenType, Tokenizer};
+
+use super::token_iter::index_tokens;
 
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.
@@ -34,7 +36,7 @@ pub fn is_d_special<B: BufferLike + ?Sized, C: JiebaPlaceholder>(
     let tokens_cursor_line =
         tokenizer.parse_str(&buffer.getline(start_lnum)?, word);
     if !tokens_cursor_line.is_empty() {
-        let i = token::index_tokens(&tokens_cursor_line, start_col).unwrap();
+        let i = index_tokens(&tokens_cursor_line, start_col).unwrap();
         if tokens_cursor_line[..i].iter().any(|tok| match tok.ty {
             TokenType::Space => false,
             TokenType::Word => true,
@@ -52,7 +54,7 @@ pub fn is_d_special<B: BufferLike + ?Sized, C: JiebaPlaceholder>(
     let tokens_new_cursor_line =
         tokenizer.parse_str(&buffer.getline(end_lnum)?, word);
     if !tokens_new_cursor_line.is_empty() {
-        let j = token::index_tokens(&tokens_new_cursor_line, end_col).unwrap();
+        let j = index_tokens(&tokens_new_cursor_line, end_col).unwrap();
         if tokens_new_cursor_line[j + 1..]
             .iter()
             .any(|tok| match tok.ty {

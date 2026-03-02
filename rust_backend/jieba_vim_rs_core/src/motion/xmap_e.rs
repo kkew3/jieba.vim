@@ -13,9 +13,9 @@
 // under the License.
 
 use crate::BufferLike;
-use crate::token::token_iter::{ForwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 
+use super::token_iter::{ForwardTokenIterator, TokenIteratorItem};
 use super::{MotionOutput, WordMotion};
 
 /// Test if a token is stoppable for `xmap_e`.
