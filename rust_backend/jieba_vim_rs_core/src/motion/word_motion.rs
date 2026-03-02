@@ -12,18 +12,15 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, Tokenizer};
+use crate::{BufferLike, CursorPositionCurswant, Position};
 
 pub struct WordMotion<C> {
     pub(super) tokenizer: Tokenizer<C>,
 }
 
-pub type Position = [usize; 4];
-pub type CursorPosition = [usize; 5];
-
 pub struct NmapOutput {
-    pub cursor: CursorPosition,
+    pub cursor: CursorPositionCurswant,
     pub prevent_change: &'static [u8],
 }
 
@@ -35,7 +32,7 @@ pub struct XmapOutput<'a> {
 }
 
 pub struct OmapOutput {
-    pub cursor: CursorPosition,
+    pub cursor: CursorPositionCurswant,
     pub langle: Position,
     pub rangle: Position,
     pub visualmode: &'static [u8],
@@ -57,7 +54,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         &mut self,
         buffer: &B,
         motion: &[u8],
-        cursor: CursorPosition,
+        cursor: CursorPositionCurswant,
         mut count: u64,
     ) -> Result<NmapOutput, B::Error> {
         if count == 0 {
@@ -155,7 +152,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         &mut self,
         buffer: &B,
         motion: &[u8],
-        cursor: CursorPosition,
+        cursor: CursorPositionCurswant,
         mut count: u64,
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {

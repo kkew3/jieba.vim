@@ -12,11 +12,11 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::BufferLike;
 use crate::token::token_iter::{ForwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
+use crate::{BufferLike, CursorPositionCurswant};
 
-use super::{CursorPosition, NmapOutput, WordMotion};
+use super::{NmapOutput, WordMotion};
 
 /// Test if a token is stoppable for `nmap_w`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
@@ -59,7 +59,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn nmap_w<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor: CursorPosition,
+        cursor: CursorPositionCurswant,
         mut count: u64,
         word: bool,
     ) -> Result<NmapOutput, B::Error> {

@@ -12,11 +12,11 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::BufferLike;
 use crate::token::token_iter::{ForwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
+use crate::{BufferLike, Position};
 
-use super::{Position, WordMotion, XmapOutput};
+use super::{WordMotion, XmapOutput};
 
 /// Test if a token is stoppable for `xmap_w`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
