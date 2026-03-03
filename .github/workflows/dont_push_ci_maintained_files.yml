@@ -1,0 +1,31 @@
+# Note: commits pushed by CI (in particular,
+# stefanzweifel/git-auto-commit-action) won't trigger this workflow due to
+# GitHub's limitation, and thus this mechanism is effective. See
+# <https://github.com/stefanzweifel/git-auto-commit-action?tab=readme-ov-file#commits-made-by-this-action-do-not-trigger-new-workflow-runs>
+# for details.
+
+name: "Don't push CI-maintained files"
+
+on:
+  pull_request:
+    paths:
+      - rust_backend/jieba_vim_rs_core/tests/nvim_*.rs
+      - rust_backend/jieba_vim_rs_core/tests/vim_*.rs
+      - test/cases/bootstrap/main.jieba_test_case
+      - test/cases/bootstrapped/*.jieba_test_case
+      - '!test/cases/bootstrapped/_*.jieba_test_case'
+  push:
+    paths:
+      - rust_backend/jieba_vim_rs_core/tests/nvim_*.rs
+      - rust_backend/jieba_vim_rs_core/tests/vim_*.rs
+      - test/cases/bootstrap/main.jieba_test_case
+      - test/cases/bootstrapped/*.jieba_test_case
+      - '!test/cases/bootstrapped/_*.jieba_test_case'
+
+jobs:
+  dont-push-ci-maintained-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail this workflow
+        shell: bash
+        run: 'false'
