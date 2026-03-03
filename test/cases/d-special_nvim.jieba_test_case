@@ -25,13 +25,13 @@
 #K w
 #O d
 #R a
-#Q | \ < > prevent_change=0 visualmode=V
+#Q | < > prevent_change=0 visualmode=V
 
 // Buffer: |␊···abcd␊······␊ <<<
 #B0 |␊···abcd␊······␊
 
-H d348f112e252ae7c657f3b6a6291cc7d7581295e48b56307d2406092
-Q | \ < > prevent_change=0 visualmode=V
+H a8d4f7746427a144e38ca1ec7bee2a21d86ab52b7c2f8e1acb26075e
+Q | < > prevent_change=0 visualmode=V
 C 2
 Bp <␊···abcd>␊······␊
 Bo ·····|·␊

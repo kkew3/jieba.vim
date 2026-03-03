@@ -22,12 +22,12 @@
 #K w
 #O d
 #R a
-#Q | \ < > prevent_change=0 visualmode=v
+#Q | < > prevent_change=0 visualmode=v
 
 // Buffer: |␊ <<<
 #B0 |␊
 
-H eff464fb67b28ce0d4d2e332574c68f8e34290264f8afdfa46c69058
+H 783df2d6a656f6a846c1023d9b79d7ee219cd804f69b199650dbbf04
 C 1
 Bp <>␊
 Bo |␊
@@ -37,14 +37,14 @@ B1 |␊
 // Buffer: |······␊ <<<
 #B0 |······␊
 
-H d074a9ae8c2d202e384b62a0610dbc75161d574710ecfc68d264303c
+H 0dbae4fbbfcfad38d75785c1a7d576ea33ed736abc7817e6c0e309bd
 C 1
 Bp <·····>·␊
 Bo |␊
 B1 |␊
 S1 "a=\<Space>\<Space>\<Space>\<Space>\<Space>\<Space>
 
-H c420a9092c7354bf89945603bbb9bbcb7b23c85c400e955716253a00
+H 322fd55e5e45035b183d456b8bb0d7e84175b5d4e40f0cc4c0a48231
 C 10293949403
 Bp <·····>·␊
 Bo |␊
@@ -55,7 +55,7 @@ S1 "a=\<Space>\<Space>\<Space>\<Space>\<Space>\<Space>
 // Buffer: ··|····␊ <<<
 #B0 ··|····␊
 
-H 0d8915939e7a875257c545577c6f6be5fd3e47948820bc13e67cdaf8
+H 8a035514a1e16aef0109e47adaf150e82ee3e2967605eb7f3fa4bc73
 C 1
 Bp ··<···>·␊
 Bo ·|·␊
@@ -66,7 +66,7 @@ S1 "a=\<Space>\<Space>\<Space>\<Space>
 // Buffer: |␊␊ <<<
 #B0 |␊␊
 
-H 2e48878e789e89cbdec64e3a7bd94a361733ea7ee438c64178aa83be
+H 1f175043c100f5a93d3b94ea6e2ceb8ad9595171930226d632e3d73c
 C 1
 Bp <>␊␊
 Bo |␊
@@ -77,7 +77,7 @@ S1 "a=\<Newline>
 // Buffer: ··|····␊␊ <<<
 #B0 ··|····␊␊
 
-H f1c8ff7972854262d9ae5b10d6017fbfa44ac7b8e248669d516394a7
+H 743b3c4ea7873f4f78aa00e6be0fc8b982a7dabd9ef75d9ea84ae1a0
 C 1
 Bp ··<···>·␊␊
 Bo ·|·␊␊
@@ -88,7 +88,7 @@ S1 "a=\<Space>\<Space>\<Space>\<Space>
 // Buffer: ··|····␊··␊ <<<
 #B0 ··|····␊··␊
 
-H 1605a5ffa5d509d54f2834587a5dc5116e43aa4526f35f65e54a398c
+H 451e7c72edc394f97556568d81ec6ee9e9d25e8f045fb7b8f791113f
 C 1
 Bp ··<···>·␊··␊
 Bo ·|·␊··␊
@@ -99,7 +99,7 @@ S1 "a=\<Space>\<Space>\<Space>\<Space>
 // Buffer: |␊······␊␊ <<<
 #B0 |␊······␊␊
 
-H 6e70ecf32b14e1c4a111aab8c79d80096e276bc2cb85c670d07ae4ff
+H 95f6c2b8150ec1b2f909fc8bd50ca6f57ca5e5bc237188b42ffa8c06
 C 1
 Bp <>␊······␊␊
 Bo ·····|·␊␊
@@ -110,7 +110,7 @@ S1 "a=\<Newline>
 // Buffer: |␊···abcd␊␊ <<<
 #B0 |␊···abcd␊␊
 
-H 2aaef08602951d1946d055d4174ab56a682bbb3fbefa9100a485f0f6
+H dacd2e355de2ad2cd8c7f8917f82c6a432d9ce87f649a25447615190
 C 1
 Bp <>␊···abcd␊␊
 Bo ···|abcd␊␊
@@ -118,8 +118,8 @@ B1 ···|abcd␊␊
 S1 "a=\<Newline>
 
 // d-special
-H 09a4e1ae715d8a8b657741c2ce71a8620a0a31d62687be7a7411edd6
-Q | \ < > prevent_change=0 visualmode=V
+H 5140fce8366bba565d9e5bd258deae8b35b185073e6ede9308c337c0
+Q | < > prevent_change=0 visualmode=V
 C 2
 Bp <␊···abcd>␊␊
 Bo |␊
@@ -131,8 +131,8 @@ S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 #B0 |␊···abcd␊
 
 // d-special
-H 64eaeef8e77814bff15fcb065fcd23ca80eb8b51c1f14efc92e32740
-Q | \ < > prevent_change=0 visualmode=V
+H 3f83629c73bb43a38896d71d28d8c1f703c9eccc95fa0520c5887f8b
+Q | < > prevent_change=0 visualmode=V
 C 2
 Bp <␊···abcd>␊
 Bo |␀
@@ -144,8 +144,8 @@ S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 #B0 |␊···abcd␊······␊
 
 // d-special
-H e045074ead88095b110cca6565bde1dc2d981ca9535c2311c425cb80
-Q | \ < > prevent_change=0 visualmode=V
+H 40bc60e2568bebf2ed73174d648d8464a10cba79957124462f01245a
+Q | < > prevent_change=0 visualmode=V
 C 2
 Bp <␊···abcd>␊······␊
 Bo ·····|·␊
@@ -156,7 +156,7 @@ S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 // Buffer: |␊···abcd␊······efg␊ <<<
 #B0 |␊···abcd␊······efg␊
 
-H c5b6479f8b77261426ea8846e93f6c532950988647215c0d59571006
+H 2304ebf0caf809b4b1e1ee11db994de530df34d2db7e755b80bd024e
 C 2
 Bp <␊···abcd>␊······efg␊
 Bo ······|efg␊
@@ -167,7 +167,7 @@ S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 // Buffer: |␊···abcd␊··␊·␊···efg␊ <<<
 #B0 |␊···abcd␊··␊·␊···efg␊
 
-H ff8e551260f6a64d3825a6055cfc3de7e64a5d87ebefd6ea9f8c044e
+H 213a87b8ef26620353982ee99e728eba8136741c3163d9258027c389
 C 2
 Bp <␊···abcd>␊··␊·␊···efg␊
 Bo ·|·␊·␊···efg␊
@@ -175,8 +175,8 @@ B1 ·|·␊·␊···efg␊
 S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 
 // d-special
-H 9376aa7484a2d0775d9ce7286ef702070ad2348562ac6277e44d2dcd
-Q | \ < > prevent_change=0 visualmode=V
+H b993f000f06f1d195e616223a96725c1a405b9dd5c2c04d971aad08d
+Q | < > prevent_change=0 visualmode=V
 C 3
 Bp <␊···abcd␊··␊·␊···efg>␊
 Bo |␀
