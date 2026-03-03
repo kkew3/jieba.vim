@@ -663,7 +663,7 @@ struct ModelOutput {
     #[serde(default)]
     rangle: Option<Position>,
     #[serde(default)]
-    cursor: Option<PositionCurswant>,
+    cursor: Option<Position>,
     #[serde(default)]
     visualmode: Option<String>,
     #[serde(default)]
@@ -843,6 +843,24 @@ impl BootstrapTestCaseBlock {
         let reader = BufReader::new(File::open(&buffer_file)?);
         let expected_buffer_after =
             unit_verification::read_as_clean_buffer(reader)?;
+        if expected_buffer_after.iter().any(|s| {
+            s.chars()
+                .any(|c| c == '\t' || Ascii::from_char(c).is_none())
+        }) {
+            panic!(
+                "expected buffer_after contains TAB or non-ASCII characters, \
+                which is not supported by current version of bootstrap verification"
+            );
+        }
+
+        // As expected buffer_after contains only non-TAB ASCIIs, all chars are
+        // of visual width 1, and we can safely set `curswant` to `col`.
+        fn cursor2cursorcurswant(
+            [bufnum, lnum, col, off]: Position,
+        ) -> PositionCurswant {
+            [bufnum, lnum, col, off, col]
+        }
+
         let self_ = std_run.0;
 
         let buffer_file = work_dir.join("buffer");
@@ -894,7 +912,7 @@ impl BootstrapTestCaseBlock {
                         rangle: None,
                         visual_begin: None,
                         visual_end: None,
-                        cursor: model_output.cursor,
+                        cursor: model_output.cursor.map(cursor2cursorcurswant),
                     },
                     UnitEditorMode::VisualChar
                     | UnitEditorMode::VisualLine
@@ -920,10 +938,10 @@ impl BootstrapTestCaseBlock {
                 };
                 let mut model_output_items = Vec::new();
                 if model_output.cursor.is_some() {
-                    // We assume cursor to be a 5-tuple of numbers (w/
+                    // We assume cursor to be a 4-tuple of numbers (w/out
                     // curswant) for simplicity, which also matches current
                     // implementation.
-                    model_output_items.push(ModelOutputItem::CursorCurswant);
+                    model_output_items.push(ModelOutputItem::Cursor);
                 }
                 if model_output.langle.is_some() {
                     model_output_items.push(ModelOutputItem::Langle);
@@ -1034,12 +1052,10 @@ impl Cli {
                 let old_hash = c.fix_hash_id();
                 let fixed_hash = c.hash_id();
                 if fixed_hash != &old_hash {
-                    return Err(anyhow::anyhow!(
+                    panic!(
                         "parsing failed: {}:{}: new hash = {}",
-                        fixed_hash.file,
-                        fixed_hash.lineno,
-                        fixed_hash.id
-                    ));
+                        fixed_hash.file, fixed_hash.lineno, fixed_hash.id
+                    );
                 }
                 match &fixed_hash.id {
                     TestHashId::Sha2(bytes) => {

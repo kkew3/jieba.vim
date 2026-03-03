@@ -15,7 +15,7 @@
 // This file contains failed test cases in bootstrap verification.
 // Best viewed in Vim.
 
-H c5fecc2f2d4d97c1080f86aaf0bc1afbba9de6d0b62d0602d802b686
+H c7d2120a5a8abb067dc68f04172115594efb14ab0f3dfb6862dfa154
 X u
 M o
 K w
@@ -23,7 +23,7 @@ O d
 R a
 B0 abc|de␊
 C 0
-Q | \ < > prevent_change=0 visualmode=v
+Q | < > prevent_change=0 visualmode=v
 Bp abc<d>e␊
 Bo ab|c␊
 B1 ab|c␊

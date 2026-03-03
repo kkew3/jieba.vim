@@ -97,7 +97,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             b"1"
         };
         Ok(NmapOutput {
-            cursor: [bufnum, lnum, col_p1, off, col_p1],
+            cursor: [bufnum, lnum, col_p1, off],
             prevent_change,
         })
     }

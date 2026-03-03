@@ -149,7 +149,7 @@ function! JiebaNmap(motion, count, model_funcname)
     else
         let l:result_dict = JiebaModelNmap(a:motion, getcurpos(), a:count)
     endif
-    call setpos(".", l:result_dict["cursor"])
+    call cursor(l:result_dict["cursor"][1:2])
 endfunction
 
 function! JiebaXmap(motion, count, model_funcname)
@@ -180,13 +180,13 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     else
         let l:result_dict = JiebaModelOmap(a:motion, l:orig_curpos, a:count, a:operator)
     endif
-    call setpos(".", l:result_dict["langle"])
+    call cursor(l:result_dict["langle"][1:2])
     " This no-op line effectively sets an undoable checkpoint such that |u|
     " undos all operations up to this line.
     call setline(".", getline("."))
     if l:result_dict["prevent_change"]
         " Land the cursor to potentially a new position.
-        call setpos(".", l:result_dict["cursor"])
+        call cursor(l:result_dict["cursor"][1:2])
     else
         " We need to use '< and '> marks in this function. Thus the clutters
         " here.
@@ -244,7 +244,7 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         endif
 
         " Land the cursor to potentially a new position.
-        call setpos(".", l:result_dict["cursor"])
+        call cursor(l:result_dict["cursor"][1:2])
 
         " Special treatment of d-special in nvim.
         if has("nvim") && a:operator ==# "d" && l:result_dict["visualmode"] ==# "V"

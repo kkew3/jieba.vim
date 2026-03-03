@@ -8,7 +8,7 @@ use jieba_vim_rs_core::token::Tokenizer;
 use keyword_cutter::KeywordCutter;
 
 #[test]
-fn test_d348f112e252ae7c657f3b6a6291cc7d7581295e48b56307d2406092() {
+fn test_a8d4f7746427a144e38ca1ec7bee2a21d86ab52b7c2f8e1acb26075e() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -31,7 +31,7 @@ fn test_d348f112e252ae7c657f3b6a6291cc7d7581295e48b56307d2406092() {
             &[100u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 6usize, 0usize, 6usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 6usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 2usize, 8usize, 0usize]);
@@ -39,7 +39,7 @@ fn test_d348f112e252ae7c657f3b6a6291cc7d7581295e48b56307d2406092() {
 }
 
 #[test]
-fn test_698e57d0555d71c2d35a6b462c2af57b8ff017a14aff967cf1c3afbe() {
+fn test_c49507d01cdbea465d32314ceb801d9c8f254abc9c6f69815f182df8() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -53,11 +53,11 @@ fn test_698e57d0555d71c2d35a6b462c2af57b8ff017a14aff967cf1c3afbe() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_706d85f12b47c3d525af804374cbc7e241aa86cc95e22e64264096ba() {
+fn test_8cce72cc00faa068725a1fe04b88053850a3f2000273e4f4730c6053() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -71,11 +71,11 @@ fn test_706d85f12b47c3d525af804374cbc7e241aa86cc95e22e64264096ba() {
             1000u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_80079981ca7ca6dd775d356f8d924c607deffc768fa0018f8b12be2a() {
+fn test_03a125e3f6590812f466d308ddc74afb24d01987a305b40f4eb8d9b1() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -89,11 +89,11 @@ fn test_80079981ca7ca6dd775d356f8d924c607deffc768fa0018f8b12be2a() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_8296af34e1f15c6444a53271d4d5f75a7eae56f85b851e01798dca1f() {
+fn test_10b646de08ba83ad3a6d33fabcde1c1c5fadc694e8d3a5b4088a3744() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -107,11 +107,11 @@ fn test_8296af34e1f15c6444a53271d4d5f75a7eae56f85b851e01798dca1f() {
             1000u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_797f49bf8ea25f1bafdb3b8d59477ea2447dfbbd137facedb78198ce() {
+fn test_3a6b4a36a2338d2844f0df72ced159c538450f9783bb8b3e0cf9e472() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -125,11 +125,11 @@ fn test_797f49bf8ea25f1bafdb3b8d59477ea2447dfbbd137facedb78198ce() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_7015f41f9bfabaa3bfc6ae2697658484cfee45d53c4341f34edc0f10() {
+fn test_329b00bed6a566f63230dff020b2d3c73b5123e211812ddd9f57429b() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -143,11 +143,11 @@ fn test_7015f41f9bfabaa3bfc6ae2697658484cfee45d53c4341f34edc0f10() {
             1000u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_c209f30411450c7334ad40b70090d535cb0fa726ee00a3773550a0c5() {
+fn test_f09570f84730fa18dae7fff574e9d718d9fde747f5cc3fe797069d47() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -161,11 +161,11 @@ fn test_c209f30411450c7334ad40b70090d535cb0fa726ee00a3773550a0c5() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_202e4390a90c3411730e2a0c0d8c6684d00266d1e0231de11107d539() {
+fn test_4ab46fe2887d1522e96230eccb0894f4adb901a241a5b428612d9b14() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -179,11 +179,11 @@ fn test_202e4390a90c3411730e2a0c0d8c6684d00266d1e0231de11107d539() {
             1000u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_52135bf88ac6b5780b7c45bce3e75aceaff381984bad60d4a07aa516() {
+fn test_cf51bdeb6cae4ca1d663f0040b03ef23d3364c5f1a5bdb63f7be2b23() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -197,11 +197,11 @@ fn test_52135bf88ac6b5780b7c45bce3e75aceaff381984bad60d4a07aa516() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_4c0437ad690881933de761f489767067a0c46e5ae6e6d26e49d4d92c() {
+fn test_2e06b3142444ec8d799820b31e62d6d33c60e501e69922c682043f13() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -215,11 +215,11 @@ fn test_4c0437ad690881933de761f489767067a0c46e5ae6e6d26e49d4d92c() {
             1000u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_4122b22abea40181a71e20fd6f0f4fe698b0eb1b43ed678e8cfe19bb() {
+fn test_a23235e47791c4c2df0c9b13493a3c9832e4caa21cede2dba0b86cd9() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -233,11 +233,11 @@ fn test_4122b22abea40181a71e20fd6f0f4fe698b0eb1b43ed678e8cfe19bb() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_1e77aa1259b352d0424c4810c2c06e8210f88200edad7cd574f28425() {
+fn test_38600c9b3ad5e0e4ddb5625882bf02c84436780f9a6296e16b2a1de3() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -251,11 +251,11 @@ fn test_1e77aa1259b352d0424c4810c2c06e8210f88200edad7cd574f28425() {
             1000u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_46f6b57c58a49bc312b67f455da23cf0bcfb9a5b869466586a9a05d0() {
+fn test_be520fc284952bcd9583f04fa1c63ad706c032517f4df840518cdffc() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -269,11 +269,11 @@ fn test_46f6b57c58a49bc312b67f455da23cf0bcfb9a5b869466586a9a05d0() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_d7dd1d63585a4759bdcf74ac3497bf8383aac9be662bf228f908342e() {
+fn test_a96daab181124c5a19a423777f5aee4ce188f1c837f5b4ee5c9ca04a() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -287,11 +287,11 @@ fn test_d7dd1d63585a4759bdcf74ac3497bf8383aac9be662bf228f908342e() {
             1000u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_b84918bb3e786c4d846a9e78e010500fea8f291803b6bda22850955b() {
+fn test_69aeb41ce405f3b2dcdc586ea6e1aaffcf3630053e14b5bc9fccc7de() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -305,11 +305,11 @@ fn test_b84918bb3e786c4d846a9e78e010500fea8f291803b6bda22850955b() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
-fn test_6c6aa33a9bc7195ba3f736ebd073cc9fb0106e09465b343f773279b3() {
+fn test_1820a6b27c57b06f594755069925c9ac174c225dc6b6d9bc02161bb6() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -323,7 +323,7 @@ fn test_6c6aa33a9bc7195ba3f736ebd073cc9fb0106e09465b343f773279b3() {
             1000u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
 }
 
 #[test]
@@ -855,7 +855,7 @@ fn test_179910635d6c8841031d9b99aa239b76bf7dda8c81732a7f46b42e02() {
 }
 
 #[test]
-fn test_81795c390b7e7b8a0f8a95b952f4c63241e5c10d7a3b1f3ea80b3bc0() {
+fn test_8fb704e4f7569d63dbd32678f9b83a8481299a11154abcbbcd207451() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -870,7 +870,7 @@ fn test_81795c390b7e7b8a0f8a95b952f4c63241e5c10d7a3b1f3ea80b3bc0() {
             &[100u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -878,7 +878,7 @@ fn test_81795c390b7e7b8a0f8a95b952f4c63241e5c10d7a3b1f3ea80b3bc0() {
 }
 
 #[test]
-fn test_d60bad19a6a163309feeab4b814f244a59e505ee593956fe07862824() {
+fn test_44a6e532bc15add989567d8b6eda27343830dcb2c32fd2bcc60bf065() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -893,7 +893,7 @@ fn test_d60bad19a6a163309feeab4b814f244a59e505ee593956fe07862824() {
             &[100u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -901,7 +901,7 @@ fn test_d60bad19a6a163309feeab4b814f244a59e505ee593956fe07862824() {
 }
 
 #[test]
-fn test_c5fecc2f2d4d97c1080f86aaf0bc1afbba9de6d0b62d0602d802b686() {
+fn test_c7d2120a5a8abb067dc68f04172115594efb14ab0f3dfb6862dfa154() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -917,7 +917,7 @@ fn test_c5fecc2f2d4d97c1080f86aaf0bc1afbba9de6d0b62d0602d802b686() {
             &[100u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 3usize, 0usize, 3usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 3usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 4usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 5usize, 0usize]);
@@ -3634,7 +3634,7 @@ fn test_750edd71d543211b4135450d760ce7d21c0d170c1f7d7020707100da() {
 }
 
 #[test]
-fn test_ce8febe9df4a357be1b3bd79b05133b26b21bb47bafcc820ebca2b51() {
+fn test_95649317eb585c559ad8386aaac4ae2a7f8a3856426550d028b130a6() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3648,12 +3648,12 @@ fn test_ce8febe9df4a357be1b3bd79b05133b26b21bb47bafcc820ebca2b51() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
 }
 
 #[test]
-fn test_3d2f8c4d5c2018fe7c244fe3c59f7e9b615f1025ce13c7f94c665250() {
+fn test_3b4ae9f1b528d423ae8963133cef63321538d01ad34a1caa4ebe03f9() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3668,7 +3668,7 @@ fn test_3d2f8c4d5c2018fe7c244fe3c59f7e9b615f1025ce13c7f94c665250() {
             &[100u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -3676,7 +3676,7 @@ fn test_3d2f8c4d5c2018fe7c244fe3c59f7e9b615f1025ce13c7f94c665250() {
 }
 
 #[test]
-fn test_fb5e235846ebb5408fc87eb56231a559d8577cafd0b38b44029b0b19() {
+fn test_5c75393b2ef4045dd42efa365a1f171b50cfbc538e13d0204fbd9eb6() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3691,7 +3691,7 @@ fn test_fb5e235846ebb5408fc87eb56231a559d8577cafd0b38b44029b0b19() {
             &[99u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -3699,7 +3699,7 @@ fn test_fb5e235846ebb5408fc87eb56231a559d8577cafd0b38b44029b0b19() {
 }
 
 #[test]
-fn test_1395313c1f2471b89b1d89ff154168bf5e4af6b574b8f0de1cd3ae40() {
+fn test_64d71eea8eab213bb976f1d989309f66bf5a5b61372236a53498a927() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3714,7 +3714,7 @@ fn test_1395313c1f2471b89b1d89ff154168bf5e4af6b574b8f0de1cd3ae40() {
             &[121u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -3722,7 +3722,7 @@ fn test_1395313c1f2471b89b1d89ff154168bf5e4af6b574b8f0de1cd3ae40() {
 }
 
 #[test]
-fn test_bc170f091cd4dd908bdff4fe12c0765083375e143f8cad24e53cf85e() {
+fn test_45950b9735f1c99d92a1ebfca666fe2c1456eec12bc0178056f38391() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3737,7 +3737,7 @@ fn test_bc170f091cd4dd908bdff4fe12c0765083375e143f8cad24e53cf85e() {
             &[103u8, 126u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -3745,7 +3745,7 @@ fn test_bc170f091cd4dd908bdff4fe12c0765083375e143f8cad24e53cf85e() {
 }
 
 #[test]
-fn test_5d3794892614cde77fc5d5d3953b37bfce5cacf46019472f29ea95c5() {
+fn test_b4b63b3556cd1fa007f4ec709bd4d9de6a22471caa7edc91b6305da8() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3759,12 +3759,12 @@ fn test_5d3794892614cde77fc5d5d3953b37bfce5cacf46019472f29ea95c5() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
 }
 
 #[test]
-fn test_fb557ac4f6aab70b0a7c4cba817420bf042c4987c8715d577848d41d() {
+fn test_5494fee08eea7981eee7de1f67198e3f7dd34c81d5756418433ad7a4() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3779,7 +3779,7 @@ fn test_fb557ac4f6aab70b0a7c4cba817420bf042c4987c8715d577848d41d() {
             &[100u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -3787,7 +3787,7 @@ fn test_fb557ac4f6aab70b0a7c4cba817420bf042c4987c8715d577848d41d() {
 }
 
 #[test]
-fn test_73f62b80718f82a3f388dff5339f302d78f66b53e38ec8e6c1b8ec40() {
+fn test_55ad8aa61160176b4777ae5ba53985090add0da68f85c37bc320dd9f() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3802,7 +3802,7 @@ fn test_73f62b80718f82a3f388dff5339f302d78f66b53e38ec8e6c1b8ec40() {
             &[99u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -3810,7 +3810,7 @@ fn test_73f62b80718f82a3f388dff5339f302d78f66b53e38ec8e6c1b8ec40() {
 }
 
 #[test]
-fn test_962474a8d396fc7d0f37d9f3c1a761687107f50f9d3b606e4071d801() {
+fn test_a2ca5aaedc620f7b00a0383f2ecc6657eda3014407cb1c5ae66fbddf() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3825,7 +3825,7 @@ fn test_962474a8d396fc7d0f37d9f3c1a761687107f50f9d3b606e4071d801() {
             &[121u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -3833,7 +3833,7 @@ fn test_962474a8d396fc7d0f37d9f3c1a761687107f50f9d3b606e4071d801() {
 }
 
 #[test]
-fn test_c99659991170cc57a618f937988c9f82b25b3cdd0988ccad71e51c09() {
+fn test_83ccdbbf9807dd1480983d040b2b81bc07068b06d477f02b703d8955() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3848,7 +3848,7 @@ fn test_c99659991170cc57a618f937988c9f82b25b3cdd0988ccad71e51c09() {
             &[103u8, 126u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 1usize, 0usize]);
@@ -3856,7 +3856,7 @@ fn test_c99659991170cc57a618f937988c9f82b25b3cdd0988ccad71e51c09() {
 }
 
 #[test]
-fn test_f4e52c2049b86b05e8914bac7687beb9510e553c0b3aec0d506c69e3() {
+fn test_1232e5a959fa58b32d1b0e6b147f5739e332b5c0499e21f0dbb93968() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3871,12 +3871,12 @@ fn test_f4e52c2049b86b05e8914bac7687beb9510e553c0b3aec0d506c69e3() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize, 5usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
 }
 
 #[test]
-fn test_bfc5e22ca2d291d5c13f4c87eaa8a5356eba837828f3d6abc009c2fb() {
+fn test_52f5873e79e7244d97482854e3f55bd55d64db39a8bf767342de3d4b() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3892,7 +3892,7 @@ fn test_bfc5e22ca2d291d5c13f4c87eaa8a5356eba837828f3d6abc009c2fb() {
             &[100u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
@@ -3900,7 +3900,7 @@ fn test_bfc5e22ca2d291d5c13f4c87eaa8a5356eba837828f3d6abc009c2fb() {
 }
 
 #[test]
-fn test_1a76649c6f7df4b7b26b414ca2648fb2784ebd38917337d49d03cae7() {
+fn test_80e808659787dcdaebcc66e723bae56eec6cd5f7e052433e20c3c5a3() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3916,7 +3916,7 @@ fn test_1a76649c6f7df4b7b26b414ca2648fb2784ebd38917337d49d03cae7() {
             &[99u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
@@ -3924,7 +3924,7 @@ fn test_1a76649c6f7df4b7b26b414ca2648fb2784ebd38917337d49d03cae7() {
 }
 
 #[test]
-fn test_693a30ae021128704e357b41fa452acafdd043a8b0f8a5ed11833dcf() {
+fn test_3ac4e49b96f591c64f5f678bf0c5c3bf1f85f3c45fc17e50d1f7c99a() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3940,7 +3940,7 @@ fn test_693a30ae021128704e357b41fa452acafdd043a8b0f8a5ed11833dcf() {
             &[121u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
@@ -3948,7 +3948,7 @@ fn test_693a30ae021128704e357b41fa452acafdd043a8b0f8a5ed11833dcf() {
 }
 
 #[test]
-fn test_108e60bf8c518e15aec760e5ded985626e3766b50d0e3e02def73d29() {
+fn test_097f3b52c20d23b90bbaa0eca9476caf1ef80325bb3895a43b64cb59() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3964,7 +3964,7 @@ fn test_108e60bf8c518e15aec760e5ded985626e3766b50d0e3e02def73d29() {
             &[103u8, 126u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
@@ -3972,7 +3972,7 @@ fn test_108e60bf8c518e15aec760e5ded985626e3766b50d0e3e02def73d29() {
 }
 
 #[test]
-fn test_d79f0c071d66d4a46182372ff56e55951199f31006f623230237d567() {
+fn test_52bc5c52d1d29e812e20697130033c6e6bd1afc573a78ea85d61d790() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -3987,12 +3987,12 @@ fn test_d79f0c071d66d4a46182372ff56e55951199f31006f623230237d567() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize, 5usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
 }
 
 #[test]
-fn test_4bd15592fedf02f774998db6dfbc9e92bdb54d669d9722bf60f3ae05() {
+fn test_b390ceadac601ac21217a9e177a8c69067428d82d1f32c8ad7013fa8() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -4008,7 +4008,7 @@ fn test_4bd15592fedf02f774998db6dfbc9e92bdb54d669d9722bf60f3ae05() {
             &[100u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
@@ -4016,7 +4016,7 @@ fn test_4bd15592fedf02f774998db6dfbc9e92bdb54d669d9722bf60f3ae05() {
 }
 
 #[test]
-fn test_9dbb05856bcba0b5e92f5c1a2c29892a86e3b986aa15b8a0bb5e7ade() {
+fn test_829b2d40486beb222742cf61169e947ba33048a0d03beb0a08fced05() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -4032,7 +4032,7 @@ fn test_9dbb05856bcba0b5e92f5c1a2c29892a86e3b986aa15b8a0bb5e7ade() {
             &[99u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
@@ -4040,7 +4040,7 @@ fn test_9dbb05856bcba0b5e92f5c1a2c29892a86e3b986aa15b8a0bb5e7ade() {
 }
 
 #[test]
-fn test_581cf81573afa927a815f8b92b6cc55d761635b928828594830f94db() {
+fn test_df4bd5abac9651056fae31ce8cd90c6b3e3bdf06f10e957aff4f5b43() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -4056,7 +4056,7 @@ fn test_581cf81573afa927a815f8b92b6cc55d761635b928828594830f94db() {
             &[121u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
@@ -4064,7 +4064,7 @@ fn test_581cf81573afa927a815f8b92b6cc55d761635b928828594830f94db() {
 }
 
 #[test]
-fn test_5500337756cdfcb86b417f834d9c7e52267e5f810076199bf7541366() {
+fn test_df72ec8230b00071f43a797c51c6081c23cdc2ceed79baab5405016f() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -4080,7 +4080,7 @@ fn test_5500337756cdfcb86b417f834d9c7e52267e5f810076199bf7541366() {
             &[103u8, 126u8][..],
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize, 1usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.langle, [0usize, 1usize, 1usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
     assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
@@ -4088,7 +4088,7 @@ fn test_5500337756cdfcb86b417f834d9c7e52267e5f810076199bf7541366() {
 }
 
 #[test]
-fn test_be3ab94b7c9794c8ce63979fc3dc0fc519704fc29522c104fa1061db() {
+fn test_225462ea5425878e213d72cb77ef39859acf053bd1b5803057f2bed8() {
     #[allow(unused_mut)]
     let mut wm = WordMotion::new(
         Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
@@ -4103,6 +4103,379 @@ fn test_be3ab94b7c9794c8ce63979fc3dc0fc519704fc29522c104fa1061db() {
             0u64,
         )
         .unwrap();
-    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize, 5usize]);
+    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+}
+
+#[test]
+fn test_061da9c720104ca623958ae278fc286b8b29cfa7d44048fce15b7a30() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[std::str::from_utf8(&[97u8, 98u8, 99u8, 100u8, 101u8][..])
+                .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 4usize, 0usize, 4usize],
+            0u64,
+            &[100u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 4usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 4usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_d1214951e79590bf246f9ccd4efe5b35168f270d44f7424b6a6776e5() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[std::str::from_utf8(&[97u8, 98u8, 99u8, 100u8, 101u8][..])
+                .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 4usize, 0usize, 4usize],
+            0u64,
+            &[99u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 4usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 4usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_c5edf4253c0d257865d5b9f791117a697794950a5749b6abc1e2f65f() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[std::str::from_utf8(&[97u8, 98u8, 99u8, 100u8, 101u8][..])
+                .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 4usize, 0usize, 4usize],
+            0u64,
+            &[121u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 4usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 4usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_3626fd483a120b9212e2f477d573660874b8ee374640138613f53c6e() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[std::str::from_utf8(&[97u8, 98u8, 99u8, 100u8, 101u8][..])
+                .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 4usize, 0usize, 4usize],
+            0u64,
+            &[103u8, 126u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 4usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 4usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_34786789639d2832beddaa52041f9f9beab2c1bab2e463cc1066b31a() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .nmap(
+            &[std::str::from_utf8(&[97u8, 98u8, 99u8, 100u8, 101u8][..])
+                .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 5usize, 0usize, 5usize],
+            0u64,
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.prevent_change, &[49u8,][..]);
+}
+
+#[test]
+fn test_98adcbc49b54bf9b8c1c57342c6f2ed405f8bd049d6565d6c1909fc0() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[std::str::from_utf8(&[97u8, 98u8, 99u8, 100u8, 101u8][..])
+                .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 5usize, 0usize, 5usize],
+            0u64,
+            &[100u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_30209a5be2983ce24d3a865fc6a1e672079d3c10a08b771b91ef3b08() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[std::str::from_utf8(&[97u8, 98u8, 99u8, 100u8, 101u8][..])
+                .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 5usize, 0usize, 5usize],
+            0u64,
+            &[99u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_58138e08422217b5f1add492866f46a4b092bb9307a6741c0a27baa2() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[std::str::from_utf8(&[97u8, 98u8, 99u8, 100u8, 101u8][..])
+                .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 5usize, 0usize, 5usize],
+            0u64,
+            &[121u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_d5755cc95aa591c3c2b4364d8b57089a2deba1dc718b19db5f1866bc() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[std::str::from_utf8(&[97u8, 98u8, 99u8, 100u8, 101u8][..])
+                .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 5usize, 0usize, 5usize],
+            0u64,
+            &[103u8, 126u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 5usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_5ddb9c34aef49344827ab1f543b72ff291b70c0852ae96c8f4d60025() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .nmap(
+            &[
+                std::str::from_utf8(
+                    &[97u8, 98u8, 99u8, 100u8, 101u8, 32u8][..],
+                )
+                .unwrap(),
+            ][..],
+            &[119u8][..],
+            [0usize, 1usize, 6usize, 0usize, 6usize],
+            0u64,
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.prevent_change, &[49u8,][..]);
+}
+
+#[test]
+fn test_fa205b7f7bae5c6b292c7242e9974a48c179228356d551449cafdb3c() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[
+                std::str::from_utf8(
+                    &[97u8, 98u8, 99u8, 100u8, 101u8, 32u8][..],
+                )
+                .unwrap(),
+            ][..],
+            &[119u8][..],
+            [0usize, 1usize, 6usize, 0usize, 6usize],
+            0u64,
+            &[100u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 7usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_fa4d59fbef8c9fcb4f254e83c9407a1409512734808d2f460175485e() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[
+                std::str::from_utf8(
+                    &[97u8, 98u8, 99u8, 100u8, 101u8, 32u8][..],
+                )
+                .unwrap(),
+            ][..],
+            &[119u8][..],
+            [0usize, 1usize, 6usize, 0usize, 6usize],
+            0u64,
+            &[99u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 7usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_c8fef4f0ae8b45e944fa64d6c664b325c557f059737750f541733947() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[
+                std::str::from_utf8(
+                    &[97u8, 98u8, 99u8, 100u8, 101u8, 32u8][..],
+                )
+                .unwrap(),
+            ][..],
+            &[119u8][..],
+            [0usize, 1usize, 6usize, 0usize, 6usize],
+            0u64,
+            &[121u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 7usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_25ddd8699f5d7467ffde4c6e8b10c03963eaf6f902db9e4c3cd569c3() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .omap(
+            &[
+                std::str::from_utf8(
+                    &[97u8, 98u8, 99u8, 100u8, 101u8, 32u8][..],
+                )
+                .unwrap(),
+            ][..],
+            &[119u8][..],
+            [0usize, 1usize, 6usize, 0usize, 6usize],
+            0u64,
+            &[103u8, 126u8][..],
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.langle, [0usize, 1usize, 6usize, 0usize]);
+    assert_eq!(output.prevent_change, &[48u8,][..]);
+    assert_eq!(output.rangle, [0usize, 1usize, 7usize, 0usize]);
+    assert_eq!(output.visualmode, &[118u8,][..]);
+}
+
+#[test]
+fn test_29fb98e8f4b9e8132988a71a4e26432ea130d3dc95e34b1fed5436c5() {
+    #[allow(unused_mut)]
+    let mut wm = WordMotion::new(
+        Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255")
+            .unwrap(),
+    );
+    let output = wm
+        .nmap(
+            &[std::str::from_utf8(
+                &[
+                    97u8, 98u8, 99u8, 32u8, 32u8, 32u8, 32u8, 100u8, 101u8,
+                    102u8,
+                ][..],
+            )
+            .unwrap()][..],
+            &[119u8][..],
+            [0usize, 1usize, 1usize, 0usize, 1usize],
+            0u64,
+        )
+        .unwrap();
+    assert_eq!(output.cursor, [0usize, 1usize, 8usize, 0usize]);
     assert_eq!(output.prevent_change, &[48u8,][..]);
 }

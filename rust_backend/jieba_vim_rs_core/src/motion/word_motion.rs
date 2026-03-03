@@ -20,7 +20,7 @@ pub struct WordMotion<C> {
 }
 
 pub struct NmapOutput {
-    pub cursor: CursorPositionCurswant,
+    pub cursor: Position,
     pub prevent_change: &'static [u8],
 }
 
@@ -32,7 +32,7 @@ pub struct XmapOutput<'a> {
 }
 
 pub struct OmapOutput {
-    pub cursor: CursorPositionCurswant,
+    pub cursor: Position,
     pub langle: Position,
     pub rangle: Position,
     pub visualmode: &'static [u8],
@@ -81,7 +81,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
         };
         Ok(NmapOutput {
-            cursor: [0, lnum, col_m1 + 1, 0, col_m1 + 1],
+            cursor: [0, lnum, col_m1 + 1, 0],
             prevent_change: b"0",
         })
     }
@@ -216,7 +216,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         };
         let prevent_change = if output.prevent_change { b"1" } else { b"0" };
         Ok(OmapOutput {
-            cursor: [0, next_lnum, next_col_m1 + 1, 0, next_col_m1 + 1],
+            cursor: [0, next_lnum, next_col_m1 + 1, 0],
             langle: [0, langle_lnum, langle_col_m1 + 1, 0],
             rangle: [0, rangle_lnum, rangle_col_m1 + 1, 0],
             visualmode: b"v",
