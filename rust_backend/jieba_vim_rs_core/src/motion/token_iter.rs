@@ -13,6 +13,19 @@
 // under the License.
 
 //! Token iterators.
+//!
+//! This module contains forward and backward iterators of general tokens
+//! (either a concrete token or an Eol (end-of-line)) in a buffer. In either
+//! implementation, the iterator starts with the token where the cursor lies
+//! on or off (see below), and ends with the first token in the buffer (for
+//! backward iterator), or the last Eol in the buffer (for forward iterator).
+//!
+//! The cursor may be "off" by some nonzero virtual column with respect to
+//! a column (see https://vimhelp.org/builtin.txt.html#getpos%28%29). We
+//! define that it's off w.r.t. a general token, if it's off w.r.t. the last
+//! column ([`last_char`](crate::token::TokenLike::last_char)) of the token;
+//! otherwise, it will be taken as lying on that token (i.e. not "off" w.r.t.
+//! the token).
 
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, Token, TokenLike, Tokenizer};
