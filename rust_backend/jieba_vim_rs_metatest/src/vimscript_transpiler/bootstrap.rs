@@ -653,7 +653,7 @@ struct StdState {
     #[serde(default)]
     visual_end: Option<Position>,
     #[serde(default)]
-    cursor: Option<Position>,
+    cursor: Option<PositionCurswant>,
 }
 
 #[derive(Deserialize)]
@@ -902,7 +902,7 @@ impl BootstrapTestCaseBlock {
                     rangle: None,
                     visual_begin: std_state.visual_begin,
                     visual_end: std_state.visual_end,
-                    cursor: std_state.cursor.map(cursor2cursorcurswant),
+                    cursor: std_state.cursor,
                 };
                 let buffer_output = match &self_.editor_mode {
                     UnitEditorMode::Normal
