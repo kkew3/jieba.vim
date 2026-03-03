@@ -920,10 +920,10 @@ impl BootstrapTestCaseBlock {
                 };
                 let mut model_output_items = Vec::new();
                 if model_output.cursor.is_some() {
-                    // We assume cursor to be a 5-tuple of numbers (w/
+                    // We assume cursor to be a 4-tuple of numbers (w/out
                     // curswant) for simplicity, which also matches current
                     // implementation.
-                    model_output_items.push(ModelOutputItem::CursorCurswant);
+                    model_output_items.push(ModelOutputItem::Cursor);
                 }
                 if model_output.langle.is_some() {
                     model_output_items.push(ModelOutputItem::Langle);
