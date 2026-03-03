@@ -15,7 +15,7 @@
 //! Positions in a buffer.
 
 /// The 4-element list of numbers \[0, lnum, col, off] as returned by Vim's
-/// `getpos(...)` where ... equals `.` or `'{local_mark}``. `lnum` and `col`
+/// `getpos(...)` where ... equals `.` or `'{local_mark}`. `lnum` and `col`
 /// are indexed from 1. `off` is indexed from 0.
 pub type Position = [usize; 4];
 
