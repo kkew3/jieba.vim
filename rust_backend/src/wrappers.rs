@@ -97,8 +97,8 @@ impl<'py> IntoPyObject<'py> for NmapOutputWrapper {
         py: Python<'py>,
     ) -> Result<Self::Output, Self::Error> {
         let dict = PyDict::new(py);
-        let [a, b, c, d, e] = self.0.cursor;
-        dict.set_item("cursor", vec![a, b, c, d, e])?;
+        let [a, b, c, d] = self.0.cursor;
+        dict.set_item("cursor", vec![a, b, c, d])?;
         dict.set_item("prevent_change", self.0.prevent_change)?;
         Ok(dict)
     }
@@ -138,10 +138,10 @@ impl<'py> IntoPyObject<'py> for OmapOutputWrapper {
         py: Python<'py>,
     ) -> Result<Self::Output, Self::Error> {
         let dict = PyDict::new(py);
-        let [a, b, c, d, e] = self.0.cursor;
+        let [a, b, c, d] = self.0.cursor;
         let [la, lb, lc, ld] = self.0.langle;
         let [ra, rb, rc, rd] = self.0.rangle;
-        dict.set_item("cursor", vec![a, b, c, d, e])?;
+        dict.set_item("cursor", vec![a, b, c, d])?;
         dict.set_item("langle", vec![la, lb, lc, ld])?;
         dict.set_item("rangle", vec![ra, rb, rc, rd])?;
         dict.set_item("prevent_change", self.0.prevent_change)?;
@@ -296,7 +296,7 @@ impl WordMotionWrapper {
             |b, (lnum, col)| {
                 let output =
                     self.wm.nmap(b, motion, [0, lnum, col, 0, col], 1)?;
-                let [_, lnum, col, _, _] = output.cursor;
+                let [_, lnum, col, _] = output.cursor;
                 Ok((lnum, col))
             },
             &BoundWrapper(buffer),
@@ -447,7 +447,7 @@ impl LazyWordMotionWrapper {
             |b, (lnum, col)| {
                 let output =
                     self.wm.nmap(b, motion, [0, lnum, col, 0, col], 1)?;
-                let [_, lnum, col, _, _] = output.cursor;
+                let [_, lnum, col, _] = output.cursor;
                 Ok((lnum, col))
             },
             &BoundWrapper(buffer),
