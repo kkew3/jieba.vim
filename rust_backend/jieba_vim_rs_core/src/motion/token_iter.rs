@@ -39,6 +39,7 @@ pub fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
 pub struct TokenIteratorItem {
     /// The `lnum` of current token.
     pub lnum: usize,
+    /// Current token.
     pub token: Option<Token>,
     /// `true` if the cursor lies in current token.
     pub cursor: bool,
