@@ -31,7 +31,6 @@
 #B0 |␊···abcd␊······␊
 
 H a8d4f7746427a144e38ca1ec7bee2a21d86ab52b7c2f8e1acb26075e
-Q | < > prevent_change=0 visualmode=V
 C 2
 Bp <␊···abcd>␊······␊
 Bo ·····|·␊
