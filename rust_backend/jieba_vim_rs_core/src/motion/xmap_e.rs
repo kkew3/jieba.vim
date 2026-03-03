@@ -15,14 +15,15 @@
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 
-use super::token_iter::{ForwardTokenIterator, TokenIteratorItem};
+use super::token_iter::{ForwardTokenIterator, GToken, TokenIteratorItem};
 use super::{MotionOutput, WordMotion};
 
 /// Test if a token is stoppable for `xmap_e`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
     match item.token {
-        None => false,
-        Some(token) => match token.ty {
+        GToken::Eol(0) => false,
+        GToken::Eol(_) => unreachable!(),
+        GToken::T(token) => match token.ty {
             TokenType::Word => true,
             TokenType::Space => false,
         },

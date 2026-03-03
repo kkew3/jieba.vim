@@ -15,14 +15,15 @@
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 
-use super::token_iter::{BackwardTokenIterator, TokenIteratorItem};
+use super::token_iter::{BackwardTokenIterator, GToken, TokenIteratorItem};
 use super::{MotionOutput, WordMotion, d_special};
 
 /// Test if a token is stoppable for `omap_d_ge`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
     match item.token {
-        None => true,
-        Some(token) => match token.ty {
+        GToken::Eol(0) => true,
+        GToken::Eol(_) => unreachable!(),
+        GToken::T(token) => match token.ty {
             TokenType::Word => true,
             TokenType::Space => false,
         },
@@ -94,7 +95,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 if it.peek().is_none() && count > 0 {
                     col = item.token.first_char();
                     count -= 1;
-                    if item.token.is_none() {
+                    if let GToken::Eol(0) = item.token {
                         prevent_change = true;
                     }
                 }

@@ -17,18 +17,40 @@
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, Token, TokenLike, Tokenizer};
 
-// `None` is used to denote the empty line.
-impl TokenLike for Option<Token> {
+/// An enum of [`Token`](crate::token::Token) and Eol (end-of-line). Although
+/// we may well represent the Eol as a zero-width Token, it's concrete
+/// [`TokenType`](crate::token::TokenType) is subject to the motion of
+/// interest. Thus, we'd better consider it a type of its own.
+///
+/// Here, "G" is a shorthand notation for "General".
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum GToken {
+    /// A regular token.
+    T(Token),
+    /// The Eol. The enclosed `usize` is the length of current line in bytes.
+    Eol(usize),
+}
+
+impl TokenLike for GToken {
     fn first_char(&self) -> usize {
-        self.map(|t| t.first_char()).unwrap_or(0)
+        match self {
+            Self::T(t) => t.first_char(),
+            Self::Eol(len) => *len,
+        }
     }
 
     fn last_char(&self) -> usize {
-        self.map(|t| t.last_char()).unwrap_or(0)
+        match self {
+            Self::T(t) => t.last_char(),
+            Self::Eol(len) => *len,
+        }
     }
 
     fn last_char1(&self) -> usize {
-        self.map(|t| t.last_char1()).unwrap_or(0)
+        match self {
+            Self::T(t) => t.last_char1(),
+            Self::Eol(len) => *len,
+        }
     }
 }
 
@@ -55,7 +77,7 @@ pub struct TokenIteratorItem {
     /// The `lnum` of current token.
     pub lnum: usize,
     /// Current token.
-    pub token: Option<Token>,
+    pub token: GToken,
     /// `true` if the cursor lies in current token.
     pub cursor: bool,
     /// `true` if the cursor lies in a token at end-of-line.
@@ -64,7 +86,7 @@ pub struct TokenIteratorItem {
 
 impl TokenIteratorItem {
     #[cfg(test)]
-    fn new(lnum: usize, token: Option<Token>, cursor: bool, eol: bool) -> Self {
+    fn new(lnum: usize, token: GToken, cursor: bool, eol: bool) -> Self {
         Self {
             lnum,
             token,
@@ -148,7 +170,7 @@ where
                 self.token_index += 1;
                 Some(Ok(TokenIteratorItem {
                     lnum: self.lnum,
-                    token: Some(to_yield),
+                    token: GToken::T(to_yield),
                     cursor: self.cursor,
                     eol,
                 }))
@@ -159,7 +181,7 @@ where
                 // The cursor line is empty.
                 Some(Ok(TokenIteratorItem {
                     lnum: self.lnum,
-                    token: None,
+                    token: GToken::Eol(0),
                     cursor: self.cursor,
                     eol: true,
                 }))
@@ -172,7 +194,7 @@ where
                         if self.tokens.is_empty() {
                             Some(Ok(TokenIteratorItem {
                                 lnum: self.lnum,
-                                token: None,
+                                token: GToken::Eol(0),
                                 cursor: self.cursor,
                                 eol: true,
                             }))
@@ -186,7 +208,7 @@ where
                             self.token_index += 1;
                             Some(Ok(TokenIteratorItem {
                                 lnum: self.lnum,
-                                token: Some(to_yield),
+                                token: GToken::T(to_yield),
                                 cursor: self.cursor,
                                 eol,
                             }))
@@ -276,7 +298,7 @@ where
                 let eol = self.token_index == self.tokens.len() - 1;
                 Some(Ok(TokenIteratorItem {
                     lnum: self.lnum,
-                    token: Some(
+                    token: GToken::T(
                         self.tokens.get(self.token_index).copied().unwrap(),
                     ),
                     cursor: self.cursor,
@@ -286,7 +308,7 @@ where
                 // The cursor line is empty.
                 Some(Ok(TokenIteratorItem {
                     lnum: self.lnum,
-                    token: None,
+                    token: GToken::Eol(0),
                     cursor: self.cursor,
                     eol: true,
                 }))
@@ -299,7 +321,7 @@ where
                         if self.tokens.is_empty() {
                             Some(Ok(TokenIteratorItem {
                                 lnum: self.lnum,
-                                token: None,
+                                token: GToken::Eol(0),
                                 cursor: self.cursor,
                                 eol: true,
                             }))
@@ -308,7 +330,7 @@ where
                             let eol = self.token_index == self.tokens.len() - 1;
                             Some(Ok(TokenIteratorItem {
                                 lnum: self.lnum,
-                                token: Some(
+                                token: GToken::T(
                                     self.tokens
                                         .get(self.token_index)
                                         .copied()
@@ -337,7 +359,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::{
-        BackwardTokenIterator, ForwardTokenIterator, TokenIteratorItem,
+        BackwardTokenIterator, ForwardTokenIterator, GToken, TokenIteratorItem,
         index_tokens,
     };
     use crate::token::jieba::KeywordCutter;
@@ -361,7 +383,7 @@ mod tests {
                 .unwrap();
             assert_eq!(
                 it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(1, None, true, true))]
+                vec![Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true))]
             );
             let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
                 .unwrap();
@@ -382,9 +404,9 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(1, None, true, true)),
-                    Ok(TokenIteratorItem::new(2, None, false, true)),
-                    Ok(TokenIteratorItem::new(3, None, false, true)),
+                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true)),
+                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
                 ]
             );
             let it = ForwardTokenIterator::new(&buffer, &tokenizer, 2, 0, true)
@@ -392,8 +414,8 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, None, true, true)),
-                    Ok(TokenIteratorItem::new(3, None, false, true)),
+                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), true, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
                 ]
             );
             let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
@@ -401,8 +423,8 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, None, false, true)),
-                    Ok(TokenIteratorItem::new(3, None, false, true)),
+                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
                 ]
             );
         }
@@ -419,10 +441,10 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(1, None, true, true)),
+                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true)),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(0, 0, 1, Space)),
+                        GToken::T(Token::new(0, 0, 1, Space)),
                         false,
                         true
                     )),
@@ -444,13 +466,13 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         true,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(3, 4, 5, Space)),
+                        GToken::T(Token::new(3, 4, 5, Space)),
                         false,
                         true
                     )),
@@ -462,7 +484,7 @@ mod tests {
                 it.collect::<Vec<_>>(),
                 vec![Ok(TokenIteratorItem::new(
                     1,
-                    Some(Token::new(3, 4, 5, Space)),
+                    GToken::T(Token::new(3, 4, 5, Space)),
                     true,
                     true
                 ))]
@@ -473,7 +495,7 @@ mod tests {
                 it.collect::<Vec<_>>(),
                 vec![Ok(TokenIteratorItem::new(
                     1,
-                    Some(Token::new(3, 4, 5, Space)),
+                    GToken::T(Token::new(3, 4, 5, Space)),
                     true,
                     true
                 ))]
@@ -497,19 +519,19 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         true,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(3, 3, 4, Space)),
+                        GToken::T(Token::new(3, 3, 4, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(4, 6, 7, Word)),
+                        GToken::T(Token::new(4, 6, 7, Word)),
                         false,
                         true
                     )),
@@ -531,38 +553,38 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         true,
                         true
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(0, 1, 2, Word)),
+                        GToken::T(Token::new(0, 1, 2, Word)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(2, 2, 3, Space)),
+                        GToken::T(Token::new(2, 2, 3, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(3, 4, 5, Word)),
+                        GToken::T(Token::new(3, 4, 5, Word)),
                         false,
                         true
                     )),
-                    Ok(TokenIteratorItem::new(3, None, false, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(0, 1, 2, Space)),
+                        GToken::T(Token::new(0, 1, 2, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(2, 4, 5, Word)),
+                        GToken::T(Token::new(2, 4, 5, Word)),
                         false,
                         true
                     )),
@@ -575,32 +597,32 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(0, 1, 2, Word)),
+                        GToken::T(Token::new(0, 1, 2, Word)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(2, 2, 3, Space)),
+                        GToken::T(Token::new(2, 2, 3, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(3, 4, 5, Word)),
+                        GToken::T(Token::new(3, 4, 5, Word)),
                         false,
                         true
                     )),
-                    Ok(TokenIteratorItem::new(3, None, false, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(0, 1, 2, Space)),
+                        GToken::T(Token::new(0, 1, 2, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(2, 4, 5, Word)),
+                        GToken::T(Token::new(2, 4, 5, Word)),
                         false,
                         true
                     )),
@@ -613,32 +635,32 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(0, 1, 2, Word)),
+                        GToken::T(Token::new(0, 1, 2, Word)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(2, 2, 3, Space)),
+                        GToken::T(Token::new(2, 2, 3, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(3, 4, 5, Word)),
+                        GToken::T(Token::new(3, 4, 5, Word)),
                         false,
                         true
                     )),
-                    Ok(TokenIteratorItem::new(3, None, false, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(0, 1, 2, Space)),
+                        GToken::T(Token::new(0, 1, 2, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(2, 4, 5, Word)),
+                        GToken::T(Token::new(2, 4, 5, Word)),
                         false,
                         true
                     )),
@@ -649,16 +671,16 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(3, None, true, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), true, true)),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(0, 1, 2, Space)),
+                        GToken::T(Token::new(0, 1, 2, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(2, 4, 5, Word)),
+                        GToken::T(Token::new(2, 4, 5, Word)),
                         false,
                         true
                     )),
@@ -671,13 +693,13 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(0, 1, 2, Space)),
+                        GToken::T(Token::new(0, 1, 2, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(2, 4, 5, Word)),
+                        GToken::T(Token::new(2, 4, 5, Word)),
                         false,
                         true
                     )),
@@ -706,21 +728,31 @@ mod tests {
                     .unwrap();
             assert_eq!(
                 it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(1, None, true, true))]
+                vec![Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true))]
             );
             let it =
                 BackwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
                     .unwrap();
             assert_eq!(
                 it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(1, None, false, true))]
+                vec![Ok(TokenIteratorItem::new(
+                    1,
+                    GToken::Eol(0),
+                    false,
+                    true
+                ))]
             );
             let it =
                 BackwardTokenIterator::new(&buffer, &tokenizer, 1, 2, true)
                     .unwrap();
             assert_eq!(
                 it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(1, None, false, true))]
+                vec![Ok(TokenIteratorItem::new(
+                    1,
+                    GToken::Eol(0),
+                    false,
+                    true
+                ))]
             );
         }
 
@@ -735,14 +767,19 @@ mod tests {
                     .unwrap();
             assert_eq!(
                 it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(1, None, true, true))]
+                vec![Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true))]
             );
             let it =
                 BackwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
                     .unwrap();
             assert_eq!(
                 it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(1, None, false, true))]
+                vec![Ok(TokenIteratorItem::new(
+                    1,
+                    GToken::Eol(0),
+                    false,
+                    true
+                ))]
             );
             let it =
                 BackwardTokenIterator::new(&buffer, &tokenizer, 2, 0, true)
@@ -750,8 +787,8 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, None, true, true)),
-                    Ok(TokenIteratorItem::new(1, None, false, true)),
+                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), true, true)),
+                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), false, true)),
                 ]
             );
             let it =
@@ -760,8 +797,8 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, None, false, true)),
-                    Ok(TokenIteratorItem::new(1, None, false, true)),
+                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
+                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), false, true)),
                 ]
             );
             let it =
@@ -770,9 +807,9 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(3, None, true, true)),
-                    Ok(TokenIteratorItem::new(2, None, false, true)),
-                    Ok(TokenIteratorItem::new(1, None, false, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), true, true)),
+                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
+                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), false, true)),
                 ]
             );
         }
@@ -791,7 +828,7 @@ mod tests {
                 it.collect::<Vec<_>>(),
                 vec![Ok(TokenIteratorItem::new(
                     1,
-                    Some(Token::new(0, 0, 1, Space)),
+                    GToken::T(Token::new(0, 0, 1, Space)),
                     true,
                     true
                 ))]
@@ -803,7 +840,7 @@ mod tests {
                 it.collect::<Vec<_>>(),
                 vec![Ok(TokenIteratorItem::new(
                     1,
-                    Some(Token::new(0, 0, 1, Space)),
+                    GToken::T(Token::new(0, 0, 1, Space)),
                     false,
                     true
                 ))]
@@ -814,10 +851,10 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, None, true, true)),
+                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), true, true)),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 0, 1, Space)),
+                        GToken::T(Token::new(0, 0, 1, Space)),
                         false,
                         true
                     ))
@@ -829,10 +866,10 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, None, false, true)),
+                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 0, 1, Space)),
+                        GToken::T(Token::new(0, 0, 1, Space)),
                         false,
                         true
                     ))
@@ -854,7 +891,7 @@ mod tests {
                 it.collect::<Vec<_>>(),
                 vec![Ok(TokenIteratorItem::new(
                     1,
-                    Some(Token::new(0, 2, 3, Word)),
+                    GToken::T(Token::new(0, 2, 3, Word)),
                     true,
                     false
                 ))]
@@ -867,13 +904,13 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(3, 4, 5, Space)),
+                        GToken::T(Token::new(3, 4, 5, Space)),
                         true,
                         true
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         false,
                         false
                     )),
@@ -887,13 +924,13 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(3, 4, 5, Space)),
+                        GToken::T(Token::new(3, 4, 5, Space)),
                         false,
                         true
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         false,
                         false
                     )),
@@ -915,7 +952,7 @@ mod tests {
                 it.collect::<Vec<_>>(),
                 vec![Ok(TokenIteratorItem::new(
                     1,
-                    Some(Token::new(0, 2, 3, Word)),
+                    GToken::T(Token::new(0, 2, 3, Word)),
                     true,
                     false
                 ))]
@@ -928,19 +965,19 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(4, 6, 7, Word)),
+                        GToken::T(Token::new(4, 6, 7, Word)),
                         true,
                         true
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(3, 3, 4, Space)),
+                        GToken::T(Token::new(3, 3, 4, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         false,
                         false
                     )),
@@ -962,7 +999,7 @@ mod tests {
                 it.collect::<Vec<_>>(),
                 vec![Ok(TokenIteratorItem::new(
                     1,
-                    Some(Token::new(0, 2, 3, Word)),
+                    GToken::T(Token::new(0, 2, 3, Word)),
                     true,
                     true
                 ))]
@@ -974,7 +1011,7 @@ mod tests {
                 it.collect::<Vec<_>>(),
                 vec![Ok(TokenIteratorItem::new(
                     1,
-                    Some(Token::new(0, 2, 3, Word)),
+                    GToken::T(Token::new(0, 2, 3, Word)),
                     false,
                     true
                 ))]
@@ -985,28 +1022,28 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(3, None, true, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), true, true)),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(3, 4, 5, Word)),
+                        GToken::T(Token::new(3, 4, 5, Word)),
                         false,
                         true
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(2, 2, 3, Space)),
+                        GToken::T(Token::new(2, 2, 3, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(0, 1, 2, Word)),
+                        GToken::T(Token::new(0, 1, 2, Word)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         false,
                         true
                     )),
@@ -1018,28 +1055,28 @@ mod tests {
             assert_eq!(
                 it.collect::<Vec<_>>(),
                 vec![
-                    Ok(TokenIteratorItem::new(3, None, false, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(3, 4, 5, Word)),
+                        GToken::T(Token::new(3, 4, 5, Word)),
                         false,
                         true
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(2, 2, 3, Space)),
+                        GToken::T(Token::new(2, 2, 3, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(0, 1, 2, Word)),
+                        GToken::T(Token::new(0, 1, 2, Word)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         false,
                         true
                     )),
@@ -1053,32 +1090,32 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(0, 1, 2, Space)),
+                        GToken::T(Token::new(0, 1, 2, Space)),
                         true,
                         false
                     )),
-                    Ok(TokenIteratorItem::new(3, None, false, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(3, 4, 5, Word)),
+                        GToken::T(Token::new(3, 4, 5, Word)),
                         false,
                         true
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(2, 2, 3, Space)),
+                        GToken::T(Token::new(2, 2, 3, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(0, 1, 2, Word)),
+                        GToken::T(Token::new(0, 1, 2, Word)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         false,
                         true
                     )),
@@ -1092,38 +1129,38 @@ mod tests {
                 vec![
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(2, 4, 5, Word)),
+                        GToken::T(Token::new(2, 4, 5, Word)),
                         true,
                         true
                     )),
                     Ok(TokenIteratorItem::new(
                         4,
-                        Some(Token::new(0, 1, 2, Space)),
+                        GToken::T(Token::new(0, 1, 2, Space)),
                         false,
                         false
                     )),
-                    Ok(TokenIteratorItem::new(3, None, false, true)),
+                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(3, 4, 5, Word)),
+                        GToken::T(Token::new(3, 4, 5, Word)),
                         false,
                         true
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(2, 2, 3, Space)),
+                        GToken::T(Token::new(2, 2, 3, Space)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         2,
-                        Some(Token::new(0, 1, 2, Word)),
+                        GToken::T(Token::new(0, 1, 2, Word)),
                         false,
                         false
                     )),
                     Ok(TokenIteratorItem::new(
                         1,
-                        Some(Token::new(0, 2, 3, Word)),
+                        GToken::T(Token::new(0, 2, 3, Word)),
                         false,
                         true
                     )),
