@@ -26,6 +26,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
+use crate::dots_progress::DotsProgress;
 use crate::parsing::{
     self, Ascii, BufferExpr, HeadConditional, ModelOutputItem, StateExpr,
     StateExprFunction, TestCaseBlock, TestHashId, UnitEditorMode,
@@ -1005,46 +1006,6 @@ impl UnitTestCaseBlock {
         )?;
 
         Ok(model_io_opt)
-    }
-}
-
-/// Show progress by printing dots to stdout.
-pub struct DotsProgress {
-    dots: u32,
-    n_dots_in_a_row: u32,
-}
-
-impl Default for DotsProgress {
-    fn default() -> Self {
-        Self {
-            dots: 0,
-            n_dots_in_a_row: 80,
-        }
-    }
-}
-
-impl DotsProgress {
-    pub fn step(&mut self) {
-        print!(".");
-        std::io::stdout().flush().ok();
-        self.dots += 1;
-        if self.dots >= self.n_dots_in_a_row {
-            self.dots = 0;
-            println!();
-        }
-    }
-
-    pub fn reset(&mut self) {
-        if self.dots > 1 {
-            println!();
-        }
-        self.dots = 0;
-    }
-}
-
-impl Drop for DotsProgress {
-    fn drop(&mut self) {
-        self.reset();
     }
 }
 

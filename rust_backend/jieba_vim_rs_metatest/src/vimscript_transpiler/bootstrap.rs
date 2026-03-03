@@ -29,15 +29,14 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use serde::Deserialize;
 
+use crate::dots_progress::DotsProgress;
 use crate::parsing::unparsing::Serializer;
 use crate::parsing::{
     self, Ascii, BootstrapTestCaseBlock, HeadConditional, Position,
     PositionCurswant, RawTestCaseBlock, StateExpr, StateExprFunction,
     TestCaseBlock, TestHashId, UnitEditorMode, UnitTestCaseBlock,
 };
-use crate::vimscript_transpiler::unit_verification::{
-    self, DotsProgress, StateExprBefore,
-};
+use crate::vimscript_transpiler::unit_verification::{self, StateExprBefore};
 use crate::vimscript_transpiler::vimscript_transpiler::Flush;
 
 use super::ToVimscript;
