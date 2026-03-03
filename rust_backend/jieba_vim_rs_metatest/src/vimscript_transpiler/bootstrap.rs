@@ -653,7 +653,7 @@ struct StdState {
     #[serde(default)]
     visual_end: Option<Position>,
     #[serde(default)]
-    cursor: Option<PositionCurswant>,
+    cursor: Option<Position>,
 }
 
 #[derive(Deserialize)]
@@ -663,7 +663,7 @@ struct ModelOutput {
     #[serde(default)]
     rangle: Option<Position>,
     #[serde(default)]
-    cursor: Option<PositionCurswant>,
+    cursor: Option<Position>,
     #[serde(default)]
     visualmode: Option<String>,
     #[serde(default)]
@@ -843,6 +843,24 @@ impl BootstrapTestCaseBlock {
         let reader = BufReader::new(File::open(&buffer_file)?);
         let expected_buffer_after =
             unit_verification::read_as_clean_buffer(reader)?;
+        if expected_buffer_after.iter().any(|s| {
+            s.chars()
+                .any(|c| c == '\t' || Ascii::from_char(c).is_none())
+        }) {
+            return Err(anyhow::anyhow!(
+                "expected buffer_after contains TAB or non-ASCII characters, \
+                which is not supported by current version of bootstrap verification"
+            ));
+        }
+
+        // As expected buffer_after contains only non-TAB ASCIIs, all chars are
+        // of visual width 1, and we can safely set `curswant` to `col`.
+        fn cursor2cursorcurswant(
+            [bufnum, lnum, col, off]: Position,
+        ) -> PositionCurswant {
+            [bufnum, lnum, col, off, col]
+        }
+
         let self_ = std_run.0;
 
         let buffer_file = work_dir.join("buffer");
@@ -884,7 +902,7 @@ impl BootstrapTestCaseBlock {
                     rangle: None,
                     visual_begin: std_state.visual_begin,
                     visual_end: std_state.visual_end,
-                    cursor: std_state.cursor,
+                    cursor: std_state.cursor.map(cursor2cursorcurswant),
                 };
                 let buffer_output = match &self_.editor_mode {
                     UnitEditorMode::Normal
@@ -894,7 +912,7 @@ impl BootstrapTestCaseBlock {
                         rangle: None,
                         visual_begin: None,
                         visual_end: None,
-                        cursor: model_output.cursor,
+                        cursor: model_output.cursor.map(cursor2cursorcurswant),
                     },
                     UnitEditorMode::VisualChar
                     | UnitEditorMode::VisualLine
