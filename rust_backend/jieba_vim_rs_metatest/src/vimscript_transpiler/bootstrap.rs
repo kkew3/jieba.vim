@@ -847,10 +847,10 @@ impl BootstrapTestCaseBlock {
             s.chars()
                 .any(|c| c == '\t' || Ascii::from_char(c).is_none())
         }) {
-            return Err(anyhow::anyhow!(
+            panic!(
                 "expected buffer_after contains TAB or non-ASCII characters, \
                 which is not supported by current version of bootstrap verification"
-            ));
+            );
         }
 
         // As expected buffer_after contains only non-TAB ASCIIs, all chars are
@@ -1052,12 +1052,10 @@ impl Cli {
                 let old_hash = c.fix_hash_id();
                 let fixed_hash = c.hash_id();
                 if fixed_hash != &old_hash {
-                    return Err(anyhow::anyhow!(
+                    panic!(
                         "parsing failed: {}:{}: new hash = {}",
-                        fixed_hash.file,
-                        fixed_hash.lineno,
-                        fixed_hash.id
-                    ));
+                        fixed_hash.file, fixed_hash.lineno, fixed_hash.id
+                    );
                 }
                 match &fixed_hash.id {
                     TestHashId::Sha2(bytes) => {
