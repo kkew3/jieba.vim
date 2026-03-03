@@ -894,21 +894,6 @@ impl Token {
 
 impl_token_like_from_col!(Token);
 
-// `None` is used to denote the empty line.
-impl TokenLike for Option<Token> {
-    fn first_char(&self) -> usize {
-        self.map(|t| t.first_char()).unwrap_or(0)
-    }
-
-    fn last_char(&self) -> usize {
-        self.map(|t| t.last_char()).unwrap_or(0)
-    }
-
-    fn last_char1(&self) -> usize {
-        self.map(|t| t.last_char1()).unwrap_or(0)
-    }
-}
-
 impl From<CharTokenGroup> for Token {
     fn from(g: CharTokenGroup) -> Self {
         Self {

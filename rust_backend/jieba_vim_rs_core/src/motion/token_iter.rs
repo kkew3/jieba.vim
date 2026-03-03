@@ -17,6 +17,21 @@
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, Token, TokenLike, Tokenizer};
 
+// `None` is used to denote the empty line.
+impl TokenLike for Option<Token> {
+    fn first_char(&self) -> usize {
+        self.map(|t| t.first_char()).unwrap_or(0)
+    }
+
+    fn last_char(&self) -> usize {
+        self.map(|t| t.last_char()).unwrap_or(0)
+    }
+
+    fn last_char1(&self) -> usize {
+        self.map(|t| t.last_char1()).unwrap_or(0)
+    }
+}
+
 /// Get the index of the token in `tokens` that covers `col`. Return `None` if
 /// `col` is to the right of the last token.
 pub fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
