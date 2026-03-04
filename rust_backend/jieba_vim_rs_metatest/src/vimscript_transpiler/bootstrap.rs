@@ -667,6 +667,8 @@ struct ModelOutput {
     visualmode: Option<String>,
     #[serde(default)]
     prevent_change: Option<String>,
+    #[serde(default)]
+    selection: Option<String>,
 }
 
 enum VimRunResponse {
@@ -957,6 +959,12 @@ impl BootstrapTestCaseBlock {
                 if let Some(value) = model_output.visualmode {
                     model_output_items.push(ModelOutputItem::KeyValue {
                         key: "visualmode".into(),
+                        value,
+                    });
+                }
+                if let Some(value) = model_output.selection {
+                    model_output_items.push(ModelOutputItem::KeyValue {
+                        key: "selection".into(),
                         value,
                     });
                 }
