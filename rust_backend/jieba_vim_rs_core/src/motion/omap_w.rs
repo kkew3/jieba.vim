@@ -140,12 +140,19 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 prevent_change: b"0",
             })
         } else {
+            let mut selection = &b"exclusive"[..];
+            // This patch covers test case id:
+            // 84706375d03465fb2979368490c6698584b2ca89cf3752da8c4a119f.
+            // Don't know why we need "old" selection mode here.
+            if langle == rangle && operator == b"c" {
+                selection = &b"old"[..];
+            }
             Ok(OmapOutput {
                 cursor: langle,
                 langle,
                 rangle,
                 visualmode: b"v",
-                selection: b"exclusive",
+                selection,
                 prevent_change: b"0",
             })
         }
