@@ -1052,7 +1052,6 @@ impl Cli {
         let mut progress = DotsProgress::default();
 
         for path in self.test_case_file {
-            progress.reset();
             let cases = parsing::parse_metatest_file(&path)?;
             eprintln!("I: {}: found {} test cases", path, cases.len());
             for mut c in cases {
@@ -1099,6 +1098,7 @@ impl Cli {
                     }
                 }
             }
+            progress.reset();
         }
 
         Ok(())

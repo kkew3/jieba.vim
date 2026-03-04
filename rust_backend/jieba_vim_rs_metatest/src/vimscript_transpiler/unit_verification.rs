@@ -1066,7 +1066,6 @@ impl Cli {
             let mut writer = BufWriter::new(File::create(&unit_info_file)?);
             let mut written_anything_to_unit_info = false;
             for path in self.test_case_file {
-                progress.reset();
                 let cases = parsing::parse_metatest_file(&path)?;
                 eprintln!("I: {}: found {} test cases", path, cases.len());
                 for mut c in cases {
@@ -1114,6 +1113,7 @@ impl Cli {
                         }
                     }
                 }
+                progress.reset();
             }
             written_anything_to_unit_info
         };
