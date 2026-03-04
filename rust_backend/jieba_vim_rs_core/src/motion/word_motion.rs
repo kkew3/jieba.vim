@@ -36,6 +36,7 @@ pub struct OmapOutput {
     pub langle: Position,
     pub rangle: Position,
     pub visualmode: &'static [u8],
+    pub selection: &'static [u8],
     pub prevent_change: &'static [u8],
 }
 
@@ -60,30 +61,21 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         if count == 0 {
             count = 1;
         }
-        let [_, lnum, col, _, _] = cursor;
-        let col_m1 = col - 1;
-        if motion[0] == b'w' || motion[0] == b'W' {
-            return self.nmap_w(buffer, cursor, count, motion[0] == b'w');
-        }
-        let (lnum, col_m1) = match motion {
+        match motion {
+            b"w" | b"W" => {
+                self.nmap_w(buffer, cursor, count, motion[0] == b'w')
+            }
             b"b" | b"B" => {
-                self.nmap_b(buffer, (lnum, col_m1), count, motion[0] == b'b')?
-                    .new_cursor_pos
+                self.nmap_b(buffer, cursor, count, motion[0] == b'b')
             }
             b"e" | b"E" => {
-                self.nmap_e(buffer, (lnum, col_m1), count, motion[0] == b'e')?
-                    .new_cursor_pos
+                self.nmap_e(buffer, cursor, count, motion[0] == b'e')
             }
             b"ge" | b"gE" => {
-                self.nmap_ge(buffer, (lnum, col_m1), count, motion[1] == b'e')?
-                    .new_cursor_pos
+                self.nmap_ge(buffer, cursor, count, motion[1] == b'e')
             }
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
-        };
-        Ok(NmapOutput {
-            cursor: [0, lnum, col_m1 + 1, 0],
-            prevent_change: b"0",
-        })
+        }
     }
 
     pub fn xmap<'a, B: BufferLike + ?Sized>(
@@ -98,54 +90,41 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         if count == 0 {
             count = 1;
         }
-        if motion[0] == b'w' || motion[0] == b'W' {
-            return self.xmap_w(
+        match motion {
+            b"w" | b"W" => self.xmap_w(
                 buffer,
                 visualmode,
                 visual_begin,
                 visual_end,
                 count,
                 motion[0] == b'w',
-            );
-        }
-        let [_, ve_lnum, ve_col, _] = visual_end;
-        let ve_col_m1 = ve_col - 1;
-        let (ve_lnum, ve_col_m1) = match motion {
-            b"b" | b"B" => {
-                self.xmap_b(
-                    buffer,
-                    (ve_lnum, ve_col_m1),
-                    count,
-                    motion[0] == b'b',
-                )?
-                .new_cursor_pos
-            }
-            b"e" | b"E" => {
-                self.xmap_e(
-                    buffer,
-                    (ve_lnum, ve_col_m1),
-                    count,
-                    motion[0] == b'e',
-                )?
-                .new_cursor_pos
-            }
-            b"ge" | b"gE" => {
-                self.xmap_ge(
-                    buffer,
-                    (ve_lnum, ve_col_m1),
-                    count,
-                    motion[1] == b'e',
-                )?
-                .new_cursor_pos
-            }
+            ),
+            b"b" | b"B" => self.xmap_b(
+                buffer,
+                visualmode,
+                visual_begin,
+                visual_end,
+                count,
+                motion[0] == b'b',
+            ),
+            b"e" | b"E" => self.xmap_e(
+                buffer,
+                visualmode,
+                visual_begin,
+                visual_end,
+                count,
+                motion[0] == b'e',
+            ),
+            b"ge" | b"gE" => self.xmap_ge(
+                buffer,
+                visualmode,
+                visual_begin,
+                visual_end,
+                count,
+                motion[1] == b'e',
+            ),
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
-        };
-        Ok(XmapOutput {
-            langle: visual_begin,
-            rangle: [0, ve_lnum, ve_col_m1 + 1, 0],
-            visualmode,
-            prevent_change: b"0",
-        })
+        }
     }
 
     pub fn omap<B: BufferLike + ?Sized>(
@@ -159,68 +138,20 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         if count == 0 {
             count = 1;
         }
-        let [_, lnum, col, _, _] = cursor;
-        let col_m1 = col - 1;
-        let output = match (motion, operator) {
-            (b"w", b"c") | (b"W", b"c") => {
-                self.omap_c_w(buffer, (lnum, col_m1), count, motion[0] == b'w')?
+        match motion {
+            b"w" | b"W" => {
+                self.omap_w(buffer, cursor, count, motion[0] == b'w', operator)
             }
-            (b"w", _) | (b"W", _) => {
-                self.omap_w(buffer, (lnum, col_m1), count, motion[0] == b'w')?
+            b"b" | b"B" => {
+                self.omap_b(buffer, cursor, count, motion[0] == b'b', operator)
             }
-            (b"b", _) | (b"B", _) => {
-                self.omap_b(buffer, (lnum, col_m1), count, motion[0] == b'b')?
+            b"e" | b"E" => {
+                self.omap_e(buffer, cursor, count, motion[0] == b'e', operator)
             }
-            (b"e", b"d") | (b"E", b"d") => {
-                self.omap_d_e(buffer, (lnum, col_m1), count, motion[0] == b'e')?
-            }
-            (b"e", _) | (b"E", _) => {
-                self.omap_e(buffer, (lnum, col_m1), count, motion[0] == b'e')?
-            }
-            (b"ge", b"d") | (b"gE", b"d") => self.omap_d_ge(
-                buffer,
-                (lnum, col_m1),
-                count,
-                motion[1] == b'e',
-            )?,
-            (b"ge", _) | (b"gE", _) => {
-                self.omap_ge(buffer, (lnum, col_m1), count, motion[1] == b'e')?
+            b"ge" | b"gE" => {
+                self.omap_ge(buffer, cursor, count, motion[1] == b'e', operator)
             }
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
-        };
-        let (
-            next_lnum,
-            next_col_m1,
-            langle_lnum,
-            langle_col_m1,
-            rangle_lnum,
-            rangle_col_m1,
-        ) = match motion {
-            b"w" | b"W" | b"e" | b"E" => (
-                lnum,
-                col_m1,
-                lnum,
-                col_m1,
-                output.new_cursor_pos.0,
-                output.new_cursor_pos.1,
-            ),
-            b"b" | b"B" | b"ge" | b"gE" => (
-                output.new_cursor_pos.0,
-                output.new_cursor_pos.1,
-                lnum,
-                col_m1,
-                output.new_cursor_pos.0,
-                output.new_cursor_pos.1,
-            ),
-            _ => unreachable!("invalid motion key sequence: {:?}", motion),
-        };
-        let prevent_change = if output.prevent_change { b"1" } else { b"0" };
-        Ok(OmapOutput {
-            cursor: [0, next_lnum, next_col_m1 + 1, 0],
-            langle: [0, langle_lnum, langle_col_m1 + 1, 0],
-            rangle: [0, rangle_lnum, rangle_col_m1 + 1, 0],
-            visualmode: b"v",
-            prevent_change,
-        })
+        }
     }
 }

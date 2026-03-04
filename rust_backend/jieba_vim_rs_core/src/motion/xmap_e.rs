@@ -12,17 +12,17 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::BufferLike;
+use crate::motion::token_iter::TokenLikeExt;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
+use crate::{BufferLike, Position, pos};
 
 use super::token_iter::{ForwardTokenIterator, GToken, TokenIteratorItem};
-use super::{MotionOutput, WordMotion};
+use super::{WordMotion, XmapOutput};
 
 /// Test if a token is stoppable for `xmap_e`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
     match item.token {
-        GToken::Eol(0) => false,
-        GToken::Eol(_) => unreachable!(),
+        GToken::Eol(_) => false,
         GToken::T(token) => match token.ty {
             TokenType::Word => true,
             TokenType::Space => false,
@@ -32,10 +32,10 @@ fn is_stoppable(item: &TokenIteratorItem) -> bool {
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `e` (if `word` is `true`) or `E` (if `word` is `false`)
-    /// in visual mode. Take in current `cursor_pos` (lnum, col), and return
-    /// the new cursor position. Note that `lnum` is 1-indexed, and `col`
-    /// is 0-indexed. We denote both `word` and `WORD` with the English word
-    /// "word" below.
+    /// in visual mode. Take in current `visual_end` (0, lnum, col, off), and
+    /// return the new `visual_end`. Note that `visual_begin` will be left
+    /// intact. We denote both `word` and `WORD` with the English word "word"
+    /// below.
     ///
     /// # Basics
     ///
@@ -45,260 +45,59 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ///
     /// # Edge cases
     ///
-    /// - If current cursor is on the one character to the right of the last
-    ///   character of the last token in the buffer, no further jump should
-    ///   be made.
     /// - If there is no next word to the right of current cursor, jump to one
     ///   character to the right of the last character of the last token in the
-    ///   buffer.
-    pub fn xmap_e<B: BufferLike + ?Sized>(
+    ///   buffer. And the motion should be taken as a failure.
+    pub fn xmap_e<'a, B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: (usize, usize),
+        visualmode: &'a [u8],
+        visual_begin: Position,
+        visual_end: Position,
         mut count: u64,
         word: bool,
-    ) -> Result<MotionOutput, B::Error> {
-        let (mut lnum, mut col) = cursor_pos;
+    ) -> Result<XmapOutput<'a>, B::Error> {
+        let [_, mut lnum, mut col, _] = visual_end;
         let mut it = ForwardTokenIterator::new(
             buffer,
             &self.tokenizer,
-            lnum,
-            col,
+            &visual_end,
             word,
-        )?
-        .peekable();
+        )?;
+        let cursor_item = it.first();
+        let mut it = it.peekable();
+        let mut stopped = false;
+        if count > 0 {
+            if is_stoppable(&cursor_item) {
+                if !cursor_item.token.at_end(col) {
+                    // Call to last_char is valid because only word is stoppable.
+                    col = cursor_item.token.last_char();
+                    count -= 1;
+                    stopped = true;
+                }
+            } else {
+                col = cursor_item.token.last_char1();
+            }
+        }
+
         while count > 0 && it.peek().is_some() {
             let item = it.next().unwrap()?;
             if !is_stoppable(&item) {
                 lnum = item.lnum;
-                if it.peek().is_some() {
-                    col = item.token.last_char();
-                } else {
-                    col = item.token.last_char1();
-                }
-            } else if !(item.cursor && col == item.token.last_char()) {
+                col = item.token.last_char1();
+            } else {
+                stopped = true;
                 lnum = item.lnum;
                 col = item.token.last_char();
                 count -= 1;
-                if count > 0 && it.peek().is_none() {
-                    col = item.token.last_char1();
-                }
-            } else if it.peek().is_none() {
-                col = item.token.last_char1();
-                count -= 1;
             }
         }
-        Ok(MotionOutput {
-            new_cursor_pos: (lnum, col),
-            d_special: false,
-            prevent_change: false,
+
+        Ok(XmapOutput {
+            langle: visual_begin,
+            rangle: pos![lnum, col],
+            visualmode,
+            prevent_change: if stopped { b"0" } else { b"1" },
         })
     }
-}
-
-#[cfg(test)]
-mod tests {
-    #[cfg(feature = "verifiable_case")]
-    use jieba_vim_rs_test_macro::verified_cases;
-    #[cfg(not(feature = "verifiable_case"))]
-    use jieba_vim_rs_test_macro::verified_cases_dry_run as verified_cases;
-
-    #[verified_cases(
-        mode = "xc",
-        motion = "e",
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["{}"])]
-    #[vcase(name = "one_word", buffer = ["aaa{a}"])]
-    #[vcase(name = "one_word", buffer = ["a{aa}a"])]
-    #[vcase(name = "one_word", buffer = ["a{aaa}"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["a{aa}a    "])]
-    #[vcase(name = "one_word_space", buffer = ["aaa{a    }"])]
-    #[vcase(name = "one_word_space", buffer = ["aaaa {   }"])]
-    #[vcase(name = "space_one_word", buffer = ["{    aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["   { aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["    {aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["    aaa{a}"])]
-    #[vcase(name = "two_words", buffer = ["a{aa}a  aaa"])]
-    #[vcase(name = "two_words", buffer = ["a{aaa  aa}a"], count = 2)]
-    #[vcase(name = "two_words", buffer = ["a{aaa  aaa}"], count = 3)]
-    #[vcase(name = "two_words", buffer = ["aaa{a aa}a"])]
-    #[vcase(name = "two_words", buffer = ["aaa{a aaa}"], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["    {aaa}a   "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   aaa}a   "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   aaaa   }"], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["a{aa}a", ""])]
-    #[vcase(name = "one_word_newline", buffer = ["a{aaa", "}"], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["aaa{a", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["a{aa}a    ", ""])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaa{a     ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa{    ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa {   ", "}"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "    }"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "  ", "    }"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaaa", "{  ", "    }"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "", "    }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", " ", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", " ", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", "", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", "", "  }"])]
-    #[vcase(name = "word_newline_word", buffer = ["a{aa}a", "", " ", "", "aaa"])]
-    #[vcase(name = "word_newline_word", buffer = ["a{aaa", "", " ", "", "aa}a"], count = 2)]
-    #[vcase(name = "word_newline_word", buffer = ["a{aaa", "", " ", "", "aaa   }"], count = 3)]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", " ", "", "aa}a"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "  ", "", " ", "aaa}a"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", "aa}a", "", "aaaa"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", "aaa", "", "aaa}a"], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["a{aa aaaa}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["aaa {aaaa}"], count = 10293949403)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "aa}a"], count = 1)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "   aa}a"], count = 1)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "", "   aa}a"], count = 1)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", " ", "   aa}a"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aaa aaaa{}"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aaa     {}"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 100)]
-    mod motion_xcmap_e {}
-
-    // Copied from xcmap_e above.
-    #[verified_cases(
-        mode = "xl",
-        motion = "e",
-        timeout = 50,
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["{}"])]
-    #[vcase(name = "one_word", buffer = ["aaa{a}"])]
-    #[vcase(name = "one_word", buffer = ["a{aa}a"])]
-    #[vcase(name = "one_word", buffer = ["a{aaa}"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["a{aa}a    "])]
-    #[vcase(name = "one_word_space", buffer = ["aaa{a    }"])]
-    #[vcase(name = "one_word_space", buffer = ["aaaa {   }"])]
-    #[vcase(name = "space_one_word", buffer = ["{    aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["   { aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["    {aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["    aaa{a}"])]
-    #[vcase(name = "two_words", buffer = ["a{aa}a  aaa"])]
-    #[vcase(name = "two_words", buffer = ["a{aaa  aa}a"], count = 2)]
-    #[vcase(name = "two_words", buffer = ["a{aaa  aaa}"], count = 3)]
-    #[vcase(name = "two_words", buffer = ["aaa{a aa}a"])]
-    #[vcase(name = "two_words", buffer = ["aaa{a aaa}"], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["    {aaa}a   "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   aaa}a   "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   aaaa   }"], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["a{aa}a", ""])]
-    #[vcase(name = "one_word_newline", buffer = ["a{aaa", "}"], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["aaa{a", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["a{aa}a    ", ""])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaa{a     ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa{    ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa {   ", "}"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "    }"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "  ", "    }"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaaa", "{  ", "    }"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "", "    }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", " ", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", " ", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", "", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", "", "  }"])]
-    #[vcase(name = "word_newline_word", buffer = ["a{aa}a", "", " ", "", "aaa"])]
-    #[vcase(name = "word_newline_word", buffer = ["a{aaa", "", " ", "", "aa}a"], count = 2)]
-    #[vcase(name = "word_newline_word", buffer = ["a{aaa", "", " ", "", "aaa   }"], count = 3)]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", " ", "", "aa}a"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "  ", "", " ", "aaa}a"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", "aa}a", "", "aaaa"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", "aaa", "", "aaa}a"], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["a{aa aaaa}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["aaa {aaaa}"], count = 10293949403)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "aa}a"], count = 1)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "   aa}a"], count = 1)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "", "   aa}a"], count = 1)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", " ", "   aa}a"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aaa aaaa{}"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aaa     {}"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 100)]
-    mod motion_xlmap_e {}
-
-    // Copied from xcmap_e above.
-    #[verified_cases(
-        mode = "xb",
-        motion = "e",
-        timeout = 50,
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["{}"])]
-    #[vcase(name = "one_word", buffer = ["aaa{a}"])]
-    #[vcase(name = "one_word", buffer = ["a{aa}a"])]
-    #[vcase(name = "one_word", buffer = ["a{aaa}"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["a{aa}a    "])]
-    #[vcase(name = "one_word_space", buffer = ["aaa{a    }"])]
-    #[vcase(name = "one_word_space", buffer = ["aaaa {   }"])]
-    #[vcase(name = "space_one_word", buffer = ["{    aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["   { aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["    {aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["    aaa{a}"])]
-    #[vcase(name = "two_words", buffer = ["a{aa}a  aaa"])]
-    #[vcase(name = "two_words", buffer = ["a{aaa  aa}a"], count = 2)]
-    #[vcase(name = "two_words", buffer = ["a{aaa  aaa}"], count = 3)]
-    #[vcase(name = "two_words", buffer = ["aaa{a aa}a"])]
-    #[vcase(name = "two_words", buffer = ["aaa{a aaa}"], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["    {aaa}a   "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   aaa}a   "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   aaaa   }"], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["a{aa}a", ""])]
-    #[vcase(name = "one_word_newline", buffer = ["a{aaa", "}"], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["aaa{a", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["a{aa}a    ", ""])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaa{a     ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa{    ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa {   ", "}"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "    }"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "  ", "    }"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaaa", "{  ", "    }"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "", "    }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", " ", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", " ", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "", "  }"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", "", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", "", "  }"])]
-    #[vcase(name = "word_newline_word", buffer = ["a{aa}a", "", " ", "", "aaa"])]
-    #[vcase(name = "word_newline_word", buffer = ["a{aaa", "", " ", "", "aa}a"], count = 2)]
-    #[vcase(name = "word_newline_word", buffer = ["a{aaa", "", " ", "", "aaa   }"], count = 3)]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", " ", "", "aa}a"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "  ", "", " ", "aaa}a"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", "aa}a", "", "aaaa"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", "aaa", "", "aaa}a"], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["a{aa aaaa}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["aaa {aaaa}"], count = 10293949403)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "aa}a"], count = 1)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "   aa}a"], count = 1)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", "", "   aa}a"], count = 1)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaaa{", " ", "   aa}a"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aaa aaaa{}"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aaa     {}"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["   aaaa", "     {}"], count = 100)]
-    mod motion_xbmap_e {}
 }

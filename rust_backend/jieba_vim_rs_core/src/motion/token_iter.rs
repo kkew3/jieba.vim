@@ -19,6 +19,8 @@
 //! implementation, the iterator starts with the token where the cursor lies
 //! on or off (see below), and ends with the first token in the buffer (for
 //! backward iterator), or the last Eol in the buffer (for forward iterator).
+//! At least one token will be yielded regardless the content of the buffer and
+//! position of the cursor.
 //!
 //! The cursor may be "off" by some nonzero virtual column with respect to
 //! a column (see https://vimhelp.org/builtin.txt.html#getpos%28%29). We
@@ -27,8 +29,77 @@
 //! otherwise, it will be taken as lying on that token (i.e. not "off" w.r.t.
 //! the token).
 
+use std::cmp::Ordering;
+
 use crate::BufferLike;
+use crate::position::{
+    BasicPosition, ColumnPosition, PositionError, PositionSanityCheck,
+};
 use crate::token::{JiebaPlaceholder, Token, TokenLike, Tokenizer};
+
+pub trait TokenLikeExt: TokenLike {
+    /// `true` if `(col, off)` is on self token.
+    #[allow(unused)]
+    fn is_on(&self, [col, off]: ColumnPosition) -> bool {
+        let fc = self.first_char();
+        let lc = self.last_char();
+        (col >= fc && col < lc) || (col == lc && off == 0)
+    }
+
+    /// `true` if `(col, off)` is off self token.
+    #[allow(unused)]
+    fn is_off(&self, [col, off]: ColumnPosition) -> bool {
+        let lc = self.last_char();
+        let lc1 = self.last_char1();
+        (col == lc && off > 0) || (col > lc && col < lc1)
+    }
+
+    /// `true` if the columnn `col` of a [`crate::position::ColumnPosition`] is
+    /// on or off (in one word, over) self token. In other words, return `true`
+    /// if the column position is contained in self token.
+    #[allow(unused)]
+    fn is_over(&self, col: usize) -> bool {
+        let fc = self.first_char();
+        let lc1 = self.last_char1();
+        (fc..lc1).contains(&col)
+    }
+
+    /// Return a total order between a `col` and self token.
+    fn cmp(&self, col: usize) -> Ordering {
+        if col < self.first_char() {
+            // col occurs to the left of self token.
+            Ordering::Greater
+        } else if col >= self.last_char1() {
+            // col occurs to the right of self token.
+            Ordering::Less
+        } else {
+            // Occurs when `self.is_over(cpos)`.
+            Ordering::Equal
+        }
+    }
+
+    /// Return true if `col` equals [`first_char`](TokenLike::first_char). Note
+    /// that this does not mean the cursor appears in the first virtual column
+    /// of the token, since it may be off w.r.t. the `first_char` column.
+    fn at_start(&self, col: usize) -> bool {
+        col == self.first_char()
+    }
+
+    /// Return true if `col` equals [`last_char`](TokenLike::last_char).
+    /// Note that this function does not make sense if
+    /// [`is_empty`](TokenLikeExt::is_empty) is true.
+    fn at_end(&self, col: usize) -> bool {
+        col == self.last_char()
+    }
+
+    /// A token is called "empty" if it takes up no bytes in a string, in which
+    /// case evaluating [`TokenLike::last_char`] does not make sense.
+    fn is_empty(&self) -> bool {
+        self.first_char() == self.last_char1()
+    }
+}
+
+impl<T: TokenLike> TokenLikeExt for T {}
 
 /// An enum of [`Token`](crate::token::Token) and Eol (end-of-line). Although
 /// we may well represent the Eol as a zero-width Token, it's concrete
@@ -40,7 +111,8 @@ use crate::token::{JiebaPlaceholder, Token, TokenLike, Tokenizer};
 pub enum GToken {
     /// A regular token.
     T(Token),
-    /// The Eol. The enclosed `usize` is the length of current line in bytes.
+    /// The Eol. The enclosed `usize` is the length of current line in bytes
+    /// plus 1. Hence, it's never 0.
     Eol(usize),
 }
 
@@ -67,65 +139,85 @@ impl TokenLike for GToken {
     }
 }
 
-/// Get the index of the token in `tokens` that covers `col`. Return `None` if
-/// `col` is to the right of the last token.
-pub fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
-    use std::cmp::Ordering;
-    tokens
-        .binary_search_by(|tok| {
-            if col < tok.first_char() {
-                Ordering::Greater
-            } else if col >= tok.last_char1() {
-                Ordering::Less
-            } else {
-                Ordering::Equal
-            }
-        })
-        .ok()
+impl From<Token> for GToken {
+    fn from(value: Token) -> Self {
+        Self::T(value)
+    }
 }
 
-/// Item type yieled by token iterators.
+/// Get the index of the token in `tokens` where `col` is contained. Return
+/// None if `col` is at the Eol of `tokens`.
+pub fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
+    tokens.binary_search_by(|t| t.cmp(col)).ok()
+}
+
+/// Get the index of the token in `tokens` where `col` is contained. Return
+/// `tokens.len()` if `col` is at the Eol of `tokens`.
+fn index_tokens_extended(
+    tokens: &[Token],
+    col: usize,
+) -> Result<usize, PositionError> {
+    match index_tokens(&tokens, col) {
+        Some(i) => Ok(i),
+        None => {
+            // If `col_at_eol` is true, it means `col` lies on/off the Eol of
+            // current lnum.
+            let col_at_eol =
+                col == tokens.last().map_or(1, TokenLike::last_char1);
+            if !col_at_eol {
+                return Err(PositionError::ColTooLarge);
+            }
+            Ok(tokens.len())
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct TokenIteratorItem {
     /// The `lnum` of current token.
     pub lnum: usize,
     /// Current token.
     pub token: GToken,
-    /// `true` if the cursor lies in current token.
-    pub cursor: bool,
-    /// `true` if the cursor lies in a token at end-of-line.
+    /// `true` if the general token immediately next (for
+    /// [`ForwardTokenIterator`]) or previous (for [`BackwardTokenIterator`])
+    /// to the current token is an [`Eol`](GToken::Eol). Will always be `false`
+    /// if `token` is an [`Eol`](GToken::Eol).
     pub eol: bool,
 }
 
 impl TokenIteratorItem {
-    #[cfg(test)]
-    fn new(lnum: usize, token: GToken, cursor: bool, eol: bool) -> Self {
-        Self {
-            lnum,
-            token,
-            cursor,
-            eol,
-        }
+    /// Construct a new iterator item. See the documentation of
+    /// [`TokenIteratorItem`] for the meaning of each argument.
+    fn new(lnum: usize, token: GToken, eol: bool) -> Self {
+        Self { lnum, token, eol }
     }
 }
 
-/// Forward iterator of [`TokenIteratorItem`]s in a `buffer`. If the cursor
-/// `col` is in a token, starts from that token; if `col` is to the right of
-/// the last token in current line, starts from the next token in the buffer.
-/// An empty line is regarded as a `None` token. If the cursor is at an empty
-/// line, also starts from that empty line.
+/// Get either the i-th token from `tokens`, or the `Eol` GToken in the end.
+fn get_gtoken(tokens: &[Token], i: usize) -> GToken {
+    tokens.get(i).copied().map(Into::into).unwrap_or_else(|| {
+        GToken::Eol(tokens.last().map_or(1, TokenLike::last_char1))
+    })
+}
+
+/// Forward iterator of [`TokenIteratorItem`]s in a `buffer`. See module
+/// documentation for details.
 pub struct ForwardTokenIterator<'b, 'p, B: ?Sized, C> {
+    /// A reference to the underlying buffer.
     buffer: &'b B,
     tokenizer: &'p Tokenizer<C>,
+    /// Tokens of current lnum.
     tokens: Vec<Token>,
+    /// The token index of current token in `tokens`. When `token_index` equals
+    /// the length of `tokens`, it denotes the [`Eol`](GToken::Eol) of current
+    /// lnum.
     token_index: usize,
+    /// Current line number, 1-based.
     lnum: usize,
     /// Number of lines in `buffer`.
     lines: usize,
     /// Whether to cut into word (true) or WORD (false).
     word: bool,
-    /// Whether current item is the cursor item or not.
-    cursor: bool,
 }
 
 impl<'b, 'p, B, C> ForwardTokenIterator<'b, 'p, B, C>
@@ -134,18 +226,27 @@ where
     C: JiebaPlaceholder,
 {
     /// Construct a [`ForwardTokenIterator`], starting from the token where the
-    /// cursor position `(lnum, col)` lies in.
-    pub fn new(
+    /// cursor position `(lnum, col, off)` lies on or off.
+    pub fn new<P: BasicPosition>(
         buffer: &'b B,
         tokenizer: &'p Tokenizer<C>,
-        lnum: usize,
-        col: usize,
+        cursor_position: &P,
         word: bool,
     ) -> Result<Self, B::Error> {
-        let tokens = tokenizer.parse_str(&buffer.getline(lnum)?, word);
-        let token_index = index_tokens(&tokens, col).unwrap_or(tokens.len());
-        let cursor =
-            (col == 0 && tokens.is_empty()) || token_index < tokens.len();
+        let [lnum, col, _] = cursor_position
+            .try_to_cb_position()
+            .and_then(PositionSanityCheck::check_indexing_basis)
+            .unwrap_or_else(|err| {
+                // TODO Return an error rather than panic.
+                panic!("{}", err)
+            });
+        let tokens = tokenizer.parse_str1(&buffer.getline(lnum)?, word);
+        // The resulting `token_index` must be no larger than `tokens.len()`.
+        let token_index =
+            index_tokens_extended(&tokens, col).unwrap_or_else(|err| {
+                // TODO Return an error rather than panic.
+                panic!("{}", err);
+            });
         let lines = buffer.lines()?;
         Ok(Self {
             buffer,
@@ -155,15 +256,55 @@ where
             lnum,
             lines,
             word,
-            cursor,
         })
     }
 
-    fn fetch_next_line(&mut self, lnum: usize) -> Result<(), B::Error> {
+    /// Yield the first item, which is guaranteed to exist, and is the item
+    /// where cursor lies on or off.
+    pub fn first(&mut self) -> TokenIteratorItem {
+        let token = get_gtoken(&self.tokens, self.token_index);
+        self.token_index += 1;
+        TokenIteratorItem::new(
+            self.lnum,
+            token,
+            self.token_index == self.tokens.len(),
+        )
+    }
+
+    /// Fetch the line at `lnum + 1` from the buffer, and populate
+    /// `self.tokens`. Return `lnum + 1` if successful.
+    fn fetch_next_line(&mut self, lnum: usize) -> Result<usize, B::Error> {
+        let next_lnum = lnum + 1;
         self.tokens = self
             .tokenizer
-            .parse_str(&self.buffer.getline(lnum + 1)?, self.word);
-        Ok(())
+            .parse_str1(&self.buffer.getline(next_lnum)?, self.word);
+        Ok(next_lnum)
+    }
+
+    /// The helper function to implement [`Iterator::next`], containing the
+    /// main procedure.
+    fn next_helper(&mut self) -> Result<Option<TokenIteratorItem>, B::Error> {
+        let next_item = if self.token_index <= self.tokens.len() {
+            let token = get_gtoken(&self.tokens, self.token_index);
+            self.token_index += 1;
+            Some(TokenIteratorItem::new(
+                self.lnum,
+                token,
+                self.token_index == self.tokens.len(),
+            ))
+        } else if self.lnum < self.lines {
+            self.lnum = self.fetch_next_line(self.lnum)?;
+            let token = get_gtoken(&self.tokens, 0);
+            self.token_index = 1;
+            Some(TokenIteratorItem::new(
+                self.lnum,
+                token,
+                self.token_index == self.tokens.len(),
+            ))
+        } else {
+            None
+        };
+        Ok(next_item)
     }
 }
 
@@ -175,87 +316,26 @@ where
     type Item = Result<TokenIteratorItem, B::Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next_item = {
-            if self.token_index < self.tokens.len() {
-                let to_yield =
-                    self.tokens.get(self.token_index).copied().unwrap();
-                let eol = self.token_index == self.tokens.len() - 1;
-                self.token_index += 1;
-                Some(Ok(TokenIteratorItem {
-                    lnum: self.lnum,
-                    token: GToken::T(to_yield),
-                    cursor: self.cursor,
-                    eol,
-                }))
-            } else if self.cursor
-                && self.tokens.is_empty()
-                && self.token_index == 0
-            {
-                // The cursor line is empty.
-                Some(Ok(TokenIteratorItem {
-                    lnum: self.lnum,
-                    token: GToken::Eol(0),
-                    cursor: self.cursor,
-                    eol: true,
-                }))
-            } else if self.lnum < self.lines {
-                match self.fetch_next_line(self.lnum) {
-                    Err(err) => Some(Err(err)),
-                    Ok(()) => {
-                        self.lnum += 1;
-                        self.token_index = 0;
-                        if self.tokens.is_empty() {
-                            Some(Ok(TokenIteratorItem {
-                                lnum: self.lnum,
-                                token: GToken::Eol(0),
-                                cursor: self.cursor,
-                                eol: true,
-                            }))
-                        } else {
-                            let to_yield = self
-                                .tokens
-                                .get(self.token_index)
-                                .copied()
-                                .unwrap();
-                            let eol = self.token_index == self.tokens.len() - 1;
-                            self.token_index += 1;
-                            Some(Ok(TokenIteratorItem {
-                                lnum: self.lnum,
-                                token: GToken::T(to_yield),
-                                cursor: self.cursor,
-                                eol,
-                            }))
-                        }
-                    }
-                }
-            } else {
-                None
-            }
-        };
-        if self.cursor {
-            self.cursor = false;
-        }
-        next_item
+        self.next_helper().transpose()
     }
 }
 
-/// Backward iterator of [`TokenIteratorItem`]s in a `buffer`. If the cursor
-/// `col` is in a token, starts from that token; if `col` is to the right of
-/// the last token in current line, starts from that last token. An empty line
-/// is regarded as a `None` token. If the cursor is at an empty line, also
-/// starts from that empty line.
+/// Backward iterator of [`TokenIteratorItem`]s in a `buffer`. See module
+/// documentation for details.
 pub struct BackwardTokenIterator<'b, 'p, B: ?Sized, C> {
+    /// A reference to the underlying buffer.
     buffer: &'b B,
     tokenizer: &'p Tokenizer<C>,
+    /// Tokens of current lnum.
     tokens: Vec<Token>,
-    token_index: usize,
+    /// The token index of current token in `tokens` plus 1. When
+    /// `token_index_p1` equals the length of `tokens` plus 1, it denotes the
+    /// [`Eol`](GToken::Eol) of current lnum.
+    token_index_p1: usize,
+    /// Current line number, 1-based.
     lnum: usize,
     /// Whether to cut into word (true) or WORD (false).
     word: bool,
-    /// Whether current item is the cursor item or not.
-    cursor: bool,
-    /// Whether current item is the first item or not.
-    first: bool,
 }
 
 impl<'b, 'p, B, C> BackwardTokenIterator<'b, 'p, B, C>
@@ -264,36 +344,79 @@ where
     C: JiebaPlaceholder,
 {
     /// Construct a [`BackwardTokenIterator`], starting from the token where
-    /// the cursor position `(lnum, col)` lies in.
-    pub fn new(
+    /// the cursor position `(lnum, col, off)` lies on or off.
+    pub fn new<P: BasicPosition>(
         buffer: &'b B,
         tokenizer: &'p Tokenizer<C>,
-        lnum: usize,
-        col: usize,
+        cursor_position: &P,
         word: bool,
     ) -> Result<Self, B::Error> {
-        let tokens = tokenizer.parse_str(&buffer.getline(lnum)?, word);
-        let token_index = index_tokens(&tokens, col);
-        let cursor = (col == 0 && tokens.is_empty()) || token_index.is_some();
-        // One past the cursor token index.
-        let token_index = token_index.map(|i| i + 1).unwrap_or(tokens.len());
+        let [lnum, col, _] = cursor_position
+            .try_to_cb_position()
+            .and_then(PositionSanityCheck::check_indexing_basis)
+            .unwrap_or_else(|err| {
+                // TODO Return an error rather than panic.
+                panic!("{}", err)
+            });
+        let tokens = tokenizer.parse_str1(&buffer.getline(lnum)?, word);
+        // 1 plus the extended token index.
+        let token_index_p1 = index_tokens_extended(&tokens, col).map_or_else(
+            |err| {
+                // TODO Return an error rather than panic.
+                panic!("{}", err)
+            },
+            |i| i + 1,
+        );
         Ok(Self {
             buffer,
             tokenizer,
             tokens,
-            token_index,
+            token_index_p1,
             lnum,
             word,
-            cursor,
-            first: true,
         })
     }
 
-    fn fetch_prev_line(&mut self, lnum: usize) -> Result<(), B::Error> {
+    /// Yield the first item, which is guaranteed to exist, and is the item
+    /// where cursor lies on or off.
+    pub fn first(&mut self) -> TokenIteratorItem {
+        // `self.token_index_p1 - 1` is the extended token index in range
+        // [0, self.tokens.len()].
+        let eol = self.token_index_p1 == self.tokens.len();
+        self.token_index_p1 -= 1;
+        let token = get_gtoken(&self.tokens, self.token_index_p1);
+        TokenIteratorItem::new(self.lnum, token, eol)
+    }
+
+    /// Fetch the line at `lnum - 1` from the buffer, and populate
+    /// `self.tokens`. Return `lnum - 1` if successful.
+    fn fetch_prev_line(&mut self, lnum: usize) -> Result<usize, B::Error> {
+        let next_lnum = lnum - 1;
         self.tokens = self
             .tokenizer
-            .parse_str(&self.buffer.getline(lnum - 1)?, self.word);
-        Ok(())
+            .parse_str1(&self.buffer.getline(next_lnum)?, self.word);
+        Ok(next_lnum)
+    }
+
+    /// The helper function to implement [`Iterator::next`], containing the
+    /// main procedure.
+    fn next_helper(&mut self) -> Result<Option<TokenIteratorItem>, B::Error> {
+        let next_item = if self.token_index_p1 > 0 {
+            // `self.token_index_p1 - 1` is the extended token index in range
+            // [0, self.tokens.len()].
+            let eol = self.token_index_p1 == self.tokens.len();
+            self.token_index_p1 -= 1;
+            let token = get_gtoken(&self.tokens, self.token_index_p1);
+            Some(TokenIteratorItem::new(self.lnum, token, eol))
+        } else if self.lnum > 1 {
+            self.lnum = self.fetch_prev_line(self.lnum)?;
+            self.token_index_p1 = self.tokens.len();
+            let token = get_gtoken(&self.tokens, self.token_index_p1);
+            Some(TokenIteratorItem::new(self.lnum, token, false))
+        } else {
+            None
+        };
+        Ok(next_item)
     }
 }
 
@@ -305,82 +428,75 @@ where
     type Item = Result<TokenIteratorItem, B::Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next_item = {
-            if self.token_index > 0 {
-                self.token_index -= 1;
-                let eol = self.token_index == self.tokens.len() - 1;
-                Some(Ok(TokenIteratorItem {
-                    lnum: self.lnum,
-                    token: GToken::T(
-                        self.tokens.get(self.token_index).copied().unwrap(),
-                    ),
-                    cursor: self.cursor,
-                    eol,
-                }))
-            } else if self.first && self.tokens.is_empty() {
-                // The cursor line is empty.
-                Some(Ok(TokenIteratorItem {
-                    lnum: self.lnum,
-                    token: GToken::Eol(0),
-                    cursor: self.cursor,
-                    eol: true,
-                }))
-            } else if self.lnum > 1 {
-                match self.fetch_prev_line(self.lnum) {
-                    Err(err) => Some(Err(err)),
-                    Ok(()) => {
-                        self.lnum -= 1;
-                        self.token_index = self.tokens.len();
-                        if self.tokens.is_empty() {
-                            Some(Ok(TokenIteratorItem {
-                                lnum: self.lnum,
-                                token: GToken::Eol(0),
-                                cursor: self.cursor,
-                                eol: true,
-                            }))
-                        } else {
-                            self.token_index -= 1;
-                            let eol = self.token_index == self.tokens.len() - 1;
-                            Some(Ok(TokenIteratorItem {
-                                lnum: self.lnum,
-                                token: GToken::T(
-                                    self.tokens
-                                        .get(self.token_index)
-                                        .copied()
-                                        .unwrap(),
-                                ),
-                                cursor: self.cursor,
-                                eol,
-                            }))
-                        }
-                    }
-                }
-            } else {
-                None
-            }
-        };
-        if self.cursor {
-            self.cursor = false;
-        }
-        if self.first {
-            self.first = false;
-        }
-        next_item
+        self.next_helper().transpose()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::token::jieba::KeywordCutter;
+    use crate::token::{Token, TokenType, Tokenizer};
+
     use super::{
         BackwardTokenIterator, ForwardTokenIterator, GToken, TokenIteratorItem,
         index_tokens,
     };
-    use crate::token::jieba::KeywordCutter;
-    use crate::token::{Token, TokenType, Tokenizer};
+
+    macro_rules! pos {
+        ($($i:expr),*) => {
+            &crate::pos![$($i),*]
+        };
+    }
 
     #[test]
     fn test_index_tokens() {
-        assert_eq!(index_tokens(&[], 0), None);
+        use TokenType::*;
+
+        assert_eq!(index_tokens(&[], 1), None);
+        assert_eq!(
+            index_tokens(
+                &[Token::new(1, 2, 3, Word), Token::new(3, 3, 4, Space)],
+                1
+            ),
+            Some(0)
+        );
+        assert_eq!(
+            index_tokens(
+                &[Token::new(1, 2, 3, Word), Token::new(3, 3, 4, Space)],
+                2
+            ),
+            Some(0)
+        );
+        assert_eq!(
+            index_tokens(
+                &[Token::new(1, 2, 3, Word), Token::new(3, 3, 4, Space)],
+                3
+            ),
+            Some(1)
+        );
+        assert_eq!(
+            index_tokens(
+                &[Token::new(1, 2, 3, Word), Token::new(3, 3, 4, Space)],
+                4
+            ),
+            None
+        );
+    }
+
+    trait CollectIntoVec<T> {
+        fn collect_into_vec(self) -> Vec<T>;
+    }
+
+    impl<T, E, I> CollectIntoVec<T> for I
+    where
+        I: Iterator<Item = Result<T, E>>,
+    {
+        fn collect_into_vec(self) -> Vec<T> {
+            self.collect::<Vec<_>>()
+                .into_iter()
+                .collect::<Result<Vec<T>, _>>()
+                .unwrap_or_else(|_| panic!())
+        }
     }
 
     mod test_forward_token_iterator {
@@ -388,56 +504,107 @@ mod tests {
 
         #[test]
         fn empty() {
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec![""];
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true))]
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(1), false)]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
-                .unwrap();
-            assert!(it.collect::<Vec<_>>().is_empty());
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 2, true)
-                .unwrap();
-            assert!(it.collect::<Vec<_>>().is_empty());
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(1), false)]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1, 2],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(1), false)]
+            );
         }
 
         #[test]
         fn three_empty() {
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec!["", "", ""];
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true)),
-                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
+                    TokenIteratorItem::new(1, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
                 ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 2, 0, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), true, true)),
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
                 ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
+                    TokenIteratorItem::new(1, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 2, 2],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
                 ]
             );
         }
@@ -445,285 +612,597 @@ mod tests {
         #[test]
         fn empty_space() {
             use TokenType::*;
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
-            let buffer = vec!["", " "];
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                .unwrap();
+            let buffer = vec!["", "   "];
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true)),
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(1, GToken::Eol(1), false),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(0, 0, 1, Space)),
-                        false,
+                        GToken::T(Token::new(1, 3, 4, Space)),
                         true
-                    )),
+                    ),
+                    TokenIteratorItem::new(2, GToken::Eol(4), false)
                 ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(1, GToken::Eol(1), false),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 3, 4, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(2, GToken::Eol(4), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 3, 4, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(2, GToken::Eol(4), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 1, 4],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 3, 4, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(2, GToken::Eol(4), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 2, 4],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 3, 4, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(2, GToken::Eol(4), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 3, 4],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 3, 4, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(2, GToken::Eol(4), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 4],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(2, GToken::Eol(4), false)]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 4, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(2, GToken::Eol(4), false)]
             );
         }
 
         #[test]
         fn word_space() {
             use TokenType::*;
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec!["aaa  "];
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        true,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(3, 4, 5, Space)),
-                        false,
+                        GToken::T(Token::new(4, 5, 6, Space)),
                         true
-                    )),
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(6), false)
                 ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 3, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 2, 3],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
-                    1,
-                    GToken::T(Token::new(3, 4, 5, Space)),
-                    true,
-                    true
-                ))]
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 5, 6, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(6), false)
+                ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 4, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 3],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
-                    1,
-                    GToken::T(Token::new(3, 4, 5, Space)),
-                    true,
-                    true
-                ))]
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 5, 6, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(6), false)
+                ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 5, true)
-                .unwrap();
-            assert!(it.collect::<Vec<_>>().is_empty());
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 3, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 5, 6, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(6), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 4],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 5, 6, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(6), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 5],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 5, 6, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(6), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 5, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 5, 6, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(6), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 6],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(6), false)]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 6, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(6), false)]
+            );
         }
 
         #[test]
         fn word_space_word() {
             use TokenType::*;
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec!["aaa aaa"];
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        true,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(3, 3, 4, Space)),
-                        false,
+                        GToken::T(Token::new(4, 4, 5, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(4, 6, 7, Word)),
-                        false,
+                        GToken::T(Token::new(5, 7, 8, Word)),
                         true
-                    )),
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(8), false)
                 ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 4, 2],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 4, 5, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(5, 7, 8, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(8), false)
+                ]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 8, 10],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(8), false)]
             );
         }
 
         #[test]
         fn complex_case_1() {
             use TokenType::*;
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec!["aaa", "aa aa", "", "  aaa"];
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        true,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         true
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(0, 1, 2, Word)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Word)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(2, 2, 3, Space)),
-                        false,
+                        GToken::T(Token::new(3, 3, 4, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(3, 4, 5, Word)),
-                        false,
+                        GToken::T(Token::new(4, 5, 6, Word)),
                         true
-                    )),
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(0, 1, 2, Space)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(2, 4, 5, Word)),
-                        false,
+                        GToken::T(Token::new(3, 5, 6, Word)),
                         true
-                    )),
+                    ),
+                    TokenIteratorItem::new(4, GToken::Eol(6), false)
                 ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 3, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 4],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(0, 1, 2, Word)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Word)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(2, 2, 3, Space)),
-                        false,
+                        GToken::T(Token::new(3, 3, 4, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(3, 4, 5, Word)),
-                        false,
+                        GToken::T(Token::new(4, 5, 6, Word)),
                         true
-                    )),
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(0, 1, 2, Space)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(2, 4, 5, Word)),
-                        false,
+                        GToken::T(Token::new(3, 5, 6, Word)),
                         true
-                    )),
+                    ),
+                    TokenIteratorItem::new(4, GToken::Eol(6), false)
                 ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 1, 4, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 4, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(0, 1, 2, Word)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Word)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(2, 2, 3, Space)),
-                        false,
+                        GToken::T(Token::new(3, 3, 4, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(3, 4, 5, Word)),
-                        false,
+                        GToken::T(Token::new(4, 5, 6, Word)),
                         true
-                    )),
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(0, 1, 2, Space)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(2, 4, 5, Word)),
-                        false,
+                        GToken::T(Token::new(3, 5, 6, Word)),
                         true
-                    )),
+                    ),
+                    TokenIteratorItem::new(4, GToken::Eol(6), false)
                 ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 3, 0, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![3, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), true, true)),
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(0, 1, 2, Space)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(2, 4, 5, Word)),
-                        false,
+                        GToken::T(Token::new(3, 5, 6, Word)),
                         true
-                    )),
+                    ),
+                    TokenIteratorItem::new(4, GToken::Eol(6), false)
                 ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 3, 1, true)
-                .unwrap();
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![3, 1, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(0, 1, 2, Space)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         4,
-                        GToken::T(Token::new(2, 4, 5, Word)),
-                        false,
+                        GToken::T(Token::new(3, 5, 6, Word)),
                         true
-                    )),
+                    ),
+                    TokenIteratorItem::new(4, GToken::Eol(6), false)
                 ]
             );
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 4, 5, true)
-                .unwrap();
-            assert!(it.collect::<Vec<_>>().is_empty());
-            let it = ForwardTokenIterator::new(&buffer, &tokenizer, 4, 6, true)
-                .unwrap();
-            assert!(it.collect::<Vec<_>>().is_empty());
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![4, 6],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(4, GToken::Eol(6), false)]
+            );
+            let it = ForwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![4, 6, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(4, GToken::Eol(6), false)]
+            );
         }
     }
 
@@ -732,40 +1211,42 @@ mod tests {
 
         #[test]
         fn empty() {
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec![""];
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true))]
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(1), false)]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
-                    1,
-                    GToken::Eol(0),
-                    false,
-                    true
-                ))]
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(0), false)]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 2, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1, 10],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
-                    1,
-                    GToken::Eol(0),
-                    false,
-                    true
-                ))]
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(0), false)]
             );
         }
 
@@ -775,54 +1256,84 @@ mod tests {
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec!["", "", ""];
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(1, GToken::Eol(0), true, true))]
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(1), false)]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
-                    1,
-                    GToken::Eol(0),
-                    false,
-                    true
-                ))]
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(1, GToken::Eol(1), false)]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 2, 0, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), true, true)),
-                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), false, true)),
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(1, GToken::Eol(1), false),
                 ]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 2, 2, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 1, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), false, true)),
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(1, GToken::Eol(1), false),
                 ]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 3, 0, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![3, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), true, true)),
-                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(1, GToken::Eol(0), false, true)),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(1, GToken::Eol(1), false),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![3, 1, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(1, GToken::Eol(1), false),
                 ]
             );
         }
@@ -830,62 +1341,97 @@ mod tests {
         #[test]
         fn space_empty() {
             use TokenType::*;
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec![" ", ""];
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(
                     1,
-                    GToken::T(Token::new(0, 0, 1, Space)),
-                    true,
+                    GToken::T(Token::new(1, 1, 2, Space)),
                     true
-                ))]
+                )]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
-                    1,
-                    GToken::T(Token::new(0, 0, 1, Space)),
-                    false,
-                    true
-                ))]
-            );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 2, 0, true)
-                    .unwrap();
-            assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), true, true)),
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(1, GToken::Eol(2), false),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 0, 1, Space)),
-                        false,
+                        GToken::T(Token::new(1, 1, 2, Space)),
                         true
-                    ))
+                    )
                 ]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 2, 2, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 2, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(2, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(1, GToken::Eol(2), false),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 0, 1, Space)),
-                        false,
+                        GToken::T(Token::new(1, 1, 2, Space)),
                         true
-                    ))
+                    )
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(1, GToken::Eol(2), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 1, 2, Space)),
+                        true
+                    )
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![2, 1, 2],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(2, GToken::Eol(1), false),
+                    TokenIteratorItem::new(1, GToken::Eol(2), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 1, 2, Space)),
+                        true
+                    )
                 ]
             );
         }
@@ -893,60 +1439,91 @@ mod tests {
         #[test]
         fn word_space() {
             use TokenType::*;
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec!["aaa  "];
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(
                     1,
-                    GToken::T(Token::new(0, 2, 3, Word)),
-                    true,
+                    GToken::T(Token::new(1, 3, 4, Word)),
                     false
-                ))]
+                )]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 4, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 5],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(3, 4, 5, Space)),
-                        true,
+                        GToken::T(Token::new(4, 5, 6, Space)),
                         true
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        false,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         false
-                    )),
+                    ),
                 ]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 5, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 6],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(1, GToken::Eol(6), false),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(3, 4, 5, Space)),
-                        false,
+                        GToken::T(Token::new(4, 5, 6, Space)),
                         true
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        false,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         false
-                    )),
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 6, 2],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(1, GToken::Eol(6), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 5, 6, Space)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        false
+                    ),
                 ]
             );
         }
@@ -954,46 +1531,160 @@ mod tests {
         #[test]
         fn word_space_word() {
             use TokenType::*;
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec!["aaa aaa"];
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 0, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(
                     1,
-                    GToken::T(Token::new(0, 2, 3, Word)),
-                    true,
+                    GToken::T(Token::new(1, 3, 4, Word)),
                     false
-                ))]
+                )]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 5, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 6],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(4, 6, 7, Word)),
-                        true,
+                        GToken::T(Token::new(5, 7, 8, Word)),
                         true
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(3, 3, 4, Space)),
-                        false,
+                        GToken::T(Token::new(4, 4, 5, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        false,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         false
-                    )),
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 7],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(5, 7, 8, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 4, 5, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        false
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 7, 10],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(5, 7, 8, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 4, 5, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        false
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 8],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(2, GToken::Eol(8), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(5, 7, 8, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 4, 5, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        false
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 8, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(2, GToken::Eol(8), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(5, 7, 8, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(4, 4, 5, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        false
+                    ),
                 ]
             );
         }
@@ -1001,182 +1692,379 @@ mod tests {
         #[test]
         fn complex_case_1() {
             use TokenType::*;
-            let kc = KeywordCutter::new(["你好".into(), "世界".into()]);
+            let kc = KeywordCutter::new([]);
             let tokenizer = Tokenizer::new(kc, "@,48-57,_,192-255");
 
             let buffer = vec!["aaa", "aa aa", "", "  aaa"];
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 1, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(
                     1,
-                    GToken::T(Token::new(0, 2, 3, Word)),
-                    true,
+                    GToken::T(Token::new(1, 3, 4, Word)),
                     true
-                ))]
+                )]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 1, 3, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 3],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
-                vec![Ok(TokenIteratorItem::new(
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(
                     1,
-                    GToken::T(Token::new(0, 2, 3, Word)),
-                    false,
+                    GToken::T(Token::new(1, 3, 4, Word)),
                     true
-                ))]
+                )]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 3, 0, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 3, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
+                vec![TokenIteratorItem::new(
+                    1,
+                    GToken::T(Token::new(1, 3, 4, Word)),
+                    true
+                )]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 4],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), true, true)),
-                    Ok(TokenIteratorItem::new(
-                        2,
-                        GToken::T(Token::new(3, 4, 5, Word)),
-                        false,
-                        true
-                    )),
-                    Ok(TokenIteratorItem::new(
-                        2,
-                        GToken::T(Token::new(2, 2, 3, Space)),
-                        false,
-                        false
-                    )),
-                    Ok(TokenIteratorItem::new(
-                        2,
-                        GToken::T(Token::new(0, 1, 2, Word)),
-                        false,
-                        false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        false,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         true
-                    )),
+                    )
                 ]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 3, 1, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![1, 4, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(
-                        2,
-                        GToken::T(Token::new(3, 4, 5, Word)),
-                        false,
-                        true
-                    )),
-                    Ok(TokenIteratorItem::new(
-                        2,
-                        GToken::T(Token::new(2, 2, 3, Space)),
-                        false,
-                        false
-                    )),
-                    Ok(TokenIteratorItem::new(
-                        2,
-                        GToken::T(Token::new(0, 1, 2, Word)),
-                        false,
-                        false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        false,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         true
-                    )),
+                    )
                 ]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 4, 0, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![3, 1],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
-                        4,
-                        GToken::T(Token::new(0, 1, 2, Space)),
-                        true,
-                        false
-                    )),
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(3, 4, 5, Word)),
-                        false,
+                        GToken::T(Token::new(4, 5, 6, Word)),
                         true
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(2, 2, 3, Space)),
-                        false,
+                        GToken::T(Token::new(3, 3, 4, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(0, 1, 2, Word)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Word)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        false,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         true
-                    )),
+                    ),
                 ]
             );
-            let it =
-                BackwardTokenIterator::new(&buffer, &tokenizer, 4, 4, true)
-                    .unwrap();
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![3, 1, 2],
+                true,
+            )
+            .unwrap();
             assert_eq!(
-                it.collect::<Vec<_>>(),
+                it.collect_into_vec(),
                 vec![
-                    Ok(TokenIteratorItem::new(
-                        4,
-                        GToken::T(Token::new(2, 4, 5, Word)),
-                        true,
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(4, 5, 6, Word)),
                         true
-                    )),
-                    Ok(TokenIteratorItem::new(
-                        4,
-                        GToken::T(Token::new(0, 1, 2, Space)),
-                        false,
-                        false
-                    )),
-                    Ok(TokenIteratorItem::new(3, GToken::Eol(0), false, true)),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(3, 4, 5, Word)),
-                        false,
-                        true
-                    )),
-                    Ok(TokenIteratorItem::new(
-                        2,
-                        GToken::T(Token::new(2, 2, 3, Space)),
-                        false,
+                        GToken::T(Token::new(3, 3, 4, Space)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(
                         2,
-                        GToken::T(Token::new(0, 1, 2, Word)),
-                        false,
+                        GToken::T(Token::new(1, 2, 3, Word)),
                         false
-                    )),
-                    Ok(TokenIteratorItem::new(
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
                         1,
-                        GToken::T(Token::new(0, 2, 3, Word)),
-                        false,
+                        GToken::T(Token::new(1, 3, 4, Word)),
                         true
-                    )),
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![4, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        4,
+                        GToken::T(Token::new(1, 2, 3, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(4, 5, 6, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(3, 3, 4, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 2, 3, Word)),
+                        false
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        true
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![4, 5],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        4,
+                        GToken::T(Token::new(3, 5, 6, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        4,
+                        GToken::T(Token::new(1, 2, 3, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(4, 5, 6, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(3, 3, 4, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 2, 3, Word)),
+                        false
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        true
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![4, 5, 2],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(
+                        4,
+                        GToken::T(Token::new(3, 5, 6, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        4,
+                        GToken::T(Token::new(1, 2, 3, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(4, 5, 6, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(3, 3, 4, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 2, 3, Word)),
+                        false
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        true
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![4, 6],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(4, GToken::Eol(6), false),
+                    TokenIteratorItem::new(
+                        4,
+                        GToken::T(Token::new(3, 5, 6, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        4,
+                        GToken::T(Token::new(1, 2, 3, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(4, 5, 6, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(3, 3, 4, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 2, 3, Word)),
+                        false
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        true
+                    ),
+                ]
+            );
+            let it = BackwardTokenIterator::new(
+                &buffer,
+                &tokenizer,
+                pos![4, 6, 1],
+                true,
+            )
+            .unwrap();
+            assert_eq!(
+                it.collect_into_vec(),
+                vec![
+                    TokenIteratorItem::new(4, GToken::Eol(6), false),
+                    TokenIteratorItem::new(
+                        4,
+                        GToken::T(Token::new(3, 5, 6, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        4,
+                        GToken::T(Token::new(1, 2, 3, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(4, 5, 6, Word)),
+                        true
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(3, 3, 4, Space)),
+                        false
+                    ),
+                    TokenIteratorItem::new(
+                        2,
+                        GToken::T(Token::new(1, 2, 3, Word)),
+                        false
+                    ),
+                    TokenIteratorItem::new(1, GToken::Eol(4), false),
+                    TokenIteratorItem::new(
+                        1,
+                        GToken::T(Token::new(1, 3, 4, Word)),
+                        true
+                    ),
                 ]
             );
         }

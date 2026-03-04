@@ -12,34 +12,30 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use crate::motion::token_iter::TokenLikeExt;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
-use crate::{BufferLike, CursorPositionCurswant};
+use crate::{BufferLike, CursorPositionCurswant, pos};
 
 use super::token_iter::{ForwardTokenIterator, GToken, TokenIteratorItem};
 use super::{NmapOutput, WordMotion};
 
 /// Test if a token is stoppable for `nmap_w`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
-    if item.cursor {
-        false
-    } else {
-        match item.token {
-            GToken::Eol(0) => true,
-            GToken::Eol(_) => unreachable!(),
-            GToken::T(token) => match token.ty {
-                TokenType::Word => true,
-                TokenType::Space => false,
-            },
-        }
+    match item.token {
+        GToken::Eol(1) => true,
+        GToken::Eol(_) => false,
+        GToken::T(token) => match token.ty {
+            TokenType::Word => true,
+            TokenType::Space => false,
+        },
     }
 }
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
-    /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
-    /// in normal mode. Take in current `cursor_pos` (lnum, col), and return
-    /// the new cursor position. Note that `lnum` is 1-indexed, and `col`
-    /// is 0-indexed. We denote both `word` and `WORD` with the English word
-    /// "word" below.
+    /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`) in
+    /// normal mode. Take in current `cursor_pos` (0, lnum, col, off, _), and
+    /// return the new cursor position. We denote both `word` and `WORD` with
+    /// the English word "word" below.
     ///
     /// # Basics
     ///
@@ -49,57 +45,55 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     /// # Edge cases
     ///
     /// - If current cursor is on the last character of the last token in the
-    ///   buffer, no further jump should be made.
+    ///   buffer, no further jump should be made. And the motion should be
+    ///   taken as a failure.
     /// - If there is no next word to the right of current cursor, jump to the
     ///   last character of the last token in the buffer.
-    ///
-    /// # Panics
-    ///
-    /// - If current cursor `col` is to the right of the last token in current
-    ///   line of the buffer.
     pub fn nmap_w<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor: CursorPositionCurswant,
+        cursor_pos: CursorPositionCurswant,
         mut count: u64,
         word: bool,
     ) -> Result<NmapOutput, B::Error> {
-        let [bufnum, lnum_orig, col_p1_orig, off, _] = cursor;
-        let mut lnum = lnum_orig;
-        let mut col = col_p1_orig - 1;
+        let [_, mut lnum, mut col, _, _] = cursor_pos;
         let mut it = ForwardTokenIterator::new(
             buffer,
             &self.tokenizer,
-            lnum,
-            col,
+            &cursor_pos,
             word,
-        )?
-        .peekable();
+        )?;
+        let cursor_item = it.first();
+        let mut it = it.peekable();
+        let mut moved = false;
+        if !cursor_item.token.is_empty() && !cursor_item.token.at_end(col) {
+            col = cursor_item.token.last_char();
+            moved = true;
+        }
+
         while count > 0 && it.peek().is_some() {
             let item = it.next().unwrap()?;
             if !is_stoppable(&item) {
                 lnum = item.lnum;
-                col = item.token.last_char();
+                if item.token.is_empty() {
+                    col = item.token.first_char();
+                } else {
+                    col = item.token.last_char();
+                    moved = true;
+                }
             } else {
+                moved = true;
                 lnum = item.lnum;
                 col = item.token.first_char();
                 count -= 1;
-                if count > 0 && it.peek().is_none() {
+                if count > 0 && it.peek().is_none() && !item.token.is_empty() {
                     col = item.token.last_char();
                 }
             }
         }
-        let col_p1 = col + 1;
-        let prevent_change = if (lnum, col_p1) != (lnum_orig, col_p1_orig)
-            || (buffer.lines()? == 1 && buffer.getline(1)?.is_empty())
-        {
-            b"0"
-        } else {
-            b"1"
-        };
         Ok(NmapOutput {
-            cursor: [bufnum, lnum, col_p1, off],
-            prevent_change,
+            cursor: pos![lnum, col],
+            prevent_change: if moved { b"0" } else { b"1" },
         })
     }
 }

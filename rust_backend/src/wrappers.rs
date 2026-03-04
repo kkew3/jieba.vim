@@ -145,6 +145,7 @@ impl<'py> IntoPyObject<'py> for OmapOutputWrapper {
         dict.set_item("langle", vec![la, lb, lc, ld])?;
         dict.set_item("rangle", vec![ra, rb, rc, rd])?;
         dict.set_item("prevent_change", self.0.prevent_change)?;
+        dict.set_item("selection", self.0.selection)?;
         dict.set_item("visualmode", self.0.visualmode)?;
         Ok(dict)
     }

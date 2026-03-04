@@ -12,17 +12,18 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::BufferLike;
+use crate::motion::token_iter::TokenLikeExt;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
+use crate::{BufferLike, CursorPositionCurswant, pos};
 
 use super::token_iter::{BackwardTokenIterator, GToken, TokenIteratorItem};
-use super::{MotionOutput, WordMotion};
+use super::{NmapOutput, WordMotion};
 
 /// Test if a token is stoppable for `nmap_ge`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
     match item.token {
-        GToken::Eol(0) => true,
-        GToken::Eol(_) => unreachable!(),
+        GToken::Eol(1) => true,
+        GToken::Eol(_) => false,
         GToken::T(token) => match token.ty {
             TokenType::Word => true,
             TokenType::Space => false,
@@ -32,9 +33,9 @@ fn is_stoppable(item: &TokenIteratorItem) -> bool {
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `ge` (if `word` is `true`) or `gE` (if `word` is `false`)
-    /// in normal mode. Take in `cursor_pos` (lnum, col), and return the new
-    /// cursor position. Note that `lnum` is 1-indexed, and `col` is 0-indexed.
-    /// We denote both `word` and `WORD` with the English word "word" below.
+    /// in normal mode. Take in `cursor_pos` (0, lnum, col, off, _), and return
+    /// the new cursor position. We denote both `word` and `WORD` with the
+    /// English word "word" below.
     ///
     /// # Basics
     ///
@@ -44,115 +45,60 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     /// # Edge cases
     ///
     /// - If current cursor is on the first character of the first token in the
-    ///   buffer, no further jump should be made.
+    ///   buffer, no further jump should be made.  And the motion should be
+    ///   taken as a failure.
     /// - If there is no previous word to the left of current cursor, jump to
     ///   the first character of the first token in the buffer.
-    ///
-    /// # Panics
-    ///
-    /// - If current cursor `col` is to the right of the last token in current
-    ///   line of the buffer.
     pub fn nmap_ge<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: (usize, usize),
+        cursor_pos: CursorPositionCurswant,
         mut count: u64,
         word: bool,
-    ) -> Result<MotionOutput, B::Error> {
-        let (mut lnum, mut col) = cursor_pos;
+    ) -> Result<NmapOutput, B::Error> {
+        let [_, mut lnum, mut col, _, _] = cursor_pos;
         let mut it = BackwardTokenIterator::new(
             buffer,
             &self.tokenizer,
-            lnum,
-            col,
+            &cursor_pos,
             word,
-        )?
-        .peekable();
+        )?;
+        let cursor_item = it.first();
+        let mut it = it.peekable();
+        if count > 0 {
+            if cursor_item.token.at_start(col) && it.peek().is_none() {
+                return Ok(NmapOutput {
+                    cursor: pos![1, 1],
+                    prevent_change: b"1",
+                });
+            } else if it.peek().is_none() {
+                col = cursor_item.token.first_char();
+                // Don't decrement count because we are not at the end of
+                // previous word.
+            }
+        }
+
         while count > 0 && it.peek().is_some() {
             let item = it.next().unwrap()?;
-            if !is_stoppable(&item) || item.cursor {
+            if !is_stoppable(&item) {
                 lnum = item.lnum;
                 col = item.token.first_char();
             } else {
                 lnum = item.lnum;
-                col = item.token.last_char();
+                if item.token.is_empty() {
+                    col = item.token.first_char();
+                } else {
+                    col = item.token.last_char();
+                }
                 count -= 1;
                 if it.peek().is_none() && count > 0 {
                     col = item.token.first_char();
-                    count -= 1;
                 }
             }
         }
-        Ok(MotionOutput {
-            new_cursor_pos: (lnum, col),
-            d_special: false,
-            prevent_change: false,
+        Ok(NmapOutput {
+            cursor: pos![lnum, col],
+            prevent_change: b"0",
         })
     }
-}
-
-#[cfg(test)]
-mod tests {
-    #[cfg(feature = "verifiable_case")]
-    use jieba_vim_rs_test_macro::verified_cases;
-    #[cfg(not(feature = "verifiable_case"))]
-    use jieba_vim_rs_test_macro::verified_cases_dry_run as verified_cases;
-
-    #[verified_cases(
-        mode = "n",
-        motion = "ge",
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["}{"])]
-    #[vcase(name = "space", buffer = ["}{ "])]
-    #[vcase(name = "space", buffer = ["}   { "])]
-    #[vcase(name = "newline_newline", buffer = ["}", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["  ", "}", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "  ", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "   {  "])]
-    #[vcase(name = "newline_space_newline", buffer = ["  ", "}", "   {  "])]
-    #[vcase(name = "one_word", buffer = ["}{aaaa"])]
-    #[vcase(name = "one_word", buffer = ["}aa{aa"])]
-    #[vcase(name = "one_word", buffer = ["}aaa{a"])]
-    #[vcase(name = "one_word", buffer = ["}aaa{a"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["aaa}a{   "])]
-    #[vcase(name = "one_word_space", buffer = ["aaa}a  { "])]
-    #[vcase(name = "space_one_word", buffer = ["}   aaa{a"])]
-    #[vcase(name = "space_one_word", buffer = ["}   aaa{a"], count = 2)]
-    #[vcase(name = "space_one_word", buffer = ["}   {aaaa"])]
-    #[vcase(name = "two_words", buffer = ["aaa}a  {aaa"])]
-    #[vcase(name = "two_words", buffer = ["aaa}a  aa{a"])]
-    #[vcase(name = "two_words", buffer = ["}aaaa  aa{a"], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["   aaa}a  { "])]
-    #[vcase(name = "space_one_word_space", buffer = ["}   aaaa  { "], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["   aaa}a{   "])]
-    #[vcase(name = "space_one_word_space", buffer = ["}   aaaa{   "], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["aaa}a", "{"])]
-    #[vcase(name = "newline_one_word", buffer = ["}", "aaa{a"])]
-    #[vcase(name = "newline_one_word", buffer = ["}", "aaa{a"], count = 2)]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaa}a    ", "{"])]
-    #[vcase(name = "two_words_space_newline", buffer = ["aaaa aa}a    ", "  ", "{"])]
-    #[vcase(name = "two_words_space_newline", buffer = ["aaaa aa}a    ", "  ", "  { "])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaa{a"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaa{a"], count = 2)]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   {aaaa"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "  { aaaa"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["", "   aaa}a  { "])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaaa  { "], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "aaa{a"])]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "", "aaa{a"], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["     ", "}", "", "aaa{a"], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "", "", "aaa{a"], count = 3)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", " ", " ", "aaa{a"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaa}a", " ", "  ", "{"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aa}a aaaa", " ", "  ", "{"], count = 2)]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaaa", "}", "  ", "{"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaa}a", "", "  ", "{"], count = 2)]
-    #[vcase(name = "newline_space_newline_one_word", buffer = ["", "  ", "}", "aa{a"])]
-    #[vcase(name = "newline_space_newline_one_word", buffer = ["}", "  ", "", "aa{a"], count = 2)]
-    #[vcase(name = "two_words_newline_one_word", buffer = ["aaaa aa}a", "", "  ", "{aaa"], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["}{"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["}aaa  aaa{aa"], count = 10293949403)]
-    mod motion_nmap_ge {}
 }

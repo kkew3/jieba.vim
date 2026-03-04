@@ -30,6 +30,10 @@ pub type CursorPositionCurswant = [usize; 5];
 /// the leading zero in [`Position`].
 pub type CurrentBufferPosition = [usize; 3];
 
+/// The 2-element list of numbers \[col, off], used when `lnum` is irrelevant
+/// in context of [`CurrentBufferPosition`].
+pub type ColumnPosition = [usize; 2];
+
 /// A position in a buffer with at least (bufnum, lnum, col, off) info.
 pub trait BasicPosition: Sized {
     fn bufnum(&self) -> usize;
@@ -142,11 +146,32 @@ pub trait PositionSanityCheck: Sized {
 impl<T: BasicPosition> PositionSanityCheck for T {
     fn check_indexing_basis(self) -> Result<Self, PositionError> {
         if self.lnum() == 0 {
-            Err(PositionError::ZeroCol)
+            Err(PositionError::ZeroLnum)
         } else if self.col() == 0 {
             Err(PositionError::ZeroCol)
         } else {
             Ok(self)
         }
     }
+}
+
+/// Use `pos![lnum, col]` or `pos![lnum, col, off]` to construct [`Position`]
+/// array. Will yield compile-time error if `lnum` or `col` equals 0.
+#[macro_export]
+macro_rules! pos {
+    (0, 0) => {
+        compile_error!("lnum and col =0");
+    };
+    (0, $_:expr) => {
+        compile_error!("lnum =0");
+    };
+    ($_:expr, 0) => {
+        compile_error!("col =0");
+    };
+    ($lnum:expr, $col:expr) => {
+        [0, $lnum, $col, 0]
+    };
+    ($lnum:expr, $col:expr, $off:expr) => {
+        [0, $lnum, $col, $off]
+    };
 }

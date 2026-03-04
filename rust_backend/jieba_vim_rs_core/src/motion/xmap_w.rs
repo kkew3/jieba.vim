@@ -12,34 +12,31 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use crate::motion::token_iter::TokenLikeExt;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
-use crate::{BufferLike, Position};
+use crate::{BufferLike, Position, pos};
 
 use super::token_iter::{ForwardTokenIterator, GToken, TokenIteratorItem};
 use super::{WordMotion, XmapOutput};
 
 /// Test if a token is stoppable for `xmap_w`.
 fn is_stoppable(item: &TokenIteratorItem) -> bool {
-    if item.cursor {
-        false
-    } else {
-        match item.token {
-            GToken::Eol(0) => true,
-            GToken::Eol(_) => unreachable!(),
-            GToken::T(token) => match token.ty {
-                TokenType::Word => true,
-                TokenType::Space => false,
-            },
-        }
+    match item.token {
+        GToken::Eol(1) => true,
+        GToken::Eol(_) => false,
+        GToken::T(token) => match token.ty {
+            TokenType::Word => true,
+            TokenType::Space => false,
+        },
     }
 }
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
-    /// in visual mode. Take in current `cursor_pos` (lnum, col), and return
-    /// the new cursor position. Note that `lnum` is 1-indexed, and `col`
-    /// is 0-indexed. We denote both `word` and `WORD` with the English word
-    /// "word" below.
+    /// in visual mode. Take in current `visual_end` (0, lnum, col, off),
+    /// and return the new visual_end. Note that `visual_begin` will be left
+    /// intact. We denote both `word` and `WORD` with the English word "word"
+    /// below.
     ///
     /// # Basics
     ///
@@ -48,9 +45,12 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ///
     /// # Edge cases
     ///
+    /// - If current `visual_end` is on the last character of the last token
+    ///   in the buffer, jump to the right of of that token. And the motion
+    ///   should be taken as a failure.
     /// - If current cursor is on the one character to the right of the last
     ///   character of the last token in the buffer, no further jump should be
-    ///   made.
+    ///   made. And the motion should be taken as a failure.
     /// - If there is no next word to the right of current cursor, jump to one
     ///   character to the right of the last character of the last token in the
     ///   buffer.
@@ -63,46 +63,40 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         mut count: u64,
         word: bool,
     ) -> Result<XmapOutput<'a>, B::Error> {
-        let [bufnum, lnum_orig, col_p1_orig, off] = visual_end;
-        let mut lnum = lnum_orig;
-        let mut col = col_p1_orig - 1;
+        let [_, mut lnum, mut col, _] = visual_end;
         let mut it = ForwardTokenIterator::new(
             buffer,
             &self.tokenizer,
-            lnum,
-            col,
+            &visual_end,
             word,
-        )?
-        .peekable();
-        while count > 0 && it.peek().is_some() {
-            let item = it.next().unwrap()?;
+        )?;
+        let cursor_item = it.first();
+        let mut moved = false;
+        if !cursor_item.token.is_empty() && !cursor_item.token.at_end(col) {
+            col = cursor_item.token.last_char();
+            moved = true;
+        }
+        while count > 0
+            && let Some(item) = it.next().transpose()?
+        {
             if !is_stoppable(&item) {
                 lnum = item.lnum;
-                if it.peek().is_some() {
-                    col = item.token.last_char();
-                } else {
-                    col = item.token.last_char1();
+                col = item.token.last_char1();
+                if !item.token.is_empty() {
+                    moved = true;
                 }
             } else {
+                moved = true;
                 lnum = item.lnum;
                 col = item.token.first_char();
                 count -= 1;
-                if count > 0 && it.peek().is_none() {
-                    col = item.token.last_char1();
-                }
             }
         }
-        let col_p1 = col + 1;
-        let prevent_change = if (lnum, col_p1) != (lnum_orig, col_p1_orig) {
-            b"0"
-        } else {
-            b"1"
-        };
         Ok(XmapOutput {
             langle: visual_begin,
-            rangle: [bufnum, lnum, col_p1, off],
+            rangle: pos![lnum, col],
             visualmode,
-            prevent_change,
+            prevent_change: if moved { b"0" } else { b"1" },
         })
     }
 }
