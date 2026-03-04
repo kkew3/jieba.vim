@@ -218,6 +218,9 @@ jobs:
             echo "Bootstrap case verification may have panicked" >&2
             false
           fi
+      - name: Check and fix bootstrapped cases
+        shell: bash
+        run: jieba_vim_rs_metatest check --fix ${{ steps.run-bootstrap-case-verification.outputs.output_test_case }}
       - uses: actions/upload-artifact@v4
         with:
           name: bootstrapped-test-case-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
