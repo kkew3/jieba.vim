@@ -64,7 +64,14 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             word,
         )?;
         let cursor_item = it.first();
-        let mut it = it.peekable();
+        // Skip all non-stoppable Eol tokens.
+        let mut it = it
+            .filter(|res| {
+                !res.as_ref().is_ok_and(|item| {
+                    item.token.is_empty() && !is_stoppable(item)
+                })
+            })
+            .peekable();
         let mut moved = false;
         if !cursor_item.token.is_empty() && !cursor_item.token.at_end(col) {
             col = cursor_item.token.last_char();
