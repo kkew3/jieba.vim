@@ -132,7 +132,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             )?
         {
             Ok(OmapOutput {
-                cursor: rangle,
+                cursor: langle,
                 langle,
                 rangle,
                 visualmode: b"V",
@@ -141,7 +141,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             })
         } else {
             Ok(OmapOutput {
-                cursor: rangle,
+                cursor: langle,
                 langle,
                 rangle,
                 visualmode: b"v",
