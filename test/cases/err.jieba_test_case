@@ -54,3 +54,31 @@ Bp <>␊··␊␊·␊
 Bo ·|·␊␊·␊
 B1 ·|·␊␊·␊
 S1 "a=\<Newline>
+
+H 24ace418ddf24df51d325b33598a0448464be2e96617fb9da9eb93d6
+X u
+M o
+K w
+O d
+R a
+B0 |␊··␊␊
+C 2
+Q | < > prevent_change=0 visualmode=v selection=exclusive
+Bp <␊··␊>␊
+Bo |␊
+B1 |␊
+S1 "a=\<Newline>\<Space>\<Space>\<Newline>
+
+H f7631faaebdd95ff686388bff6f025bd0e4aabe5d6db86eb73b1c969
+X u
+M o
+K w
+O d
+R a
+B0 |␊··␊␊····␊
+C 2
+Q | < > prevent_change=0 visualmode=v selection=exclusive
+Bp <␊··␊␊>····␊
+Bo ···|·␊
+B1 ···|·␊
+S1 "a=\<Newline>\<Space>\<Space>\<Newline>\<Newline>
