@@ -596,7 +596,7 @@ mod tests {
             let it = ForwardTokenIterator::new(
                 &buffer,
                 &tokenizer,
-                pos![1, 2, 2],
+                pos![2, 1, 2],
                 true,
             )
             .unwrap();
@@ -1235,7 +1235,7 @@ mod tests {
             .unwrap();
             assert_eq!(
                 it.collect_into_vec(),
-                vec![TokenIteratorItem::new(1, GToken::Eol(0), false)]
+                vec![TokenIteratorItem::new(1, GToken::Eol(1), false)]
             );
             let it = BackwardTokenIterator::new(
                 &buffer,
@@ -1246,7 +1246,7 @@ mod tests {
             .unwrap();
             assert_eq!(
                 it.collect_into_vec(),
-                vec![TokenIteratorItem::new(1, GToken::Eol(0), false)]
+                vec![TokenIteratorItem::new(1, GToken::Eol(1), false)]
             );
         }
 
@@ -1641,7 +1641,7 @@ mod tests {
             assert_eq!(
                 it.collect_into_vec(),
                 vec![
-                    TokenIteratorItem::new(2, GToken::Eol(8), false),
+                    TokenIteratorItem::new(1, GToken::Eol(8), false),
                     TokenIteratorItem::new(
                         1,
                         GToken::T(Token::new(5, 7, 8, Word)),
@@ -1669,7 +1669,7 @@ mod tests {
             assert_eq!(
                 it.collect_into_vec(),
                 vec![
-                    TokenIteratorItem::new(2, GToken::Eol(8), false),
+                    TokenIteratorItem::new(1, GToken::Eol(8), false),
                     TokenIteratorItem::new(
                         1,
                         GToken::T(Token::new(5, 7, 8, Word)),
@@ -1788,6 +1788,7 @@ mod tests {
                 it.collect_into_vec(),
                 vec![
                     TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
                     TokenIteratorItem::new(
                         2,
                         GToken::T(Token::new(4, 5, 6, Word)),
@@ -1822,6 +1823,7 @@ mod tests {
                 it.collect_into_vec(),
                 vec![
                     TokenIteratorItem::new(3, GToken::Eol(1), false),
+                    TokenIteratorItem::new(2, GToken::Eol(6), false),
                     TokenIteratorItem::new(
                         2,
                         GToken::T(Token::new(4, 5, 6, Word)),
