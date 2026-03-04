@@ -218,11 +218,13 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
                 call visualmode(1)
             endif
         endif
+        let l:orig_selection = &selection
 
         " Select and execute.
         execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
         call setpos("'<", l:result_dict["langle"])
         call setpos("'>", l:result_dict["rangle"])
+        let &selection = l:result_dict["selection"]
         if a:operator ==# "c" && a:repeat
             execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
         else
@@ -230,6 +232,7 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         endif
 
         " Restore original states.
+        let &selection = l:orig_selection
         if l:orig_visualmode ==# ""
             call visualmode(1)
         else
