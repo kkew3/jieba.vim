@@ -8,9 +8,4 @@ unic-emoji-char = "0.9"
 
 [dev-dependencies]
 proptest = "1.10"
-once_cell = "1.21"
 jieba_vim_rs_test = { path = "../jieba_vim_rs_test" }
-jieba_vim_rs_test_macro = { path = "../jieba_vim_rs_test_macro" }
-
-[features]
-verifiable_case = []

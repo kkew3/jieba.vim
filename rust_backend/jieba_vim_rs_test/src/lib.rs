@@ -12,6 +12,4 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-pub mod cursor_marker;
 pub mod keyword_cutter;
-pub mod verified_case;
