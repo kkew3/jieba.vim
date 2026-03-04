@@ -741,6 +741,7 @@ fn verify_in_vim(
             }
             cmd.arg("-S").arg(run_file).arg(buffer_file);
             let st = cmd
+                .env("JIEBA_TEST_CASE", "1")
                 .stdin(Stdio::null())
                 .stdout(Stdio::piped())
                 .stderr(Stdio::inherit())
