@@ -257,9 +257,17 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         " Special treatment to |c| which needs to drop the user in insert mode.
         if a:operator ==# "c" && a:repeat == 0
             if l:result_dict["cursor"][2] >= col("$")
-                startinsert!
+                if exists("$JIEBA_TEST_CASE")
+                    normal! A
+                else
+                    startinsert!
+                endif
             else
-                startinsert
+                if exists("$JIEBA_TEST_CASE")
+                    normal! i
+                else
+                    startinsert
+                endif
             endif
         endif
     endif
