@@ -78,24 +78,36 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             col = cursor_item.token.last_char();
         }
 
-        let mut rangle_of_last_stoppable_moved_over = None;
+        // `last_stoppable_moved_over`: (last stoppable item, its rangle).
+        let mut last_stoppable_moved_over = None;
         if is_stoppable(&cursor_item) {
-            rangle_of_last_stoppable_moved_over =
-                Some(if cursor_item.token.is_empty() {
-                    pos![cursor_item.lnum, cursor_item.token.first_char()]
-                } else {
-                    pos![cursor_item.lnum, cursor_item.token.last_char()]
-                });
+            last_stoppable_moved_over = Some(if cursor_item.token.is_empty() {
+                (
+                    cursor_item,
+                    pos![cursor_item.lnum, cursor_item.token.first_char()],
+                )
+            } else {
+                (
+                    cursor_item,
+                    pos![cursor_item.lnum, cursor_item.token.last_char()],
+                )
+            });
         }
-        let mut it = it.peekable();
 
-        while count > 0 && it.peek().is_some() {
-            let item = it.next().unwrap()?;
+        while count > 0
+            && let Some(item) = it.next().transpose()?
+        {
             if !is_stoppable(&item) && item.token.is_empty() {
                 lnum = item.lnum;
                 col = item.token.first_char();
-                if let Some(x) = rangle_of_last_stoppable_moved_over.as_mut() {
-                    *x = pos![item.lnum, item.token.first_char()];
+                if let Some((s_item, rangle)) =
+                    last_stoppable_moved_over.as_mut()
+                {
+                    if s_item.lnum == item.lnum {
+                        *rangle = pos![item.lnum, item.token.first_char()];
+                    } else if s_item.lnum + 1 == item.lnum {
+                        *rangle = pos![item.lnum, 1];
+                    }
                 }
             } else if !is_stoppable(&item) {
                 lnum = item.lnum;
@@ -104,24 +116,36 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 lnum = item.lnum;
                 col = item.token.first_char();
                 count -= 1;
-                if count > 0 && it.peek().is_some() {
-                    rangle_of_last_stoppable_moved_over =
+                if item.token.is_empty() {
+                    if let Some((s_item, rangle)) =
+                        last_stoppable_moved_over.as_mut()
+                    {
+                        if s_item.lnum == item.lnum {
+                            *rangle = pos![item.lnum, item.token.first_char()];
+                        } else if s_item.lnum + 1 == item.lnum {
+                            *rangle = pos![item.lnum, 1];
+                        }
+                    }
+                }
+                if count > 0 {
+                    last_stoppable_moved_over =
                         Some(if item.token.is_empty() {
-                            pos![item.lnum, item.token.first_char()]
+                            (item, pos![item.lnum, item.token.first_char()])
                         } else {
-                            pos![item.lnum, item.token.last_char()]
+                            (item, pos![item.lnum, item.token.last_char()])
                         });
                 } else if item.token.first_char() > 1 {
                     // If we will stop at item.token which is a word ..
-                    rangle_of_last_stoppable_moved_over = None;
+                    last_stoppable_moved_over = None;
                 }
             }
         }
-        let rangle = match rangle_of_last_stoppable_moved_over {
+        let rangle = match last_stoppable_moved_over {
             None => pos![lnum, col],
-            Some(rangle) => rangle,
+            Some((_, rangle)) => rangle,
         };
         if operator == b"d"
+            && last_stoppable_moved_over.is_none()
             && d_special::is_d_special(
                 buffer,
                 &self.tokenizer,
@@ -140,19 +164,18 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 prevent_change: b"0",
             })
         } else {
-            let mut selection = &b"exclusive"[..];
-            // This patch covers test case id:
-            // 84706375d03465fb2979368490c6698584b2ca89cf3752da8c4a119f.
-            // Don't know why we need "old" selection mode here.
-            if langle == rangle && operator == b"c" {
-                selection = &b"old"[..];
-            }
             Ok(OmapOutput {
                 cursor: langle,
                 langle,
                 rangle,
                 visualmode: b"v",
-                selection,
+                selection: if last_stoppable_moved_over
+                    .is_some_and(|(item, _)| item.token.is_empty())
+                {
+                    &b"colon"[..]
+                } else {
+                    &b"exclusive"[..]
+                },
                 prevent_change: b"0",
             })
         }

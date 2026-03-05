@@ -172,7 +172,7 @@ fn index_tokens_extended(
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct TokenIteratorItem {
     /// The `lnum` of current token.
     pub lnum: usize,
