@@ -126,6 +126,11 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                             *rangle = pos![item.lnum, 1];
                         }
                     }
+                } else if let Some((s_item, rangle)) =
+                    last_stoppable_moved_over.as_mut()
+                    && s_item.lnum + 1 == item.lnum
+                {
+                    *rangle = pos![item.lnum, 1];
                 }
                 if count > 0 {
                     last_stoppable_moved_over =
