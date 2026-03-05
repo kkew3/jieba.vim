@@ -393,9 +393,9 @@ S1 visualmode()=\<C-v>
 #M o
 #K w
 #O d
-#Q | < > prevent_change=0 visualmode=v selection=exclusive
+#Q | < > prevent_change=0 visualmode=v selection=colon
 
-H 14249057c9a711969be139e683dd34fc746302b9294c9819986a565a visual mode unchanged
+H a907d13707aef8a525176ece50793a9d5fc268065732ac7c8e81994a visual mode unchanged
 S0 visualmode()=V
 B0 |[]␊
 Bp <>␊
@@ -403,7 +403,7 @@ Bo |␊
 B1 |[]␊
 S1 visualmode()=V
 
-H 2b9fbbb5eebb73cd5fd5f62a056edbed7ee126e580aa0f7b1cb949c3 visual mode unchanged
+H d26cb0fc74ac16f08ae5dde829227f8e56641ce5384c4388aa437790 visual mode unchanged
 S0 visualmode()=
 B0 |␊
 Bp <>␊

@@ -30,10 +30,10 @@
 // Buffer: |␊···abcd␊······␊ <<<
 #B0 |␊···abcd␊······␊
 
-H 810c3ba3ff4b8859c5f3b441dd374c3fbd998329c45165df82ff79a3
+H 0169f4a53dfec2d846d39ad5be5d2ce4115d76d8c0df70e7b8b87f1c
 C 2
 Bp <␊···abcd>␊······␊
-Bo ·····|·␊
+Bo |······␊
 B1 |······␊
 S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
 
