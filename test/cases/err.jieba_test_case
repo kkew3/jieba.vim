@@ -15,7 +15,7 @@
 // This file contains failed test cases in bootstrap verification.
 // Best viewed in Vim.
 
-H 4816a1007442038104c4cf82a224d8a245c0e480c7e73238e6e964db
+H 14c717cf30984640044562f6fb86e801e82c2cc09e261012766c1b07
 X u
 M o
 K w
@@ -23,10 +23,24 @@ O d
 R a
 B0 abc|de␊
 C 0
-Q | < > prevent_change=0 visualmode=v selection=exclusive
-Bp abc<de>␊
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+Bp abc<d>e␊
 Bo abc|␊
 B1 ab|c␊
+S1 "a=de
+
+H 505a8f89f6d0e474863e4abb525c11a894ae0d54f912afc318edc1f3
+X u
+M o
+K w
+O d
+R a
+B0 abc|de␊␊
+C 0
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+Bp abc<d>e␊␊
+Bo abc|␊␊
+B1 ab|c␊␊
 S1 "a=de
 
 H 265c539d04333eeaa48ee93762b1deb8d7b86edaab5ac66db37b7263
@@ -82,3 +96,17 @@ Bp <␊··␊␊>····␊
 Bo |····␊
 B1 ···|·␊
 S1 "a=\<Newline>\<Space>\<Space>\<Newline>\<Newline>
+
+H 41bc342e62641b187b4b1441ed01b8581241e9038f22bffd5a12f0b3
+X u
+M o
+K w
+O d
+R a
+B0 ·|···␊···␊
+C 0
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+Bp ·<··>·␊···␊
+Bo ·|␊···␊
+B1 |·␊···␊
+S1 "a=\<Space>\<Space>\<Space>
