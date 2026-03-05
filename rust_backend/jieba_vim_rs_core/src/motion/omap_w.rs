@@ -80,7 +80,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
 
         // `last_stoppable_moved_over`: (last stoppable item, its rangle).
         let mut last_stoppable_moved_over = None;
-        if is_stoppable(&cursor_item) {
+        if is_stoppable(&cursor_item) || !cursor_item.token.is_empty() {
             last_stoppable_moved_over = Some(if cursor_item.token.is_empty() {
                 (
                     cursor_item,
@@ -142,7 +142,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         }
         let rangle = match last_stoppable_moved_over {
             None => pos![lnum, col],
-            Some((_, rangle)) => rangle,
+            Some((s_item, rangle)) => {
+                if s_item.token.is_empty() {
+                    rangle
+                } else {
+                    pos![s_item.lnum, s_item.token.last_char()]
+                }
+            }
         };
         if operator == b"d"
             && last_stoppable_moved_over.is_none()
@@ -164,18 +170,17 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 prevent_change: b"0",
             })
         } else {
+            let selection = match last_stoppable_moved_over {
+                None => &b"exclusive"[..],
+                Some((s_item, _)) if s_item.token.is_empty() => &b"colon"[..],
+                _ => &b"inclusive"[..],
+            };
             Ok(OmapOutput {
                 cursor: langle,
                 langle,
                 rangle,
                 visualmode: b"v",
-                selection: if last_stoppable_moved_over
-                    .is_some_and(|(item, _)| item.token.is_empty())
-                {
-                    &b"colon"[..]
-                } else {
-                    &b"exclusive"[..]
-                },
+                selection,
                 prevent_change: b"0",
             })
         }
