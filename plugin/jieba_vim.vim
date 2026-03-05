@@ -222,6 +222,9 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
 
         " Select and execute.
         if l:result_dict["selection"] ==# "colon"
+            execute "normal! v\<Esc>"
+            " Use '< and '> to sort op_begin and op_end so that op_begin
+            " appears before op_end.
             call setpos("'<", l:result_dict["langle"])
             call setpos("'>", l:result_dict["rangle"])
             let l:op_begin = getpos("'<")[1:2]
