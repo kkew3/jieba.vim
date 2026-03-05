@@ -110,3 +110,17 @@ Bp ·<··>·␊···␊
 Bo ·|␊···␊
 B1 |·␊···␊
 S1 "a=\<Space>\<Space>\<Space>
+
+H e66b45f40a2b82ef219100d006ab9fe194c7f7991343b1b4d986cd2e
+X u
+M o
+K w
+O d
+R a
+B0 ·|···␊·abc␊
+C 0
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+Bp ·<··>·␊·abc␊
+Bo ·|␊·abc␊
+B1 |·␊·abc␊
+S1 "a=\<Space>\<Space>\<Space>
