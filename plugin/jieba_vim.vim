@@ -221,14 +221,32 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         let l:orig_selection = &selection
 
         " Select and execute.
-        execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
-        call setpos("'<", l:result_dict["langle"])
-        call setpos("'>", l:result_dict["rangle"])
-        let &selection = l:result_dict["selection"]
-        if a:operator ==# "c" && a:repeat
-            execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
+        if l:result_dict["selection"] ==# "colon"
+            call setpos("'<", l:result_dict["langle"])
+            call setpos("'>", l:result_dict["rangle"])
+            let l:op_begin = getpos("'<")[1:2]
+            let l:op_end = getpos("'>")[1:2]
+            call cursor(l:op_begin)
+            if a:operator ==# "c" && a:repeat
+                execute 'normal! "' . a:register . a:operator
+                    \ . ":call cursor(" . l:op_end[0] . ", "
+                    \ . l:op_end[1] . ")\<CR>"
+                    \ . @.
+            else
+                execute 'normal! "' . a:register . a:operator
+                    \ . ":call cursor(" . l:op_end[0] . ", "
+                    \ . l:op_end[1] . ")\<CR>"
+            endif
         else
-            execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
+            execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
+            call setpos("'<", l:result_dict["langle"])
+            call setpos("'>", l:result_dict["rangle"])
+            let &selection = l:result_dict["selection"]
+            if a:operator ==# "c" && a:repeat
+                execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
+            else
+                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
+            endif
         endif
 
         " Restore original states.
@@ -247,7 +265,11 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         endif
 
         " Land the cursor to potentially a new position.
-        call cursor(l:result_dict["cursor"][1:2])
+        " If we have used colon-trick or d-special, the cursor should already
+        " be placed by Vim.
+        if !(l:result_dict["selection"] ==# "colon" || l:result_dict["visualmode"] ==# "V")
+            call cursor(l:result_dict["cursor"][1:2])
+        endif
 
         " Special treatment of d-special in nvim.
         if has("nvim") && a:operator ==# "d" && l:result_dict["visualmode"] ==# "V"
