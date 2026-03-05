@@ -228,12 +228,12 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
             let l:op_end = getpos("'>")[1:2]
             call cursor(l:op_begin)
             if a:operator ==# "c" && a:repeat
-                execute 'normal! "' . a:register . a:operator
+                silent execute 'normal! "' . a:register . a:operator
                     \ . ":call cursor(" . l:op_end[0] . ", "
                     \ . l:op_end[1] . ")\<CR>"
                     \ . @.
             else
-                execute 'normal! "' . a:register . a:operator
+                silent execute 'normal! "' . a:register . a:operator
                     \ . ":call cursor(" . l:op_end[0] . ", "
                     \ . l:op_end[1] . ")\<CR>"
             endif
