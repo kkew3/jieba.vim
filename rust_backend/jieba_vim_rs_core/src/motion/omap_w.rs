@@ -134,7 +134,10 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                         } else {
                             (item, pos![item.lnum, item.token.last_char()])
                         });
-                } else if item.token.first_char() > 1 {
+                } else if let Some((s_item, _)) = last_stoppable_moved_over
+                    && s_item.lnum == item.lnum
+                    && item.token.first_char() > 1
+                {
                     // If we will stop at item.token which is a word ..
                     last_stoppable_moved_over = None;
                 }
