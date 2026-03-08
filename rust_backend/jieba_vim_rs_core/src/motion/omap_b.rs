@@ -13,8 +13,11 @@
 // under the License.
 
 use crate::token::JiebaPlaceholder;
-use crate::{BufferLike, CursorPositionCurswant, pos};
+use crate::{BufferLike, CursorPositionCurswant};
 
+use super::nmap_b::UnitNmapB;
+use super::token_iter::ParsedBuffer;
+use super::word_motion::{Markovian, Motion, MotionState};
 use super::{OmapOutput, WordMotion, d_special};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
@@ -34,51 +37,53 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ///   buffer, no further jump should be made.
     /// - If there is no previous word to the left of current cursor, jump to
     ///   the first character of the first token in the buffer.
-    ///
-    /// # Panics
-    ///
-    /// - If current cursor `col` is to the right of the last token in current
-    ///   line of the buffer.
     pub fn omap_b<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor: CursorPositionCurswant,
+        cursor_pos: CursorPositionCurswant,
         count: u64,
         word: bool,
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
-        let [_, lnum0, col0, _, _] = cursor;
-        let output = self.nmap_b(buffer, cursor, count, word)?;
-        let [_, lnum1, col1, _] = output.cursor;
-        let langle = pos![lnum0, col0];
-        let rangle = pos![lnum1, col1];
-        if operator == b"d"
-            && d_special::is_d_special(
-                buffer,
-                &self.tokenizer,
-                langle,
-                rangle,
-                false,
-                word,
-            )?
-        {
-            Ok(OmapOutput {
+        let buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let [bufnum, lnum, col, off, _] = cursor_pos;
+        let langle = [bufnum, lnum, col, off];
+        let mut rangle = langle;
+        let mut motion = Markovian::new(UnitNmapB);
+        // Motion state is transitive from nmap_b to omap_b.
+        let output = match motion.map(&buffer, count, &mut rangle)? {
+            MotionState::Failure => OmapOutput {
                 cursor: rangle,
                 langle,
                 rangle,
-                visualmode: b"V",
-                selection: b"exclusive",
-                prevent_change: output.prevent_change,
-            })
-        } else {
-            Ok(OmapOutput {
-                cursor: rangle,
-                langle,
-                rangle,
-                visualmode: b"v",
-                selection: b"exclusive",
-                prevent_change: output.prevent_change,
-            })
-        }
+                visualmode: b"v", // is arbitrary due to the failure
+                selection: b"exclusive", // is arbitrary due to the failure
+                prevent_change: b"1",
+            },
+            MotionState::Success => {
+                if operator == b"d"
+                    && d_special::is_d_special(&buffer, langle, rangle, false)?
+                {
+                    OmapOutput {
+                        cursor: rangle,
+                        langle,
+                        rangle,
+                        visualmode: b"V",
+                        selection: b"inclusive",
+                        prevent_change: b"0",
+                    }
+                } else {
+                    OmapOutput {
+                        cursor: rangle,
+                        langle,
+                        rangle,
+                        visualmode: b"v",
+                        selection: b"exclusive",
+                        prevent_change: b"0",
+                    }
+                }
+            }
+        };
+        Ok(output)
     }
 }

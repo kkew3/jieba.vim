@@ -465,7 +465,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "jieba_vim_rs_test",
  "proptest",

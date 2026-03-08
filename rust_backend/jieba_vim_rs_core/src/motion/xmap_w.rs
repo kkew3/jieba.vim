@@ -12,24 +12,16 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::motion::token_iter::TokenLikeExt;
-use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
-use crate::{BufferLike, Position, pos};
+use crate::token::{JiebaPlaceholder, TokenLike};
+use crate::{BufferLike, Position};
 
-use super::token_iter::{ForwardTokenIterator, GToken, TokenIteratorItem};
+use super::nmap_w::UnitNmapW;
+use super::token_iter::{ExtendedInlineTokensIter, GToken, ParsedBuffer};
+use super::word_motion::{
+    ExtendedMotionState, Markovian, MarkovianUnit, Motion, SemiTolerable,
+    UnitMotion,
+};
 use super::{WordMotion, XmapOutput};
-
-/// Test if a token is stoppable for `xmap_w`.
-fn is_stoppable(item: &TokenIteratorItem) -> bool {
-    match item.token {
-        GToken::Eol(1) => true,
-        GToken::Eol(_) => false,
-        GToken::T(token) => match token.ty {
-            TokenType::Word => true,
-            TokenType::Space => false,
-        },
-    }
-}
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
@@ -59,44 +51,50 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         buffer: &B,
         visualmode: &'a [u8],
         visual_begin: Position,
-        visual_end: Position,
-        mut count: u64,
+        mut visual_end: Position,
+        count: u64,
         word: bool,
     ) -> Result<XmapOutput<'a>, B::Error> {
-        let [_, mut lnum, mut col, _] = visual_end;
-        let mut it = ForwardTokenIterator::new(
-            buffer,
-            &self.tokenizer,
-            &visual_end,
-            word,
-        )?;
-        let cursor_item = it.first();
-        let mut moved = false;
-        if !cursor_item.token.is_empty() && !cursor_item.token.at_end(col) {
-            col = cursor_item.token.last_char();
-            moved = true;
-        }
-        while count > 0
-            && let Some(item) = it.next().transpose()?
-        {
-            if !is_stoppable(&item) {
-                lnum = item.lnum;
-                col = item.token.last_char1();
-                if !item.token.is_empty() {
-                    moved = true;
-                }
-            } else {
-                moved = true;
-                lnum = item.lnum;
-                col = item.token.first_char();
-                count -= 1;
-            }
-        }
+        let buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let mut motion = Markovian::new(UnitXmapW);
+        let s = motion.map(&buffer, count, &mut visual_end)?;
+        let prevent_change = s.into_prevent_change();
         Ok(XmapOutput {
             langle: visual_begin,
-            rangle: pos![lnum, col],
+            rangle: visual_end,
             visualmode,
-            prevent_change: if moved { b"0" } else { b"1" },
+            prevent_change,
         })
     }
+}
+
+pub struct UnitXmapW;
+
+impl UnitMotion<Position> for UnitXmapW {
+    fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+        &mut self,
+        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        cursor: &mut Position,
+    ) -> Result<ExtendedMotionState, B::Error> {
+        use ExtendedMotionState::*;
+
+        let s = UnitNmapW.unit_map(buffer, cursor)?;
+        if s == Failure || s == Pending {
+            let [_, lnum, col, _] = cursor;
+            let tokens = buffer.getline_parsed(*lnum)?;
+            let cursor_token = ExtendedInlineTokensIter::new(&tokens)
+                .skip_col(*col)
+                .expect("col too large")
+                .next()
+                .unwrap();
+            if let GToken::T(t) = cursor_token {
+                *col = t.last_char1();
+            }
+        }
+        Ok(s)
+    }
+}
+
+impl MarkovianUnit<Position> for UnitXmapW {
+    type FoldState = SemiTolerable;
 }

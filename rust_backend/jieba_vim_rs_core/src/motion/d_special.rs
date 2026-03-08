@@ -13,20 +13,18 @@
 // under the License.
 
 use crate::motion::token_iter::{
-    BackwardTokenIterator, ForwardTokenIterator, GToken, TokenLikeExt,
+    ExtendedInlineTokensIter, GToken, ParsedBuffer, TokenLikeExt,
 };
-use crate::token::{JiebaPlaceholder, TokenLike, TokenType, Tokenizer};
+use crate::token::{JiebaPlaceholder, TokenType};
 use crate::{BufferLike, Position};
 
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.
-pub fn is_d_special<B: BufferLike + ?Sized, C: JiebaPlaceholder>(
-    buffer: &B,
-    tokenizer: &Tokenizer<C>,
+pub fn is_d_special<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    buffer: &ParsedBuffer<'b, 'p, B, C>,
     langle: Position,
     rangle: Position,
     inclusive: bool,
-    word: bool,
 ) -> Result<bool, B::Error> {
     let (langle, rangle) = if langle <= rangle {
         (langle, rangle)
@@ -39,43 +37,43 @@ pub fn is_d_special<B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         return Ok(false);
     }
 
-    let mut it = BackwardTokenIterator::new(buffer, tokenizer, &langle, word)?;
-    let cursor_item = it.first();
-    if !cursor_item.token.at_start(lcol) {
-        if let GToken::T(t) = cursor_item.token {
-            if t.ty == TokenType::Word {
-                return Ok(false);
-            }
-        }
-    }
-    for item in
-        it.take_while(|res| !res.as_ref().is_ok_and(|item| item.lnum != llnum))
+    let lline = buffer.getline_parsed(llnum)?;
+    let mut ltokens = ExtendedInlineTokensIter::new(&lline)
+        .take_col_rev(lcol)
+        .expect("col of langle too large");
+    if let GToken::T(t) = ltokens.next().unwrap()
+        && t.ty == TokenType::Word
+        && !t.at_start(lcol)
     {
-        if let GToken::T(t) = item?.token {
-            if t.ty == TokenType::Word {
-                return Ok(false);
-            }
+        return Ok(false);
+    }
+    for token in ltokens {
+        if let GToken::T(t) = token
+            && t.ty == TokenType::Word
+        {
+            return Ok(false);
         }
     }
 
-    let mut it = ForwardTokenIterator::new(buffer, tokenizer, &rangle, word)?;
-    let cursor_item = it.first();
-    if !((rcol == cursor_item.token.last_char() && inclusive)
-        || (rcol == cursor_item.token.last_char1() && !inclusive))
+    let rline = buffer.getline_parsed(rlnum)?;
+    let mut rtokens = ExtendedInlineTokensIter::new(&rline)
+        .skip_col(rcol)
+        .expect("col of rangle too large");
+    if let GToken::T(t) = rtokens.next().unwrap()
+        && t.ty == TokenType::Word
     {
-        if let GToken::T(t) = cursor_item.token {
-            if t.ty == TokenType::Word {
-                return Ok(false);
-            }
+        if !inclusive {
+            return Ok(false);
+        }
+        if !t.at_end(rcol) {
+            return Ok(false);
         }
     }
-    for item in
-        it.take_while(|res| !res.as_ref().is_ok_and(|item| item.lnum != rlnum))
-    {
-        if let GToken::T(t) = item?.token {
-            if t.ty == TokenType::Word {
-                return Ok(false);
-            }
+    for token in rtokens {
+        if let GToken::T(t) = token
+            && t.ty == TokenType::Word
+        {
+            return Ok(false);
         }
     }
 

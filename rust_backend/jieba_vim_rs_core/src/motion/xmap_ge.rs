@@ -15,6 +15,9 @@
 use crate::token::JiebaPlaceholder;
 use crate::{BufferLike, Position};
 
+use super::nmap_ge::UnitNmapGe;
+use super::token_iter::ParsedBuffer;
+use super::word_motion::{Markovian, Motion};
 use super::{WordMotion, XmapOutput};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
@@ -40,18 +43,19 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         buffer: &B,
         visualmode: &'a [u8],
         visual_begin: Position,
-        visual_end: Position,
+        mut visual_end: Position,
         count: u64,
         word: bool,
     ) -> Result<XmapOutput<'a>, B::Error> {
-        let [_, lnum, col, off] = visual_end;
-        let output =
-            self.nmap_ge(buffer, [0, lnum, col, off, 0], count, word)?;
+        let buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let mut motion = Markovian::new(UnitNmapGe);
+        let s = motion.map(&buffer, count, &mut visual_end)?;
+        let prevent_change = s.into_prevent_change();
         Ok(XmapOutput {
             langle: visual_begin,
-            rangle: output.cursor,
+            rangle: visual_end,
             visualmode,
-            prevent_change: output.prevent_change,
+            prevent_change,
         })
     }
 }

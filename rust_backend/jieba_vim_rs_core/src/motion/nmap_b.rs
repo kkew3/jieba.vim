@@ -12,16 +12,20 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::motion::token_iter::TokenLikeExt;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
-use crate::{BufferLike, CursorPositionCurswant, pos};
+use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::token_iter::{BackwardTokenIterator, GToken, TokenIteratorItem};
-use super::{NmapOutput, WordMotion};
+use super::token_iter::{
+    ExtendedInlineTokensIter, GToken, ParsedBuffer, TokenLikeExt,
+};
+use super::word_motion::{
+    ExtendedMotionState, Markovian, MarkovianUnit, Motion, NmapOutput,
+    Tolerable, UnitMotion, WordMotion,
+};
 
 /// Test if a token is stoppable for `nmap_b`.
-fn is_stoppable(item: &TokenIteratorItem) -> bool {
-    match item.token {
+fn is_stoppable(token: &GToken) -> bool {
+    match token {
         GToken::Eol(1) => true,
         GToken::Eol(_) => false,
         GToken::T(token) => match token.ty {
@@ -53,46 +57,110 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         &self,
         buffer: &B,
         cursor_pos: CursorPositionCurswant,
-        mut count: u64,
+        count: u64,
         word: bool,
     ) -> Result<NmapOutput, B::Error> {
-        let [_, mut lnum, mut col, _, _] = cursor_pos;
-        let mut it = BackwardTokenIterator::new(
-            buffer,
-            &self.tokenizer,
-            &cursor_pos,
-            word,
-        )?;
-        let cursor_item = it.first();
-        let mut it = it.peekable();
-        if count > 0 {
-            if cursor_item.token.at_start(col) {
-                if it.peek().is_none() {
-                    return Ok(NmapOutput {
-                        cursor: pos![1, 1],
-                        prevent_change: b"1",
-                    });
-                }
-            } else if is_stoppable(&cursor_item) {
-                col = cursor_item.token.first_char();
-                count -= 1;
-            } else {
-                col = cursor_item.token.first_char();
-            }
-        }
-
-        while count > 0
-            && let Some(item) = it.next().transpose()?
-        {
-            lnum = item.lnum;
-            col = item.token.first_char();
-            if is_stoppable(&item) {
-                count -= 1;
-            }
-        }
+        let buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let [bufnum, lnum, col, off, _] = cursor_pos;
+        let mut cursor = [bufnum, lnum, col, off];
+        let mut motion = Markovian::new(UnitNmapB);
+        let s = motion.map(&buffer, count, &mut cursor)?;
         Ok(NmapOutput {
-            cursor: pos![lnum, col],
-            prevent_change: b"0",
+            cursor,
+            prevent_change: s.into_prevent_change(),
         })
     }
+}
+
+/// Unit motion of |b| in normal mode. Also applicable to visual and operator-
+/// pending mode.
+pub struct UnitNmapB;
+
+impl UnitMotion<Position> for UnitNmapB {
+    fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+        &mut self,
+        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        cursor: &mut Position,
+    ) -> Result<ExtendedMotionState, B::Error> {
+        let [_, lnum, col, off] = cursor;
+        *off = 0;
+
+        // Quick path.
+        if *lnum == 1 && *col == 1 {
+            return Ok(ExtendedMotionState::Failure);
+        }
+
+        let tokens = buffer.getline_parsed(*lnum)?;
+        let mut line = ExtendedInlineTokensIter::new(&tokens)
+            .take_col_rev(*col)
+            .expect("col too large")
+            .peekable();
+        // `unwrap` is safe because `take_col_rev` yields at least one item.
+        let cursor_token = line.next().unwrap();
+
+        if *lnum == 1 && line.peek().is_none() {
+            let s = match &cursor_token {
+                // cursor_token can't be Eol, since it would result in col ==
+                // 1, but we have tested for col == 1 above.
+                GToken::Eol(_) => unreachable!(),
+                GToken::T(t) => {
+                    // If we are at a regular token at bof ..
+
+                    // We have tested that col > 1 above.
+                    *col = 1;
+                    match t.ty {
+                        TokenType::Space => ExtendedMotionState::Pending,
+                        TokenType::Word => ExtendedMotionState::Success,
+                    }
+                }
+            };
+            return Ok(s);
+        }
+
+        if let GToken::T(t) = &cursor_token
+            && t.ty == TokenType::Word
+            && !t.at_start(*col)
+        {
+            *col = t.first_char();
+            return Ok(ExtendedMotionState::Success);
+        }
+
+        let s = match find_stop_point(line, col) {
+            // `unwrap` is safe because `find_stop_point` return only empty
+            // line or words.
+            Some(t) => ExtendedMotionState::from_dest_token(t).unwrap(),
+            None => loop {
+                // `line` can't be empty when `lnum` == 1, as we have covered
+                // above.
+                if *lnum <= 1 {
+                    // Calling |b| on a Space at bof ..
+                    break ExtendedMotionState::Pending;
+                }
+                *lnum -= 1;
+                let tokens = buffer.getline_parsed(*lnum)?;
+                let line = ExtendedInlineTokensIter::new(&tokens).rev();
+                if let Some(t) = find_stop_point(line, col) {
+                    break ExtendedMotionState::from_dest_token(t).unwrap();
+                }
+            },
+        };
+        Ok(s)
+    }
+}
+
+impl MarkovianUnit<Position> for UnitNmapB {
+    type FoldState = Tolerable;
+}
+
+fn find_stop_point<L: IntoIterator<Item = GToken>>(
+    line: L,
+    col: &mut usize,
+) -> Option<GToken> {
+    for token in line {
+        *col = token.first_char();
+        if is_stoppable(&token) {
+            return Some(token);
+        }
+    }
+    None
 }

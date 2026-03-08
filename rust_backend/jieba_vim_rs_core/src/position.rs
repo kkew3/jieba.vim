@@ -26,109 +26,18 @@ pub type Position = [usize; 4];
 /// is indexed from 0.
 pub type CursorPositionCurswant = [usize; 5];
 
-/// The 3-element list of numbers \[lnum, col, off] obtained by stripping off
-/// the leading zero in [`Position`].
-pub type CurrentBufferPosition = [usize; 3];
-
 /// The 2-element list of numbers \[col, off], used when `lnum` is irrelevant
 /// in context of [`CurrentBufferPosition`].
 pub type ColumnPosition = [usize; 2];
 
-/// A position in a buffer with at least (bufnum, lnum, col, off) info.
-pub trait BasicPosition: Sized {
-    fn bufnum(&self) -> usize;
-    fn lnum(&self) -> usize;
-    fn col(&self) -> usize;
-    fn off(&self) -> usize;
-
-    /// Convert to [`CurrentBufferPosition`] provided that `bufnum` is zero.
-    fn try_to_cb_position(
-        &self,
-    ) -> Result<CurrentBufferPosition, PositionError> {
-        if self.bufnum() == 0 {
-            Ok([self.lnum(), self.col(), self.off()])
-        } else {
-            Err(PositionError::NonzeroBufnum)
-        }
-    }
-}
-
-impl BasicPosition for Position {
-    fn bufnum(&self) -> usize {
-        self[0]
-    }
-
-    fn lnum(&self) -> usize {
-        self[1]
-    }
-
-    fn col(&self) -> usize {
-        self[2]
-    }
-
-    fn off(&self) -> usize {
-        self[3]
-    }
-}
-
-impl BasicPosition for CursorPositionCurswant {
-    fn bufnum(&self) -> usize {
-        self[0]
-    }
-
-    fn lnum(&self) -> usize {
-        self[1]
-    }
-
-    fn col(&self) -> usize {
-        self[2]
-    }
-
-    fn off(&self) -> usize {
-        self[3]
-    }
-}
-
-impl BasicPosition for CurrentBufferPosition {
-    fn bufnum(&self) -> usize {
-        0
-    }
-
-    fn lnum(&self) -> usize {
-        self[0]
-    }
-
-    fn col(&self) -> usize {
-        self[1]
-    }
-
-    fn off(&self) -> usize {
-        self[2]
-    }
-
-    fn try_to_cb_position(
-        &self,
-    ) -> Result<CurrentBufferPosition, PositionError> {
-        Ok(*self)
-    }
-}
-
 #[derive(Debug)]
 pub enum PositionError {
-    ZeroLnum,
-    ZeroCol,
-    NonzeroBufnum,
     ColTooLarge,
 }
 
 impl Display for PositionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::ZeroLnum => {
-                f.write_str("lnum =0 but should be indexed from 1")
-            }
-            Self::ZeroCol => f.write_str("col =0 but should be indexed from 1"),
-            Self::NonzeroBufnum => f.write_str("bufnum >0 but should be 0"),
             Self::ColTooLarge => {
                 f.write_str("col is larger than one plus the line length")
             }
@@ -137,41 +46,3 @@ impl Display for PositionError {
 }
 
 impl std::error::Error for PositionError {}
-
-pub trait PositionSanityCheck: Sized {
-    /// Check for violation of indexing basis.
-    fn check_indexing_basis(self) -> Result<Self, PositionError>;
-}
-
-impl<T: BasicPosition> PositionSanityCheck for T {
-    fn check_indexing_basis(self) -> Result<Self, PositionError> {
-        if self.lnum() == 0 {
-            Err(PositionError::ZeroLnum)
-        } else if self.col() == 0 {
-            Err(PositionError::ZeroCol)
-        } else {
-            Ok(self)
-        }
-    }
-}
-
-/// Use `pos![lnum, col]` or `pos![lnum, col, off]` to construct [`Position`]
-/// array. Will yield compile-time error if `lnum` or `col` equals 0.
-#[macro_export]
-macro_rules! pos {
-    (0, 0) => {
-        compile_error!("lnum and col =0");
-    };
-    (0, $_:expr) => {
-        compile_error!("lnum =0");
-    };
-    ($_:expr, 0) => {
-        compile_error!("col =0");
-    };
-    ($lnum:expr, $col:expr) => {
-        [0, $lnum, $col, 0]
-    };
-    ($lnum:expr, $col:expr, $off:expr) => {
-        [0, $lnum, $col, $off]
-    };
-}
