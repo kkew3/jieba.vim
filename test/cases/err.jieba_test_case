@@ -28,3 +28,17 @@ Bp <␊>␊
 Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>
+
+H e7164083f32c6fb5ac41d7da6f304bbc6f53a3cff7a96269f9971160
+X u
+M o
+K w
+O d
+R a
+B0 |abc␊def␊ghi␊
+C 2
+Q \ < > prevent_change=0 visualmode=V selection=inclusive
+Bp <abc␊de>f␊ghi␊
+Bo |ghi␊
+B1 |ghi␊
+S1 "a=abc\<Newline>def\<Newline>
