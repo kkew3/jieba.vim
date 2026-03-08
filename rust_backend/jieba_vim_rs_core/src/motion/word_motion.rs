@@ -411,8 +411,8 @@ impl FoldState for Intolerable {
 
         *self = match (*self, state) {
             (Failure, _) => Failure,
-            (Success, ExtendedMotionState::Success) => Success,
-            (Success, _) => Failure,
+            (Success, ExtendedMotionState::Failure) => Failure,
+            (Success, _) => Success,
         };
         if *self == Failure {
             Some(MotionState::Failure)
