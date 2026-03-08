@@ -15,126 +15,16 @@
 // This file contains failed test cases in bootstrap verification.
 // Best viewed in Vim.
 
-H 14c717cf30984640044562f6fb86e801e82c2cc09e261012766c1b07
-X u
-M o
-K w
-O d
-R a
-B0 abc|de␊
-C 0
-Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp abc<d>e␊
-Bo abc|␊
-B1 ab|c␊
-S1 "a=de
-
-H 505a8f89f6d0e474863e4abb525c11a894ae0d54f912afc318edc1f3
-X u
-M o
-K w
-O d
-R a
-B0 abc|de␊␊
-C 0
-Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp abc<d>e␊␊
-Bo abc|␊␊
-B1 ab|c␊␊
-S1 "a=de
-
-H 265c539d04333eeaa48ee93762b1deb8d7b86edaab5ac66db37b7263
+H 25151d2964ae69d9af0795a3294254101a7daf85d84df80f28139360
 X u
 M o
 K w
 O c
+R a
 B0 |␊␊
 C 0
 Q | < > prevent_change=0 visualmode=v selection=colon
 Bp <␊>␊
 Bo |␊␊
 B1 |␊␊
-
-H 9f4538c2bc4ecc6781702386cbcea878b866f5ebd9f4a636c2033efc
-X u
-M o
-K w
-O d
-R a
-B0 |␊··␊␊·␊
-C 0
-Q | < > prevent_change=0 visualmode=v selection=colon
-Bp <␊>··␊␊·␊
-Bo |··␊␊·␊
-B1 ·|·␊␊·␊
-S1 "a=\<Newline>
-
-H 80c7e1661057640df3f60a51e9d33020ce7559606fbc80a288e0e5be
-X u
-M o
-K w
-O d
-R a
-B0 |␊··␊␊
-C 2
-Q | < > prevent_change=0 visualmode=v selection=colon
-Bp <␊··␊>␊
-Bo |␊
-B1 |␊
-S1 "a=\<Newline>\<Space>\<Space>\<Newline>
-
-H 5516888628137ec3788fbeb19b3e499f99dde33823f03b428c462c92
-X u
-M o
-K w
-O d
-R a
-B0 |␊··␊␊····␊
-C 2
-Q | < > prevent_change=0 visualmode=v selection=colon
-Bp <␊··␊␊>····␊
-Bo |····␊
-B1 ···|·␊
-S1 "a=\<Newline>\<Space>\<Space>\<Newline>\<Newline>
-
-H 41bc342e62641b187b4b1441ed01b8581241e9038f22bffd5a12f0b3
-X u
-M o
-K w
-O d
-R a
-B0 ·|···␊···␊
-C 0
-Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp ·<··>·␊···␊
-Bo ·|␊···␊
-B1 |·␊···␊
-S1 "a=\<Space>\<Space>\<Space>
-
-H e66b45f40a2b82ef219100d006ab9fe194c7f7991343b1b4d986cd2e
-X u
-M o
-K w
-O d
-R a
-B0 ·|···␊·abc␊
-C 0
-Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp ·<··>·␊·abc␊
-Bo ·|␊·abc␊
-B1 |·␊·abc␊
-S1 "a=\<Space>\<Space>\<Space>
-
-H 33478d99b9fc0c21713d891367cdb81a55527893452973a07e9b7c42
-X u
-M o
-K w
-O d
-R a
-B0 |␊abcd␊
-C 0
-Q | < > prevent_change=0 visualmode=v selection=colon
-Bp <␊>abcd␊
-Bo |abcd␊
-B1 |abcd␊
 S1 "a=\<Newline>
