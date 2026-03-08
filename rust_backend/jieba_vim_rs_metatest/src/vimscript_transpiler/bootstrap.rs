@@ -960,7 +960,7 @@ impl BootstrapTestCaseBlock {
                 if let Some(value) = model_output.visualmode {
                     model_output_items.push(ModelOutputItem::KeyValue {
                         key: "visualmode".into(),
-                        value,
+                        value: value.replace(r"\\", r"\"),
                     });
                 }
                 if let Some(value) = model_output.selection {
