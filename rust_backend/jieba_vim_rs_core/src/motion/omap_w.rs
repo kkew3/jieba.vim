@@ -17,7 +17,9 @@ use crate::{BufferLike, CursorPositionCurswant, Position};
 
 use super::nmap_b::UnitNmapB;
 use super::omap_e::UnitOmapERangle;
-use super::token_iter::{ExtendedInlineTokensIter, GToken, ParsedBuffer};
+use super::token_iter::{
+    ExtendedInlineTokensIter, GToken, ParsedBuffer, TokenLikeExt,
+};
 use super::word_motion::{
     ExtendedMotionState, Intolerable, Markovian, MarkovianUnit, Motion,
     MotionState, UnitMotion,
@@ -271,9 +273,6 @@ where
     }
 
     // Else, `lnum0` < `lnum1`. Hence, `lnum0` can't be the last line.
-    // Futhermore, `langle_token` can't be a Word, as it should have been
-    // covered by |cw| special case. Thus, `langle_token` must be either a
-    // Space or an Eol(_).
 
     if count_eq_1 {
         // First, if `count` == 1 and `langle_token` is an Eol(_), then the
@@ -281,14 +280,24 @@ where
         // trick and let Vim to handle the complexity.
         //
         // Second, if `count` == 1 and `langle_token` is a Space, then the last
-        // "word" moved over must be `langle_token`, the Space, regardless of
-        // the next token after `langle_token` is (i.e. either a Word or and
-        // Eol).
-        let langle_token = ExtendedInlineTokensIter::new(&tokens)
+        // "word" moved over must be `langle_token`, the Space. The next token
+        // after `langle_token` can't be a Word, since otherwise |w| will land
+        // the cursor on the start of that Word, but we have been asserted that
+        // `langle_token` and `rangle_token` are on different lines. The next
+        // token can't be a Space either, since two adjacent Spaces would have
+        // been merged during tokenization. Thus, the next token must be an
+        // Eol(_), and thus the conclusion.
+        //
+        // Third, if `count` == 1 and `langle_token` is a Word, then the last
+        // "word" moved over must be `langle_token`, plus some trailing Spaces,
+        // if any. The following tokens in the same line as `langle_token`
+        // can't be Words, since otherwise, `rangle_token` would be on the same
+        // line as `langle_token`, which we have asserted not.
+        let mut line = ExtendedInlineTokensIter::new(&tokens)
             .skip_col(*col0)
             .expect("col0 too large")
-            .next()
-            .unwrap();
+            .peekable();
+        let langle_token = line.next().unwrap();
         let s = match langle_token {
             GToken::Eol(_) => {
                 *lnum1 = *lnum0 + 1;
@@ -302,7 +311,21 @@ where
                     Selection::Inclusive
                 }
                 TokenType::Word => {
-                    unreachable!("should have been covered by |cw|")
+                    *lnum1 = *lnum0;
+                    *col1 = t.last_char();
+                    if line.peek().is_some_and(|token| !token.is_empty()) {
+                        let next_token = line.next().unwrap();
+                        match next_token {
+                            GToken::Eol(_) => unreachable!(),
+                            GToken::T(next_t) => match next_t.ty {
+                                TokenType::Space => *col1 = next_t.last_char(),
+                                TokenType::Word => {
+                                    unreachable!("can't be a Word")
+                                }
+                            },
+                        }
+                    }
+                    Selection::Inclusive
                 }
             },
         };
