@@ -60,11 +60,11 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         count: u64,
         word: bool,
     ) -> Result<NmapOutput, B::Error> {
-        let buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let [bufnum, lnum, col, off, _] = cursor_pos;
         let mut cursor = [bufnum, lnum, col, off];
         let mut motion = Markovian::new(UnitNmapB);
-        let s = motion.map(&buffer, count, &mut cursor)?;
+        let s = motion.map(&mut buffer, count, &mut cursor)?;
         Ok(NmapOutput {
             cursor,
             prevent_change: s.into_prevent_change(),
@@ -79,7 +79,7 @@ pub struct UnitNmapB;
 impl UnitMotion<Position> for UnitNmapB {
     fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         &mut self,
-        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         let [_, lnum, col, off] = cursor;

@@ -21,7 +21,6 @@
 //! otherwise, it will be taken as lying on that token (i.e. not "off" w.r.t.
 //! the token).
 
-use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::iter::{Rev, Skip, Take};
@@ -270,7 +269,7 @@ pub struct ParsedBuffer<'b, 'p, B: ?Sized, C> {
     buffer: &'b B,
     tokenizer: &'p Tokenizer<C>,
     into_word: bool,
-    parsed_lines: RefCell<BTreeMap<usize, Vec<Token>>>,
+    parsed_lines: BTreeMap<usize, Vec<Token>>,
 }
 
 impl<'b, 'p, B: ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
@@ -283,7 +282,7 @@ impl<'b, 'p, B: ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
             buffer,
             tokenizer,
             into_word,
-            parsed_lines: RefCell::new(BTreeMap::new()),
+            parsed_lines: BTreeMap::new(),
         }
     }
 }
@@ -298,16 +297,14 @@ impl<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>
     ParsedBuffer<'b, 'p, B, C>
 {
     pub fn getline_parsed(
-        &self,
+        &mut self,
         lnum: usize,
-    ) -> Result<std::cell::Ref<'_, [Token]>, B::Error> {
-        if !self.parsed_lines.borrow().contains_key(&lnum) {
+    ) -> Result<&[Token], B::Error> {
+        if !self.parsed_lines.contains_key(&lnum) {
             let line = self.buffer.getline(lnum)?;
             let parsed_line = self.tokenizer.parse_str1(&line, self.into_word);
-            self.parsed_lines.borrow_mut().insert(lnum, parsed_line);
+            self.parsed_lines.insert(lnum, parsed_line);
         }
-        Ok(std::cell::Ref::map(self.parsed_lines.borrow(), |b| {
-            b.get(&lnum).unwrap().as_slice()
-        }))
+        Ok(self.parsed_lines.get(&lnum).unwrap())
     }
 }

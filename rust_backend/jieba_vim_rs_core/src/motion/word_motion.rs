@@ -179,7 +179,7 @@ impl MotionState {
 pub trait Motion<P> {
     fn map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         &mut self,
-        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
         count: u64,
         cursor: &mut P,
     ) -> Result<MotionState, B::Error>;
@@ -214,7 +214,7 @@ impl ExtendedMotionState {
 pub trait UnitMotion<P> {
     fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         &mut self,
-        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
         cursor: &mut P,
     ) -> Result<ExtendedMotionState, B::Error>;
 }
@@ -252,7 +252,7 @@ where
 {
     fn map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         &mut self,
-        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
         mut count: u64,
         cursor: &mut P,
     ) -> Result<MotionState, B::Error> {
@@ -304,7 +304,7 @@ impl<M, S> OneOffMotion<M, S> {
 impl<P, M: OneOffUnit<P>> Motion<P> for OneOffMotion<M, M::FoldState> {
     fn map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         &mut self,
-        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
         count: u64,
         cursor: &mut P,
     ) -> Result<MotionState, B::Error> {

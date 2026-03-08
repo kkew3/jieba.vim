@@ -21,7 +21,7 @@ use crate::{BufferLike, Position};
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.
 pub fn is_d_special<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
-    buffer: &ParsedBuffer<'b, 'p, B, C>,
+    buffer: &mut ParsedBuffer<'b, 'p, B, C>,
     langle: Position,
     rangle: Position,
     inclusive: bool,

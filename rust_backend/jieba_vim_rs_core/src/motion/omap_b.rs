@@ -45,13 +45,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         word: bool,
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
-        let buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let [bufnum, lnum, col, off, _] = cursor_pos;
         let langle = [bufnum, lnum, col, off];
         let mut rangle = langle;
         let mut motion = Markovian::new(UnitNmapB);
         // Motion state is transitive from nmap_b to omap_b.
-        let output = match motion.map(&buffer, count, &mut rangle)? {
+        let output = match motion.map(&mut buffer, count, &mut rangle)? {
             MotionState::Failure => OmapOutput {
                 cursor: rangle,
                 langle,
@@ -62,7 +62,12 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             },
             MotionState::Success => {
                 if operator == b"d"
-                    && d_special::is_d_special(&buffer, langle, rangle, false)?
+                    && d_special::is_d_special(
+                        &mut buffer,
+                        langle,
+                        rangle,
+                        false,
+                    )?
                 {
                     OmapOutput {
                         cursor: rangle,

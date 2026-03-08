@@ -55,9 +55,9 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         count: u64,
         word: bool,
     ) -> Result<XmapOutput<'a>, B::Error> {
-        let buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let mut motion = Markovian::new(UnitXmapW);
-        let s = motion.map(&buffer, count, &mut visual_end)?;
+        let s = motion.map(&mut buffer, count, &mut visual_end)?;
         let prevent_change = s.into_prevent_change();
         Ok(XmapOutput {
             langle: visual_begin,
@@ -73,7 +73,7 @@ pub struct UnitXmapW;
 impl UnitMotion<Position> for UnitXmapW {
     fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         &mut self,
-        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         use ExtendedMotionState::*;

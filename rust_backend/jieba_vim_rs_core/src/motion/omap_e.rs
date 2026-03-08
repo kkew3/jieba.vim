@@ -49,18 +49,18 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         word: bool,
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
-        let buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let [bufnum, lnum, col, off, _] = cursor_pos;
         let mut langle = [bufnum, lnum, col, off];
         let mut rangle = langle;
         let mut motion_langle = OneOffMotion::new(UnitOmapELangle);
         let mut motion_rangle = Markovian::new(UnitOmapERangle);
-        let _ = motion_langle.map(&buffer, count, &mut langle)?;
+        let _ = motion_langle.map(&mut buffer, count, &mut langle)?;
         let prevent_change = motion_rangle
-            .map(&buffer, count, &mut rangle)?
+            .map(&mut buffer, count, &mut rangle)?
             .into_prevent_change();
         let output = if operator == b"d"
-            && d_special::is_d_special(&buffer, langle, rangle, true)?
+            && d_special::is_d_special(&mut buffer, langle, rangle, true)?
         {
             OmapOutput {
                 cursor: langle,
@@ -89,7 +89,7 @@ pub struct UnitOmapELangle;
 impl UnitMotion<Position> for UnitOmapELangle {
     fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         &mut self,
-        _buffer: &ParsedBuffer<'b, 'p, B, C>,
+        _buffer: &mut ParsedBuffer<'b, 'p, B, C>,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         let [_, _, _, off] = cursor;
@@ -107,7 +107,7 @@ pub struct UnitOmapERangle;
 impl UnitMotion<Position> for UnitOmapERangle {
     fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         &mut self,
-        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         UnitXmapE.unit_map(buffer, cursor)

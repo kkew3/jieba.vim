@@ -57,7 +57,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
         assert!(count >= 1);
-        let buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let [bufnum, lnum, col, off, _] = cursor;
         let langle = [bufnum, lnum, col, off];
         let mut rangle = langle;
@@ -76,7 +76,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         {
             let mut motion = Markovian::new(UnitOmapERangle);
             let prevent_change = motion
-                .map(&buffer, count, &mut rangle)?
+                .map(&mut buffer, count, &mut rangle)?
                 .into_prevent_change();
             return Ok(OmapOutput {
                 cursor: langle,
@@ -91,7 +91,8 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         // First stage.
         let mut motion_rangle_first_stage =
             Markovian::new(UnitOmapWRangleFirstStage);
-        let s = motion_rangle_first_stage.map(&buffer, count, &mut rangle)?;
+        let s =
+            motion_rangle_first_stage.map(&mut buffer, count, &mut rangle)?;
 
         // Operator-pending w special case (*).
         let output = match s {
@@ -105,7 +106,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             },
             MotionState::Success => {
                 let selection = operator_w_special_case(
-                    &buffer,
+                    &mut buffer,
                     &langle,
                     &mut rangle,
                     count == 1,
@@ -122,7 +123,10 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                     Selection::Exclusive => {
                         if operator == b"d"
                             && d_special::is_d_special(
-                                &buffer, langle, rangle, false,
+                                &mut buffer,
+                                langle,
+                                rangle,
+                                false,
                             )?
                         {
                             OmapOutput {
@@ -147,7 +151,10 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                     Selection::Inclusive => {
                         if operator == b"d"
                             && d_special::is_d_special(
-                                &buffer, langle, rangle, false,
+                                &mut buffer,
+                                langle,
+                                rangle,
+                                false,
                             )?
                         {
                             OmapOutput {
@@ -182,7 +189,7 @@ pub struct UnitOmapWRangleFirstStage;
 impl UnitMotion<Position> for UnitOmapWRangleFirstStage {
     fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
         &mut self,
-        buffer: &ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         UnitXmapW.unit_map(buffer, cursor)
@@ -204,7 +211,7 @@ enum Selection {
 
 /// Return the selection type of the resulting operation range.
 fn operator_w_special_case<'b, 'p, B, C>(
-    buffer: &ParsedBuffer<'b, 'p, B, C>,
+    buffer: &mut ParsedBuffer<'b, 'p, B, C>,
     langle: &Position,
     rangle: &mut Position,
     count_eq_1: bool,
