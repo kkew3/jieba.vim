@@ -382,10 +382,10 @@ impl FoldState for SemiTolerable {
             (Success, _) => Success,
             (Pending, _) => Pending,
         };
-        if *self == Failure {
-            Some(MotionState::Failure)
-        } else {
-            None
+        match *self {
+            Failure => Some(MotionState::Failure),
+            Pending => Some(MotionState::Success),
+            Success => None,
         }
     }
 }
