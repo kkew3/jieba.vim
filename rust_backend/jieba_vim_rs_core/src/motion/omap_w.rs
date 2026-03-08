@@ -156,7 +156,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 &mut buffer,
                                 langle,
                                 rangle,
-                                false,
+                                true,
                             )?
                         {
                             OmapOutput {
