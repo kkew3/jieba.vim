@@ -42,3 +42,17 @@ Bp <abc␊de>f␊ghi␊
 Bo |ghi␊
 B1 |ghi␊
 S1 "a=abc\<Newline>def\<Newline>
+
+H 7ff70abf1025766b8a58eb532687cde68df56dafd6d6bdbc0060c11f
+X u
+M o
+K w
+O c
+R a
+B0 |␊␊
+C 2
+Q | < > prevent_change=0 visualmode=v selection=colon
+Bp <␊>␊
+Bo |␊␊
+B1 |␊␊
+S1 "a=\<Newline>
