@@ -2133,7 +2133,7 @@ pub mod unparsing {
             stream: &mut Vec<u8>,
         ) -> UnparsingResult<()> {
             let s = self
-                .replace(r"\", r"\\")
+                .replace(r"\u0016", r"\<C-v>")
                 .replace(" ", r"\<Space>")
                 .replace("\t", r"\<Tab>")
                 .replace("\n", r"\<NL>")
