@@ -385,6 +385,16 @@ jobs:
                 ;;
           esac
           echo "safe_version=${SAFE_VERSION}" >> "$GITHUB_OUTPUT"
+      - name: Collect rust test info files for manual download
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          path: unit_verification/unit-*.jsonl
+          if-no-files-found: error
+          retention-days: 1
+      - name: Fail the job
+        shell: bash
+        run: 'false'
       - name: Generate rust core tests
         shell: bash
         run: |
