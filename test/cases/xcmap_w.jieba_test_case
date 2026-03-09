@@ -175,7 +175,8 @@ Bo a<bcd␊>␊
 B1 a[bcd␊]␊
 S1 visualmode()=v
 
-H 69c454b2d38af4bf7fddeebf467288cce38dcc5ee947eace1a1ade8b
+H 5896ac2c74d81e4d794bdf48e1bfa76cdbf6f0311817d8ffd2c7ef9c
+Q < > visualmode=v prevent_change=1
 C 2
 Bo a<bcd␊>␊
 B1 a[bcd␊]␊
