@@ -115,7 +115,6 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                     &mut rangle,
                     prev_cursor,
                     count == 1,
-                    n_lines,
                 )?;
                 match selection {
                     Selection::Colon => OmapOutput {
@@ -288,7 +287,6 @@ fn operator_w_special_case<'b, 'p, B, C>(
     rangle: &mut Position,
     prev_cursor: Position,
     count_eq_1: bool,
-    n_lines: usize,
 ) -> Result<Selection, B::Error>
 where
     B: BufferLike + ?Sized,
@@ -423,10 +421,11 @@ where
     // an Eol(_). In case it is Eol(1), we will apply operator-colon trick as
     // before. Otherwise, be exclusive up to `rangle` (excluding `rangle`).
     //
-    // If the starting point of the last jump is a Word, then we need to see if
-    // we should use exclusive or inclusive. Denote word by 'w', space by 's',
-    // eol by 'l'. We will brute force all possible jumps up to `rangle_token`
-    // (excluding `rangle_token`) below:
+    // If the starting point of the last jump is a Word, and that starting
+    // point is not `langle`, then we need to see if we should use exclusive or
+    // inclusive. Denote word by 'w', space by 's', eol by 'l'. We will brute
+    // force all possible jumps up to `rangle_token` (excluding `rangle_token`)
+    // below:
     //
     //  1: w        -- inclusive up to 'w'
     //  2: w s      -- exclusive up to `rangle_token` if `rangle_token` is a
@@ -464,6 +463,21 @@ where
     //   * 'w' -> 's' -> 'w' where the 2nd 'w' is `rangle_token`
     // - The selection is colon (operator-colon trick) if:
     //   * 'l' -> ...
+    //
+    // If the starting point of the last jump is a Word, and that starting
+    // point is indeed `langle`, then `rangle` can't be a Word, since if it
+    // were a Word, `rangle` would be the Eol(_) after that Word, contradicting
+    // our assumption. But `rangle` must be either Eol(_) or a Word. Thus, it
+    // must be an Eol(_). From above, `langle` and `rangle` must be on
+    // different lines, and thus there must be at least one Eol(_) between
+    // `langle` and `rangle`. Here are all possible cases when there is exactly
+    // one Eol(_) in between, following the above notation:
+    //
+    //  1: w l l      -- `rangle` is Eol(1), use operator-colon trick
+    //  2: w s l l    -- same
+    //  3: w l s l    -- `rangle` is Eol(_), be exclusive up to `rangle`
+    //                   (excluding `rangle`)
+    //  4: w s l s l  -- same
 
     // Revert one jump to `prev_cursor`.
     let [_, prev_lnum, prev_col, _] = prev_cursor;
@@ -484,6 +498,7 @@ where
         GToken::Eol(_) => unreachable!(),
         GToken::T(t) => match t.ty {
             TokenType::Space => {
+                assert_eq!([*lnum0, *col0], [prev_lnum, prev_col]);
                 let [_, rangle_lnum, rangle_col, _] = rangle_copy;
                 let rangle_token = ExtendedInlineTokensIter::new(
                     &buffer.getline_parsed(rangle_lnum)?,
@@ -495,42 +510,61 @@ where
                 match rangle_token {
                     GToken::T(_) => unreachable!(),
                     GToken::Eol(1) => {
-                        // Apply operator-colon trick, but be sure that
-                        // `lnum1 + 1` won't exceed the buffer boundary.
-                        if *lnum1 + 1 <= n_lines {
-                            *lnum1 += 1;
-                        }
-                        // `col1` should already be 1, but added here for
-                        // clarity.
-                        *col1 = 1;
+                        // Apply operator-colon trick. Since `rangle` must be
+                        // at eof, don't need to set `lnum1` here. And since at
+                        // empty line `col1` is already 1, don't need to set it
+                        // either.
                         Selection::Colon
                     }
                     GToken::Eol(_) => Selection::Exclusive,
                 }
             }
             TokenType::Word => {
-                let mut exclusive = false;
-                for token in line {
-                    match token {
-                        GToken::Eol(_) => break,
-                        GToken::T(t) => match t.ty {
-                            TokenType::Space => prev_token = token,
-                            TokenType::Word => {
-                                exclusive = true;
-                                break;
-                            }
-                        },
+                if [*lnum0, *col0] == [prev_lnum, prev_col] {
+                    // Same as above handling of `prev_token` being Space.
+                    let [_, rangle_lnum, rangle_col, _] = rangle_copy;
+                    let rangle_token = ExtendedInlineTokensIter::new(
+                        &buffer.getline_parsed(rangle_lnum)?,
+                    )
+                    .take_col_rev(rangle_col)
+                    .expect("rangle_col too large")
+                    .next()
+                    .unwrap();
+                    match rangle_token {
+                        GToken::T(_) => unreachable!(),
+                        GToken::Eol(1) => {
+                            // Apply operator-colon trick. Since `rangle` must be
+                            // at eof, don't need to set `lnum1` here. And since at
+                            // empty line `col1` is already 1, don't need to set it
+                            // either.
+                            Selection::Colon
+                        }
+                        GToken::Eol(_) => Selection::Exclusive,
                     }
-                }
-                if exclusive {
-                    assert_eq!(*lnum1, prev_lnum);
-                    *col1 = prev_token.last_char1();
-                    Selection::Exclusive
                 } else {
-                    assert!(*lnum1 >= prev_lnum);
-                    *lnum1 = prev_lnum;
-                    *col1 = prev_token.last_char();
-                    Selection::Inclusive
+                    let mut exclusive = false;
+                    for token in line {
+                        match token {
+                            GToken::Eol(_) => break,
+                            GToken::T(t) => match t.ty {
+                                TokenType::Space => prev_token = token,
+                                TokenType::Word => {
+                                    exclusive = true;
+                                    break;
+                                }
+                            },
+                        }
+                    }
+                    if exclusive {
+                        assert_eq!(*lnum1, prev_lnum);
+                        *col1 = prev_token.last_char1();
+                        Selection::Exclusive
+                    } else {
+                        assert!(*lnum1 >= prev_lnum);
+                        *lnum1 = prev_lnum;
+                        *col1 = prev_token.last_char();
+                        Selection::Inclusive
+                    }
                 }
             }
         },
