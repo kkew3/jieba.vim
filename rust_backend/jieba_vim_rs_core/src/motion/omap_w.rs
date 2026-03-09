@@ -12,17 +12,18 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use std::marker::PhantomData;
+
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::nmap_b::UnitNmapB;
 use super::omap_e::UnitOmapERangle;
 use super::token_iter::{
     ExtendedInlineTokensIter, GToken, ParsedBuffer, TokenLikeExt,
 };
 use super::word_motion::{
-    ExtendedMotionState, Intolerable, Markovian, MarkovianUnit, Motion,
-    MotionState, UnitMotion,
+    ExtendedMotionState, FoldState, Intolerable, Markovian, MarkovianUnit,
+    Motion, MotionState, UnitMotion,
 };
 use super::xmap_w::UnitXmapW;
 use super::{OmapOutput, WordMotion, d_special};
@@ -92,13 +93,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
 
         // First stage.
         let mut motion_rangle_first_stage =
-            Markovian::new(UnitOmapWRangleFirstStage);
-        let s =
+            MarkovianOmapW::new(UnitOmapWRangleFirstStage);
+        let _ =
             motion_rangle_first_stage.map(&mut buffer, count, &mut rangle)?;
 
         // Operator-pending w special case (*).
-        let output = match s {
-            MotionState::Failure => OmapOutput {
+        let output = match motion_rangle_first_stage.cursor_before_last_motion {
+            None => OmapOutput {
                 cursor: langle,
                 langle,
                 rangle,
@@ -106,12 +107,15 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 selection: b"exclusive",
                 prevent_change: b"0",
             },
-            MotionState::Success => {
+            Some(prev_cursor) => {
+                let n_lines = buffer.lines()?;
                 let selection = operator_w_special_case(
                     &mut buffer,
                     &langle,
                     &mut rangle,
+                    prev_cursor,
                     count == 1,
+                    n_lines,
                 )?;
                 match selection {
                     Selection::Colon => OmapOutput {
@@ -131,8 +135,18 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 false,
                             )?
                         {
+                            // `cursor` is essentially arbitrary for d-special;
+                            // setting to this value to please the verifier, in
+                            // case d-special deletes the entire buffer.
+                            let [_, llnum, _, _] = langle;
+                            let [_, rlnum, _, _] = rangle;
+                            let cursor = if llnum == 1 && rlnum == n_lines {
+                                [bufnum, 1, 1, 0]
+                            } else {
+                                langle
+                            };
                             OmapOutput {
-                                cursor: langle,
+                                cursor,
                                 langle,
                                 rangle,
                                 visualmode: b"V",
@@ -159,8 +173,18 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 true,
                             )?
                         {
+                            // `cursor` is essentially arbitrary for d-special;
+                            // setting to this value to please the verifier, in
+                            // case d-special deletes the entire buffer.
+                            let [_, llnum, _, _] = langle;
+                            let [_, rlnum, _, _] = rangle;
+                            let cursor = if llnum == 1 && rlnum == n_lines {
+                                [bufnum, 1, 1, 0]
+                            } else {
+                                langle
+                            };
                             OmapOutput {
-                                cursor: langle,
+                                cursor,
                                 langle,
                                 rangle,
                                 visualmode: b"V",
@@ -181,6 +205,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 }
             }
         };
+
         Ok(output)
     }
 }
@@ -203,6 +228,51 @@ impl MarkovianUnit<Position> for UnitOmapWRangleFirstStage {
     type FoldState = Intolerable;
 }
 
+pub struct MarkovianOmapW<M, S, P> {
+    unit_motion: M,
+    phantom_data: PhantomData<S>,
+    cursor_before_last_motion: Option<P>,
+}
+
+impl<M, S, P> MarkovianOmapW<M, S, P> {
+    pub fn new(unit_motion: M) -> Self {
+        Self {
+            unit_motion,
+            phantom_data: PhantomData,
+            cursor_before_last_motion: None,
+        }
+    }
+}
+
+impl<P, M> Motion<P> for MarkovianOmapW<M, M::FoldState, P>
+where
+    M: MarkovianUnit<P>,
+    P: Clone,
+{
+    fn map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+        &mut self,
+        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        mut count: u64,
+        cursor: &mut P,
+    ) -> Result<MotionState, B::Error> {
+        let mut state = M::FoldState::default();
+        self.cursor_before_last_motion = None;
+        while count > 0 {
+            let current_cursor_before_motion = cursor.clone();
+            let s = self.unit_motion.unit_map(buffer, cursor)?;
+            if s != ExtendedMotionState::Failure {
+                self.cursor_before_last_motion =
+                    Some(current_cursor_before_motion);
+            }
+            if let Some(absorbing_state) = state.update(s) {
+                return Ok(absorbing_state);
+            }
+            count -= 1;
+        }
+        Ok(state.finalize())
+    }
+}
+
 enum Selection {
     Exclusive,
     Inclusive,
@@ -216,7 +286,9 @@ fn operator_w_special_case<'b, 'p, B, C>(
     buffer: &mut ParsedBuffer<'b, 'p, B, C>,
     langle: &Position,
     rangle: &mut Position,
+    prev_cursor: Position,
     count_eq_1: bool,
+    n_lines: usize,
 ) -> Result<Selection, B::Error>
 where
     B: BufferLike + ?Sized,
@@ -332,18 +404,29 @@ where
         return Ok(s);
     }
 
-    // Else, since `count` > 1, we focus on the last jump. The starting point
-    // of the last jump must be the start of either Eol(1) or Word, since |w|
-    // only lands on Eol(1) or Word, and that the starting position of the last
-    // jump must be the destination of a previous jump.
+    // Else, since `count` > 1, we focus on the last jump.
     //
     // If the starting point of the last jump is an Eol(1), then we simply
     // apply operator-colon trick.
     //
+    // If the starting point of the last jump is a Space, then this starting
+    // point must be `langle`, since if not, |w| would not stop on a Space.
+    // Between `langle`, the starting point, and `rangle` there can't be any
+    // Word or empty lines, since that would result in cursor stopping at that
+    // Word or empty line, such that the jump from the starting point won't be
+    // the last jump, a contradiction. The next token of `langle` must be an
+    // Eol(_), since it can't be a Word as above, and can't be a Space due to
+    // tokenization. Furthermore, as above, `rangle` must be either a Word or
+    // an Eol(_). But `rangle` can't be a Word either, since by assumption,
+    // `count` > 1, and if `rangle` were a Word, the `rangle` would have been
+    // the Eol(_) after the Word, a contradiction. Therefore, `rangle` must be
+    // an Eol(_). In case it is Eol(1), we will apply operator-colon trick as
+    // before. Otherwise, be exclusive up to `rangle` (excluding `rangle`).
+    //
     // If the starting point of the last jump is a Word, then we need to see if
     // we should use exclusive or inclusive. Denote word by 'w', space by 's',
     // eol by 'l'. We will brute force all possible jumps up to `rangle_token`
-    // (exclusive) below:
+    // (excluding `rangle_token`) below:
     //
     //  1: w        -- inclusive up to 'w'
     //  2: w s      -- exclusive up to `rangle_token` if `rangle_token` is a
@@ -382,9 +465,7 @@ where
     // - The selection is colon (operator-colon trick) if:
     //   * 'l' -> ...
 
-    // Revert one jump using nmap |b| to `prev_token`.
-    let mut prev_cursor = rangle_copy;
-    let _ = UnitNmapB.unit_map(buffer, &mut prev_cursor)?;
+    // Revert one jump to `prev_cursor`.
     let [_, prev_lnum, prev_col, _] = prev_cursor;
     let tokens = buffer.getline_parsed(prev_lnum)?;
     let mut line = ExtendedInlineTokensIter::new(&tokens)
@@ -402,7 +483,31 @@ where
         }
         GToken::Eol(_) => unreachable!(),
         GToken::T(t) => match t.ty {
-            TokenType::Space => unreachable!(),
+            TokenType::Space => {
+                let [_, rangle_lnum, rangle_col, _] = rangle_copy;
+                let rangle_token = ExtendedInlineTokensIter::new(
+                    &buffer.getline_parsed(rangle_lnum)?,
+                )
+                .take_col_rev(rangle_col)
+                .expect("rangle_col too large")
+                .next()
+                .unwrap();
+                match rangle_token {
+                    GToken::T(_) => unreachable!(),
+                    GToken::Eol(1) => {
+                        // Apply operator-colon trick, but be sure that
+                        // `lnum1 + 1` won't exceed the buffer boundary.
+                        if *lnum1 + 1 <= n_lines {
+                            *lnum1 += 1;
+                        }
+                        // `col1` should already be 1, but added here for
+                        // clarity.
+                        *col1 = 1;
+                        Selection::Colon
+                    }
+                    GToken::Eol(_) => Selection::Exclusive,
+                }
+            }
             TokenType::Word => {
                 let mut exclusive = false;
                 for token in line {
