@@ -69,8 +69,16 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                         false,
                     )?
                 {
+                    let mut cursor = rangle;
+                    let n_lines = buffer.lines()?;
+                    d_special::reset_cursor_when_d_special(
+                        n_lines,
+                        &langle,
+                        &rangle,
+                        &mut cursor,
+                    );
                     OmapOutput {
-                        cursor: rangle,
+                        cursor,
                         langle,
                         rangle,
                         visualmode: b"V",

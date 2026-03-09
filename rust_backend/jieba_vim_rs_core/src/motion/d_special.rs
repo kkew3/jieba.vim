@@ -79,3 +79,22 @@ pub fn is_d_special<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
 
     Ok(true)
 }
+
+/// `cursor` is essentially arbitrary for d-special; setting `cursor` to
+/// (lnum=1, col=1, off=0) to please the verifier, in case d-special deletes
+/// the entire buffer.
+pub fn reset_cursor_when_d_special(
+    n_lines: usize,
+    langle: &Position,
+    rangle: &Position,
+    cursor: &mut Position,
+) {
+    let [_, llnum, _, _] = langle;
+    let [_, rlnum, _, _] = rangle;
+    let [_, lnum, col, off] = cursor;
+    if *llnum == 1 && *rlnum == n_lines {
+        *lnum = 1;
+        *col = 1;
+        *off = 0;
+    }
+}

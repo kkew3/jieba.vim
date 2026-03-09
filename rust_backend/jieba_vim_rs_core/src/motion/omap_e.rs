@@ -62,8 +62,16 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         let output = if operator == b"d"
             && d_special::is_d_special(&mut buffer, langle, rangle, true)?
         {
+            let mut cursor = langle;
+            let n_lines = buffer.lines()?;
+            d_special::reset_cursor_when_d_special(
+                n_lines,
+                &langle,
+                &rangle,
+                &mut cursor,
+            );
             OmapOutput {
-                cursor: langle,
+                cursor,
                 langle,
                 rangle,
                 visualmode: b"V",

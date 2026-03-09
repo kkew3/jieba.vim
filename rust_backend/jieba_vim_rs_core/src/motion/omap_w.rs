@@ -135,16 +135,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 false,
                             )?
                         {
-                            // `cursor` is essentially arbitrary for d-special;
-                            // setting to this value to please the verifier, in
-                            // case d-special deletes the entire buffer.
-                            let [_, llnum, _, _] = langle;
-                            let [_, rlnum, _, _] = rangle;
-                            let cursor = if llnum == 1 && rlnum == n_lines {
-                                [bufnum, 1, 1, 0]
-                            } else {
-                                langle
-                            };
+                            let mut cursor = langle;
+                            d_special::reset_cursor_when_d_special(
+                                n_lines,
+                                &langle,
+                                &rangle,
+                                &mut cursor,
+                            );
                             OmapOutput {
                                 cursor,
                                 langle,
@@ -173,16 +170,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 true,
                             )?
                         {
-                            // `cursor` is essentially arbitrary for d-special;
-                            // setting to this value to please the verifier, in
-                            // case d-special deletes the entire buffer.
-                            let [_, llnum, _, _] = langle;
-                            let [_, rlnum, _, _] = rangle;
-                            let cursor = if llnum == 1 && rlnum == n_lines {
-                                [bufnum, 1, 1, 0]
-                            } else {
-                                langle
-                            };
+                            let mut cursor = langle;
+                            d_special::reset_cursor_when_d_special(
+                                n_lines,
+                                &langle,
+                                &rangle,
+                                &mut cursor,
+                            );
                             OmapOutput {
                                 cursor,
                                 langle,
