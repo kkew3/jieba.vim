@@ -56,3 +56,17 @@ Bp <␊>␊
 Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>
+
+H 1f49b50c1d9d85ccac4bb61d06f2c14a77188c89e1ea6eaa17f0ff1e
+X u
+M o
+K w
+O d
+R a
+B0 ·|···␊···␊
+C 2
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+Bp ·<···␊···>␊
+Bo |␀
+B1 |␀
+S1 "a=\<Space>\<Space>\<Space>\<Space>\<Newline>\<Space>\<Space>\<Space>\<Newline>
