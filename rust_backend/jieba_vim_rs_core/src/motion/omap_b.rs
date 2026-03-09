@@ -64,7 +64,12 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 // Apply operator-colon trick whatsoever.
                 // A bit weird, but seems to work.
                 OmapOutput {
-                    cursor: rangle,
+                    // When using operator-colon trick, `cursor` value is
+                    // arbitrary. We pick this value to ensure that the
+                    // verifier is satisfactory, as it's always a valid
+                    // position even if the buffer becomes empty due to
+                    // d-special.
+                    cursor: [bufnum, 1, 1, 0],
                     langle,
                     rangle,
                     visualmode: b"v",
