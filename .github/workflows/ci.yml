@@ -164,16 +164,7 @@ jobs:
           set nocompatible
           set sessionoptions=globals
           set rtp+=${{ github.workspace }}
-          filetype off
-          filetype plugin off
-          filetype indent off
-          syntax off
-          set noswapfile
-          set nobackup
-          set noundofile
-          if has("nvim")
-            set shada="NONE"
-          endif
+          filetype plugin indent on
           EOF
       - name: Vim sanity check
         shell: bash
@@ -337,16 +328,7 @@ jobs:
           endif
           set nocompatible
           set rtp+=${{ github.workspace }}
-          filetype off
-          filetype plugin off
-          filetype indent off
-          syntax off
-          set noswapfile
-          set nobackup
-          set noundofile
-          if has("nvim")
-            set shada="NONE"
-          endif
+          filetype plugin indent on
           EOF
       - name: Vim sanity check
         shell: bash
