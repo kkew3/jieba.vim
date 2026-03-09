@@ -856,6 +856,7 @@ impl fmt::Display for RunType {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum VimType {
     Vim,
     Neovim,
@@ -1070,7 +1071,7 @@ impl Cli {
             for path in self.test_case_file {
                 let cases = parsing::parse_metatest_file(&path).unwrap();
                 eprintln!("I: {}: found {} test cases", path, cases.len());
-                for mut c in cases {
+                'cases_loop: for mut c in cases {
                     let old_hash = c.fix_hash_id();
                     let fixed_hash = c.hash_id();
                     if fixed_hash != &old_hash {
@@ -1096,6 +1097,31 @@ impl Cli {
                         continue;
                     }
                     if let TestCaseBlock::Unit(unit_case) = c.block {
+                        for hc in unit_case.head_conditionals.iter() {
+                            match hc {
+                                HeadConditional::Feature(must_has) => {
+                                    if must_has == "nvim"
+                                        && vim_type == VimType::Vim
+                                    {
+                                        if let VimBin::Path(_) = &vim_bin {
+                                            progress.step();
+                                        }
+                                        continue 'cases_loop;
+                                    }
+                                }
+                                HeadConditional::NoFeature(must_has_no) => {
+                                    if must_has_no == "nvim"
+                                        && vim_type == VimType::Neovim
+                                    {
+                                        if let VimBin::Path(_) = &vim_bin {
+                                            progress.step();
+                                        }
+                                        continue 'cases_loop;
+                                    }
+                                }
+                                _ => (),
+                            }
+                        }
                         let case_work_dir = self.work_dir.join(&id_hex);
                         let unit_io = unit_case.run_unit_verification(
                             self.vimrc.as_ref().map(|p| p.as_path()),

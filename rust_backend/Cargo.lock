@@ -474,7 +474,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_metatest"
-version = "0.2.19"
+version = "0.2.20"
 dependencies = [
  "anyhow",
  "camino",
