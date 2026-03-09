@@ -115,6 +115,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                     &mut rangle,
                     prev_cursor,
                     count == 1,
+                    motion_rangle_first_stage.last_motion_ends_with_failure,
                 )?;
                 match selection {
                     Selection::Colon => OmapOutput {
@@ -231,6 +232,7 @@ pub struct MarkovianOmapW<M, S, P> {
     unit_motion: M,
     phantom_data: PhantomData<S>,
     cursor_before_last_motion: Option<P>,
+    last_motion_ends_with_failure: bool,
 }
 
 impl<M, S, P> MarkovianOmapW<M, S, P> {
@@ -239,6 +241,7 @@ impl<M, S, P> MarkovianOmapW<M, S, P> {
             unit_motion,
             phantom_data: PhantomData,
             cursor_before_last_motion: None,
+            last_motion_ends_with_failure: false,
         }
     }
 }
@@ -263,6 +266,8 @@ where
                 self.cursor_before_last_motion =
                     Some(current_cursor_before_motion);
             }
+            self.last_motion_ends_with_failure =
+                s == ExtendedMotionState::Failure;
             if let Some(absorbing_state) = state.update(s) {
                 return Ok(absorbing_state);
             }
@@ -287,12 +292,12 @@ fn operator_w_special_case<'b, 'p, B, C>(
     rangle: &mut Position,
     prev_cursor: Position,
     count_eq_1: bool,
+    last_motion_ends_with_failure: bool,
 ) -> Result<Selection, B::Error>
 where
     B: BufferLike + ?Sized,
     C: JiebaPlaceholder,
 {
-    let rangle_copy = *rangle;
     let [_, lnum0, col0, _] = langle;
     let [_, lnum1, col1, _] = rangle;
 
@@ -402,30 +407,46 @@ where
         return Ok(s);
     }
 
-    // Else, since `count` > 1, we focus on the last jump.
+    if last_motion_ends_with_failure {
+        // If last motion ends with Failure, then `rangle` must be an Eol at
+        // eof. This means that the operation intends to span till eof. Thus,
+        // if `rangle` is an empty line, we simply apply operator-colon trick;
+        // else, span the motion range exclusively up to `rangle`.
+
+        let [_, rangle_lnum, rangle_col, _] = *rangle;
+        let rangle_token =
+            ExtendedInlineTokensIter::new(&buffer.getline_parsed(rangle_lnum)?)
+                .take_col_rev(rangle_col)
+                .expect("rangle_col too large")
+                .next()
+                .unwrap();
+        let s = match rangle_token {
+            GToken::T(_) => unreachable!(),
+            GToken::Eol(1) => {
+                // Apply operator-colon trick. Since `rangle` must be
+                // at eof, don't need to set `lnum1` here. And since at
+                // empty line `col1` is already 1, don't need to set it
+                // either.
+                Selection::Colon
+            }
+            GToken::Eol(_) => Selection::Exclusive,
+        };
+        return Ok(s);
+    }
+
+    // Else, since `count` > 1, we focus on the last jump. The starting
+    // point of the last jump can't be a Space. If it's a Space, it must be
+    // `langle`, since |w| never stops in a Space. But this will contradict our
+    // assumption that `count` > 1 and there is no failure in the motion. The
+    // starting point can't be `langle` due to the same argument.
     //
     // If the starting point of the last jump is an Eol(1), then we simply
     // apply operator-colon trick.
     //
-    // If the starting point of the last jump is a Space, then this starting
-    // point must be `langle`, since if not, |w| would not stop on a Space.
-    // Between `langle`, the starting point, and `rangle` there can't be any
-    // Word or empty lines, since that would result in cursor stopping at that
-    // Word or empty line, such that the jump from the starting point won't be
-    // the last jump, a contradiction. The next token of `langle` must be an
-    // Eol(_), since it can't be a Word as above, and can't be a Space due to
-    // tokenization. Furthermore, as above, `rangle` must be either a Word or
-    // an Eol(_). But `rangle` can't be a Word either, since by assumption,
-    // `count` > 1, and if `rangle` were a Word, the `rangle` would have been
-    // the Eol(_) after the Word, a contradiction. Therefore, `rangle` must be
-    // an Eol(_). In case it is Eol(1), we will apply operator-colon trick as
-    // before. Otherwise, be exclusive up to `rangle` (excluding `rangle`).
-    //
-    // If the starting point of the last jump is a Word, and that starting
-    // point is not `langle`, then we need to see if we should use exclusive or
-    // inclusive. Denote word by 'w', space by 's', eol by 'l'. We will brute
-    // force all possible jumps up to `rangle_token` (excluding `rangle_token`)
-    // below:
+    // If the starting point of the last jump is a Word, then we need to see if
+    // we should use exclusive or inclusive. Denote word by 'w', space by 's',
+    // eol by 'l'. We will brute force all possible jumps up to `rangle_token`
+    // (excluding `rangle_token`) below:
     //
     //  1: w        -- inclusive up to 'w'
     //  2: w s      -- exclusive up to `rangle_token` if `rangle_token` is a
@@ -463,21 +484,6 @@ where
     //   * 'w' -> 's' -> 'w' where the 2nd 'w' is `rangle_token`
     // - The selection is colon (operator-colon trick) if:
     //   * 'l' -> ...
-    //
-    // If the starting point of the last jump is a Word, and that starting
-    // point is indeed `langle`, then `rangle` can't be a Word, since if it
-    // were a Word, `rangle` would be the Eol(_) after that Word, contradicting
-    // our assumption. But `rangle` must be either Eol(_) or a Word. Thus, it
-    // must be an Eol(_). From above, `langle` and `rangle` must be on
-    // different lines, and thus there must be at least one Eol(_) between
-    // `langle` and `rangle`. Here are all possible cases when there is exactly
-    // one Eol(_) in between, following the above notation:
-    //
-    //  1: w l l      -- `rangle` is Eol(1), use operator-colon trick
-    //  2: w s l l    -- same
-    //  3: w l s l    -- `rangle` is Eol(_), be exclusive up to `rangle`
-    //                   (excluding `rangle`)
-    //  4: w s l s l  -- same
 
     // Revert one jump to `prev_cursor`.
     let [_, prev_lnum, prev_col, _] = prev_cursor;
@@ -497,74 +503,30 @@ where
         }
         GToken::Eol(_) => unreachable!(),
         GToken::T(t) => match t.ty {
-            TokenType::Space => {
-                assert_eq!([*lnum0, *col0], [prev_lnum, prev_col]);
-                let [_, rangle_lnum, rangle_col, _] = rangle_copy;
-                let rangle_token = ExtendedInlineTokensIter::new(
-                    &buffer.getline_parsed(rangle_lnum)?,
-                )
-                .take_col_rev(rangle_col)
-                .expect("rangle_col too large")
-                .next()
-                .unwrap();
-                match rangle_token {
-                    GToken::T(_) => unreachable!(),
-                    GToken::Eol(1) => {
-                        // Apply operator-colon trick. Since `rangle` must be
-                        // at eof, don't need to set `lnum1` here. And since at
-                        // empty line `col1` is already 1, don't need to set it
-                        // either.
-                        Selection::Colon
-                    }
-                    GToken::Eol(_) => Selection::Exclusive,
-                }
-            }
+            TokenType::Space => unreachable!(),
             TokenType::Word => {
-                if [*lnum0, *col0] == [prev_lnum, prev_col] {
-                    // Same as above handling of `prev_token` being Space.
-                    let [_, rangle_lnum, rangle_col, _] = rangle_copy;
-                    let rangle_token = ExtendedInlineTokensIter::new(
-                        &buffer.getline_parsed(rangle_lnum)?,
-                    )
-                    .take_col_rev(rangle_col)
-                    .expect("rangle_col too large")
-                    .next()
-                    .unwrap();
-                    match rangle_token {
-                        GToken::T(_) => unreachable!(),
-                        GToken::Eol(1) => {
-                            // Apply operator-colon trick. Since `rangle` must be
-                            // at eof, don't need to set `lnum1` here. And since at
-                            // empty line `col1` is already 1, don't need to set it
-                            // either.
-                            Selection::Colon
-                        }
-                        GToken::Eol(_) => Selection::Exclusive,
+                let mut exclusive = false;
+                for token in line {
+                    match token {
+                        GToken::Eol(_) => break,
+                        GToken::T(t) => match t.ty {
+                            TokenType::Space => prev_token = token,
+                            TokenType::Word => {
+                                exclusive = true;
+                                break;
+                            }
+                        },
                     }
+                }
+                if exclusive {
+                    assert_eq!(*lnum1, prev_lnum);
+                    *col1 = prev_token.last_char1();
+                    Selection::Exclusive
                 } else {
-                    let mut exclusive = false;
-                    for token in line {
-                        match token {
-                            GToken::Eol(_) => break,
-                            GToken::T(t) => match t.ty {
-                                TokenType::Space => prev_token = token,
-                                TokenType::Word => {
-                                    exclusive = true;
-                                    break;
-                                }
-                            },
-                        }
-                    }
-                    if exclusive {
-                        assert_eq!(*lnum1, prev_lnum);
-                        *col1 = prev_token.last_char1();
-                        Selection::Exclusive
-                    } else {
-                        assert!(*lnum1 >= prev_lnum);
-                        *lnum1 = prev_lnum;
-                        *col1 = prev_token.last_char();
-                        Selection::Inclusive
-                    }
+                    assert!(*lnum1 >= prev_lnum);
+                    *lnum1 = prev_lnum;
+                    *col1 = prev_token.last_char();
+                    Selection::Inclusive
                 }
             }
         },
