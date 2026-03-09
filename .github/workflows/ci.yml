@@ -444,6 +444,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: rust-core-test
     steps:
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - name: Cache cargo-tarpaulin
         id: cache-cargo-tarpaulin
