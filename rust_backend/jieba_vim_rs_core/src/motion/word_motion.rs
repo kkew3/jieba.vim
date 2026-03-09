@@ -220,7 +220,7 @@ pub trait UnitMotion<P> {
 }
 
 /// Define how [`ExtendedMotionState`]s should be folded into [`MotionState`].
-pub trait FoldState: Default + Sized {
+pub trait FoldState: Default {
     fn finalize(self) -> MotionState;
     /// Return the final state if it's an absorbing state.
     fn update(&mut self, state: ExtendedMotionState) -> Option<MotionState>;
