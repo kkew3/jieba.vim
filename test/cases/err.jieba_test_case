@@ -108,3 +108,15 @@ C 0
 Q |
 Bo ·····|·␊
 B1 ·····|·␊
+
+H 8d43d87ad40795a5e4f0cfbac9368bd903cb6dfd2571a8d13a4d27df
+X u
+M o
+K b
+O d
+B0 ␊|···␊
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+Bp >␊<···␊
+Bo |···␊
+B1 ··|·␊
