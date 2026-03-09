@@ -1064,21 +1064,20 @@ impl Cli {
         let unit_info_file =
             self.work_dir.join(format!("unit-{}.jsonl", vim_dist_name));
         let written_to_unit_info = {
-            let mut writer = BufWriter::new(File::create(&unit_info_file)?);
+            let mut writer =
+                BufWriter::new(File::create(&unit_info_file).unwrap());
             let mut written_anything_to_unit_info = false;
             for path in self.test_case_file {
-                let cases = parsing::parse_metatest_file(&path)?;
+                let cases = parsing::parse_metatest_file(&path).unwrap();
                 eprintln!("I: {}: found {} test cases", path, cases.len());
                 for mut c in cases {
                     let old_hash = c.fix_hash_id();
                     let fixed_hash = c.hash_id();
                     if fixed_hash != &old_hash {
-                        return Err(anyhow::anyhow!(
+                        panic!(
                             "parsing failed: {}:{}: new hash = {}",
-                            fixed_hash.file,
-                            fixed_hash.lineno,
-                            fixed_hash.id
-                        ));
+                            fixed_hash.file, fixed_hash.lineno, fixed_hash.id
+                        );
                     }
                     match &fixed_hash.id {
                         TestHashId::Sha2(bytes) => {
@@ -1105,8 +1104,9 @@ impl Cli {
                             &vim_type,
                         )?;
                         if let Some(unit_io) = unit_io {
-                            serde_json::to_writer(&mut writer, &unit_io)?;
-                            writer.write_all(b"\n")?;
+                            serde_json::to_writer(&mut writer, &unit_io)
+                                .unwrap();
+                            writer.write_all(b"\n").unwrap();
                             written_anything_to_unit_info = true;
                         }
                         if let VimBin::Path(_) = &vim_bin {
@@ -1119,7 +1119,7 @@ impl Cli {
             written_anything_to_unit_info
         };
         if !written_to_unit_info {
-            fs::remove_file(unit_info_file)?;
+            fs::remove_file(unit_info_file).unwrap();
         }
 
         Ok(())
