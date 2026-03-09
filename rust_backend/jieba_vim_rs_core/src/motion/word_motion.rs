@@ -347,8 +347,8 @@ impl FoldState for Tolerable {
             (Success, ExtendedMotionState::Failure) => Success,
             (Success, ExtendedMotionState::Pending) => Success,
         };
-        if *self == Failure {
-            Some(MotionState::Failure)
+        if state == ExtendedMotionState::Failure {
+            Some(self.finalize())
         } else {
             None
         }
