@@ -1042,18 +1042,19 @@ impl Cli {
         let mut jieba_test_writer = match self.output_jieba_test_case {
             None => None,
             Some(path) => {
-                let writer = BufWriter::new(File::create(path)?);
+                let writer = BufWriter::new(File::create(path).unwrap());
                 let serializer = Serializer::setup(
                     writer,
                     head_conditionals_from_vim_type(&vim_type),
-                )?;
+                )
+                .unwrap();
                 Some(serializer)
             }
         };
         let mut progress = DotsProgress::default();
 
         for path in self.test_case_file {
-            let cases = parsing::parse_metatest_file(&path)?;
+            let cases = parsing::parse_metatest_file(&path).unwrap();
             eprintln!("I: {}: found {} test cases", path, cases.len());
             for mut c in cases {
                 let old_hash = c.fix_hash_id();
@@ -1092,7 +1093,7 @@ impl Cli {
                         && let Some(block) = block
                     {
                         let block: RawTestCaseBlock = block.into();
-                        writer.write(&block)?;
+                        writer.write(&block).unwrap();
                     }
                     if let VimBin::Path(_) = &vim_bin {
                         progress.step();
