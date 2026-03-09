@@ -18,7 +18,7 @@ use crate::{BufferLike, CursorPositionCurswant};
 use super::nmap_b::UnitNmapB;
 use super::token_iter::ParsedBuffer;
 use super::word_motion::{Markovian, Motion, MotionState};
-use super::{OmapOutput, WordMotion, d_special};
+use super::{OmapOutput, WordMotion};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `b` (if `word` is `true`) or `B` (if `word` is `false`) in
@@ -43,7 +43,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         cursor_pos: CursorPositionCurswant,
         count: u64,
         word: bool,
-        operator: &[u8],
+        _operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let [bufnum, lnum, col, off, _] = cursor_pos;
@@ -61,39 +61,15 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 prevent_change: b"1",
             },
             MotionState::Success => {
-                if operator == b"d"
-                    && d_special::is_d_special(
-                        &mut buffer,
-                        langle,
-                        rangle,
-                        false,
-                    )?
-                {
-                    let mut cursor = rangle;
-                    let n_lines = buffer.lines()?;
-                    d_special::reset_cursor_when_d_special(
-                        n_lines,
-                        &langle,
-                        &rangle,
-                        &mut cursor,
-                    );
-                    OmapOutput {
-                        cursor,
-                        langle,
-                        rangle,
-                        visualmode: b"V",
-                        selection: b"inclusive",
-                        prevent_change: b"0",
-                    }
-                } else {
-                    OmapOutput {
-                        cursor: rangle,
-                        langle,
-                        rangle,
-                        visualmode: b"v",
-                        selection: b"exclusive",
-                        prevent_change: b"0",
-                    }
+                // Apply operator-colon trick whatsoever.
+                // A bit weird, but seems to work.
+                OmapOutput {
+                    cursor: rangle,
+                    langle,
+                    rangle,
+                    visualmode: b"v",
+                    selection: b"colon",
+                    prevent_change: b"0",
                 }
             }
         };
