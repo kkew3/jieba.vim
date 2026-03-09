@@ -467,7 +467,6 @@ jobs:
             --no-dead-code \
             --manifest-path rust_backend/Cargo.toml \
             --exclude-files 'jieba_vim_rs_test/*' \
-            --exclude-files 'jieba_vim_rs_test_macro/*' \
             --exclude-files 'jieba_vim_rs_metatest/*' \
             --exclude-files 'src/*' \
             --packages jieba_vim_rs_core
