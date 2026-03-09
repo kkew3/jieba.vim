@@ -70,3 +70,17 @@ Bp ·<···␊···>␊
 Bo |␀
 B1 |␀
 S1 "a=\<Space>\<Space>\<Space>\<Space>\<Newline>\<Space>\<Space>\<Space>\<Newline>
+
+H b8f788ace4573074794da3dbf377cd841aae728386718a33458ce82a
+X u
+M o
+K w
+O d
+R a
+B0 |abc␊···␊
+C 2
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+Bp <abc␊···>␊
+Bo |␀
+B1 |␀
+S1 "a=abc\<Newline>\<Space>\<Space>\<Space>\<Newline>
