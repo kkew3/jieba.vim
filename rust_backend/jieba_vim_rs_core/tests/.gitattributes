@@ -1,2 +1,2 @@
-vim_*.rs diff=binary linguist-generated
-nvim_*.rs diff=binary linguist-generated
+vim_*.rs -diff -merge -text linguist-generated
+nvim_*.rs -diff -merge -text linguist-generated
