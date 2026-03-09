@@ -87,6 +87,7 @@ impl UnitMotion<Position> for UnitNmapE {
                 }
                 Some(next_t) => {
                     // If `next_t` exists, `cursor_token` can't be empty.
+                    assert!(!cursor_token.is_empty());
                     if cursor_token.at_end(*col) && next_t.is_empty() {
                         // If `cursor_token` is at eof and `col` is at end of
                         // `cursor_token` ..
@@ -95,6 +96,16 @@ impl UnitMotion<Position> for UnitNmapE {
                         // `next_t` in 'virtualedit' mode, and then return
                         // Failure.
                         return Ok(ExtendedMotionState::Failure);
+                    }
+                    if next_t.is_empty()
+                        && let GToken::T(t) = &cursor_token
+                    {
+                        *col = t.last_char();
+                        let s = match t.ty {
+                            TokenType::Space => ExtendedMotionState::Pending,
+                            TokenType::Word => ExtendedMotionState::Success,
+                        };
+                        return Ok(s);
                     }
                 }
             }
