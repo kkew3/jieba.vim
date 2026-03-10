@@ -419,12 +419,12 @@ impl GetDebugInfo for str {
 fn assert_on_field<'a, T: PartialEq + GetFromOutputs<'a> + GetDebugInfo>(
     outputs: &'a Map<String, Value>,
     key: &str,
-    expected: &T,
+    actual: &T,
 ) -> Result<(), Failed> {
     match T::get_from_outputs(outputs, key) {
         None => Ok(()),
-        Some(actual) => {
-            if &actual == expected {
+        Some(expected) => {
+            if actual == &expected {
                 Ok(())
             } else {
                 Err(format!(
