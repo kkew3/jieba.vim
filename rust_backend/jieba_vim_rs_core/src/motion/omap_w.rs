@@ -218,7 +218,6 @@ impl UnitMotion<Position> for UnitOmapWRangleFirstStage {
 }
 
 impl MarkovianUnit<Position> for UnitOmapWRangleFirstStage {
-    // The `omap_w` motion always succeeds.
     type FoldState = Intolerable;
 }
 
