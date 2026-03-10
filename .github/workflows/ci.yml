@@ -342,36 +342,53 @@ jobs:
               ;;
           esac
 
+      - name: Get a filename-safe version of vim.version
+        id: safe-version
+        shell: bash
+        run: |
+          SAFE_VERSION="$(echo "${{ matrix.vim.version }}" | tr . _)"
+          echo "safe_version=${SAFE_VERSION}" >> "$GITHUB_OUTPUT"
+      - name: Cache verified cases
+        uses: actions/cache@v5
+        with:
+          path: unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl
+          key: verified-unit-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+
       # Do the job.
       - name: Run unit case verification
         id: run-unit-case-verification
         shell: bash
         run: |
-          SAFE_VERSION="$(echo "${{ matrix.vim.version }}" | tr . _)"
+          mkdir -p unit_verification/cache
           case ${{ matrix.vim.distr }} in
             vim)
               jieba_vim_rs_metatest verify-unit \
                 --rc vimrc -v vim \
-                -n vim_${SAFE_VERSION}_${{ matrix.glue-lang }} \
+                -n vim_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }} \
                 -d unit_verification \
+                -C unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl \
                 test/cases/*.jieba_test_case \
                 test/cases/bootstrapped/*.jieba_test_case
               ;;
             nvim)
               jieba_vim_rs_metatest verify-unit \
                 --rc vimrc -v nvim --neovim \
-                -n nvim_${SAFE_VERSION}_${{ matrix.glue-lang }} \
+                -n nvim_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }} \
                 -d unit_verification \
+                -C unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl \
                 test/cases/*.jieba_test_case \
                 test/cases/bootstrapped/*.jieba_test_case
                 ;;
           esac
-          echo "safe_version=${SAFE_VERSION}" >> "$GITHUB_OUTPUT"
+          # Update the cache.
+          cp \
+            unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl \
+            unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl
       - name: Collect rust test info jsonl files
         uses: actions/upload-artifact@v4
         with:
           name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
-          path: unit_verification/unit-*.jsonl
+          path: unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl
           if-no-files-found: error
           retention-days: 5
 
