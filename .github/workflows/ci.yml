@@ -367,28 +367,12 @@ jobs:
                 ;;
           esac
           echo "safe_version=${SAFE_VERSION}" >> "$GITHUB_OUTPUT"
-      - name: Collect rust test info files for manual download
+      - name: Collect rust test info jsonl files
         uses: actions/upload-artifact@v4
         with:
           name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
           path: unit_verification/unit-*.jsonl
           if-no-files-found: error
-          retention-days: 1
-      - name: Fail the job
-        shell: bash
-        run: 'false'
-      - name: Generate rust core tests
-        shell: bash
-        run: |
-          mkdir -p rust_backend/jieba_vim_rs_core/tests
-          jieba_vim_rs_metatest gen-unit \
-            -d unit_verification \
-            -t rust_backend/jieba_vim_rs_core/tests
-          cargo fmt --manifest-path rust_backend/jieba_vim_rs_core/Cargo.toml
-      - uses: actions/upload-artifact@v4
-        with:
-          name: rust-core-test-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
-          path: rust_backend/jieba_vim_rs_core/tests/${{ matrix.vim.distr }}_${{ steps.run-unit-case-verification.outputs.safe_version }}_${{ matrix.glue-lang }}.rs
           retention-days: 5
 
   commit_changes:
@@ -399,6 +383,8 @@ jobs:
     needs:
       - bootstrap-case-template-expansion
       - bootstrap-case-verification
+      # We don't rely on the artifacts produced by unit-case-verification; yet
+      # we require the correctness guarantee of the bootstrapped cases from it.
       - unit-case-verification
     steps:
       - uses: actions/checkout@v6
@@ -416,12 +402,6 @@ jobs:
           path: test/cases/bootstrapped
           pattern: bootstrapped-test-case-*
           merge-multiple: true
-      - name: Get rust core tests
-        uses: actions/download-artifact@v5
-        with:
-          path: rust_backend/jieba_vim_rs_core/tests
-          pattern: rust-core-test-*
-          merge-multiple: true
       - name: Commit the changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
@@ -429,7 +409,6 @@ jobs:
           file_pattern: >
             test/cases/bootstrap/*.jieba_test_case
             test/cases/bootstrapped/*.jieba_test_case
-            rust_backend/jieba_vim_rs_core/tests/*.rs
 
   rust-core-test:
     name: Run rust core tests
@@ -437,17 +416,23 @@ jobs:
     needs: unit-case-verification
     steps:
       - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run unit tests of jieba_vim_rs_test
+        shell: bash
+        run: cargo test -r --manifest-path rust_backend/jieba_vim_rs_test/Cargo.toml
+      - name: Run unit tests of jieba_vim_rs_core
+        shell: bash
+        run: cargo test -r --manifest-path rust_backend/jieba_vim_rs_core/Cargo.toml
       - uses: actions/download-artifact@v5
         with:
-          path: rust_backend/jieba_vim_rs_core/tests
-          pattern: rust-core-test-*
+          path: rust_backend/jieba_vim_rs_core
+          pattern: rust-core-test-info-*
           merge-multiple: true
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build and run tests
+      - name: Run Golden Master integration tests of jieba_vim_rs_core
         shell: bash
         run: |
-          cargo test -r --manifest-path rust_backend/jieba_vim_rs_test/Cargo.toml
-          cargo test -r --manifest-path rust_backend/jieba_vim_rs_core/Cargo.toml
+          cd rust_backend/jieba_vim_rs_core
+          cargo test -r --test golden_master -- unit-*.jsonl
 
   coverage:
     name: Test coverage
@@ -469,15 +454,24 @@ jobs:
       - name: Show cargo-tarpaulin version
         shell: bash
         run: cargo tarpaulin --version
+      - uses: actions/download-artifact@v5
+        with:
+          path: rust_backend/jieba_vim_rs_core/golden_master_records
+          pattern: rust-core-test-info-*
+          merge-multiple: true
       - name: Run cargo-tarpaulin
         shell: bash
         run: |
-          cargo tarpaulin --release --out Xml \
+          cd rust_backend
+          # The working directory in the following command is:
+          # rust_backend/jieba_vim_rs_core.
+          GOLDEN_MASTER_DIR=golden_master_records \
+            cargo tarpaulin --release --out Xml \
             --engine Llvm \
             --no-dead-code \
-            --manifest-path rust_backend/Cargo.toml \
             --exclude-files 'jieba_vim_rs_test/*' \
             --exclude-files 'jieba_vim_rs_metatest/*' \
+            --exclude-files 'jieba_vim_rs_core/tests/*' \
             --exclude-files 'src/*' \
             --packages jieba_vim_rs_core
       - uses: codecov/codecov-action@v5
