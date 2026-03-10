@@ -1,6 +1,6 @@
 [package]
 name = "jieba_vim_rs_core"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 
 [dependencies]
@@ -9,3 +9,13 @@ unic-emoji-char = "0.9"
 [dev-dependencies]
 proptest = "1.10"
 jieba_vim_rs_test = { path = "../jieba_vim_rs_test" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+clap = { version = "4.5.60", features = ["derive"] }
+flate2 = "1.1.9"
+libtest-mimic = "0.8.1"
+bstr = "1.12.1"
+
+[[test]]
+name = "golden_master"
+harness = false
