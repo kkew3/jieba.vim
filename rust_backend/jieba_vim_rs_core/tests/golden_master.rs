@@ -12,7 +12,9 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-//! This file contains the Golden Master tests for [`jieba_vim_rs_core`].
+//! This file contains the Golden Master tests for [`jieba_vim_rs_core`]. For
+//! details on how to use this harness, see the CI pipeline under .github/
+//! directory.
 
 use std::fs;
 use std::io::BufReader;
