@@ -14,6 +14,7 @@
 
 //! This file contains the Golden Master tests for [`jieba_vim_rs_core`].
 
+use std::fs;
 use std::io::BufReader;
 use std::path::PathBuf;
 use std::{fs::File, io::BufRead};
@@ -34,16 +35,37 @@ use keyword_cutter::KeywordCutter;
 struct Cli {
     /// The jsonl files containing model inputs/outputs origined from last unit
     /// verification. If the files are named ending with ".gz", they will be
-    /// decompressed automatically.
+    /// decompressed automatically. Will also read all jsonl or jsonl.gz files
+    /// under directory pointed to by env variable GOLDEN_MASTER_DIR.
     test_info_jsonl: Vec<PathBuf>,
 }
 
 fn main() {
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
     let mut trials = Vec::new();
+    if let Ok(dir) = std::env::var("GOLDEN_MASTER_DIR") {
+        let dir_path = PathBuf::from(dir);
+        for entry in fs::read_dir(&dir_path).unwrap_or_else(|err| {
+            panic!(
+                "failed to read dir `{}` due to: {}",
+                dir_path.display(),
+                err
+            )
+        }) {
+            if let Ok(entry) = entry {
+                if let Some(file_name) = entry.file_name().to_str() {
+                    if file_name.ends_with(".jsonl")
+                        || file_name.ends_with(".jsonl.gz")
+                    {
+                        cli.test_info_jsonl.push(dir_path.join(file_name));
+                    }
+                }
+            }
+        }
+    }
     for file in cli.test_info_jsonl {
         let reader = BufReader::new(File::open(&file).unwrap_or_else(|err| {
-            panic!("can't open file `{}` due to {}", file.display(), err)
+            panic!("can't open file `{}` due to: {}", file.display(), err)
         }));
         if file.extension().is_some_and(|ext| ext == "gz") {
             let reader = BufReader::new(GzDecoder::new(reader));
@@ -52,8 +74,7 @@ fn main() {
             push_trials_from_jsonlines(&mut trials, reader);
         }
     }
-    let mut args = Arguments::default();
-    args.quiet = true;
+    let args = Arguments::default();
     libtest_mimic::run(&args, trials).exit();
 }
 
