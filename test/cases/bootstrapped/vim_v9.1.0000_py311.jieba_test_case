@@ -179923,53 +179923,53 @@ B0 ····|·␊
 Bo |·····␊
 B1 |·····␊
 
-H 8c3d1ea63c608478e05dafb25d9a1105a1e73206c6160401a05eda05
+H b103b3bd77322c8dfd842a0f07f5c6975fc2f81c01de2883b8bcb21d
 X u
 M o
 K b
 O d
 R "
 C 0
-Q | < > prevent_change=0 visualmode=v selection=exclusive
+Q | < > prevent_change=0 visualmode=v selection=colon
 B0 ····|·␊
 Bp >····<·␊
 Bo |·␊
 B1 |·␊
 
-H a8e62e85c7738f637fa4113640fa8988a56711ddddb306a90b457906
+H a0d71a98bd1c396a04394f9a63266115e0439153eedb4d7ba9c89e4d
 X u
 M o
 K b
 O c
 R "
 C 0
-Q | < > prevent_change=0 visualmode=v selection=exclusive
+Q | < > prevent_change=0 visualmode=v selection=colon
 B0 ····|·␊
 Bp >····<·␊
 Bo |·␊
 B1 |·␊
 
-H a3f7b4bbdbce4317fc6aca053dd59a09c3769a37db9b75d3b1baf30d
+H 7a6ace97d78cb94ac6362291387060a77ddc95b8fdef0fa241e0b348
 X u
 M o
 K b
 O y
 R "
 C 0
-Q | < > prevent_change=0 visualmode=v selection=exclusive
+Q | < > prevent_change=0 visualmode=v selection=colon
 B0 ····|·␊
 Bp >····<·␊
 Bo |·····␊
 B1 |·····␊
 
-H 933ca3c3907500ec85e6ffd147ab7011f72351e424add891f66880e6
+H 391a499b467dd1db43185e84f977eaf6dadb6df466a0de3262814daf
 X u
 M o
 K b
 O g~
 R "
 C 0
-Q | < > prevent_change=0 visualmode=v selection=exclusive
+Q | < > prevent_change=0 visualmode=v selection=colon
 B0 ····|·␊
 Bp >····<·␊
 Bo |·····␊
@@ -180111,3 +180111,898 @@ Q | prevent_change=0
 B0 ␊|␊
 Bo |␊␊
 B1 |␊␊
+
+H 2e415d2ef421da9315272dd68c98e76b48754f778a54da37eeed6264
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ␊|␊
+Bp >␊<␊
+Bo |␊
+B1 |␊
+
+H 8009840a0a64c6d3c332463164dd1e4be245d7e739fd6f1b4f5e6adb
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ␊|␊
+Bp >␊<␊
+Bo |␊␊
+B1 |␊␊
+
+H a874b31c73f91f26749130aff1db1d08fcb8506f01e0833454aa19ba
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ␊|␊
+Bp >␊<␊
+Bo |␊␊
+B1 |␊␊
+
+H e429055368bec835409c1a838432a0fcebf3dedccf01b77f6e6977d4
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ␊|␊
+Bp >␊<␊
+Bo |␊␊
+B1 |␊␊
+
+H a7e44807b9052922e527b06f23b3884baf679ba8d346236b740d8851
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 ␊␊␊|␊
+Bo ␊␊|␊␊
+B1 ␊␊|␊␊
+
+H 8eaada325a923f0604476b29af8f5c9d3ef33e9af5795417615bdbbe
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ␊␊␊|␊
+Bp ␊␊>␊<␊
+Bo |␊␊␊
+B1 ␊␊|␊
+
+H 9a73525c8bc504e0fb9c8985edce918952228c6b269107d8f998084d
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ␊␊␊|␊
+Bp ␊␊>␊<␊
+Bo |␊␊␊␊
+B1 ␊␊|␊␊
+
+H 0e87f7b84b37bce7af31de781f69894babaa0c0366bb1b541c15e3d0
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ␊␊␊|␊
+Bp ␊␊>␊<␊
+Bo |␊␊␊␊
+B1 ␊␊|␊␊
+
+H b39b49b298a6b70dabe10b875b74f988157b695bdfbf2ea12787b144
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ␊␊␊|␊
+Bp ␊␊>␊<␊
+Bo |␊␊␊␊
+B1 ␊␊|␊␊
+
+H 517be6ac86c40041df35eb61b41a7aa6076442539ef45028200d3462
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 ····␊|␊
+Bo |····␊␊
+B1 |····␊␊
+
+H 9843be05bde9b5fc338396e021ef5af405a98b4772a6b12159085c12
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊|␊
+Bp >····␊<␊
+Bo |␊
+B1 |␊
+
+H 6a95122ac388686f23f5fa338b6f2957ddea52b20f8bb5e641028942
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊|␊
+Bp >····␊<␊
+Bo |␊␊
+B1 |␊␊
+
+H 642aac1a30624220da2c20f33449a69fd775ddf353bc324afdd5bab9
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊|␊
+Bp >····␊<␊
+Bo |····␊␊
+B1 |····␊␊
+
+H ce201290b0a5b73781a0d117c8bc7872177ee29ebcc3453ad7a7871c
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊|␊
+Bp >····␊<␊
+Bo |····␊␊
+B1 |····␊␊
+
+H 91262efe09c83bf01f9aeac122ad2215e1c0da31d8fe1135120147f0
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 ····␊␊|␊
+Bo ····␊|␊␊
+B1 ····␊|␊␊
+
+H 95852cb3f441a9b1299c7a120100ff0554f97d9a0a7e752b369dfcb7
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊␊|␊
+Bp ····␊>␊<␊
+Bo |····␊␊
+B1 ····␊|␊
+
+H 7018cd51ef22c2c1277442f9d90eb6d912f5f157085aef1d773b9600
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊␊|␊
+Bp ····␊>␊<␊
+Bo |····␊␊␊
+B1 ····␊|␊␊
+
+H 8c6992fe5a61a08af313beb258adc9c6bd24474c2545f426f68cd167
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊␊|␊
+Bp ····␊>␊<␊
+Bo |····␊␊␊
+B1 ····␊|␊␊
+
+H d10a8072ccf1351736e3feffa495a5fe32f8d3fa47577c35c891023d
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊␊|␊
+Bp ····␊>␊<␊
+Bo |····␊␊␊
+B1 ····␊|␊␊
+
+H f46982b455fdbe377fbcd74e0ea4d905b14884cb46aea3c60e412565
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 ····␊···␊|␊
+Bo |····␊···␊␊
+B1 |····␊···␊␊
+
+H 677c987e35ce2c9c30fa8c709adbe1cb95b2a5d2983bdb203524ba92
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊···␊|␊
+Bp >····␊···␊<␊
+Bo |␊
+B1 |␊
+
+H 28574624787a229e990efbbe5ab0a08749f98cd1890f911544ff6bbe
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊···␊|␊
+Bp >····␊···␊<␊
+Bo |␊␊
+B1 |␊␊
+
+H d4f071dc50d00188d33e5aab3cd01011915e84f4b9feba016d4860c0
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊···␊|␊
+Bp >····␊···␊<␊
+Bo |····␊···␊␊
+B1 |····␊···␊␊
+
+H 55619058f86d7b60882e87bda909729431d293c5470dbadb58f573b1
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊···␊|␊
+Bp >····␊···␊<␊
+Bo |····␊···␊␊
+B1 |····␊···␊␊
+
+H fe076200a70a41724d057876c33e5a77436fa03a6f9ab7d2e2b96746
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 ····␊·····|··␊
+Bo |····␊·······␊
+B1 |····␊·······␊
+
+H ea85935549139a95c43a198c1e6fe79b1bba904c7278362b28c8af0b
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊·····|··␊
+Bp >····␊·····<··␊
+Bo |␀
+B1 |␀
+
+H ee22bac54f1023fcf7188e3b25ba2a683e12c189c9643b2c7e04a151
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊·····|··␊
+Bp >····␊·····<··␊
+Bo |··␊
+B1 |··␊
+
+H 47841190896bca356acf0c12f8341c22c61fc991cc354ecfbf50de92
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊·····|··␊
+Bp >····␊·····<··␊
+Bo |····␊·······␊
+B1 |····␊·······␊
+
+H 2207ced13e817adc052870d0575d18c0297e253126ab141f17cdeb01
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊·····|··␊
+Bp >····␊·····<··␊
+Bo |····␊·······␊
+B1 |····␊·······␊
+
+H 272e3ef91dbc76ccb6a1de35e4199fa886f1b63ca5302fa596d722ad
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 ····␊␊··|···␊
+Bo ····␊|␊·····␊
+B1 ····␊|␊·····␊
+
+H 1b4ce512fbc4fc26276b005f601f73ae21c34e3b85be75b5693f885b
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊␊··|···␊
+Bp ····␊>␊··<···␊
+Bo |····␊
+B1 ···|·␊
+
+H 42c375be17a191beb69e83be8963f342a80c5d370a5ba9474c543fbe
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊␊··|···␊
+Bp ····␊>␊··<···␊
+Bo |····␊···␊
+B1 ····␊|···␊
+
+H 75f649c49c37f11eec2bb1e451ed1469e0060932f5a5b743e4d69858
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊␊··|···␊
+Bp ····␊>␊··<···␊
+Bo |····␊␊·····␊
+B1 ····␊|␊·····␊
+
+H e33f7c759316c4c7f7ec0fea83aedbe8d465a1d8ffdc9a2946834938
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····␊␊··|···␊
+Bp ····␊>␊··<···␊
+Bo |····␊␊·····␊
+B1 ····␊|␊·····␊
+
+H 92f80d16644c4c84fcf29c58997a42cbffbfe3ec629750dc02dbe552
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 abcd|e␊
+Bo |abcde␊
+B1 |abcde␊
+
+H 5617da45ba974e22eded4916fc365608739a857377414e8592b83416
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd|e␊
+Bp >abcd<e␊
+Bo |e␊
+B1 |e␊
+
+H 80b5cece99bc2957f2703ce56b7cfbe7cae8657f965d63c7411db094
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd|e␊
+Bp >abcd<e␊
+Bo |e␊
+B1 |e␊
+
+H 5059ccef333f75dc521d48131fd38039228fdbe2a1d5b4dafb67795d
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd|e␊
+Bp >abcd<e␊
+Bo |abcde␊
+B1 |abcde␊
+
+H 85294ab2d06f5d42942c924a0d0a7b99eb9798027589163876d8fc54
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd|e␊
+Bp >abcd<e␊
+Bo |ABCDe␊
+B1 |ABCDe␊
+
+H ed54fae9951702bbf13485058c9088a5d92c556d03ad5a48111995a3
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 abc|de␊
+Bo |abcde␊
+B1 |abcde␊
+
+H f870dd1fb4d86741b475347413183d52258557fb8d13f252d9d14eee
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc|de␊
+Bp >abc<de␊
+Bo |de␊
+B1 |de␊
+
+H 416d9bc1a290c178995a8e799ba96620f42eb14bb32501f7780c0f86
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc|de␊
+Bp >abc<de␊
+Bo |de␊
+B1 |de␊
+
+H cf4243f80b116014b00d4b924ac523492757f117511586ee88a2dbbb
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc|de␊
+Bp >abc<de␊
+Bo |abcde␊
+B1 |abcde␊
+
+H 0ce32e9ba1416b133eb0588e149d9091fd5f03eca72bdbbe731a46aa
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc|de␊
+Bp >abc<de␊
+Bo |ABCde␊
+B1 |ABCde␊
+
+H 1b6897e6312afde91ed086531c3768cd0957f6ec8cc03c808327d4ee
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=1
+B0 |abcde␊
+Bo |abcde␊
+B1 |abcde␊
+
+H 03abd0242993634b041f67612ab317cd45c111c783c9ebcdd90cef78
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=1 visualmode=v selection=exclusive
+B0 |abcde␊
+Bp <>abcde␊
+Bo |abcde␊
+B1 |abcde␊
+
+H ea95081e4dcb52c7abdb85f2d018c4d1d6b9158e7d225465615cd770
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=1 visualmode=v selection=exclusive
+B0 |abcde␊
+Bp <>abcde␊
+Bo |abcde␊
+B1 |abcde␊
+
+H ded3c50713a8bd69942a5d809a0d3ad37fd410f6ad8c07d30c72aaf4
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=1 visualmode=v selection=exclusive
+B0 |abcde␊
+Bp <>abcde␊
+Bo |abcde␊
+B1 |abcde␊
+
+H 37750100aa312956b6715a89c3af8c56bc540be18423a43571934eb0
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=1 visualmode=v selection=exclusive
+B0 |abcde␊
+Bp <>abcde␊
+Bo |abcde␊
+B1 |abcde␊
+
+H 2795d7c07258e75fb062d36fd9861ceee19f92f5bda9cb8d265183f8
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 abc␊def␊|ghi␊
+Bo abc␊|def␊ghi␊
+B1 abc␊|def␊ghi␊
+
+H 11236204563382afac1d32a10f3a2a0cb2ed18ca4fe2dd417c79fe2a
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc␊def␊|ghi␊
+Bp abc␊>def␊<ghi␊
+Bo |abc␊ghi␊
+B1 abc␊|ghi␊
+
+H dab03a3d4d620d954fa57b7fb4a4bbf0628bf4cf552728cf11d063bf
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc␊def␊|ghi␊
+Bp abc␊>def␊<ghi␊
+Bo |abc␊␊ghi␊
+B1 abc␊|␊ghi␊
+
+H c882a397a3ff51f0f84b5bbf423a98d1db2ea68d7a5ee444904b7c5e
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc␊def␊|ghi␊
+Bp abc␊>def␊<ghi␊
+Bo |abc␊def␊ghi␊
+B1 abc␊|def␊ghi␊
+
+H 443c45f10bd2e15ad40ae290fe606e76d9463cba2f2b6633bc129c3c
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc␊def␊|ghi␊
+Bp abc␊>def␊<ghi␊
+Bo |abc␊DEF␊ghi␊
+B1 abc␊|DEF␊ghi␊
+
+H 0519896015ea449b714da53a9b20c530ee2cd6e83b9f2ec1143ac15c
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 abc␊def␊gh|i␊
+Bo abc␊def␊|ghi␊
+B1 abc␊def␊|ghi␊
+
+H 9f1ec147324e715d9d4c20c5fbcd8aba48fe50eda96bab6b04d08986
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc␊def␊gh|i␊
+Bp abc␊def␊>gh<i␊
+Bo |abc␊def␊i␊
+B1 abc␊def␊|i␊
+
+H 0332fe0737b4ccda710a944da2fb33a8fe411ec410efe471f9691c2c
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc␊def␊gh|i␊
+Bp abc␊def␊>gh<i␊
+Bo |abc␊def␊i␊
+B1 abc␊def␊|i␊
+
+H 0f0f840a9dfaaaf0a6edbaac60b6f944ab95621f8e3cc833e5bae018
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc␊def␊gh|i␊
+Bp abc␊def␊>gh<i␊
+Bo |abc␊def␊ghi␊
+B1 abc␊def␊|ghi␊
+
+H 2e3787d03ce63ef51a6d552cb8af2448be0ee3f9f811687ed3f8e966
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abc␊def␊gh|i␊
+Bp abc␊def␊>gh<i␊
+Bo |abc␊def␊GHi␊
+B1 abc␊def␊|GHi␊
+
+H 406c5323388786aee7f5e74763ead98493fc2992566fe6880a90bdc9
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 abcd|···␊
+Bo |abcd···␊
+B1 |abcd···␊
+
+H cfeeaf93e6136796e5f156c21d2683a403744a146222f70331520fb2
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd|···␊
+Bp >abcd<···␊
+Bo |···␊
+B1 |···␊
+
+H c39e276e3e2fb8267bea6790f0bbc80783700b126db28d281602018c
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd|···␊
+Bp >abcd<···␊
+Bo |···␊
+B1 |···␊
+
+H e340e5421e99ba7c409fac89eea3f7fbb532fc318357d590e4e28ec9
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd|···␊
+Bp >abcd<···␊
+Bo |abcd···␊
+B1 |abcd···␊
+
+H bd8ccd3f01b4b6fad6adde701260c72d2368961c27bebfd47d2c15a3
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd|···␊
+Bp >abcd<···␊
+Bo |ABCD···␊
+B1 |ABCD···␊
+
+H 4eb977998c4e3c0b12bc96379651ac4035f4b03f47dbb1d456fdc4d3
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 abcd··|·␊
+Bo |abcd···␊
+B1 |abcd···␊
+
+H cd28e0213c78408b3078ce4523700c5693a00e8ecffea889b6022895
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd··|·␊
+Bp >abcd··<·␊
+Bo |·␊
+B1 |·␊
+
+H 9ddf4dc8a094f1d7a7734630b2cebb448a19e621d99db64e8045a439
+X u
+M o
+K b
+O c
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd··|·␊
+Bp >abcd··<·␊
+Bo |·␊
+B1 |·␊
+
+H 486ccac360e6d2dbaaa3d4e5f75e9e390e4410182776dd20f577f17d
+X u
+M o
+K b
+O y
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd··|·␊
+Bp >abcd··<·␊
+Bo |abcd···␊
+B1 |abcd···␊
+
+H e614faa1873c93d1a8ca83d82aab72115764d71f1ff1518163b8dfe6
+X u
+M o
+K b
+O g~
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 abcd··|·␊
+Bp >abcd··<·␊
+Bo |ABCD···␊
+B1 |ABCD···␊
+
+H 0f027f9f0d8b9812ad6fe66a8588c1b2f2e443ab77061f774565598c
+X u
+M n
+K b
+R "
+C 0
+Q | prevent_change=0
+B0 ····abc|d␊
+Bo ····|abcd␊
+B1 ····|abcd␊
+
+H 5c02f71cbb2a5c26a6b83584a02d8d58a5be005d85064d0fd01a506c
+X u
+M o
+K b
+O d
+R "
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+B0 ····abc|d␊
+Bp ····>abc<d␊
+Bo |····d␊
+B1 ····|d␊
