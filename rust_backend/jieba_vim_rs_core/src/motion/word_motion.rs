@@ -421,3 +421,35 @@ impl FoldState for Intolerable {
         }
     }
 }
+
+/// An absolutely intolerable motion state transition.
+#[derive(Default, PartialEq, Eq, Clone, Copy)]
+pub enum AbsolutelyIntolerable {
+    #[default]
+    Success,
+    Failure,
+}
+
+impl FoldState for AbsolutelyIntolerable {
+    fn finalize(self) -> MotionState {
+        match self {
+            Self::Success => MotionState::Success,
+            Self::Failure => MotionState::Failure,
+        }
+    }
+
+    fn update(&mut self, state: ExtendedMotionState) -> Option<MotionState> {
+        use AbsolutelyIntolerable::*;
+
+        *self = match (*self, state) {
+            (Failure, _) => Failure,
+            (Success, ExtendedMotionState::Success) => Success,
+            (Success, _) => Failure,
+        };
+        if *self == Failure {
+            Some(MotionState::Failure)
+        } else {
+            None
+        }
+    }
+}

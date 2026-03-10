@@ -19,8 +19,8 @@ use super::token_iter::{
     ExtendedInlineTokensIter, GToken, ParsedBuffer, TokenLikeExt,
 };
 use super::word_motion::{
-    ExtendedMotionState, Intolerable, Markovian, MarkovianUnit, Motion,
-    UnitMotion,
+    AbsolutelyIntolerable, ExtendedMotionState, Markovian, MarkovianUnit,
+    Motion, UnitMotion,
 };
 use super::{NmapOutput, WordMotion};
 
@@ -167,7 +167,7 @@ impl UnitMotion<Position> for UnitNmapE {
 }
 
 impl MarkovianUnit<Position> for UnitNmapE {
-    type FoldState = Intolerable;
+    type FoldState = AbsolutelyIntolerable;
 }
 
 /// Return either the stop point (a Word), or the last token yielded by `line`.
