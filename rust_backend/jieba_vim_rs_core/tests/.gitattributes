@@ -1,2 +1,0 @@
-vim_*.rs -diff -merge -text linguist-generated
-nvim_*.rs -diff -merge -text linguist-generated
