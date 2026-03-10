@@ -16,7 +16,7 @@
 //! verification aims to test the vimscript side functions and verify the
 //! correctness of unit tests.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
@@ -1038,8 +1038,38 @@ pub struct Cli {
     /// Verify this case id only.
     #[arg(short)]
     case_id: Option<String>,
+    /// If specified, will skip verification on those cases whose id is
+    /// contained in this jsonl file. If this is specified but error occurs
+    /// when trying to read and/or parse it, the error will be silently ignored
+    /// and run as if the option were absent. The format of this jsonl file
+    /// should be compatible with those "unit-*.jsonl" written to the directory
+    /// pointed to by `-d` option.
+    #[arg(short = 'C', long)]
+    verified_cache_file: Option<Utf8PathBuf>,
     /// The *.jieba_test_case files.
     test_case_file: Vec<Utf8PathBuf>,
+}
+
+fn read_verified_cache_file_opt(
+    path: &Utf8Path,
+) -> anyhow::Result<HashMap<String, ModelInputOutputSer>> {
+    let mut verified_cases = HashMap::new();
+    let mut reader = BufReader::new(File::open(path)?);
+    let mut line = String::new();
+    while reader.read_line(&mut line)? > 0 {
+        let v = serde_json::from_str::<ModelInputOutputSer>(&line)?;
+        verified_cases.insert(v.id.to_string(), v);
+        line.clear();
+    }
+    Ok(verified_cases)
+}
+
+fn read_verified_cache_file(
+    path: Option<&Utf8Path>,
+) -> HashMap<String, ModelInputOutputSer> {
+    path.ok_or(anyhow::anyhow!(""))
+        .and_then(read_verified_cache_file_opt)
+        .unwrap_or_default()
 }
 
 impl Cli {
@@ -1064,6 +1094,8 @@ impl Cli {
         let mut progress = DotsProgress::default();
         let unit_info_file =
             self.work_dir.join(format!("unit-{}.jsonl", vim_dist_name));
+        let verified_ids =
+            read_verified_cache_file(self.verified_cache_file.as_deref());
         let written_to_unit_info = {
             let mut writer =
                 BufWriter::new(File::create(&unit_info_file).unwrap());
@@ -1097,6 +1129,17 @@ impl Cli {
                         continue;
                     }
                     if let TestCaseBlock::Unit(unit_case) = c.block {
+                        if let Some(unit_io) = verified_ids.get(&id_hex) {
+                            serde_json::to_writer(&mut writer, &unit_io)
+                                .unwrap();
+                            writer.write_all(b"\n").unwrap();
+                            written_anything_to_unit_info = true;
+
+                            if let VimBin::Path(_) = &vim_bin {
+                                progress.step();
+                            }
+                            continue;
+                        }
                         for hc in unit_case.head_conditionals.iter() {
                             match hc {
                                 HeadConditional::Feature(must_has) => {
