@@ -35,6 +35,9 @@ use keyword_cutter::KeywordCutter;
 /// The Golden Master test harness for `jieba_vim_rs_core`.
 #[derive(Debug, Parser)]
 struct Cli {
+    /// Be quiet.
+    #[arg(short, long, default_value_t = false)]
+    quiet: bool,
     /// The jsonl files containing model inputs/outputs origined from last unit
     /// verification. If the files are named ending with ".gz", they will be
     /// decompressed automatically. Will also read all jsonl or jsonl.gz files
@@ -76,7 +79,8 @@ fn main() {
             push_trials_from_jsonlines(&mut trials, reader);
         }
     }
-    let args = Arguments::default();
+    let mut args = Arguments::default();
+    args.quiet = cli.quiet;
     libtest_mimic::run(&args, trials).exit();
 }
 
