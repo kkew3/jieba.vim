@@ -12,6 +12,16 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+//! Quoted from vimhelp.org:
+//!
+//! > An exception for the d{motion} command: If the motion is not linewise,
+//! > the start and end of the motion are not in the same line, and there are
+//! > only blanks before the start and there are no non-blanks after the end of
+//! > the motion, the delete becomes linewise.  This means that the delete also
+//! > removes the line of blanks that you might expect to remain.
+//!
+//! Check <https://vimhelp.org/change.txt.html#d-special> for details.
+
 use crate::Position;
 use crate::token::TokenType;
 
