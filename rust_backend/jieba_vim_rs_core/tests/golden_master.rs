@@ -17,9 +17,9 @@
 //! directory.
 
 use std::fs;
-use std::io::BufReader;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
-use std::{fs::File, io::BufRead};
 
 use bstr::io::BufReadExt;
 use clap::Parser;
