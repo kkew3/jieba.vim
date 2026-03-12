@@ -43,6 +43,12 @@ pub fn is_d_special<B: ParsedBufferLike + ?Sized>(
     };
     let [_, llnum, lcol, _] = langle;
     let [_, rlnum, rcol, _] = rangle;
+    if rcol == 1 && !inclusive {
+        panic!(
+            "`exclusive + rcol=1` case must be handled first by \
+            `exclusive_special` mod"
+        );
+    }
     if llnum == rlnum {
         return Ok(false);
     }
