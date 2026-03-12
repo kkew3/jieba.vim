@@ -15,7 +15,7 @@
 use crate::token::JiebaPlaceholder;
 use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::parsed_buffer::ParsedBuffer;
+use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
 use super::word_motion::{
     ExtendedMotionState, Intolerable, Markovian, MarkovianUnit, Motion,
     OneOffMotion, OneOffUnit, SuppressFailure, UnitMotion,
@@ -95,9 +95,9 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
 pub struct UnitOmapELangle;
 
 impl UnitMotion<Position> for UnitOmapELangle {
-    fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        _buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        _buffer: &mut B,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         let [_, _, _, off] = cursor;
@@ -113,9 +113,9 @@ impl OneOffUnit<Position> for UnitOmapELangle {
 pub struct UnitOmapERangle;
 
 impl UnitMotion<Position> for UnitOmapERangle {
-    fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut B,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         UnitXmapE.unit_map(buffer, cursor)

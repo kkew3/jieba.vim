@@ -16,7 +16,7 @@ use crate::token::{JiebaPlaceholder, TokenLike};
 use crate::{BufferLike, Position};
 
 use super::nmap_w::UnitNmapW;
-use super::parsed_buffer::ParsedBuffer;
+use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
 use super::token_iter::{ExtendedInlineTokensIter, GToken};
 use super::word_motion::{
     ExtendedMotionState, Markovian, MarkovianUnit, Motion, SemiTolerable,
@@ -72,9 +72,9 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
 pub struct UnitXmapW;
 
 impl UnitMotion<Position> for UnitXmapW {
-    fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut B,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         use ExtendedMotionState::*;

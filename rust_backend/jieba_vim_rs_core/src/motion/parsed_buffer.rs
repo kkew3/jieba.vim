@@ -17,6 +17,15 @@ use std::collections::BTreeMap;
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, Token, Tokenizer};
 
+/// Any type that resembles a Vim buffer but returns tokenized lines, often
+/// implemented with an internal cache.
+pub trait ParsedBufferLike: BufferLike {
+    /// Either return the cached tokenized line, or tokenize the requested
+    /// line, update the cache (which requires mut self), and return the
+    /// tokenization result.
+    fn getline_parsed(&mut self, lnum: usize) -> Result<&[Token], Self::Error>;
+}
+
 /// A buffer that caches parsed tokens.
 pub struct ParsedBuffer<'b, 'p, B: ?Sized, C> {
     buffer: &'b B,
@@ -40,19 +49,24 @@ impl<'b, 'p, B: ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
     }
 }
 
-impl<'b, 'p, B: BufferLike + ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
-    pub fn lines(&self) -> Result<usize, B::Error> {
+impl<'b, 'p, B: BufferLike + ?Sized, C> BufferLike
+    for ParsedBuffer<'b, 'p, B, C>
+{
+    type Error = B::Error;
+
+    fn getline(&self, lnum: usize) -> Result<String, Self::Error> {
+        self.buffer.getline(lnum)
+    }
+
+    fn lines(&self) -> Result<usize, Self::Error> {
         self.buffer.lines()
     }
 }
 
-impl<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>
-    ParsedBuffer<'b, 'p, B, C>
+impl<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder> ParsedBufferLike
+    for ParsedBuffer<'b, 'p, B, C>
 {
-    pub fn getline_parsed(
-        &mut self,
-        lnum: usize,
-    ) -> Result<&[Token], B::Error> {
+    fn getline_parsed(&mut self, lnum: usize) -> Result<&[Token], B::Error> {
         if !self.parsed_lines.contains_key(&lnum) {
             let line = self.buffer.getline(lnum)?;
             let parsed_line = self.tokenizer.parse_str1(&line, self.into_word);

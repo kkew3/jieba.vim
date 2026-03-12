@@ -12,16 +12,16 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::token::{JiebaPlaceholder, TokenType};
-use crate::{BufferLike, Position};
+use crate::Position;
+use crate::token::TokenType;
 
-use super::parsed_buffer::ParsedBuffer;
+use super::parsed_buffer::ParsedBufferLike;
 use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.
-pub fn is_d_special<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
-    buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+pub fn is_d_special<B: ParsedBufferLike + ?Sized>(
+    buffer: &mut B,
     langle: Position,
     rangle: Position,
     inclusive: bool,

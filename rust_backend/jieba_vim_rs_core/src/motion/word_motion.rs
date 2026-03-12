@@ -17,7 +17,7 @@ use std::marker::PhantomData;
 use crate::token::{JiebaPlaceholder, TokenType, Tokenizer};
 use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::parsed_buffer::ParsedBuffer;
+use super::parsed_buffer::ParsedBufferLike;
 use super::token_iter::GToken;
 
 pub struct WordMotion<C> {
@@ -178,9 +178,9 @@ impl MotionState {
 
 /// A general motion.
 pub trait Motion<P> {
-    fn map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut B,
         count: u64,
         cursor: &mut P,
     ) -> Result<MotionState, B::Error>;
@@ -213,9 +213,9 @@ impl ExtendedMotionState {
 
 /// A unit motion.
 pub trait UnitMotion<P> {
-    fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut B,
         cursor: &mut P,
     ) -> Result<ExtendedMotionState, B::Error>;
 }
@@ -251,9 +251,9 @@ impl<P, M> Motion<P> for Markovian<M, M::FoldState>
 where
     M: MarkovianUnit<P>,
 {
-    fn map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut B,
         mut count: u64,
         cursor: &mut P,
     ) -> Result<MotionState, B::Error> {
@@ -303,9 +303,9 @@ impl<M, S> OneOffMotion<M, S> {
 }
 
 impl<P, M: OneOffUnit<P>> Motion<P> for OneOffMotion<M, M::FoldState> {
-    fn map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut B,
         count: u64,
         cursor: &mut P,
     ) -> Result<MotionState, B::Error> {

@@ -18,7 +18,7 @@ use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 use crate::{BufferLike, CursorPositionCurswant, Position};
 
 use super::omap_e::UnitOmapERangle;
-use super::parsed_buffer::ParsedBuffer;
+use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
 use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::word_motion::{
     ExtendedMotionState, FoldState, Intolerable, Markovian, MarkovianUnit,
@@ -207,9 +207,9 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
 pub struct UnitOmapWRangleFirstStage;
 
 impl UnitMotion<Position> for UnitOmapWRangleFirstStage {
-    fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut B,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         UnitXmapW.unit_map(buffer, cursor)
@@ -243,9 +243,9 @@ where
     M: MarkovianUnit<P>,
     P: Clone,
 {
-    fn map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut B,
         mut count: u64,
         cursor: &mut P,
     ) -> Result<MotionState, B::Error> {

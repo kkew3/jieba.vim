@@ -16,7 +16,7 @@ use crate::motion::token_iter::TokenLikeExt;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::parsed_buffer::ParsedBuffer;
+use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
 use super::token_iter::{ExtendedInlineTokensIter, GToken};
 use super::word_motion::{
     ExtendedMotionState, Markovian, MarkovianUnit, Motion, SemiTolerable,
@@ -64,9 +64,9 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
 pub struct UnitNmapW;
 
 impl UnitMotion<Position> for UnitNmapW {
-    fn unit_map<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>(
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
         &mut self,
-        buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+        buffer: &mut B,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
         let [_, lnum, col, off] = cursor;
