@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, Token, Tokenizer};
@@ -31,7 +31,7 @@ pub struct ParsedBuffer<'b, 'p, B: ?Sized, C> {
     buffer: &'b B,
     tokenizer: &'p Tokenizer<C>,
     into_word: bool,
-    parsed_lines: BTreeMap<usize, Vec<Token>>,
+    parsed_lines: HashMap<usize, Vec<Token>>,
 }
 
 impl<'b, 'p, B: ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
@@ -44,7 +44,7 @@ impl<'b, 'p, B: ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
             buffer,
             tokenizer,
             into_word,
-            parsed_lines: BTreeMap::new(),
+            parsed_lines: HashMap::new(),
         }
     }
 }
