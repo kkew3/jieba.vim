@@ -18,9 +18,8 @@ use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 use crate::{BufferLike, CursorPositionCurswant, Position};
 
 use super::omap_e::UnitOmapERangle;
-use super::token_iter::{
-    ExtendedInlineTokensIter, GToken, ParsedBuffer, TokenLikeExt,
-};
+use super::parsed_buffer::ParsedBuffer;
+use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::word_motion::{
     ExtendedMotionState, FoldState, Intolerable, Markovian, MarkovianUnit,
     Motion, MotionState, UnitMotion,

@@ -15,9 +15,8 @@
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::token_iter::{
-    ExtendedInlineTokensIter, GToken, ParsedBuffer, TokenLikeExt,
-};
+use super::parsed_buffer::ParsedBuffer;
+use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::word_motion::{
     AbsolutelyIntolerable, ExtendedMotionState, Markovian, MarkovianUnit,
     Motion, UnitMotion,

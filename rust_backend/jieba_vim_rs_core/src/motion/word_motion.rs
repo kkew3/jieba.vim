@@ -17,7 +17,8 @@ use std::marker::PhantomData;
 use crate::token::{JiebaPlaceholder, TokenType, Tokenizer};
 use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::token_iter::{GToken, ParsedBuffer};
+use super::parsed_buffer::ParsedBuffer;
+use super::token_iter::GToken;
 
 pub struct WordMotion<C> {
     pub(super) tokenizer: Tokenizer<C>,

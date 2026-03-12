@@ -16,7 +16,7 @@ use crate::token::JiebaPlaceholder;
 use crate::{BufferLike, Position};
 
 use super::nmap_ge::UnitNmapGe;
-use super::token_iter::ParsedBuffer;
+use super::parsed_buffer::ParsedBuffer;
 use super::word_motion::{Markovian, Motion};
 use super::{WordMotion, XmapOutput};
 

@@ -22,12 +22,10 @@
 //! the token).
 
 use std::cmp::Ordering;
-use std::collections::BTreeMap;
 use std::iter::{Rev, Skip, Take};
 
-use crate::BufferLike;
 use crate::position::{ColumnPosition, PositionError};
-use crate::token::{JiebaPlaceholder, Token, TokenLike, Tokenizer};
+use crate::token::{Token, TokenLike};
 
 pub trait TokenLikeExt: TokenLike {
     /// `true` if `(col, off)` is on self token.
@@ -261,50 +259,5 @@ impl<'p> DoubleEndedIterator for ExtendedInlineTokensIter<'p> {
     fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
         self.right_index_compl += n;
         self.next_back()
-    }
-}
-
-/// A [`BufferLike`] that caches parsed tokens.
-pub struct ParsedBuffer<'b, 'p, B: ?Sized, C> {
-    buffer: &'b B,
-    tokenizer: &'p Tokenizer<C>,
-    into_word: bool,
-    parsed_lines: BTreeMap<usize, Vec<Token>>,
-}
-
-impl<'b, 'p, B: ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
-    pub fn new(
-        buffer: &'b B,
-        tokenizer: &'p Tokenizer<C>,
-        into_word: bool,
-    ) -> Self {
-        Self {
-            buffer,
-            tokenizer,
-            into_word,
-            parsed_lines: BTreeMap::new(),
-        }
-    }
-}
-
-impl<'b, 'p, B: BufferLike + ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
-    pub fn lines(&self) -> Result<usize, B::Error> {
-        self.buffer.lines()
-    }
-}
-
-impl<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder>
-    ParsedBuffer<'b, 'p, B, C>
-{
-    pub fn getline_parsed(
-        &mut self,
-        lnum: usize,
-    ) -> Result<&[Token], B::Error> {
-        if !self.parsed_lines.contains_key(&lnum) {
-            let line = self.buffer.getline(lnum)?;
-            let parsed_line = self.tokenizer.parse_str1(&line, self.into_word);
-            self.parsed_lines.insert(lnum, parsed_line);
-        }
-        Ok(self.parsed_lines.get(&lnum).unwrap())
     }
 }

@@ -12,11 +12,11 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::motion::token_iter::{
-    ExtendedInlineTokensIter, GToken, ParsedBuffer, TokenLikeExt,
-};
 use crate::token::{JiebaPlaceholder, TokenType};
 use crate::{BufferLike, Position};
+
+use super::parsed_buffer::ParsedBuffer;
+use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.

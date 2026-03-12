@@ -21,6 +21,7 @@ mod omap_b;
 mod omap_e;
 mod omap_ge;
 mod omap_w;
+mod parsed_buffer;
 mod token_iter;
 mod word_motion;
 mod xmap_b;

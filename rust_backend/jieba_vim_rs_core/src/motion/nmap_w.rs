@@ -16,7 +16,8 @@ use crate::motion::token_iter::TokenLikeExt;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::token_iter::{ExtendedInlineTokensIter, GToken, ParsedBuffer};
+use super::parsed_buffer::ParsedBuffer;
+use super::token_iter::{ExtendedInlineTokensIter, GToken};
 use super::word_motion::{
     ExtendedMotionState, Markovian, MarkovianUnit, Motion, SemiTolerable,
     UnitMotion,
