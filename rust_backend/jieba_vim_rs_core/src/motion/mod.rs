@@ -13,6 +13,7 @@
 // under the License.
 
 mod d_special;
+mod exclusive_special;
 mod nmap_b;
 mod nmap_e;
 mod nmap_ge;
