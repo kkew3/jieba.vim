@@ -20,9 +20,10 @@ use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
 use super::core::failure::SemiTolerable;
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::motion::{
-    ExtendedMotionState, Markovian, MarkovianUnit, Motion, UnitMotion,
+    ExtendedMotionState, MarkovianUnit, Motion, UnitMotion,
 };
 use super::core::position::Position;
+use super::motions::text_object::ForwardWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
@@ -50,7 +51,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         word: bool,
     ) -> Result<NmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let mut motion = Markovian::new(UnitNmapW);
+        let mut motion = ForwardWord::new(false);
         let s = motion.map(&mut buffer, count, &mut cursor)?;
         Ok(NmapOutput {
             cursor,
