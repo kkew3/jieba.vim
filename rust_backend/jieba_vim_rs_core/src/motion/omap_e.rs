@@ -17,10 +17,10 @@ use crate::token::JiebaPlaceholder;
 
 use super::api::{OmapOutput, Selection, WordMotion};
 use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
-use super::core::failure::Intolerable;
+use super::core::failure::{Intolerable, SuppressFailure};
 use super::core::motion::{
     ExtendedMotionState, Markovian, MarkovianUnit, Motion, OneOffMotion,
-    OneOffUnit, SuppressFailure, UnitMotion,
+    OneOffUnit, UnitMotion,
 };
 use super::core::position::Position;
 use super::policy::d_special;

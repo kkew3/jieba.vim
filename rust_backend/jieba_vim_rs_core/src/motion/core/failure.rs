@@ -151,3 +151,16 @@ impl FoldState for AbsolutelyIntolerable {
         }
     }
 }
+
+#[derive(Default)]
+pub struct SuppressFailure<S>(S);
+
+impl<S: FoldState> FoldState for SuppressFailure<S> {
+    fn finalize(self) -> MotionState {
+        MotionState::Success
+    }
+
+    fn update(&mut self, state: ExtendedMotionState) -> Option<MotionState> {
+        self.0.update(state).map(|_| MotionState::Success)
+    }
+}
