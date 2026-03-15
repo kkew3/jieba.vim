@@ -56,6 +56,7 @@ mod inner {
     use super::ffi;
 
     /// Visualmode used in xmap.
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     pub enum VisualMode {
         Char,
         Line,
@@ -74,6 +75,7 @@ mod inner {
     }
 
     /// Output selection used to select operation range in omap.
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     pub enum Selection {
         /// Inclusive selection by characters.
         CharInclusive,
