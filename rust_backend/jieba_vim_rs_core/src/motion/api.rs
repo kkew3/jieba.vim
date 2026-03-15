@@ -176,11 +176,9 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         buffer: &B,
         motion: &[u8],
         cursor: ffi::CursorPositionCurswant,
-        mut count: u64,
+        count: u64,
     ) -> Result<ffi::NmapOutput, B::Error> {
-        if count == 0 {
-            count = 1;
-        }
+        let count = count.max(1);
         let cursor = cursor.into();
         let output = match motion {
             b"w" | b"W" => {
@@ -207,11 +205,9 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         motion: &[u8],
         visual_begin: ffi::Position,
         visual_end: ffi::Position,
-        mut count: u64,
+        count: u64,
     ) -> Result<ffi::XmapOutput<'a>, B::Error> {
-        if count == 0 {
-            count = 1;
-        }
+        let count = count.max(1);
         let visualmode = visualmode.into();
         let visual_begin = visual_begin.into();
         let visual_end = visual_end.into();
@@ -258,12 +254,10 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         buffer: &B,
         motion: &[u8],
         cursor: ffi::CursorPositionCurswant,
-        mut count: u64,
+        count: u64,
         operator: &[u8],
     ) -> Result<ffi::OmapOutput, B::Error> {
-        if count == 0 {
-            count = 1;
-        }
+        let count = count.max(1);
         let cursor = cursor.into();
         let output = match motion {
             b"w" | b"W" => {
