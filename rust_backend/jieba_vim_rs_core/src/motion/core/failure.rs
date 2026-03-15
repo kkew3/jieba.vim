@@ -60,7 +60,6 @@ pub enum SemiTolerable {
     #[default]
     Success,
     Failure,
-    Pending,
 }
 
 impl FoldState for SemiTolerable {
@@ -68,7 +67,6 @@ impl FoldState for SemiTolerable {
         match self {
             Self::Success => MotionState::Success,
             Self::Failure => MotionState::Failure,
-            Self::Pending => MotionState::Success,
         }
     }
 
@@ -78,15 +76,15 @@ impl FoldState for SemiTolerable {
         *self = match (*self, state) {
             (Failure, _) => Failure,
             (Success, ExtendedMotionState::Failure) => Failure,
-            (Success, ExtendedMotionState::Pending) => Pending,
             (Success, _) => Success,
-            (Pending, _) => Pending,
         };
-        match *self {
-            Failure => Some(MotionState::Failure),
-            Pending => Some(MotionState::Success),
-            Success => None,
+        if *self == Failure {
+            return Some(MotionState::Failure);
         }
+        if state == ExtendedMotionState::Pending {
+            return Some(MotionState::Success);
+        }
+        None
     }
 }
 
