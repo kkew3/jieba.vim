@@ -60,7 +60,7 @@ impl Motion<Position> for ForwardWord {
         let mut state = SemiTolerable::default();
         while count > 0 {
             count -= 1;
-            let mut unit_motion = UnitForwardMotion {
+            let mut unit_motion = UnitForwardWord {
                 eol: self.eol && count == 0,
             };
             if let Some(absorbing_state) =
@@ -75,12 +75,12 @@ impl Motion<Position> for ForwardWord {
 
 /// Note that this is a [`UnitMotion`], but not a
 /// [`MarkovianUnit`](crate::motion::core::motion::MarkovianUnit).
-struct UnitForwardMotion {
+struct UnitForwardWord {
     /// True to stop at Eol in *this* motion.
     eol: bool,
 }
 
-impl UnitMotion<Position> for UnitForwardMotion {
+impl UnitMotion<Position> for UnitForwardWord {
     fn unit_map<B: ParsedBufferLike + ?Sized>(
         &mut self,
         buffer: &mut B,
@@ -105,6 +105,7 @@ impl UnitMotion<Position> for UnitForwardMotion {
                 }
                 Some(next_t) => {
                     // If `next_t` exists, `cursor_token` can't be empty.
+                    assert!(!cursor_token.is_empty());
                     if cursor_token.at_end(*col) && next_t.is_empty() {
                         // If `cursor_token` is at eof and `col` is at end of
                         // `cursor_token`, jump to the Eol(_) and return
@@ -114,17 +115,10 @@ impl UnitMotion<Position> for UnitForwardMotion {
                     }
                     if next_t.is_empty() {
                         // If `cursor_token` is at eof and `col` is *not* at
-                        // end of `cursor_token` ..
-                        let s = match cursor_token {
-                            // As above, if `next_t` exists, `cursor_token`
-                            // can't be empty.
-                            GToken::Eol(_) => unreachable!(),
-                            GToken::T(t) => {
-                                *col = t.last_char();
-                                ExtendedMotionState::Pending
-                            }
-                        };
-                        return Ok(s);
+                        // end of `cursor_token`, do the same, but return
+                        // Pending.
+                        *col = next_t.first_char();
+                        return Ok(ExtendedMotionState::Pending);
                     }
                     // Till here, there must be at least one non-empty token
                     // after `cursor_token`, if we are in the last line of the
@@ -146,7 +140,7 @@ impl UnitMotion<Position> for UnitForwardMotion {
                 // `line` can't be empty when `lnum` == `n_lines` at the very
                 // beginning, as we have covered above.
                 if *lnum >= n_lines {
-                    // Calling |w| on a Space at bof ..
+                    // Calling |w| on a Space at eof ..
                     break ExtendedMotionState::Pending;
                 }
                 *lnum += 1;
