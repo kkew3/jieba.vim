@@ -138,7 +138,7 @@ impl From<Token> for GToken {
 
 /// Get the index of the token in `tokens` where `col` is contained. Return
 /// None if `col` is at the Eol of `tokens`.
-pub fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
+fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
     tokens.binary_search_by(|t| t.cmp(col)).ok()
 }
 
