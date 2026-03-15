@@ -15,3 +15,5 @@
 //! The motions.
 
 pub mod text_object;
+
+use super::core;

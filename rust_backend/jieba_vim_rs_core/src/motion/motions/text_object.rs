@@ -26,16 +26,15 @@
 //! Note that the term "text objects" is quoted from Bram's C code. It refers
 //! to all atomic word motions underneath |w|, |b|, |e|, |ge|, |iw|, |aw|.
 
-use crate::motion::core::buffer::ParsedBufferLike;
-use crate::motion::core::failure::SemiTolerable;
-use crate::motion::core::iter::{
-    ExtendedInlineTokensIter, GToken, TokenLikeExt,
-};
-use crate::motion::core::motion::{
+use crate::token::{TokenLike, TokenType};
+
+use super::core::buffer::ParsedBufferLike;
+use super::core::failure::SemiTolerable;
+use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
+use super::core::motion::{
     ExtendedMotionState, FoldState, Motion, MotionState, UnitMotion,
 };
-use crate::motion::core::position::Position;
-use crate::token::{TokenLike, TokenType};
+use super::core::position::Position;
 
 /// Move forward `count` words.
 pub struct ForwardWord {

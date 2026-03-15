@@ -17,3 +17,5 @@
 pub mod adjust_cursor;
 pub mod d_special;
 pub mod exclusive_special;
+
+use super::core;

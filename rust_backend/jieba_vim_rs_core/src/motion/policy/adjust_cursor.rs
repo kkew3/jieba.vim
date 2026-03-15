@@ -21,10 +21,11 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::motion::core::buffer::ParsedBufferLike;
-use crate::motion::core::iter::{ExtendedInlineTokensIter, GToken};
-use crate::motion::core::position::Position;
 use crate::token::TokenLike;
+
+use super::core::buffer::ParsedBufferLike;
+use super::core::iter::{ExtendedInlineTokensIter, GToken};
+use super::core::position::Position;
 
 /// Used after a movement command: If the cursor ends up on the Eol(_),
 /// may move it back to the last character in the line and make the motion
