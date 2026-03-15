@@ -17,7 +17,7 @@ use std::marker::PhantomData;
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 
-use super::api::{OmapOutput, WordMotion};
+use super::api::{OmapOutput, Selection, WordMotion};
 use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
 use super::core::failure::Intolerable;
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
@@ -25,7 +25,7 @@ use super::core::motion::{
     ExtendedMotionState, FoldState, Markovian, MarkovianUnit, Motion,
     MotionState, UnitMotion,
 };
-use super::core::position::{CursorPositionCurswant, Position};
+use super::core::position::Position;
 use super::omap_e::UnitOmapERangle;
 use super::policy::d_special;
 use super::xmap_w::UnitXmapW;
@@ -56,20 +56,19 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn omap_w<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor: CursorPositionCurswant,
+        cursor: Position,
         count: u64,
         word: bool,
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
         assert!(count >= 1);
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let [bufnum, lnum, col, off, _] = cursor;
-        let langle = [bufnum, lnum, col, off];
+        let langle = cursor;
         let mut rangle = langle;
 
-        let tokens = buffer.getline_parsed(lnum)?;
+        let tokens = buffer.getline_parsed(cursor.lnum)?;
         let mut line = ExtendedInlineTokensIter::new(&tokens)
-            .skip_col(col)
+            .skip_col(cursor.col)
             .expect("col too large")
             .peekable();
         let cursor_token = line.peek().unwrap();
@@ -87,8 +86,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 cursor: langle,
                 langle,
                 rangle,
-                visualmode: b"v",
-                selection: b"inclusive",
+                selection: Selection::CharInclusive,
                 prevent_change,
             });
         }
@@ -105,9 +103,8 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 cursor: langle,
                 langle,
                 rangle,
-                visualmode: b"v",
-                selection: b"exclusive",
-                prevent_change: b"0",
+                selection: Selection::CharExclusive,
+                prevent_change: false,
             },
             Some(prev_cursor) => {
                 let n_lines = buffer.lines()?;
@@ -120,15 +117,14 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                     motion_rangle_first_stage.last_motion_ends_with_failure,
                 )?;
                 match selection {
-                    Selection::Colon => OmapOutput {
+                    WSpecialSelection::Colon => OmapOutput {
                         cursor: langle,
                         langle,
                         rangle,
-                        visualmode: b"v",
-                        selection: b"colon",
-                        prevent_change: b"0",
+                        selection: Selection::OperatorColon,
+                        prevent_change: false,
                     },
-                    Selection::Exclusive => {
+                    WSpecialSelection::Exclusive => {
                         if operator == b"d"
                             && d_special::is_d_special(
                                 &mut buffer,
@@ -148,22 +144,20 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 cursor,
                                 langle,
                                 rangle,
-                                visualmode: b"V",
-                                selection: b"inclusive",
-                                prevent_change: b"0",
+                                selection: Selection::LineInclusive,
+                                prevent_change: false,
                             }
                         } else {
                             OmapOutput {
                                 cursor: langle,
                                 langle,
                                 rangle,
-                                visualmode: b"v",
-                                selection: b"exclusive",
-                                prevent_change: b"0",
+                                selection: Selection::CharExclusive,
+                                prevent_change: false,
                             }
                         }
                     }
-                    Selection::Inclusive => {
+                    WSpecialSelection::Inclusive => {
                         if operator == b"d"
                             && d_special::is_d_special(
                                 &mut buffer,
@@ -183,18 +177,16 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 cursor,
                                 langle,
                                 rangle,
-                                visualmode: b"V",
-                                selection: b"inclusive",
-                                prevent_change: b"0",
+                                selection: Selection::LineInclusive,
+                                prevent_change: false,
                             }
                         } else {
                             OmapOutput {
                                 cursor: langle,
                                 langle,
                                 rangle,
-                                visualmode: b"v",
-                                selection: b"inclusive",
-                                prevent_change: b"0",
+                                selection: Selection::CharInclusive,
+                                prevent_change: false,
                             }
                         }
                     }
@@ -272,7 +264,7 @@ where
     }
 }
 
-enum Selection {
+enum WSpecialSelection {
     Exclusive,
     Inclusive,
     /// The operator-colon trick. Works when the last token moved over is an
@@ -288,13 +280,21 @@ fn operator_w_special_case<'b, 'p, B, C>(
     prev_cursor: Position,
     count_eq_1: bool,
     last_motion_ends_with_failure: bool,
-) -> Result<Selection, B::Error>
+) -> Result<WSpecialSelection, B::Error>
 where
     B: BufferLike + ?Sized,
     C: JiebaPlaceholder,
 {
-    let [_, lnum0, col0, _] = langle;
-    let [_, lnum1, col1, _] = rangle;
+    let Position {
+        lnum: lnum0,
+        col: col0,
+        ..
+    } = langle;
+    let Position {
+        lnum: lnum1,
+        col: col1,
+        ..
+    } = rangle;
 
     let tokens = buffer.getline_parsed(*lnum0)?;
     // This is how the `langle_token` (commented below) would be defined:
@@ -333,10 +333,10 @@ where
         // inclusive and exclusive leads to the same operation range, we will
         // pick exclusive. Don't need to move langle/rangle in this case.
         let s = match rangle_token {
-            GToken::Eol(_) => Selection::Exclusive,
+            GToken::Eol(_) => WSpecialSelection::Exclusive,
             GToken::T(t) => match t.ty {
                 TokenType::Space => unreachable!(),
-                TokenType::Word => Selection::Exclusive,
+                TokenType::Word => WSpecialSelection::Exclusive,
             },
         };
         return Ok(s);
@@ -372,13 +372,13 @@ where
             GToken::Eol(_) => {
                 *lnum1 = *lnum0 + 1;
                 *col1 = 1;
-                Selection::Colon
+                WSpecialSelection::Colon
             }
             GToken::T(t) => match t.ty {
                 TokenType::Space => {
                     *lnum1 = *lnum0;
                     *col1 = t.last_char();
-                    Selection::Inclusive
+                    WSpecialSelection::Inclusive
                 }
                 TokenType::Word => {
                     *lnum1 = *lnum0;
@@ -395,7 +395,7 @@ where
                             },
                         }
                     }
-                    Selection::Inclusive
+                    WSpecialSelection::Inclusive
                 }
             },
         };
@@ -408,7 +408,11 @@ where
         // if `rangle` is an empty line, we simply apply operator-colon trick;
         // else, span the motion range exclusively up to `rangle`.
 
-        let [_, rangle_lnum, rangle_col, _] = *rangle;
+        let Position {
+            lnum: rangle_lnum,
+            col: rangle_col,
+            ..
+        } = *rangle;
         let rangle_token =
             ExtendedInlineTokensIter::new(&buffer.getline_parsed(rangle_lnum)?)
                 .take_col_rev(rangle_col)
@@ -422,9 +426,9 @@ where
                 // at eof, don't need to set `lnum1` here. And since at
                 // empty line `col1` is already 1, don't need to set it
                 // either.
-                Selection::Colon
+                WSpecialSelection::Colon
             }
-            GToken::Eol(_) => Selection::Exclusive,
+            GToken::Eol(_) => WSpecialSelection::Exclusive,
         };
         return Ok(s);
     }
@@ -481,7 +485,11 @@ where
     //   * 'l' -> ...
 
     // Revert one jump to `prev_cursor`.
-    let [_, prev_lnum, prev_col, _] = prev_cursor;
+    let Position {
+        lnum: prev_lnum,
+        col: prev_col,
+        ..
+    } = prev_cursor;
     let tokens = buffer.getline_parsed(prev_lnum)?;
     let mut line = ExtendedInlineTokensIter::new(&tokens)
         .skip_col(prev_col)
@@ -494,7 +502,7 @@ where
             assert!(*lnum1 >= prev_lnum + 1);
             *lnum1 = prev_lnum + 1;
             *col1 = 1;
-            Selection::Colon
+            WSpecialSelection::Colon
         }
         GToken::Eol(_) => unreachable!(),
         GToken::T(t) => match t.ty {
@@ -516,12 +524,12 @@ where
                 if exclusive {
                     assert_eq!(*lnum1, prev_lnum);
                     *col1 = prev_token.last_char1();
-                    Selection::Exclusive
+                    WSpecialSelection::Exclusive
                 } else {
                     assert!(*lnum1 >= prev_lnum);
                     *lnum1 = prev_lnum;
                     *col1 = prev_token.last_char();
-                    Selection::Inclusive
+                    WSpecialSelection::Inclusive
                 }
             }
         },

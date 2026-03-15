@@ -15,14 +15,14 @@
 use crate::BufferLike;
 use crate::token::JiebaPlaceholder;
 
-use super::api::{OmapOutput, WordMotion};
+use super::api::{OmapOutput, Selection, WordMotion};
 use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
 use super::core::failure::Intolerable;
 use super::core::motion::{
     ExtendedMotionState, Markovian, MarkovianUnit, Motion, OneOffMotion,
     OneOffUnit, SuppressFailure, UnitMotion,
 };
-use super::core::position::{CursorPositionCurswant, Position};
+use super::core::position::Position;
 use super::policy::d_special;
 use super::xmap_e::UnitXmapE;
 
@@ -47,14 +47,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn omap_e<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: CursorPositionCurswant,
+        cursor_pos: Position,
         count: u64,
         word: bool,
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let [bufnum, lnum, col, off, _] = cursor_pos;
-        let mut langle = [bufnum, lnum, col, off];
+        let mut langle = cursor_pos;
         let mut rangle = langle;
         let mut motion_langle = OneOffMotion::new(UnitOmapELangle);
         let mut motion_rangle = Markovian::new(UnitOmapERangle);
@@ -77,8 +76,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 cursor,
                 langle,
                 rangle,
-                visualmode: b"V",
-                selection: b"inclusive",
+                selection: Selection::LineInclusive,
                 prevent_change,
             }
         } else {
@@ -86,8 +84,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 cursor: langle,
                 langle,
                 rangle,
-                visualmode: b"v",
-                selection: b"inclusive",
+                selection: Selection::CharInclusive,
                 prevent_change,
             }
         };
@@ -103,8 +100,7 @@ impl UnitMotion<Position> for UnitOmapELangle {
         _buffer: &mut B,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
-        let [_, _, _, off] = cursor;
-        *off = 0;
+        cursor.off = 0;
         Ok(ExtendedMotionState::Success)
     }
 }

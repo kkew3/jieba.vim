@@ -16,19 +16,62 @@
 
 use std::fmt::{self, Display};
 
-/// The 4-element list of numbers \[0, lnum, col, off] as returned by Vim's
-/// `getpos(...)` where ... equals `.` or `'{local_mark}`. `lnum` and `col`
-/// are indexed from 1. `off` is indexed from 0.
-pub type Position = [usize; 4];
+/// Position types related to FFI bindings.
+pub mod ffi {
+    /// The 4-element list of numbers \[0, lnum, col, off] as returned by Vim's
+    /// `getpos(...)` where ... equals `.` or `'{local_mark}`. `lnum` and `col`
+    /// are indexed from 1. `off` is indexed from 0.
+    pub type Position = [usize; 4];
 
-/// The 5-element list of numbers \[0, lnum, col, off, curswant] as returned by
-/// Vim's `getcurpos()`. `lnum`, `col` and `curswant` are indexed from 1. `off`
-/// is indexed from 0.
-pub type CursorPositionCurswant = [usize; 5];
+    /// The 5-element list of numbers \[0, lnum, col, off, curswant] as returned by
+    /// Vim's `getcurpos()`. `lnum`, `col` and `curswant` are indexed from 1. `off`
+    /// is indexed from 0.
+    pub type CursorPositionCurswant = [usize; 5];
 
-/// The 2-element list of numbers \[col, off], used when `lnum` is irrelevant
-/// in context of [`CurrentBufferPosition`].
-pub type ColumnPosition = [usize; 2];
+    /// The 2-element list of numbers \[col, off], used when `lnum` is irrelevant
+    /// in context of [`CurrentBufferPosition`].
+    pub type ColumnPosition = [usize; 2];
+}
+
+/// A position in current text buffer.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub struct Position {
+    /// The line number, indexed from 1.
+    pub lnum: usize,
+    /// The column number, indexed from 1.
+    pub col: usize,
+    /// The virtual column offset, indexed from 0.
+    pub off: usize,
+}
+
+impl Position {
+    /// Create a new [`Position`] with `off` equal zero.
+    pub fn new(lnum: usize, col: usize) -> Self {
+        Self { lnum, col, off: 0 }
+    }
+}
+
+impl From<ffi::Position> for Position {
+    fn from(value: ffi::Position) -> Self {
+        let [bufnum, lnum, col, off] = value;
+        assert_eq!(bufnum, 0);
+        Self { lnum, col, off }
+    }
+}
+
+impl From<ffi::CursorPositionCurswant> for Position {
+    fn from(value: ffi::CursorPositionCurswant) -> Self {
+        let [bufnum, lnum, col, off, _] = value;
+        assert_eq!(bufnum, 0);
+        Self { lnum, col, off }
+    }
+}
+
+impl From<Position> for ffi::Position {
+    fn from(value: Position) -> Self {
+        [0, value.lnum, value.col, value.off]
+    }
+}
 
 #[derive(Debug)]
 pub enum PositionError {

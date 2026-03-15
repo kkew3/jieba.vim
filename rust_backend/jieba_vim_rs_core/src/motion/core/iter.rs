@@ -26,7 +26,8 @@ use std::iter::{Rev, Skip, Take};
 
 use crate::token::{Token, TokenLike};
 
-use super::position::{ColumnPosition, PositionError};
+use super::position::PositionError;
+use super::position::ffi::ColumnPosition;
 
 pub trait TokenLikeExt: TokenLike {
     /// `true` if `(col, off)` is on self token.

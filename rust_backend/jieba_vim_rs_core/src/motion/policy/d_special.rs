@@ -42,8 +42,16 @@ pub fn is_d_special<B: ParsedBufferLike + ?Sized>(
     } else {
         (rangle, langle)
     };
-    let [_, llnum, lcol, _] = langle;
-    let [_, rlnum, rcol, _] = rangle;
+    let Position {
+        lnum: llnum,
+        col: lcol,
+        ..
+    } = langle;
+    let Position {
+        lnum: rlnum,
+        col: rcol,
+        ..
+    } = rangle;
     if rcol == 1 && !inclusive {
         panic!(
             "`exclusive + rcol=1` case must be handled first by \
@@ -106,10 +114,10 @@ pub fn reset_cursor_when_d_special(
     rangle: &Position,
     cursor: &mut Position,
 ) {
-    let [_, llnum, _, _] = langle;
-    let [_, rlnum, _, _] = rangle;
-    let [_, lnum, col, off] = cursor;
-    if *llnum == 1 && *rlnum == n_lines {
+    let llnum = langle.lnum;
+    let rlnum = rangle.lnum;
+    let Position { lnum, col, off } = cursor;
+    if llnum == 1 && rlnum == n_lines {
         *lnum = 1;
         *col = 1;
         *off = 0;

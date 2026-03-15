@@ -15,10 +15,10 @@
 use crate::BufferLike;
 use crate::token::JiebaPlaceholder;
 
-use super::api::{OmapOutput, WordMotion};
+use super::api::{OmapOutput, Selection, WordMotion};
 use super::core::buffer::ParsedBuffer;
 use super::core::motion::{Markovian, Motion, MotionState};
-use super::core::position::CursorPositionCurswant;
+use super::core::position::Position;
 use super::nmap_b::UnitNmapB;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
@@ -41,14 +41,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn omap_b<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: CursorPositionCurswant,
+        cursor_pos: Position,
         count: u64,
         word: bool,
         _operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let [bufnum, lnum, col, off, _] = cursor_pos;
-        let langle = [bufnum, lnum, col, off];
+        let langle = cursor_pos;
         let mut rangle = langle;
         let mut motion = Markovian::new(UnitNmapB);
         // Motion state is transitive from nmap_b to omap_b.
@@ -57,9 +56,8 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 cursor: rangle,
                 langle,
                 rangle,
-                visualmode: b"v", // is arbitrary due to the failure
-                selection: b"exclusive", // is arbitrary due to the failure
-                prevent_change: b"1",
+                selection: Selection::CharExclusive, // is arbitrary due to the failure
+                prevent_change: true,
             },
             MotionState::Success => {
                 // Apply operator-colon trick whatsoever.
@@ -70,12 +68,11 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                     // verifier is satisfactory, as it's always a valid
                     // position even if the buffer becomes empty due to
                     // d-special.
-                    cursor: [bufnum, 1, 1, 0],
+                    cursor: Position::new(1, 1),
                     langle,
                     rangle,
-                    visualmode: b"v",
-                    selection: b"colon",
-                    prevent_change: b"0",
+                    selection: Selection::OperatorColon,
+                    prevent_change: false,
                 }
             }
         };

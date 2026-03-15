@@ -22,7 +22,7 @@ use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::motion::{
     ExtendedMotionState, Markovian, MarkovianUnit, Motion, UnitMotion,
 };
-use super::core::position::{CursorPositionCurswant, Position};
+use super::core::position::Position;
 
 /// Test if a token is stoppable for `nmap_b`.
 fn is_stoppable(token: &GToken) -> bool {
@@ -38,9 +38,9 @@ fn is_stoppable(token: &GToken) -> bool {
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `b` (if `word` is `true`) or `B` (if `word` is `false`) in
-    /// normal mode. Take in `cursor_pos` (0, lnum, col, off, _), and return
-    /// the new cursor position. We denote both `word` and `WORD` with the
-    /// English word "word" below.
+    /// normal mode. Take in `cursor` (0, lnum, col, off, _), and return the
+    /// new cursor position. We denote both `word` and `WORD` with the English
+    /// word "word" below.
     ///
     /// # Basics
     ///
@@ -57,13 +57,11 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn nmap_b<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: CursorPositionCurswant,
+        mut cursor: Position,
         count: u64,
         word: bool,
     ) -> Result<NmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let [bufnum, lnum, col, off, _] = cursor_pos;
-        let mut cursor = [bufnum, lnum, col, off];
         let mut motion = Markovian::new(UnitNmapB);
         let s = motion.map(&mut buffer, count, &mut cursor)?;
         Ok(NmapOutput {
@@ -83,7 +81,7 @@ impl UnitMotion<Position> for UnitNmapB {
         buffer: &mut B,
         cursor: &mut Position,
     ) -> Result<ExtendedMotionState, B::Error> {
-        let [_, lnum, col, off] = cursor;
+        let Position { lnum, col, off } = cursor;
         *off = 0;
 
         // Quick path.

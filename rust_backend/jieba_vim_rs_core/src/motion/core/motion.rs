@@ -28,10 +28,10 @@ pub enum MotionState {
 }
 
 impl MotionState {
-    pub fn into_prevent_change(self) -> &'static [u8] {
+    pub fn into_prevent_change(self) -> bool {
         match self {
-            MotionState::Failure => b"1",
-            MotionState::Success => b"0",
+            MotionState::Failure => true,
+            MotionState::Success => false,
         }
     }
 }

@@ -17,32 +17,146 @@
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, Tokenizer};
 
-use super::core::position::{CursorPositionCurswant, Position};
-
 pub struct WordMotion<C> {
     pub(super) tokenizer: Tokenizer<C>,
 }
 
-pub struct NmapOutput {
-    pub cursor: Position,
-    pub prevent_change: &'static [u8],
+/// Output types related to FFI bindings.
+pub mod ffi {
+    pub use crate::motion::core::position::ffi::{
+        CursorPositionCurswant, Position,
+    };
+
+    pub struct NmapOutput {
+        pub cursor: Position,
+        pub prevent_change: &'static [u8],
+    }
+
+    pub struct XmapOutput<'a> {
+        pub langle: Position,
+        pub rangle: Position,
+        pub visualmode: &'a [u8],
+        pub prevent_change: &'static [u8],
+    }
+
+    pub struct OmapOutput {
+        pub cursor: Position,
+        pub langle: Position,
+        pub rangle: Position,
+        pub visualmode: &'static [u8],
+        pub selection: &'static [u8],
+        pub prevent_change: &'static [u8],
+    }
 }
 
-pub struct XmapOutput<'a> {
-    pub langle: Position,
-    pub rangle: Position,
-    pub visualmode: &'a [u8],
-    pub prevent_change: &'static [u8],
+/// Output types for inner-crate use.
+mod inner {
+    use crate::motion::core::position::Position;
+
+    use super::ffi;
+
+    /// Visualmode used in xmap.
+    pub enum VisualMode {
+        Char,
+        Line,
+        Block,
+    }
+
+    impl From<&[u8]> for VisualMode {
+        fn from(value: &[u8]) -> Self {
+            match value {
+                b"v" => Self::Char,
+                b"V" => Self::Line,
+                b"\x16" | br"\<C-v>" | br"\u0016" => Self::Block,
+                bs => panic!("cannot convert bytes `{:?}` to VisualMode", bs),
+            }
+        }
+    }
+
+    /// Output selection used to select operation range in omap.
+    pub enum Selection {
+        /// Inclusive selection by characters.
+        CharInclusive,
+        /// Exclusive selection by characters.
+        CharExclusive,
+        /// Selection by line (always inclusive).
+        LineInclusive,
+        /// Implicit selection by operator-colon trick, e.g.
+        /// `d:call cursor(lnum, col)<CR>`.
+        OperatorColon,
+    }
+
+    pub struct NmapOutput {
+        pub cursor: Position,
+        pub prevent_change: bool,
+    }
+
+    pub struct XmapOutput {
+        pub langle: Position,
+        pub rangle: Position,
+        pub visualmode: VisualMode,
+        pub prevent_change: bool,
+    }
+
+    pub struct OmapOutput {
+        pub cursor: Position,
+        pub langle: Position,
+        pub rangle: Position,
+        pub selection: Selection,
+        pub prevent_change: bool,
+    }
+
+    fn to_prevent_change(prevent_change: bool) -> &'static [u8] {
+        if prevent_change { b"1" } else { b"0" }
+    }
+
+    impl From<NmapOutput> for ffi::NmapOutput {
+        fn from(value: NmapOutput) -> Self {
+            Self {
+                cursor: value.cursor.into(),
+                prevent_change: to_prevent_change(value.prevent_change),
+            }
+        }
+    }
+
+    impl<'a> From<XmapOutput> for ffi::XmapOutput<'a> {
+        fn from(value: XmapOutput) -> Self {
+            Self {
+                langle: value.langle.into(),
+                rangle: value.rangle.into(),
+                visualmode: match value.visualmode {
+                    VisualMode::Char => b"v",
+                    VisualMode::Line => b"V",
+                    VisualMode::Block => b"\x16",
+                },
+                prevent_change: to_prevent_change(value.prevent_change),
+            }
+        }
+    }
+
+    impl From<OmapOutput> for ffi::OmapOutput {
+        fn from(value: OmapOutput) -> Self {
+            let (visualmode, selection) = match value.selection {
+                Selection::CharInclusive => (b"v", b"inclusive".as_ref()),
+                Selection::CharExclusive => (b"v", b"exclusive".as_ref()),
+                Selection::LineInclusive => (b"V", b"inclusive".as_ref()),
+                Selection::OperatorColon => (b"v", b"colon".as_ref()),
+            };
+            Self {
+                cursor: value.cursor.into(),
+                langle: value.langle.into(),
+                rangle: value.rangle.into(),
+                visualmode,
+                selection,
+                prevent_change: to_prevent_change(value.prevent_change),
+            }
+        }
+    }
 }
 
-pub struct OmapOutput {
-    pub cursor: Position,
-    pub langle: Position,
-    pub rangle: Position,
-    pub visualmode: &'static [u8],
-    pub selection: &'static [u8],
-    pub prevent_change: &'static [u8],
-}
+pub(crate) use inner::{
+    NmapOutput, OmapOutput, Selection, VisualMode, XmapOutput,
+};
 
 impl<C> WordMotion<C> {
     pub fn new(tokenizer: Tokenizer<C>) -> Self {
@@ -59,13 +173,14 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         &mut self,
         buffer: &B,
         motion: &[u8],
-        cursor: CursorPositionCurswant,
+        cursor: ffi::CursorPositionCurswant,
         mut count: u64,
-    ) -> Result<NmapOutput, B::Error> {
+    ) -> Result<ffi::NmapOutput, B::Error> {
         if count == 0 {
             count = 1;
         }
-        match motion {
+        let cursor = cursor.into();
+        let output = match motion {
             b"w" | b"W" => {
                 self.nmap_w(buffer, cursor, count, motion[0] == b'w')
             }
@@ -79,7 +194,8 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 self.nmap_ge(buffer, cursor, count, motion[1] == b'e')
             }
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
-        }
+        }?;
+        Ok(output.into())
     }
 
     pub fn xmap<'a, B: BufferLike + ?Sized>(
@@ -87,14 +203,17 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         buffer: &B,
         visualmode: &'a [u8],
         motion: &[u8],
-        visual_begin: Position,
-        visual_end: Position,
+        visual_begin: ffi::Position,
+        visual_end: ffi::Position,
         mut count: u64,
-    ) -> Result<XmapOutput<'a>, B::Error> {
+    ) -> Result<ffi::XmapOutput<'a>, B::Error> {
         if count == 0 {
             count = 1;
         }
-        match motion {
+        let visualmode = visualmode.into();
+        let visual_begin = visual_begin.into();
+        let visual_end = visual_end.into();
+        let output = match motion {
             b"w" | b"W" => self.xmap_w(
                 buffer,
                 visualmode,
@@ -128,21 +247,23 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 motion[1] == b'e',
             ),
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
-        }
+        }?;
+        Ok(output.into())
     }
 
     pub fn omap<B: BufferLike + ?Sized>(
         &mut self,
         buffer: &B,
         motion: &[u8],
-        cursor: CursorPositionCurswant,
+        cursor: ffi::CursorPositionCurswant,
         mut count: u64,
         operator: &[u8],
-    ) -> Result<OmapOutput, B::Error> {
+    ) -> Result<ffi::OmapOutput, B::Error> {
         if count == 0 {
             count = 1;
         }
-        match motion {
+        let cursor = cursor.into();
+        let output = match motion {
             b"w" | b"W" => {
                 self.omap_w(buffer, cursor, count, motion[0] == b'w', operator)
             }
@@ -156,6 +277,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 self.omap_ge(buffer, cursor, count, motion[1] == b'e', operator)
             }
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
-        }
+        }?;
+        Ok(output.into())
     }
 }

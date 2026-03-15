@@ -28,4 +28,5 @@ mod xmap_e;
 mod xmap_ge;
 mod xmap_w;
 
-pub use api::{NmapOutput, OmapOutput, WordMotion, XmapOutput};
+pub use api::WordMotion;
+pub use api::ffi::{NmapOutput, OmapOutput, XmapOutput};

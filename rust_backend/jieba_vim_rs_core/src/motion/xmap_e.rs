@@ -15,7 +15,7 @@
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, TokenLike};
 
-use super::api::{WordMotion, XmapOutput};
+use super::api::{VisualMode, WordMotion, XmapOutput};
 use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
 use super::core::failure::Intolerable;
 use super::core::iter::{ExtendedInlineTokensIter, GToken};
@@ -43,15 +43,15 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     /// - If there is no next word to the right of current cursor, jump to one
     ///   character to the right of the last character of the last token in the
     ///   buffer. And the motion should be taken as a failure.
-    pub fn xmap_e<'a, B: BufferLike + ?Sized>(
+    pub fn xmap_e<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        visualmode: &'a [u8],
+        visualmode: VisualMode,
         visual_begin: Position,
         mut visual_end: Position,
         count: u64,
         word: bool,
-    ) -> Result<XmapOutput<'a>, B::Error> {
+    ) -> Result<XmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let mut motion = Markovian::new(UnitXmapE);
         let s = motion.map(&mut buffer, count, &mut visual_end)?;
@@ -77,7 +77,7 @@ impl UnitMotion<Position> for UnitXmapE {
 
         let s = UnitNmapE.unit_map(buffer, cursor)?;
         if s == Failure || s == Pending {
-            let [_, lnum, col, _] = cursor;
+            let Position { lnum, col, .. } = cursor;
             let tokens = buffer.getline_parsed(*lnum)?;
             let cursor_token = ExtendedInlineTokensIter::new(&tokens)
                 .skip_col(*col)
