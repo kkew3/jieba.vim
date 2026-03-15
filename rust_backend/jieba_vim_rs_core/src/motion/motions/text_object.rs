@@ -187,18 +187,15 @@ fn find_stop_point<L: IntoIterator<Item = GToken>>(
         *col = token.first_char();
         match token {
             GToken::Eol(1) => {
-                *col = token.first_char();
                 return Some(token);
             }
             GToken::Eol(_) => {
-                *col = token.first_char();
                 if eol {
                     return Some(token);
                 }
             }
             GToken::T(t) => match t.ty {
                 TokenType::Word => {
-                    *col = token.first_char();
                     return Some(token);
                 }
                 TokenType::Space => *col = token.last_char(),
