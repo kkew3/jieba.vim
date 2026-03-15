@@ -14,5 +14,6 @@
 
 //! Vim quirks and mode-specific rules.
 
+pub mod adjust_cursor;
 pub mod d_special;
 pub mod exclusive_special;

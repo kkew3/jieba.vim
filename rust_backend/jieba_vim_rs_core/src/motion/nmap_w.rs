@@ -24,6 +24,7 @@ use super::core::motion::{
 };
 use super::core::position::Position;
 use super::motions::text_object::ForwardWord;
+use super::policy::adjust_cursor::AdjustCursor;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
@@ -53,6 +54,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let mut motion = ForwardWord::new(false);
         let s = motion.map(&mut buffer, count, &mut cursor)?;
+        cursor.adjust_cursor(&mut buffer)?;
         Ok(NmapOutput {
             cursor,
             prevent_change: s.into_prevent_change(),
