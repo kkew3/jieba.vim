@@ -1,4 +1,4 @@
-// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,8 +12,7 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-mod buffer;
-pub mod motion;
-pub mod token;
+//! Vim quirks and mode-specific rules.
 
-pub use buffer::BufferLike;
+pub mod d_special;
+pub mod exclusive_special;

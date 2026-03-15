@@ -22,11 +22,12 @@
 //!
 //! Check <https://vimhelp.org/change.txt.html#d-special> for details.
 
-use crate::Position;
+use crate::motion::core::buffer::ParsedBufferLike;
+use crate::motion::core::iter::{
+    ExtendedInlineTokensIter, GToken, TokenLikeExt,
+};
+use crate::motion::core::position::Position;
 use crate::token::TokenType;
-
-use super::parsed_buffer::ParsedBufferLike;
-use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.

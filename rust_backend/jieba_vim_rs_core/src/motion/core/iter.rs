@@ -24,8 +24,9 @@
 use std::cmp::Ordering;
 use std::iter::{Rev, Skip, Take};
 
-use crate::position::{ColumnPosition, PositionError};
 use crate::token::{Token, TokenLike};
+
+use super::position::{ColumnPosition, PositionError};
 
 pub trait TokenLikeExt: TokenLike {
     /// `true` if `(col, off)` is on self token.

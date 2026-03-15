@@ -12,16 +12,17 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
-use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
-use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
-use super::word_motion::{
-    AbsolutelyIntolerable, ExtendedMotionState, Markovian, MarkovianUnit,
-    Motion, UnitMotion,
+use super::api::{NmapOutput, WordMotion};
+use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
+use super::core::failure::AbsolutelyIntolerable;
+use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
+use super::core::motion::{
+    ExtendedMotionState, Markovian, MarkovianUnit, Motion, UnitMotion,
 };
-use super::{NmapOutput, WordMotion};
+use super::core::position::{CursorPositionCurswant, Position};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `e` (if `word` is `true`) or `E` (if `word` is `false`) in

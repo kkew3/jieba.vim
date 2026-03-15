@@ -14,18 +14,21 @@
 
 use std::marker::PhantomData;
 
+use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
-use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::omap_e::UnitOmapERangle;
-use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
-use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
-use super::word_motion::{
-    ExtendedMotionState, FoldState, Intolerable, Markovian, MarkovianUnit,
-    Motion, MotionState, UnitMotion,
+use super::api::{OmapOutput, WordMotion};
+use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
+use super::core::failure::Intolerable;
+use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
+use super::core::motion::{
+    ExtendedMotionState, FoldState, Markovian, MarkovianUnit, Motion,
+    MotionState, UnitMotion,
 };
+use super::core::position::{CursorPositionCurswant, Position};
+use super::omap_e::UnitOmapERangle;
+use super::policy::d_special;
 use super::xmap_w::UnitXmapW;
-use super::{OmapOutput, WordMotion, d_special};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
