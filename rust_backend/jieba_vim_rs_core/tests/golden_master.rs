@@ -38,6 +38,9 @@ struct Cli {
     /// Be quiet.
     #[arg(short, long, default_value_t = false)]
     quiet: bool,
+    /// Run test cases that contain this string only.
+    #[arg(short, long)]
+    case: Option<String>,
     /// The jsonl files containing model inputs/outputs origined from last unit
     /// verification. If the files are named ending with ".gz", they will be
     /// decompressed automatically. Will also read all jsonl or jsonl.gz files
@@ -81,6 +84,7 @@ fn main() {
     }
     let mut args = Arguments::default();
     args.quiet = cli.quiet;
+    args.filter = cli.case;
     libtest_mimic::run(&args, trials).exit();
 }
 
