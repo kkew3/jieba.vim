@@ -20,9 +20,10 @@ use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
 use super::core::failure::Intolerable;
 use super::core::iter::{ExtendedInlineTokensIter, GToken};
 use super::core::motion::{
-    ExtendedMotionState, Markovian, MarkovianUnit, Motion, UnitMotion,
+    ExtendedMotionState, MarkovianUnit, Motion, UnitMotion,
 };
 use super::core::position::Position;
+use super::motions::text_object::EndWord;
 use super::nmap_e::UnitNmapE;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
@@ -53,7 +54,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         word: bool,
     ) -> Result<XmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let mut motion = Markovian::new(UnitXmapE);
+        let mut motion = EndWord::new(false, false);
         let s = motion.map(&mut buffer, count, &mut visual_end)?;
         let prevent_change = s.into_prevent_change();
         Ok(XmapOutput {
