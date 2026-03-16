@@ -14,8 +14,6 @@
 
 //! General motion traits and structs.
 
-use std::marker::PhantomData;
-
 use crate::token::TokenType;
 
 use super::buffer::ParsedBufferLike;
@@ -93,21 +91,17 @@ pub trait MarkovianUnit<P>: UnitMotion<P> {
 }
 
 /// A Markovian motion.
-pub struct Markovian<M, S> {
+pub struct Markovian<M> {
     unit_motion: M,
-    phantom_data: PhantomData<S>,
 }
 
-impl<M, S> Markovian<M, S> {
+impl<M> Markovian<M> {
     pub fn new(unit_motion: M) -> Self {
-        Self {
-            unit_motion,
-            phantom_data: PhantomData,
-        }
+        Self { unit_motion }
     }
 }
 
-impl<P, M> Motion<P> for Markovian<M, M::FoldState>
+impl<P, M> Motion<P> for Markovian<M>
 where
     M: MarkovianUnit<P>,
 {
@@ -135,21 +129,17 @@ pub trait OneOffUnit<P>: UnitMotion<P> {
 }
 
 /// A non-Markovian motion that runs for at most once whatever the count is.
-pub struct OneOffMotion<M, S> {
+pub struct OneOffMotion<M> {
     unit_motion: M,
-    phantom_data: PhantomData<S>,
 }
 
-impl<M, S> OneOffMotion<M, S> {
+impl<M> OneOffMotion<M> {
     pub fn new(unit_motion: M) -> Self {
-        Self {
-            unit_motion,
-            phantom_data: PhantomData,
-        }
+        Self { unit_motion }
     }
 }
 
-impl<P, M: OneOffUnit<P>> Motion<P> for OneOffMotion<M, M::FoldState> {
+impl<P, M: OneOffUnit<P>> Motion<P> for OneOffMotion<M> {
     fn map<B: ParsedBufferLike + ?Sized>(
         &mut self,
         buffer: &mut B,
