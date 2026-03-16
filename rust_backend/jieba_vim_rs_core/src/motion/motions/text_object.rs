@@ -32,7 +32,8 @@ use super::core::buffer::ParsedBufferLike;
 use super::core::failure::{AbsolutelyIntolerable, SemiTolerable};
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::motion::{
-    ExtendedMotionState, FoldState, Motion, MotionState, UnitMotion,
+    ExtendedMotionState, FoldState, Markovian, MarkovianUnit, Motion,
+    MotionState, UnitMotion,
 };
 use super::core::position::Position;
 
@@ -229,24 +230,14 @@ mod end_word {
         fn map<B: ParsedBufferLike + ?Sized>(
             &mut self,
             buffer: &mut B,
-            mut count: u64,
+            count: u64,
             cursor: &mut Position,
         ) -> Result<MotionState, B::Error> {
-            let mut state = AbsolutelyIntolerable::default();
-            let orig_count = count;
-            while count > 0 {
-                let mut unit_motion = UnitEndWord {
-                    stop: self.stop && count == orig_count,
-                    empty: self.empty,
-                };
-                if let Some(absorbing_state) =
-                    state.update(unit_motion.unit_map(buffer, cursor)?)
-                {
-                    return Ok(absorbing_state);
-                }
-                count -= 1;
-            }
-            Ok(state.finalize())
+            let mut motion = Markovian::new(UnitEndWord {
+                stop: self.stop,
+                empty: self.empty,
+            });
+            motion.map(buffer, count, cursor)
         }
     }
 
@@ -267,6 +258,9 @@ mod end_word {
         ) -> Result<ExtendedMotionState, B::Error> {
             let Position { lnum, col, off } = cursor;
             *off = 0;
+
+            let stop = self.stop;
+            self.stop = false;
 
             let n_lines = buffer.lines()?;
             let tokens = buffer.getline_parsed(*lnum)?;
@@ -313,11 +307,9 @@ mod end_word {
                     Some(next_t) => {
                         if next_t.is_empty() {
                             let s = match &cursor_token {
-                                GToken::T(cursor_token) => last_line_eof_case(
-                                    cursor_token,
-                                    col,
-                                    self.stop,
-                                ),
+                                GToken::T(cursor_token) => {
+                                    last_line_eof_case(cursor_token, col, stop)
+                                }
                                 // If `next_t` exists, `cursor_token` can't be
                                 // empty.
                                 GToken::Eol(_) => unreachable!(),
@@ -334,7 +326,7 @@ mod end_word {
                 if !t.at_end(*col) {
                     *col = t.last_char();
                     return Ok(ExtendedMotionState::Success);
-                } else if self.stop {
+                } else if stop {
                     return Ok(ExtendedMotionState::Success);
                 }
             }
@@ -393,6 +385,10 @@ mod end_word {
             };
             Ok(s)
         }
+    }
+
+    impl MarkovianUnit<Position> for UnitEndWord {
+        type FoldState = AbsolutelyIntolerable;
     }
 
     /// Return either the stop point (a Word), or the last token yielded by
