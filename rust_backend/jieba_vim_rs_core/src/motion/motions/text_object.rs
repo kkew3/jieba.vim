@@ -326,7 +326,8 @@ mod end_word {
                 if !t.at_end(*col) {
                     *col = t.last_char();
                     return Ok(ExtendedMotionState::Success);
-                } else if stop {
+                }
+                if stop {
                     return Ok(ExtendedMotionState::Success);
                 }
             }
