@@ -16,6 +16,8 @@
 
 use std::fmt::{self, Display};
 
+use crate::motion::api::Selection;
+
 /// Position types related to FFI bindings.
 pub mod ffi {
     /// The 4-element list of numbers \[0, lnum, col, off] as returned by Vim's
@@ -89,3 +91,50 @@ impl Display for PositionError {
 }
 
 impl std::error::Error for PositionError {}
+
+/// An operator-pending range.
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct OperatorRange<'o> {
+    pub cursor: Position,
+    pub langle: Position,
+    pub rangle: Position,
+    pub sel: Selection,
+    pub operator: &'o [u8],
+}
+
+impl<'o> OperatorRange<'o> {
+    /// Construct a new characterwise exclusive empty range.
+    pub fn new_exclusive(cursor: Position, operator: &'o [u8]) -> Self {
+        Self {
+            cursor,
+            langle: cursor,
+            rangle: cursor,
+            sel: Selection::CharExclusive,
+            operator,
+        }
+    }
+
+    /// Construct a new characterwise inclusive empty range.
+    pub fn new_inclusive(cursor: Position, operator: &'o [u8]) -> Self {
+        Self {
+            cursor,
+            langle: cursor,
+            rangle: cursor,
+            sel: Selection::CharInclusive,
+            operator,
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.langle == self.rangle
+    }
+
+    /// Return (langle, rangle) if langle <= rangle, else (rangle, langle).
+    pub fn start_end_ord(&self) -> (&Position, &Position) {
+        if self.langle <= self.rangle {
+            (&self.langle, &self.rangle)
+        } else {
+            (&self.rangle, &self.langle)
+        }
+    }
+}
