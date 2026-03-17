@@ -15,7 +15,7 @@
 use crate::BufferLike;
 use crate::token::JiebaPlaceholder;
 
-use super::api::{OmapOutput, Selection, WordMotion};
+use super::api::{MotionType, OmapOutput, WordMotion};
 use super::core::buffer::ParsedBuffer;
 use super::core::motion::{Markovian, Motion, MotionState};
 use super::core::position::Position;
@@ -56,7 +56,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 cursor: rangle,
                 langle,
                 rangle,
-                selection: Selection::CharExclusive, // is arbitrary due to the failure
+                mtype: MotionType::CharExclusive, // is arbitrary due to the failure
                 prevent_change: true,
             },
             MotionState::Success => {
@@ -71,7 +71,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                     cursor: Position::new(1, 1),
                     langle,
                     rangle,
-                    selection: Selection::OperatorColon,
+                    mtype: MotionType::OperatorColon,
                     prevent_change: false,
                 }
             }

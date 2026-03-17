@@ -22,7 +22,7 @@
 //!
 //! Check <https://vimhelp.org/change.txt.html#d-special> for details.
 
-use crate::motion::api::Selection;
+use crate::motion::api::MotionType;
 use crate::token::TokenType;
 
 use super::core::buffer::ParsedBufferLike;
@@ -50,8 +50,8 @@ impl<'o> DSpecial for OperatorRange<'o> {
         }
 
         // d-special applies to characterwise motions.
-        if self.sel != Selection::CharExclusive
-            && self.sel != Selection::CharInclusive
+        if self.mtype != MotionType::CharExclusive
+            && self.mtype != MotionType::CharInclusive
         {
             return Ok(());
         }
@@ -62,7 +62,7 @@ impl<'o> DSpecial for OperatorRange<'o> {
             return Ok(());
         }
 
-        if end.col == 1 && self.sel == Selection::CharExclusive {
+        if end.col == 1 && self.mtype == MotionType::CharExclusive {
             panic!(
                 "`exclusive + end.col=1` case must be handled first by \
                 `exclusive_special` policy"
@@ -99,7 +99,7 @@ impl<'o> DSpecial for OperatorRange<'o> {
         if let GToken::T(t) = rtokens.next().unwrap()
             && t.ty == TokenType::Word
         {
-            if self.sel == Selection::CharExclusive {
+            if self.mtype == MotionType::CharExclusive {
                 return Ok(());
             }
             if !t.at_end(rcol) {
@@ -115,7 +115,7 @@ impl<'o> DSpecial for OperatorRange<'o> {
         }
 
         // Make the motion linewise if it's indeed d-special.
-        self.sel = Selection::LineInclusive;
+        self.mtype = MotionType::LineInclusive;
         Ok(())
     }
 }

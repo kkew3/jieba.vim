@@ -16,7 +16,7 @@
 
 use std::fmt::{self, Display};
 
-use crate::motion::api::Selection;
+use crate::motion::api::MotionType;
 
 /// Position types related to FFI bindings.
 pub mod ffi {
@@ -98,7 +98,7 @@ pub struct OperatorRange<'o> {
     pub cursor: Position,
     pub langle: Position,
     pub rangle: Position,
-    pub sel: Selection,
+    pub mtype: MotionType,
     pub operator: &'o [u8],
 }
 
@@ -109,7 +109,7 @@ impl<'o> OperatorRange<'o> {
             cursor,
             langle: cursor,
             rangle: cursor,
-            sel: Selection::CharExclusive,
+            mtype: MotionType::CharExclusive,
             operator,
         }
     }
@@ -120,7 +120,7 @@ impl<'o> OperatorRange<'o> {
             cursor,
             langle: cursor,
             rangle: cursor,
-            sel: Selection::CharInclusive,
+            mtype: MotionType::CharInclusive,
             operator,
         }
     }

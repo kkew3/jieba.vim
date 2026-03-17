@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::motion::api::Selection;
+use crate::motion::api::MotionType;
 
 use super::core::buffer::ParsedBufferLike;
 use super::core::position::{OperatorRange, Position};
@@ -34,7 +34,7 @@ impl<'o> PositionCursor for OperatorRange<'o> {
             let (start, end) = self.start_end_ord();
             if start.lnum == 1
                 && end.lnum == buffer.lines()?
-                && self.sel == Selection::LineInclusive
+                && self.mtype == MotionType::LineInclusive
             {
                 self.cursor = Position::new(1, 1);
             }

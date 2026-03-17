@@ -76,7 +76,7 @@ mod inner {
 
     /// Output selection used to select operation range in omap.
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    pub enum Selection {
+    pub enum MotionType {
         /// Inclusive selection by characters.
         CharInclusive,
         /// Exclusive selection by characters.
@@ -104,7 +104,7 @@ mod inner {
         pub cursor: Position,
         pub langle: Position,
         pub rangle: Position,
-        pub selection: Selection,
+        pub mtype: MotionType,
         pub prevent_change: bool,
     }
 
@@ -138,11 +138,11 @@ mod inner {
 
     impl From<OmapOutput> for ffi::OmapOutput {
         fn from(value: OmapOutput) -> Self {
-            let (visualmode, selection) = match value.selection {
-                Selection::CharInclusive => (b"v", b"inclusive".as_ref()),
-                Selection::CharExclusive => (b"v", b"exclusive".as_ref()),
-                Selection::LineInclusive => (b"V", b"inclusive".as_ref()),
-                Selection::OperatorColon => (b"v", b"colon".as_ref()),
+            let (visualmode, selection) = match value.mtype {
+                MotionType::CharInclusive => (b"v", b"inclusive".as_ref()),
+                MotionType::CharExclusive => (b"v", b"exclusive".as_ref()),
+                MotionType::LineInclusive => (b"V", b"inclusive".as_ref()),
+                MotionType::OperatorColon => (b"v", b"colon".as_ref()),
             };
             Self {
                 cursor: value.cursor.into(),
@@ -157,7 +157,7 @@ mod inner {
 }
 
 pub(crate) use inner::{
-    NmapOutput, OmapOutput, Selection, VisualMode, XmapOutput,
+    MotionType, NmapOutput, OmapOutput, VisualMode, XmapOutput,
 };
 
 impl<C> WordMotion<C> {

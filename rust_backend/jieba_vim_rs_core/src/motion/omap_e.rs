@@ -68,14 +68,14 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             cursor,
             langle,
             rangle,
-            sel: selection,
+            mtype,
             ..
         } = orng;
         Ok(OmapOutput {
             cursor,
             langle,
             rangle,
-            selection,
+            mtype,
             prevent_change: false,
         })
     }

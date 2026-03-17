@@ -17,7 +17,7 @@ use std::marker::PhantomData;
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 
-use super::api::{OmapOutput, Selection, WordMotion};
+use super::api::{MotionType, OmapOutput, WordMotion};
 use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
 use super::core::failure::Intolerable;
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
@@ -86,7 +86,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 cursor: langle,
                 langle,
                 rangle,
-                selection: Selection::CharInclusive,
+                mtype: MotionType::CharInclusive,
                 prevent_change,
             });
         }
@@ -103,7 +103,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 cursor: langle,
                 langle,
                 rangle,
-                selection: Selection::CharExclusive,
+                mtype: MotionType::CharExclusive,
                 prevent_change: false,
             },
             Some(prev_cursor) => {
@@ -121,7 +121,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                         cursor: langle,
                         langle,
                         rangle,
-                        selection: Selection::OperatorColon,
+                        mtype: MotionType::OperatorColon,
                         prevent_change: false,
                     },
                     WSpecialSelection::Exclusive => {
@@ -144,7 +144,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 cursor,
                                 langle,
                                 rangle,
-                                selection: Selection::LineInclusive,
+                                mtype: MotionType::LineInclusive,
                                 prevent_change: false,
                             }
                         } else {
@@ -152,7 +152,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 cursor: langle,
                                 langle,
                                 rangle,
-                                selection: Selection::CharExclusive,
+                                mtype: MotionType::CharExclusive,
                                 prevent_change: false,
                             }
                         }
@@ -177,7 +177,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 cursor,
                                 langle,
                                 rangle,
-                                selection: Selection::LineInclusive,
+                                mtype: MotionType::LineInclusive,
                                 prevent_change: false,
                             }
                         } else {
@@ -185,7 +185,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                                 cursor: langle,
                                 langle,
                                 rangle,
-                                selection: Selection::CharInclusive,
+                                mtype: MotionType::CharInclusive,
                                 prevent_change: false,
                             }
                         }
