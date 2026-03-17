@@ -17,9 +17,9 @@ use crate::token::JiebaPlaceholder;
 
 use super::api::{VisualMode, WordMotion, XmapOutput};
 use super::core::buffer::ParsedBuffer;
-use super::core::motion::{Markovian, Motion};
+use super::core::motion::Motion;
 use super::core::position::Position;
-use super::nmap_b::UnitNmapB;
+use super::motions::text_object::BackwardWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `b` (if `word` is `true`) or `B` (if `word` is `false`)
@@ -49,7 +49,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         word: bool,
     ) -> Result<XmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let mut motion = Markovian::new(UnitNmapB);
+        let mut motion = BackwardWord::new(false);
         let s = motion.map(&mut buffer, count, &mut visual_end)?;
         let prevent_change = s.into_prevent_change();
         Ok(XmapOutput {
