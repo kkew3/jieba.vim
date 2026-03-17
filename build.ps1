@@ -48,10 +48,18 @@ function Download-Release {
 
 function Build-From-Source {
 	$color_when = if ($env:VIMRUNTIME) { 'never' } else { 'auto' }
+	# Assume that build.ps1 only runs on Windows.
+	$cdylib_name = 'jieba_vim_rs.dll'
+	$dest_name = 'jieba_vim_rs.pyd'
 	Push-Location 'rust_backend'
 	try {
-		& cargo build -r -F expose-shared-library --color=$color_when
-		return ($LASTEXITCODE -eq 0)
+		& cargo build -r --color=$color_when
+		if ($LASTEXITCODE -ne 0) { return $false }
+
+		# Remove-Item: used to delete $dest_name in case it's a symlink
+		Remove-Item "..\pythonx\jieba_vim\$dest_name" -Force -ErrorAction SilentlyContinue
+		Copy-Item "target\release\$cdylib_name" -Destination "..\pythonx\jieba_vim\$dest_name"
+		return $?
 	} finally {
 		Pop-Location
 	}
@@ -61,7 +69,7 @@ if (Has-Command git) {
 	if (Download-Release) { exit 0 }
 }
 if (Has-Command cargo) {
-	if (Build-From-Source) { exit 0 } else { exit $LASTEXITCODE }
+	if (Build-From-Source) { exit 0 } else { exit 1 }
 } else {
 	Write-Error 'cargo not found; cannot build from source.'
 	exit 1
