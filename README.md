@@ -32,6 +32,8 @@ Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': './build.sh' }
 
 其中 `./build.sh` 用于下载预编译链接库，然后如果没有找到的话再尝试本地编译。
 
+Windows 用户可以把 `'do': './build.sh'` 替换为 `'do': '.\build.ps1'` 以运行 powershell 安装脚本。
+
 虽然通常不需要，但在极少数情况下可能需要进入插件目录调整 `rust_backend/Cargo.toml` 中的 pyo3 python ABI 版本，以匹配 vim 中 python3 的版本。可以在终端使用
 
 ```bash
@@ -150,6 +152,8 @@ Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': './build.sh' }
 
 where `./build.sh` is used to download precompiled shared library.
 Local compilation will be attempted only if the shared library cannot be found.
+
+On Windows, `'do': './build.sh'` can be replaced with `'do': '.\build.ps1'` in order to run the build script in powershell.
 
 Though not always necessary, user may need to adjust the pyo3 python ABI in `rust_backend/Cargo.toml` under the plugin directory after downloading the plugin, in order to match with the python3 version vim is compiled against.
 The vim's python3 version may be checked by the following command at terminal:
