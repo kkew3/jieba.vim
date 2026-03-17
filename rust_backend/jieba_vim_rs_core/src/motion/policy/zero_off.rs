@@ -12,11 +12,15 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-//! Vim quirks and mode-specific rules.
+use super::core::position::Position;
 
-pub mod adjust_cursor;
-pub mod d_special;
-pub mod exclusive_special;
-pub mod zero_off;
+/// Make `off` zero.
+pub trait ZeroOff {
+    fn zero_off(&mut self);
+}
 
-use super::core;
+impl ZeroOff for Position {
+    fn zero_off(&mut self) {
+        self.off = 0;
+    }
+}
