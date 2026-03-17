@@ -1,4 +1,4 @@
-// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 // Portions Copyright (c) by Bram Moolenaar and others.
 //
 // This file contains code adapted from Vim's textobject.c. The Vim License
