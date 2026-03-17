@@ -20,9 +20,10 @@ use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
 use super::core::failure::Tolerable;
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::motion::{
-    ExtendedMotionState, Markovian, MarkovianUnit, Motion, UnitMotion,
+    ExtendedMotionState, MarkovianUnit, Motion, UnitMotion,
 };
 use super::core::position::Position;
+use super::motions::text_object::BackwardWord;
 
 /// Test if a token is stoppable for `nmap_b`.
 fn is_stoppable(token: &GToken) -> bool {
@@ -62,7 +63,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         word: bool,
     ) -> Result<NmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let mut motion = Markovian::new(UnitNmapB);
+        let mut motion = BackwardWord::new(false);
         let s = motion.map(&mut buffer, count, &mut cursor)?;
         Ok(NmapOutput {
             cursor,
