@@ -22,11 +22,103 @@
 //!
 //! Check <https://vimhelp.org/change.txt.html#d-special> for details.
 
+use crate::motion::api::Selection;
 use crate::token::TokenType;
 
 use super::core::buffer::ParsedBufferLike;
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
-use super::core::position::Position;
+use super::core::position::{OperatorRange, Position};
+
+/// Check if current motion satisfies d-special case, and make the motion
+/// linewise if true. See <https://vimhelp.org/change.txt.html#d-special> for
+/// details.
+pub trait DSpecial {
+    fn d_special<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+    ) -> Result<(), B::Error>;
+}
+
+impl<'o> DSpecial for OperatorRange<'o> {
+    fn d_special<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+    ) -> Result<(), B::Error> {
+        // d-special applies only to operator "d".
+        if self.operator != b"d" {
+            return Ok(());
+        }
+
+        // d-special applies to characterwise motions.
+        if self.sel != Selection::CharExclusive
+            && self.sel != Selection::CharInclusive
+        {
+            return Ok(());
+        }
+
+        // d-special applies to multi-line motions.
+        let (start, end) = self.start_end_ord();
+        if start.lnum == end.lnum {
+            return Ok(());
+        }
+
+        if end.col == 1 && self.sel == Selection::CharExclusive {
+            panic!(
+                "`exclusive + end.col=1` case must be handled first by \
+                `exclusive_special` policy"
+            );
+        }
+
+        let llnum = start.lnum;
+        let lcol = start.col;
+        let rlnum = end.lnum;
+        let rcol = end.col;
+
+        let lline = buffer.getline_parsed(llnum)?;
+        let mut ltokens = ExtendedInlineTokensIter::new(&lline)
+            .take_col_rev(lcol)
+            .expect("start.col too large");
+        if let GToken::T(t) = ltokens.next().unwrap()
+            && t.ty == TokenType::Word
+            && !t.at_start(lcol)
+        {
+            return Ok(());
+        }
+        for token in ltokens {
+            if let GToken::T(t) = token
+                && t.ty == TokenType::Word
+            {
+                return Ok(());
+            }
+        }
+
+        let rline = buffer.getline_parsed(rlnum)?;
+        let mut rtokens = ExtendedInlineTokensIter::new(&rline)
+            .skip_col(rcol)
+            .expect("end.col too large");
+        if let GToken::T(t) = rtokens.next().unwrap()
+            && t.ty == TokenType::Word
+        {
+            if self.sel == Selection::CharExclusive {
+                return Ok(());
+            }
+            if !t.at_end(rcol) {
+                return Ok(());
+            }
+        }
+        for token in rtokens {
+            if let GToken::T(t) = token
+                && t.ty == TokenType::Word
+            {
+                return Ok(());
+            }
+        }
+
+        // Make the motion linewise if it's indeed d-special.
+        self.sel = Selection::LineInclusive;
+        Ok(())
+    }
+}
 
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.
