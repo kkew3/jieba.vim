@@ -28,3 +28,63 @@
 //! >    the cursor position.
 //!
 //! Check <https://vimhelp.org/motion.txt.html#exclusive> for details.
+
+use crate::motion::api::MotionType;
+use crate::token::TokenLike;
+
+use super::core::buffer::ParsedBufferLike;
+use super::core::iter::{ExtendedInlineTokensIter, GToken};
+use super::core::position::OperatorRange;
+use super::motions::predicate::OnOrBeforeFirstNonBlanks;
+
+/// Check if current motion satisfies the two exceptions for
+/// exclusive motions, and update current motion accordingly. See
+/// <https://vimhelp.org/motion.txt.html#exclusive> for details.
+pub trait ExclusiveSpecial {
+    fn exclusive_special<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+    ) -> Result<(), B::Error>;
+}
+
+impl<'o> ExclusiveSpecial for OperatorRange<'o> {
+    fn exclusive_special<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+    ) -> Result<(), B::Error> {
+        // exclusive-special applies to characterwise exclusive motions.
+        if self.mtype != MotionType::CharExclusive {
+            return Ok(());
+        }
+
+        let (start, end) = self.start_end_ord_mut();
+        // exclusive-special appies to motions ending in column 1.
+        if end.col > 1 {
+            return Ok(());
+        }
+        // exclusive-special applies to multi-line motions.
+        if start.lnum == end.lnum {
+            return Ok(());
+        }
+
+        end.lnum -= 1;
+        if start.on_or_before_first_non_blank(buffer)? {
+            self.mtype = MotionType::LineInclusive;
+        } else {
+            let tokens = buffer.getline_parsed(end.lnum)?;
+            let mut line = ExtendedInlineTokensIter::new(tokens).rev();
+            let eol = line.next().unwrap();
+            match eol {
+                GToken::Eol(col) => {
+                    if col > 1 {
+                        let last_token = line.next().unwrap();
+                        end.col = last_token.last_char();
+                        self.mtype = MotionType::CharInclusive;
+                    }
+                }
+                GToken::T(_) => unreachable!(),
+            }
+        }
+        Ok(())
+    }
+}

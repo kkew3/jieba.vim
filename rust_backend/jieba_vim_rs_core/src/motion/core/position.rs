@@ -137,4 +137,13 @@ impl<'o> OperatorRange<'o> {
             (&self.rangle, &self.langle)
         }
     }
+
+    /// Return (langle, rangle) if langle <= rangle, else (rangle, langle).
+    pub fn start_end_ord_mut(&mut self) -> (&mut Position, &mut Position) {
+        if self.langle <= self.rangle {
+            (&mut self.langle, &mut self.rangle)
+        } else {
+            (&mut self.rangle, &mut self.langle)
+        }
+    }
 }
