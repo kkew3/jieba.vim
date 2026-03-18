@@ -231,12 +231,9 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         call setpos("'<", l:result_dict["langle"])
         call setpos("'>", l:result_dict["rangle"])
 
-        " We need this block of code to decide whether to re-position cursor
+        " We need this line of code to decide whether to re-position cursor
         " after d-special when 'startofline' is unset.
-        let l:start_lnum = getpos("'<")[1]
-        let l:end_lnum = getpos("'>")[1]
-        let l:multiline = l:start_lnum !=# l:end_lnum
-        let l:need_repos = getline(l:end_lnum) !=# ""
+        let l:need_repos = getline(getpos("'>")[1]) !=# ""
 
         " .. and execute.
         let &selection = l:result_dict["selection"]
@@ -271,8 +268,8 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         endif
 
         " Cursor re-positioning of d-special in case 'startofline' is 0.
-        if &startofline ==# 0 && l:multiline && l:need_repos && l:result_dict["visualmode"] ==# "V"
-            call cursor(0, virtcol2col(0, line("."), l:orig_curpos[4]))
+        if &startofline ==# 0 && l:need_repos && l:result_dict["visualmode"] ==# "V"
+            execute "normal! " . l:orig_curpos[4] . "|"
         endif
 
         " Special treatment to |c| which needs to drop the user in insert mode.
