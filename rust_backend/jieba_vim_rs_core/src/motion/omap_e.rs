@@ -22,7 +22,6 @@ use super::core::position::{OperatorRange, Position};
 use super::policy::adjust_cursor::AdjustCursor;
 use super::policy::d_special::DSpecial;
 use super::policy::position_cursor::PositionCursor;
-use super::policy::zero_off::ZeroOff;
 use super::primitives::text_object::EndWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
@@ -53,7 +52,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ) -> Result<OmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let mut orng = OperatorRange::new_inclusive(cursor_pos, operator);
-        orng.langle.zero_off();
+        orng.langle.off = 0;
         orng.cursor = orng.langle;
         let mut motion_rangle = EndWord::new(false, false);
         let _ = motion_rangle.map(&mut buffer, count, &mut orng.rangle)?;

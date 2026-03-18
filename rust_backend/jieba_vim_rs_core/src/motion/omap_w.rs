@@ -25,7 +25,6 @@ use super::policy::d_special::DSpecial;
 use super::policy::exclusive_special::ExclusiveSpecial;
 use super::policy::position_cursor::PositionCursor;
 use super::policy::yank_linewise::YankLinewise;
-use super::policy::zero_off::ZeroOff;
 use super::primitives::text_object::{EndWord, ForwardWord};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
@@ -61,7 +60,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ) -> Result<OmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let mut orng = OperatorRange::new_exclusive(cursor, operator);
-        orng.langle.zero_off();
+        orng.langle.off = 0;
         orng.cursor = orng.langle;
         if operator == b"c" && on_word(&orng.cursor, &mut buffer)? {
             orng.mtype = MotionType::CharInclusive;
