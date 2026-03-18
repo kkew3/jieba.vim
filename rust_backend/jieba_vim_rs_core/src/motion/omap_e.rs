@@ -61,7 +61,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         orng.cursor = orng.langle;
         let mut motion_rangle = EndWord::new(false, false);
         let _ = motion_rangle.map(&mut buffer, count, &mut orng.rangle)?;
-        orng.rangle.adjust_cursor(&mut buffer)?;
+        orng.adjust_cursor(&mut buffer)?;
         orng.d_special(&mut buffer)?;
         orng.position_cursor(&mut buffer)?;
         let OperatorRange {
