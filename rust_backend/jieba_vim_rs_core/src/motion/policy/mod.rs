@@ -20,4 +20,4 @@ pub mod exclusive_special;
 pub mod position_cursor;
 pub mod zero_off;
 
-use super::core;
+use super::{core, motions};

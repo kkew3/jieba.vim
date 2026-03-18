@@ -28,6 +28,7 @@ use crate::token::TokenType;
 use super::core::buffer::ParsedBufferLike;
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::position::{OperatorRange, Position};
+use super::motions::predicate::OnOrBeforeFirstNonBlanks;
 
 /// Check if current motion satisfies d-special case, and make the motion
 /// linewise if true. See <https://vimhelp.org/change.txt.html#d-special> for
@@ -69,28 +70,12 @@ impl<'o> DSpecial for OperatorRange<'o> {
             );
         }
 
-        let llnum = start.lnum;
-        let lcol = start.col;
-        let rlnum = end.lnum;
-        let rcol = end.col;
-
-        let lline = buffer.getline_parsed(llnum)?;
-        let mut ltokens = ExtendedInlineTokensIter::new(&lline)
-            .take_col_rev(lcol)
-            .expect("start.col too large");
-        if let GToken::T(t) = ltokens.next().unwrap()
-            && t.ty == TokenType::Word
-            && !t.at_start(lcol)
-        {
+        if !start.on_or_before_first_non_blank(buffer)? {
             return Ok(());
         }
-        for token in ltokens {
-            if let GToken::T(t) = token
-                && t.ty == TokenType::Word
-            {
-                return Ok(());
-            }
-        }
+
+        let rlnum = end.lnum;
+        let rcol = end.col;
 
         let rline = buffer.getline_parsed(rlnum)?;
         let mut rtokens = ExtendedInlineTokensIter::new(&rline)
