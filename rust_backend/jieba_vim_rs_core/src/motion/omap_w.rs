@@ -22,12 +22,17 @@ use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
 use super::core::failure::Intolerable;
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::motion::{
-    ExtendedMotionState, FoldState, Markovian, MarkovianUnit, Motion,
-    MotionState, UnitMotion,
+    ExtendedMotionState, FoldState, MarkovianUnit, Motion, MotionState,
+    UnitMotion,
 };
-use super::core::position::Position;
-use super::omap_e::UnitOmapERangle;
-use super::policy::d_special;
+use super::core::position::{OperatorRange, Position};
+use super::motions::text_object::{EndWord, ForwardWord};
+use super::policy::adjust_cursor::AdjustCursor;
+use super::policy::d_special::DSpecial;
+use super::policy::exclusive_special::ExclusiveSpecial;
+use super::policy::position_cursor::PositionCursor;
+use super::policy::yank_linewise::YankLinewise;
+use super::policy::zero_off::ZeroOff;
 use super::xmap_w::UnitXmapW;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
@@ -61,141 +66,59 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         word: bool,
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
-        assert!(count >= 1);
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let langle = cursor;
-        let mut rangle = langle;
-
-        let tokens = buffer.getline_parsed(cursor.lnum)?;
-        let mut line = ExtendedInlineTokensIter::new(&tokens)
-            .skip_col(cursor.col)
-            .expect("col too large")
-            .peekable();
-        let cursor_token = line.peek().unwrap();
-
-        // |cw| special case (**).
-        if let GToken::T(t) = cursor_token
-            && t.ty == TokenType::Word
-            && operator == b"c"
-        {
-            let mut motion = Markovian::new(UnitOmapERangle);
-            let prevent_change = motion
-                .map(&mut buffer, count, &mut rangle)?
-                .into_prevent_change();
-            return Ok(OmapOutput {
-                cursor: langle,
-                langle,
-                rangle,
-                mtype: MotionType::CharInclusive,
-                prevent_change,
-            });
+        let mut orng = OperatorRange::new_exclusive(cursor, operator);
+        orng.langle.zero_off();
+        orng.cursor = orng.langle;
+        if operator == b"c" && on_word(&orng.cursor, &mut buffer)? {
+            orng.mtype = MotionType::CharInclusive;
+            let mut motion_rangle = EndWord::new(true, false);
+            let _ = motion_rangle.map(&mut buffer, count, &mut orng.rangle)?;
+        } else {
+            let mut motion_rangle = ForwardWord::new(true);
+            let _ = motion_rangle.map(&mut buffer, count, &mut orng.rangle)?;
         }
-
-        // First stage.
-        let mut motion_rangle_first_stage =
-            MarkovianOmapW::new(UnitOmapWRangleFirstStage);
-        let _ =
-            motion_rangle_first_stage.map(&mut buffer, count, &mut rangle)?;
-
-        // Operator-pending w special case (*).
-        let output = match motion_rangle_first_stage.cursor_before_last_motion {
-            None => OmapOutput {
-                cursor: langle,
-                langle,
-                rangle,
-                mtype: MotionType::CharExclusive,
-                prevent_change: false,
-            },
-            Some(prev_cursor) => {
-                let n_lines = buffer.lines()?;
-                let selection = operator_w_special_case(
-                    &mut buffer,
-                    &langle,
-                    &mut rangle,
-                    prev_cursor,
-                    count == 1,
-                    motion_rangle_first_stage.last_motion_ends_with_failure,
-                )?;
-                match selection {
-                    WSpecialSelection::Colon => OmapOutput {
-                        cursor: langle,
-                        langle,
-                        rangle,
-                        mtype: MotionType::OperatorColon,
-                        prevent_change: false,
-                    },
-                    WSpecialSelection::Exclusive => {
-                        if operator == b"d"
-                            && d_special::is_d_special(
-                                &mut buffer,
-                                langle,
-                                rangle,
-                                false,
-                            )?
-                        {
-                            let mut cursor = langle;
-                            d_special::reset_cursor_when_d_special(
-                                n_lines,
-                                &langle,
-                                &rangle,
-                                &mut cursor,
-                            );
-                            OmapOutput {
-                                cursor,
-                                langle,
-                                rangle,
-                                mtype: MotionType::LineInclusive,
-                                prevent_change: false,
-                            }
-                        } else {
-                            OmapOutput {
-                                cursor: langle,
-                                langle,
-                                rangle,
-                                mtype: MotionType::CharExclusive,
-                                prevent_change: false,
-                            }
-                        }
-                    }
-                    WSpecialSelection::Inclusive => {
-                        if operator == b"d"
-                            && d_special::is_d_special(
-                                &mut buffer,
-                                langle,
-                                rangle,
-                                true,
-                            )?
-                        {
-                            let mut cursor = langle;
-                            d_special::reset_cursor_when_d_special(
-                                n_lines,
-                                &langle,
-                                &rangle,
-                                &mut cursor,
-                            );
-                            OmapOutput {
-                                cursor,
-                                langle,
-                                rangle,
-                                mtype: MotionType::LineInclusive,
-                                prevent_change: false,
-                            }
-                        } else {
-                            OmapOutput {
-                                cursor: langle,
-                                langle,
-                                rangle,
-                                mtype: MotionType::CharInclusive,
-                                prevent_change: false,
-                            }
-                        }
-                    }
-                }
-            }
-        };
-
-        Ok(output)
+        orng.adjust_cursor(&mut buffer)?;
+        orng.exclusive_special(&mut buffer)?;
+        orng.d_special(&mut buffer)?;
+        orng.yank_linewise();
+        orng.position_cursor(&mut buffer)?;
+        let OperatorRange {
+            cursor,
+            langle,
+            rangle,
+            mtype,
+            ..
+        } = orng;
+        Ok(OmapOutput {
+            cursor,
+            langle,
+            rangle,
+            mtype,
+            prevent_change: false,
+        })
     }
+}
+
+/// Return true if `cursor` is on a word.
+fn on_word<B: ParsedBufferLike + ?Sized>(
+    cursor: &Position,
+    buffer: &mut B,
+) -> Result<bool, B::Error> {
+    let tokens = buffer.getline_parsed(cursor.lnum)?;
+    let cursor_token = ExtendedInlineTokensIter::new(tokens)
+        .skip_col(cursor.col)
+        .expect("cursor col too large")
+        .next()
+        .unwrap();
+    let on_word = match cursor_token {
+        GToken::T(t) => match t.ty {
+            TokenType::Word => true,
+            TokenType::Space => false,
+        },
+        GToken::Eol(_) => false,
+    };
+    Ok(on_word)
 }
 
 /// The first stage of omap w for rangle.
