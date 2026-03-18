@@ -30,15 +30,23 @@ impl<'o> PositionCursor for OperatorRange<'o> {
         &mut self,
         buffer: &mut B,
     ) -> Result<(), B::Error> {
-        if self.operator == b"d" || self.operator == b"c" {
+        // Re-position the cursor within remaining lines after deletion to keep
+        // its position valid.
+        if (self.operator == b"d" || self.operator == b"c")
+            && self.mtype == MotionType::LineInclusive
+        {
             let (start, end) = self.start_end_ord();
-            if start.lnum == 1
-                && end.lnum == buffer.lines()?
-                && self.mtype == MotionType::LineInclusive
-            {
-                self.cursor = Position::new(1, 1);
+            let start_lnum = start.lnum;
+            let end_lnum = end.lnum;
+            let n_lines = buffer.lines()?;
+            let n_lines_remains = n_lines - (end_lnum - start_lnum + 1);
+            if self.cursor.lnum > n_lines_remains {
+                // max(1): empty buffer still "contains" one line.
+                self.cursor = Position::new(n_lines_remains.max(1), 1);
             }
+            return Ok(());
         }
+
         Ok(())
     }
 }
