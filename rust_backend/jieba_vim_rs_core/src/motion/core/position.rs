@@ -125,10 +125,6 @@ impl<'o> OperatorRange<'o> {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.langle == self.rangle
-    }
-
     /// Return (langle, rangle) if langle <= rangle, else (rangle, langle).
     pub fn start_end_ord(&self) -> (&Position, &Position) {
         if self.langle <= self.rangle {
