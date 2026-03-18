@@ -247,7 +247,11 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         endif
 
         " Land the cursor to potentially a new position.
-        call cursor(l:result_dict["cursor"][1:2])
+        " If we have used d-special, the cursor should already be placed by
+        " Vim.
+        if l:result_dict["visualmode"] !=# "V"
+            call cursor(l:result_dict["cursor"][1:2])
+        endif
 
         " Special treatment of d-special in nvim.
         if has("nvim") && a:operator ==# "d" && l:result_dict["visualmode"] ==# "V"
