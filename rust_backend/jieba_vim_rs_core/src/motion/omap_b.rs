@@ -15,11 +15,16 @@
 use crate::BufferLike;
 use crate::token::JiebaPlaceholder;
 
-use super::api::{MotionType, OmapOutput, WordMotion};
+use super::api::{OmapOutput, WordMotion};
 use super::core::buffer::ParsedBuffer;
-use super::core::motion::{Markovian, Motion, MotionState};
-use super::core::position::Position;
-use super::nmap_b::UnitNmapB;
+use super::core::motion::{Motion, MotionState};
+use super::core::position::{OperatorRange, Position};
+use super::policy::d_special::DSpecial;
+use super::policy::exclusive_special::ExclusiveSpecial;
+use super::policy::position_cursor::PositionCursor;
+use super::policy::yank_linewise::YankLinewise;
+use super::policy::zero_off::ZeroOff;
+use super::primitives::text_object::BackwardWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `b` (if `word` is `true`) or `B` (if `word` is `false`) in
@@ -44,38 +49,33 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         cursor_pos: Position,
         count: u64,
         word: bool,
-        _operator: &[u8],
+        operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let langle = cursor_pos;
-        let mut rangle = langle;
-        let mut motion = Markovian::new(UnitNmapB);
-        // Motion state is transitive from nmap_b to omap_b.
-        let output = match motion.map(&mut buffer, count, &mut rangle)? {
-            MotionState::Failure => OmapOutput {
-                cursor: rangle,
-                langle,
-                rangle,
-                mtype: MotionType::CharExclusive, // is arbitrary due to the failure
-                prevent_change: true,
-            },
-            MotionState::Success => {
-                // Apply operator-colon trick whatsoever.
-                // A bit weird, but seems to work.
-                OmapOutput {
-                    // When using operator-colon trick, `cursor` value is
-                    // arbitrary. We pick this value to ensure that the
-                    // verifier is satisfactory, as it's always a valid
-                    // position even if the buffer becomes empty due to
-                    // d-special.
-                    cursor: Position::new(1, 1),
-                    langle,
-                    rangle,
-                    mtype: MotionType::OperatorColon,
-                    prevent_change: false,
-                }
-            }
-        };
-        Ok(output)
+        let mut orng = OperatorRange::new_exclusive(cursor_pos, operator);
+        orng.langle.zero_off();
+        let mut motion_rangle = BackwardWord::new(false);
+        let s = motion_rangle.map(&mut buffer, count, &mut orng.rangle)?;
+        if s == MotionState::Success {
+            orng.exclusive_special(&mut buffer)?;
+            orng.d_special(&mut buffer)?;
+            orng.yank_linewise();
+        }
+        orng.cursor = orng.rangle;
+        orng.position_cursor(&mut buffer)?;
+        let OperatorRange {
+            cursor,
+            langle,
+            rangle,
+            mtype,
+            ..
+        } = orng;
+        Ok(OmapOutput {
+            cursor,
+            langle,
+            rangle,
+            mtype,
+            prevent_change: s.into_prevent_change(),
+        })
     }
 }
