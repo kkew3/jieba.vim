@@ -127,7 +127,7 @@ impl UnitMotion<Position> for UnitBackwardEndWord {
 }
 
 impl MarkovianUnit<Position> for UnitBackwardEndWord {
-    type FoldState = SemiTolerable;
+    type FoldState = Tolerable;
 }
 
 /// If `eol` is true, Eol(_) will also become a stop point.
