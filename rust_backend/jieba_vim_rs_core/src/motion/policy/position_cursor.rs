@@ -30,7 +30,7 @@ impl<'o> PositionCursor for OperatorRange<'o> {
         &mut self,
         buffer: &mut B,
     ) -> Result<(), B::Error> {
-        if self.operator == b"d" {
+        if self.operator == b"d" || self.operator == b"c" {
             let (start, end) = self.start_end_ord();
             if start.lnum == 1
                 && end.lnum == buffer.lines()?
