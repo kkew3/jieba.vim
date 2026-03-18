@@ -110,8 +110,6 @@ jobs:
         vim:
           - distr: vim
             version: v9.1.0000
-          - distr: nvim
-            version: v0.11.5
     steps:
       # Prepare env.
       - uses: actions/checkout@v6
