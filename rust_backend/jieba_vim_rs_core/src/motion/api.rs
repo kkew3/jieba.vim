@@ -83,9 +83,6 @@ mod inner {
         CharExclusive,
         /// Selection by line (always inclusive).
         LineInclusive,
-        /// Implicit selection by operator-colon trick, e.g.
-        /// `d:call cursor(lnum, col)<CR>`.
-        OperatorColon,
     }
 
     pub struct NmapOutput {
@@ -142,7 +139,6 @@ mod inner {
                 MotionType::CharInclusive => (b"v", b"inclusive".as_ref()),
                 MotionType::CharExclusive => (b"v", b"exclusive".as_ref()),
                 MotionType::LineInclusive => (b"V", b"inclusive".as_ref()),
-                MotionType::OperatorColon => (b"v", b"colon".as_ref()),
             };
             Self {
                 cursor: value.cursor.into(),
