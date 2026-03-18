@@ -28,7 +28,7 @@ use crate::token::TokenType;
 use super::core::buffer::ParsedBufferLike;
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::position::{OperatorRange, Position};
-use super::motions::predicate::OnOrBeforeFirstNonBlanks;
+use super::primitives::predicate::OnOrBeforeFirstNonBlanks;
 
 /// Check if current motion satisfies d-special case, and make the motion
 /// linewise if true. See <https://vimhelp.org/change.txt.html#d-special> for

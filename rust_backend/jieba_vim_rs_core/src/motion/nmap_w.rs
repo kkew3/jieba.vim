@@ -19,8 +19,8 @@ use super::api::{NmapOutput, WordMotion};
 use super::core::buffer::ParsedBuffer;
 use super::core::motion::Motion;
 use super::core::position::Position;
-use super::motions::text_object::ForwardWord;
 use super::policy::adjust_cursor::AdjustCursor;
+use super::primitives::text_object::ForwardWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)

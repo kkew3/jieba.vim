@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-//! The motions.
+//! The primitive motions and position predicates.
 
 pub mod predicate;
 pub mod text_object;

@@ -35,7 +35,7 @@ use crate::token::TokenLike;
 use super::core::buffer::ParsedBufferLike;
 use super::core::iter::{ExtendedInlineTokensIter, GToken};
 use super::core::position::OperatorRange;
-use super::motions::predicate::OnOrBeforeFirstNonBlanks;
+use super::primitives::predicate::OnOrBeforeFirstNonBlanks;
 
 /// Check if current motion satisfies the two exceptions for
 /// exclusive motions, and update current motion accordingly. See

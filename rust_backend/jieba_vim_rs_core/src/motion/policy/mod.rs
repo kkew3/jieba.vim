@@ -21,4 +21,4 @@ pub mod position_cursor;
 pub mod yank_linewise;
 pub mod zero_off;
 
-use super::{core, motions};
+use super::{core, primitives};

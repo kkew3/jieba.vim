@@ -23,7 +23,7 @@ use super::core::motion::{
     ExtendedMotionState, MarkovianUnit, Motion, UnitMotion,
 };
 use super::core::position::Position;
-use super::motions::text_object::BackwardEndWord;
+use super::primitives::text_object::BackwardEndWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `ge` (if `word` is `true`) or `gE` (if `word` is `false`)

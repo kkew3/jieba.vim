@@ -23,7 +23,7 @@ use super::core::motion::{
     ExtendedMotionState, MarkovianUnit, Motion, UnitMotion,
 };
 use super::core::position::Position;
-use super::motions::text_object::BackwardWord;
+use super::primitives::text_object::BackwardWord;
 
 /// Test if a token is stoppable for `nmap_b`.
 fn is_stoppable(token: &GToken) -> bool {

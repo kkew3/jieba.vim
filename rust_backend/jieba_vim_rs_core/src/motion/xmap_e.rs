@@ -19,7 +19,7 @@ use super::api::{VisualMode, WordMotion, XmapOutput};
 use super::core::buffer::ParsedBuffer;
 use super::core::motion::Motion;
 use super::core::position::Position;
-use super::motions::text_object::EndWord;
+use super::primitives::text_object::EndWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `e` (if `word` is `true`) or `E` (if `word` is `false`)

@@ -19,7 +19,7 @@ use super::api::{VisualMode, WordMotion, XmapOutput};
 use super::core::buffer::ParsedBuffer;
 use super::core::motion::Motion;
 use super::core::position::Position;
-use super::motions::text_object::ForwardWord;
+use super::primitives::text_object::ForwardWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)

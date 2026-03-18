@@ -14,7 +14,6 @@
 
 mod api;
 pub(crate) mod core;
-pub(crate) mod motions;
 mod nmap_b;
 mod nmap_e;
 mod nmap_ge;
@@ -24,6 +23,7 @@ mod omap_e;
 mod omap_ge;
 mod omap_w;
 pub(crate) mod policy;
+pub(crate) mod primitives;
 mod xmap_b;
 mod xmap_e;
 mod xmap_ge;

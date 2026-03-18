@@ -20,13 +20,13 @@ use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
 use super::core::iter::{ExtendedInlineTokensIter, GToken};
 use super::core::motion::Motion;
 use super::core::position::{OperatorRange, Position};
-use super::motions::text_object::{EndWord, ForwardWord};
 use super::policy::adjust_cursor::AdjustCursor;
 use super::policy::d_special::DSpecial;
 use super::policy::exclusive_special::ExclusiveSpecial;
 use super::policy::position_cursor::PositionCursor;
 use super::policy::yank_linewise::YankLinewise;
 use super::policy::zero_off::ZeroOff;
+use super::primitives::text_object::{EndWord, ForwardWord};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
