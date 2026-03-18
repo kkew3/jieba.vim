@@ -120,3 +120,18 @@ Q | < > prevent_change=0 visualmode=V selection=inclusive
 Bp ><␊···␊
 Bo |···␊
 B1 ··|·␊
+
+H 5a682bb552faae7618fa52bec898ae0e2c017db031fbf0e120357ac1
+X u
+M o
+K ge
+O d
+R a
+B0 abcd|e␊
+C 2
+S1 "a=
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+Bp >abcd<e␊
+Bo |␊
+B1 |␊
+S1 "a=abcde
