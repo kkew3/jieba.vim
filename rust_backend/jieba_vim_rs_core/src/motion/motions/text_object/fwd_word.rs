@@ -83,6 +83,7 @@ impl UnitMotion<Position> for UnitForwardWord {
             .expect("col too large")
             .peekable();
         let cursor_token = line.next().unwrap();
+        let cursor_token_is_eol = cursor_token.is_empty();
 
         if *lnum == n_lines {
             match line.peek() {
@@ -118,9 +119,9 @@ impl UnitMotion<Position> for UnitForwardWord {
             Some(GToken::T(t)) => {
                 ExtendedMotionState::from_dest_token(GToken::T(t)).unwrap()
             }
-            Some(GToken::Eol(1)) => {
-                ExtendedMotionState::from_dest_token(GToken::Eol(1)).unwrap()
-            }
+            // The stop point must be after `cursor_token`, so it can't be
+            // Eol(1).
+            Some(GToken::Eol(1)) => unreachable!(),
             // This branch will be reached only if self.eol is true.
             Some(GToken::Eol(_)) => ExtendedMotionState::Success,
             None => loop {
@@ -131,6 +132,12 @@ impl UnitMotion<Position> for UnitForwardWord {
                     break ExtendedMotionState::Pending;
                 }
                 *lnum += 1;
+
+                if cursor_token_is_eol && self.eol {
+                    *col = 1;
+                    break ExtendedMotionState::Success;
+                }
+
                 let tokens = buffer.getline_parsed(*lnum)?;
                 let line = ExtendedInlineTokensIter::new(&tokens);
                 match find_stop_point(line, col, self.eol) {
@@ -185,4 +192,37 @@ fn find_stop_point<L: IntoIterator<Item = GToken>>(
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::motion::core::buffer::PreTokenizedBuffer;
+
+    use super::{ForwardWord, Motion, MotionState, Position, Token, TokenType};
+
+    #[test]
+    fn test_newline_space_newline() {
+        let mut buffer = PreTokenizedBuffer::new(
+            1,
+            [vec![], vec![Token::new(1, 3, 4, TokenType::Space)]],
+        );
+        let mut motion = ForwardWord::new(false);
+        let mut cursor = Position::new(1, 1);
+        let s = motion.map(&mut buffer, 1, &mut cursor).unwrap();
+        assert_eq!(s, MotionState::Success);
+        assert_eq!(cursor, Position::new(2, 4));
+    }
+
+    #[test]
+    fn test_newline_space_newline_eol() {
+        let mut buffer = PreTokenizedBuffer::new(
+            1,
+            [vec![], vec![Token::new(1, 3, 4, TokenType::Space)]],
+        );
+        let mut motion = ForwardWord::new(true);
+        let mut cursor = Position::new(1, 1);
+        let s = motion.map(&mut buffer, 1, &mut cursor).unwrap();
+        assert_eq!(s, MotionState::Success);
+        assert_eq!(cursor, Position::new(2, 1));
+    }
 }
