@@ -12,19 +12,13 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use std::marker::PhantomData;
-
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
 
 use super::api::{MotionType, OmapOutput, WordMotion};
 use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
-use super::core::failure::Intolerable;
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
-use super::core::motion::{
-    ExtendedMotionState, FoldState, MarkovianUnit, Motion, MotionState,
-    UnitMotion,
-};
+use super::core::motion::Motion;
 use super::core::position::{OperatorRange, Position};
 use super::motions::text_object::{EndWord, ForwardWord};
 use super::policy::adjust_cursor::AdjustCursor;
@@ -33,7 +27,6 @@ use super::policy::exclusive_special::ExclusiveSpecial;
 use super::policy::position_cursor::PositionCursor;
 use super::policy::yank_linewise::YankLinewise;
 use super::policy::zero_off::ZeroOff;
-use super::xmap_w::UnitXmapW;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
@@ -119,72 +112,6 @@ fn on_word<B: ParsedBufferLike + ?Sized>(
         GToken::Eol(_) => false,
     };
     Ok(on_word)
-}
-
-/// The first stage of omap w for rangle.
-pub struct UnitOmapWRangleFirstStage;
-
-impl UnitMotion<Position> for UnitOmapWRangleFirstStage {
-    fn unit_map<B: ParsedBufferLike + ?Sized>(
-        &mut self,
-        buffer: &mut B,
-        cursor: &mut Position,
-    ) -> Result<ExtendedMotionState, B::Error> {
-        UnitXmapW.unit_map(buffer, cursor)
-    }
-}
-
-impl MarkovianUnit<Position> for UnitOmapWRangleFirstStage {
-    type FoldState = Intolerable;
-}
-
-pub struct MarkovianOmapW<M, S, P> {
-    unit_motion: M,
-    phantom_data: PhantomData<S>,
-    cursor_before_last_motion: Option<P>,
-    last_motion_ends_with_failure: bool,
-}
-
-impl<M, S, P> MarkovianOmapW<M, S, P> {
-    pub fn new(unit_motion: M) -> Self {
-        Self {
-            unit_motion,
-            phantom_data: PhantomData,
-            cursor_before_last_motion: None,
-            last_motion_ends_with_failure: false,
-        }
-    }
-}
-
-impl<P, M> Motion<P> for MarkovianOmapW<M, M::FoldState, P>
-where
-    M: MarkovianUnit<P>,
-    P: Clone,
-{
-    fn map<B: ParsedBufferLike + ?Sized>(
-        &mut self,
-        buffer: &mut B,
-        mut count: u64,
-        cursor: &mut P,
-    ) -> Result<MotionState, B::Error> {
-        let mut state = M::FoldState::default();
-        self.cursor_before_last_motion = None;
-        while count > 0 {
-            let current_cursor_before_motion = cursor.clone();
-            let s = self.unit_motion.unit_map(buffer, cursor)?;
-            if s != ExtendedMotionState::Failure {
-                self.cursor_before_last_motion =
-                    Some(current_cursor_before_motion);
-            }
-            self.last_motion_ends_with_failure =
-                s == ExtendedMotionState::Failure;
-            if let Some(absorbing_state) = state.update(s) {
-                return Ok(absorbing_state);
-            }
-            count -= 1;
-        }
-        Ok(state.finalize())
-    }
 }
 
 enum WSpecialSelection {

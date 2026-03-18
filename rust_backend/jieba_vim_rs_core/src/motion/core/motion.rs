@@ -123,33 +123,3 @@ where
         Ok(state.finalize())
     }
 }
-
-pub trait OneOffUnit<P>: UnitMotion<P> {
-    type FoldState: FoldState;
-}
-
-/// A non-Markovian motion that runs for at most once whatever the count is.
-pub struct OneOffMotion<M> {
-    unit_motion: M,
-}
-
-impl<M> OneOffMotion<M> {
-    pub fn new(unit_motion: M) -> Self {
-        Self { unit_motion }
-    }
-}
-
-impl<P, M: OneOffUnit<P>> Motion<P> for OneOffMotion<M> {
-    fn map<B: ParsedBufferLike + ?Sized>(
-        &mut self,
-        buffer: &mut B,
-        count: u64,
-        cursor: &mut P,
-    ) -> Result<MotionState, B::Error> {
-        let mut state = M::FoldState::default();
-        if count > 0 {
-            state.update(self.unit_motion.unit_map(buffer, cursor)?);
-        }
-        Ok(state.finalize())
-    }
-}

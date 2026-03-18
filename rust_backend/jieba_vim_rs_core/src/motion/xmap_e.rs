@@ -13,18 +13,13 @@
 // under the License.
 
 use crate::BufferLike;
-use crate::token::{JiebaPlaceholder, TokenLike};
+use crate::token::JiebaPlaceholder;
 
 use super::api::{VisualMode, WordMotion, XmapOutput};
-use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
-use super::core::failure::Intolerable;
-use super::core::iter::{ExtendedInlineTokensIter, GToken};
-use super::core::motion::{
-    ExtendedMotionState, MarkovianUnit, Motion, UnitMotion,
-};
+use super::core::buffer::ParsedBuffer;
+use super::core::motion::Motion;
 use super::core::position::Position;
 use super::motions::text_object::EndWord;
-use super::nmap_e::UnitNmapE;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `e` (if `word` is `true`) or `E` (if `word` is `false`)
@@ -64,35 +59,4 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             prevent_change,
         })
     }
-}
-
-pub struct UnitXmapE;
-
-impl UnitMotion<Position> for UnitXmapE {
-    fn unit_map<B: ParsedBufferLike + ?Sized>(
-        &mut self,
-        buffer: &mut B,
-        cursor: &mut Position,
-    ) -> Result<ExtendedMotionState, B::Error> {
-        use ExtendedMotionState::*;
-
-        let s = UnitNmapE.unit_map(buffer, cursor)?;
-        if s == Failure || s == Pending {
-            let Position { lnum, col, .. } = cursor;
-            let tokens = buffer.getline_parsed(*lnum)?;
-            let cursor_token = ExtendedInlineTokensIter::new(&tokens)
-                .skip_col(*col)
-                .expect("col too large")
-                .next()
-                .unwrap();
-            if let GToken::T(t) = cursor_token {
-                *col = t.last_char1();
-            }
-        }
-        Ok(s)
-    }
-}
-
-impl MarkovianUnit<Position> for UnitXmapE {
-    type FoldState = Intolerable;
 }

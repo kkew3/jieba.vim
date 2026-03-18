@@ -16,18 +16,14 @@ use crate::BufferLike;
 use crate::token::JiebaPlaceholder;
 
 use super::api::{OmapOutput, WordMotion};
-use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
-use super::core::failure::SuppressFailure;
-use super::core::motion::{
-    ExtendedMotionState, MarkovianUnit, Motion, UnitMotion,
-};
+use super::core::buffer::ParsedBuffer;
+use super::core::motion::Motion;
 use super::core::position::{OperatorRange, Position};
 use super::motions::text_object::EndWord;
 use super::policy::adjust_cursor::AdjustCursor;
 use super::policy::d_special::DSpecial;
 use super::policy::position_cursor::PositionCursor;
 use super::policy::zero_off::ZeroOff;
-use super::xmap_e::UnitXmapE;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `e` (if `word` is `true`) or `E` (if `word` is `false`) in
@@ -79,22 +75,4 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             prevent_change: false,
         })
     }
-}
-
-pub struct UnitOmapERangle;
-
-impl UnitMotion<Position> for UnitOmapERangle {
-    fn unit_map<B: ParsedBufferLike + ?Sized>(
-        &mut self,
-        buffer: &mut B,
-        cursor: &mut Position,
-    ) -> Result<ExtendedMotionState, B::Error> {
-        UnitXmapE.unit_map(buffer, cursor)
-    }
-}
-
-impl MarkovianUnit<Position> for UnitOmapERangle {
-    // The `omap_e` motion always succeeds.
-    type FoldState =
-        SuppressFailure<<UnitXmapE as MarkovianUnit<Position>>::FoldState>;
 }

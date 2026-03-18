@@ -13,15 +13,11 @@
 // under the License.
 
 use crate::BufferLike;
-use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
+use crate::token::JiebaPlaceholder;
 
 use super::api::{NmapOutput, WordMotion};
-use super::core::buffer::{ParsedBuffer, ParsedBufferLike};
-use super::core::failure::SemiTolerable;
-use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
-use super::core::motion::{
-    ExtendedMotionState, MarkovianUnit, Motion, UnitMotion,
-};
+use super::core::buffer::ParsedBuffer;
+use super::core::motion::Motion;
 use super::core::position::Position;
 use super::motions::text_object::ForwardWord;
 use super::policy::adjust_cursor::AdjustCursor;
@@ -60,112 +56,4 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             prevent_change: s.into_prevent_change(),
         })
     }
-}
-
-pub struct UnitNmapW;
-
-impl UnitMotion<Position> for UnitNmapW {
-    fn unit_map<B: ParsedBufferLike + ?Sized>(
-        &mut self,
-        buffer: &mut B,
-        cursor: &mut Position,
-    ) -> Result<ExtendedMotionState, B::Error> {
-        let Position { lnum, col, off } = cursor;
-        *off = 0;
-
-        let n_lines = buffer.lines()?;
-        let tokens = buffer.getline_parsed(*lnum)?;
-        let mut line = ExtendedInlineTokensIter::new(&tokens)
-            .skip_col(*col)
-            .expect("col too large")
-            .peekable();
-        let cursor_token = line.next().unwrap();
-
-        if *lnum == n_lines {
-            match line.peek() {
-                None => {
-                    assert!(cursor_token.is_empty());
-                    return Ok(ExtendedMotionState::Failure);
-                }
-                Some(next_t) => {
-                    // If `next_t` exists, `cursor_token` can't be empty.
-                    if cursor_token.at_end(*col) && next_t.is_empty() {
-                        // If `cursor_token` is at eof and `col` is at end of
-                        // `cursor_token` ..
-                        //
-                        // TODO we should be able to jump to the first_char of
-                        // `next_t` in 'virtualedit' mode, and then return
-                        // Failure.
-                        return Ok(ExtendedMotionState::Failure);
-                    }
-                    if next_t.is_empty() {
-                        // If `cursor_token` is at eof and `col` is *not* at
-                        // end of `cursor_token` ..
-                        let s = match cursor_token {
-                            // As above, if `next_t` exists, `cursor_token`
-                            // can't be empty.
-                            GToken::Eol(_) => unreachable!(),
-                            GToken::T(t) => {
-                                *col = t.last_char();
-                                ExtendedMotionState::Pending
-                            }
-                        };
-                        return Ok(s);
-                    }
-                    // Till here, there must be at least one non-empty token
-                    // after `cursor_token`, if we are in the last line of the
-                    // buffer.
-                }
-            }
-        }
-
-        let s = match find_stop_point(line, col) {
-            // `unwrap` is safe because `find_stop_point` return only empty
-            // line or words.
-            Some(t) => ExtendedMotionState::from_dest_token(t).unwrap(),
-            None => loop {
-                // `line` can't be empty when `lnum` == `n_lines`, as we have
-                // covered above.
-                if *lnum >= n_lines {
-                    // Calling |w| on a Space at bof ..
-                    break ExtendedMotionState::Pending;
-                }
-                *lnum += 1;
-                let tokens = buffer.getline_parsed(*lnum)?;
-                let line = ExtendedInlineTokensIter::new(&tokens);
-                if let Some(t) = find_stop_point(line, col) {
-                    break ExtendedMotionState::from_dest_token(t).unwrap();
-                }
-            },
-        };
-        Ok(s)
-    }
-}
-
-impl MarkovianUnit<Position> for UnitNmapW {
-    type FoldState = SemiTolerable;
-}
-
-fn find_stop_point<L: IntoIterator<Item = GToken>>(
-    line: L,
-    col: &mut usize,
-) -> Option<GToken> {
-    for token in line {
-        *col = token.first_char();
-        match token {
-            GToken::Eol(1) => {
-                *col = token.first_char();
-                return Some(token);
-            }
-            GToken::Eol(_) => *col = token.first_char(),
-            GToken::T(t) => match t.ty {
-                TokenType::Word => {
-                    *col = token.first_char();
-                    return Some(token);
-                }
-                TokenType::Space => *col = token.last_char(),
-            },
-        }
-    }
-    None
 }
