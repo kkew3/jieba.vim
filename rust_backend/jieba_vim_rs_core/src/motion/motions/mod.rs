@@ -14,6 +14,7 @@
 
 //! The motions.
 
+pub mod predicate;
 pub mod text_object;
 
 use super::core;
