@@ -88,15 +88,15 @@ impl FoldState for SemiTolerable {
     }
 }
 
-/// An absolutely intolerable motion state transition.
+/// An intolerable motion state transition.
 #[derive(Default, PartialEq, Eq, Clone, Copy)]
-pub enum AbsolutelyIntolerable {
+pub enum Intolerable {
     #[default]
     Success,
     Failure,
 }
 
-impl FoldState for AbsolutelyIntolerable {
+impl FoldState for Intolerable {
     fn finalize(self) -> MotionState {
         match self {
             Self::Success => MotionState::Success,
@@ -105,7 +105,7 @@ impl FoldState for AbsolutelyIntolerable {
     }
 
     fn update(&mut self, state: ExtendedMotionState) -> Option<MotionState> {
-        use AbsolutelyIntolerable::*;
+        use Intolerable::*;
 
         *self = match (*self, state) {
             (Failure, _) => Failure,

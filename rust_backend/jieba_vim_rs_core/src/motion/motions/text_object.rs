@@ -29,7 +29,7 @@
 use crate::token::{Token, TokenLike, TokenType};
 
 use super::core::buffer::ParsedBufferLike;
-use super::core::failure::{AbsolutelyIntolerable, SemiTolerable, Tolerable};
+use super::core::failure::{Intolerable, SemiTolerable, Tolerable};
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::motion::{
     ExtendedMotionState, FoldState, Markovian, MarkovianUnit, Motion,
@@ -389,7 +389,7 @@ mod end_word {
     }
 
     impl MarkovianUnit<Position> for UnitEndWord {
-        type FoldState = AbsolutelyIntolerable;
+        type FoldState = Intolerable;
     }
 
     /// Return either the stop point (a Word), or the last token yielded by
