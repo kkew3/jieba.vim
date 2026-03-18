@@ -63,13 +63,6 @@ impl<'o> DSpecial for OperatorRange<'o> {
             return Ok(());
         }
 
-        if end.col == 1 && self.mtype == MotionType::CharExclusive {
-            panic!(
-                "`exclusive + end.col=1` case must be handled first by \
-                `exclusive_special` policy"
-            );
-        }
-
         if !start.on_or_before_first_non_blank(buffer)? {
             return Ok(());
         }
