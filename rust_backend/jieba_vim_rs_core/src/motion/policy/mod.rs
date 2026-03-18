@@ -18,6 +18,7 @@ pub mod adjust_cursor;
 pub mod d_special;
 pub mod exclusive_special;
 pub mod position_cursor;
+pub mod yank_linewise;
 pub mod zero_off;
 
 use super::{core, motions};
