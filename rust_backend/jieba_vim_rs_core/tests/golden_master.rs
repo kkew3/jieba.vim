@@ -71,15 +71,22 @@ fn main() {
             }
         }
     }
-    for file in cli.test_info_jsonl {
-        let reader = BufReader::new(File::open(&file).unwrap_or_else(|err| {
-            panic!("can't open file `{}` due to: {}", file.display(), err)
-        }));
-        if file.extension().is_some_and(|ext| ext == "gz") {
-            let reader = BufReader::new(GzDecoder::new(reader));
-            push_trials_from_jsonlines(&mut trials, reader);
-        } else {
-            push_trials_from_jsonlines(&mut trials, reader);
+    for path in cli.test_info_jsonl {
+        match File::open(&path) {
+            Err(err) => eprintln!(
+                "can't open file `{}` due to: {}",
+                path.display(),
+                err
+            ),
+            Ok(file) => {
+                let reader = BufReader::new(file);
+                if path.extension().is_some_and(|ext| ext == "gz") {
+                    let reader = BufReader::new(GzDecoder::new(reader));
+                    push_trials_from_jsonlines(&mut trials, reader);
+                } else {
+                    push_trials_from_jsonlines(&mut trials, reader);
+                }
+            }
         }
     }
     let mut args = Arguments::default();
