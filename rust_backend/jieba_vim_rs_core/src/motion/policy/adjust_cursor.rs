@@ -21,11 +21,12 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use crate::motion::api::MotionType;
 use crate::token::TokenLike;
 
 use super::core::buffer::ParsedBufferLike;
 use super::core::iter::{ExtendedInlineTokensIter, GToken};
-use super::core::position::Position;
+use super::core::position::{OperatorRange, Position};
 
 /// Used after a movement command: If the cursor ends up on the Eol(_),
 /// may move it back to the last character in the line and make the motion
@@ -54,6 +55,21 @@ impl AdjustCursor for Position {
             // There must be at least one token before an Eol(_).
             let prev_token = line.next().unwrap();
             self.col = prev_token.last_char();
+        }
+        Ok(())
+    }
+}
+
+impl<'o> AdjustCursor for OperatorRange<'o> {
+    /// Adjust `rangle` after an omap motion.
+    fn adjust_cursor<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+    ) -> Result<(), B::Error> {
+        let start_col = self.rangle.col;
+        self.rangle.adjust_cursor(buffer)?;
+        if self.rangle.col != start_col {
+            self.mtype = MotionType::CharInclusive;
         }
         Ok(())
     }
