@@ -25,15 +25,24 @@ M n
 K {{ key }}
 B0 {{ buffer }}
 C {{ count }}
-      {%- for operator in ['d', 'c', 'y', 'g~'] %}
+      {%- for operator in ['d', 'c', 'y'] %}
 
 H ?
 M o
 K {{ key }}
 O {{ operator }}
+R a
 B0 {{ buffer }}
 C {{ count }}
+S1 "a=
       {%- endfor %}
+
+H ?
+M o
+K {{ key }}
+O g~
+B0 {{ buffer }}
+C {{ count }}
     {%- endfor %}
     {%- for buffer in visual_buffers %}
       {%- for visualmode in ['v', 'V', '\\<C-v>'] %}
@@ -57,15 +66,24 @@ M n
 K {{ key }}
 B0 {{ buffer }}
 C {{ count }}
-      {%- for operator in ['d', 'c', 'y', 'g~'] %}
+      {%- for operator in ['d', 'c', 'y'] %}
 
 H ?
 M o
 K {{ key }}
 O {{ operator }}
+R a
 B0 {{ buffer }}
 C {{ count }}
+S1 "a=
       {%- endfor %}
+
+H ?
+M o
+K {{ key }}
+O g~
+B0 {{ buffer }}
+C {{ count }}
     {%- endfor %}
     {%- for buffer in visual_buffers %}
       {%- for visualmode in ['v', 'V', '\\<C-v>'] %}
