@@ -219,20 +219,37 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
             endif
         endif
         let l:orig_selection = &selection
+        let l:orig_startofline = &startofline
 
-        " Select and execute.
+        " We need this option for cursor to be correctly positioned after
+        " d-special.
+        set startofline
+
+        " ===
+        " Select ..
         execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
         call setpos("'<", l:result_dict["langle"])
         call setpos("'>", l:result_dict["rangle"])
+
+        " We need this block of code to decide whether to re-position cursor
+        " after d-special when 'startofline' is unset.
+        let l:start_lnum = getpos("'<")[1]
+        let l:end_lnum = getpos("'>")[1]
+        let l:multiline = l:start_lnum !=# l:end_lnum
+        let l:need_repos = getline(l:end_lnum) !=# ""
+
+        " .. and execute.
         let &selection = l:result_dict["selection"]
         if a:operator ==# "c" && a:repeat
             execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
         else
             execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
         endif
+        " ===
 
         " Restore original states.
         let &selection = l:orig_selection
+        let &startofline = l:orig_startofline
         if l:orig_visualmode ==# ""
             call visualmode(1)
         else
@@ -253,8 +270,8 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
             call cursor(l:result_dict["cursor"][1:2])
         endif
 
-        " Special treatment of d-special in nvim.
-        if has("nvim") && a:operator ==# "d" && l:result_dict["visualmode"] ==# "V"
+        " Cursor re-positioning of d-special in case 'startofline' is 0.
+        if &startofline ==# 0 && l:multiline && l:need_repos && l:result_dict["visualmode"] ==# "V"
             call cursor(0, virtcol2col(0, line("."), l:orig_curpos[4]))
         endif
 
