@@ -15,12 +15,15 @@
 use crate::BufferLike;
 use crate::token::JiebaPlaceholder;
 
-use super::api::{MotionType, OmapOutput, WordMotion};
+use super::api::{OmapOutput, WordMotion};
 use super::core::buffer::ParsedBuffer;
-use super::core::motion::{Markovian, Motion, MotionState};
-use super::core::position::Position;
-use super::nmap_ge::UnitNmapGe;
-use super::policy::d_special;
+use super::core::motion::{Motion, MotionState};
+use super::core::position::{OperatorRange, Position};
+use super::policy::d_special::DSpecial;
+use super::policy::exclusive_special::ExclusiveSpecial;
+use super::policy::position_cursor::PositionCursor;
+use super::policy::zero_off::ZeroOff;
+use super::primitives::text_object::BackwardEndWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `ge` (if `word` is `true`) or `gE` (if `word` is `false`) in
@@ -48,54 +51,29 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let langle = cursor_pos;
-        let mut rangle = langle;
-        let mut motion = Markovian::new(UnitNmapGe);
-        // Model state is transitive from nmap_ge to omap_ge.
-        let output = match motion.map(&mut buffer, count, &mut rangle)? {
-            MotionState::Failure => OmapOutput {
-                cursor: rangle,
-                langle,
-                rangle,
-                // `selection` is arbitrary due to the failure
-                mtype: MotionType::CharInclusive,
-                prevent_change: true,
-            },
-            MotionState::Success => {
-                if operator == b"d"
-                    && d_special::is_d_special(
-                        &mut buffer,
-                        langle,
-                        rangle,
-                        false,
-                    )?
-                {
-                    let mut cursor = rangle;
-                    let n_lines = buffer.lines()?;
-                    d_special::reset_cursor_when_d_special(
-                        n_lines,
-                        &langle,
-                        &rangle,
-                        &mut cursor,
-                    );
-                    OmapOutput {
-                        cursor,
-                        langle,
-                        rangle,
-                        mtype: MotionType::LineInclusive,
-                        prevent_change: false,
-                    }
-                } else {
-                    OmapOutput {
-                        cursor: rangle,
-                        langle,
-                        rangle,
-                        mtype: MotionType::CharInclusive,
-                        prevent_change: false,
-                    }
-                }
-            }
-        };
-        Ok(output)
+        let mut orng = OperatorRange::new_inclusive(cursor_pos, operator);
+        orng.langle.zero_off();
+        let mut motion_rangle = BackwardEndWord::new(false);
+        let s = motion_rangle.map(&mut buffer, count, &mut orng.rangle)?;
+        if s == MotionState::Success {
+            orng.exclusive_special(&mut buffer)?;
+            orng.d_special(&mut buffer)?;
+        }
+        orng.cursor = orng.rangle;
+        orng.position_cursor(&mut buffer)?;
+        let OperatorRange {
+            cursor,
+            langle,
+            rangle,
+            mtype,
+            ..
+        } = orng;
+        Ok(OmapOutput {
+            cursor,
+            langle,
+            rangle,
+            mtype,
+            prevent_change: s.into_prevent_change(),
+        })
     }
 }
