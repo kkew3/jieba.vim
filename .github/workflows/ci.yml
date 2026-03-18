@@ -160,6 +160,9 @@ jobs:
             finish
           endif
           set nocompatible
+          if has("nvim")
+            set shada="NONE"
+          endif
           set sessionoptions=globals
           set rtp+=${{ github.workspace }}
           filetype plugin indent on
@@ -325,6 +328,9 @@ jobs:
             finish
           endif
           set nocompatible
+          if has("nvim")
+            set shada="NONE"
+          endif
           set rtp+=${{ github.workspace }}
           filetype plugin indent on
           EOF
