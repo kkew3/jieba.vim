@@ -12,25 +12,6 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use super::tokenize::{Token, TokenLike};
-
-/// Get the index of the token in `tokens` that covers `col`. Return `None` if
-/// `col` is to the right of the last token.
-pub fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
-    use std::cmp::Ordering;
-    tokens
-        .binary_search_by(|tok| {
-            if col < tok.first_char() {
-                Ordering::Greater
-            } else if col >= tok.last_char1() {
-                Ordering::Less
-            } else {
-                Ordering::Equal
-            }
-        })
-        .ok()
-}
-
 /// Try to convert `c` to an ASCII. If failed, return None.
 pub fn ascii_or(c: char) -> Option<u8> {
     if c as u32 <= u8::MAX as u32 {
@@ -198,12 +179,7 @@ pub use set256::Set256;
 
 #[cfg(test)]
 mod tests {
-    use super::{Set256, index_tokens};
-
-    #[test]
-    fn test_index_tokens() {
-        assert_eq!(index_tokens(&[], 0), None);
-    }
+    use super::Set256;
 
     #[test]
     fn test_set256() {

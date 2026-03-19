@@ -29,15 +29,14 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
 use serde::Deserialize;
 
+use crate::dots_progress::DotsProgress;
 use crate::parsing::unparsing::Serializer;
 use crate::parsing::{
     self, Ascii, BootstrapTestCaseBlock, HeadConditional, Position,
     PositionCurswant, RawTestCaseBlock, StateExpr, StateExprFunction,
     TestCaseBlock, TestHashId, UnitEditorMode, UnitTestCaseBlock,
 };
-use crate::vimscript_transpiler::unit_verification::{
-    self, DotsProgress, StateExprBefore,
-};
+use crate::vimscript_transpiler::unit_verification::{self, StateExprBefore};
 use crate::vimscript_transpiler::vimscript_transpiler::Flush;
 
 use super::ToVimscript;
@@ -663,11 +662,13 @@ struct ModelOutput {
     #[serde(default)]
     rangle: Option<Position>,
     #[serde(default)]
-    cursor: Option<PositionCurswant>,
+    cursor: Option<Position>,
     #[serde(default)]
     visualmode: Option<String>,
     #[serde(default)]
     prevent_change: Option<String>,
+    #[serde(default)]
+    selection: Option<String>,
 }
 
 enum VimRunResponse {
@@ -740,6 +741,7 @@ fn verify_in_vim(
             }
             cmd.arg("-S").arg(run_file).arg(buffer_file);
             let st = cmd
+                .env("JIEBA_TEST_CASE", "1")
                 .stdin(Stdio::null())
                 .stdout(Stdio::piped())
                 .stderr(Stdio::inherit())
@@ -843,6 +845,24 @@ impl BootstrapTestCaseBlock {
         let reader = BufReader::new(File::open(&buffer_file)?);
         let expected_buffer_after =
             unit_verification::read_as_clean_buffer(reader)?;
+        if expected_buffer_after.iter().any(|s| {
+            s.chars()
+                .any(|c| c == '\t' || Ascii::from_char(c).is_none())
+        }) {
+            panic!(
+                "expected buffer_after contains TAB or non-ASCII characters, \
+                which is not supported by current version of bootstrap verification"
+            );
+        }
+
+        // As expected buffer_after contains only non-TAB ASCIIs, all chars are
+        // of visual width 1, and we can safely set `curswant` to `col`.
+        fn cursor2cursorcurswant(
+            [bufnum, lnum, col, off]: Position,
+        ) -> PositionCurswant {
+            [bufnum, lnum, col, off, col]
+        }
+
         let self_ = std_run.0;
 
         let buffer_file = work_dir.join("buffer");
@@ -894,7 +914,7 @@ impl BootstrapTestCaseBlock {
                         rangle: None,
                         visual_begin: None,
                         visual_end: None,
-                        cursor: model_output.cursor,
+                        cursor: model_output.cursor.map(cursor2cursorcurswant),
                     },
                     UnitEditorMode::VisualChar
                     | UnitEditorMode::VisualLine
@@ -920,10 +940,10 @@ impl BootstrapTestCaseBlock {
                 };
                 let mut model_output_items = Vec::new();
                 if model_output.cursor.is_some() {
-                    // We assume cursor to be a 5-tuple of numbers (w/
+                    // We assume cursor to be a 4-tuple of numbers (w/out
                     // curswant) for simplicity, which also matches current
                     // implementation.
-                    model_output_items.push(ModelOutputItem::CursorCurswant);
+                    model_output_items.push(ModelOutputItem::Cursor);
                 }
                 if model_output.langle.is_some() {
                     model_output_items.push(ModelOutputItem::Langle);
@@ -940,6 +960,12 @@ impl BootstrapTestCaseBlock {
                 if let Some(value) = model_output.visualmode {
                     model_output_items.push(ModelOutputItem::KeyValue {
                         key: "visualmode".into(),
+                        value,
+                    });
+                }
+                if let Some(value) = model_output.selection {
+                    model_output_items.push(ModelOutputItem::KeyValue {
+                        key: "selection".into(),
                         value,
                     });
                 }
@@ -1016,30 +1042,28 @@ impl Cli {
         let mut jieba_test_writer = match self.output_jieba_test_case {
             None => None,
             Some(path) => {
-                let writer = BufWriter::new(File::create(path)?);
+                let writer = BufWriter::new(File::create(path).unwrap());
                 let serializer = Serializer::setup(
                     writer,
                     head_conditionals_from_vim_type(&vim_type),
-                )?;
+                )
+                .unwrap();
                 Some(serializer)
             }
         };
         let mut progress = DotsProgress::default();
 
         for path in self.test_case_file {
-            progress.reset();
-            let cases = parsing::parse_metatest_file(&path)?;
+            let cases = parsing::parse_metatest_file(&path).unwrap();
             eprintln!("I: {}: found {} test cases", path, cases.len());
             for mut c in cases {
                 let old_hash = c.fix_hash_id();
                 let fixed_hash = c.hash_id();
                 if fixed_hash != &old_hash {
-                    return Err(anyhow::anyhow!(
+                    panic!(
                         "parsing failed: {}:{}: new hash = {}",
-                        fixed_hash.file,
-                        fixed_hash.lineno,
-                        fixed_hash.id
-                    ));
+                        fixed_hash.file, fixed_hash.lineno, fixed_hash.id
+                    );
                 }
                 match &fixed_hash.id {
                     TestHashId::Sha2(bytes) => {
@@ -1069,13 +1093,14 @@ impl Cli {
                         && let Some(block) = block
                     {
                         let block: RawTestCaseBlock = block.into();
-                        writer.write(&block)?;
+                        writer.write(&block).unwrap();
                     }
                     if let VimBin::Path(_) = &vim_bin {
                         progress.step();
                     }
                 }
             }
+            progress.reset();
         }
 
         Ok(())

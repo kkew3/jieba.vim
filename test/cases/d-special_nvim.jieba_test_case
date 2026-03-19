@@ -12,10 +12,31 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-mod cli;
-mod dots_progress;
-mod parsing;
-mod rust_transpiler;
-mod vimscript_transpiler;
+// This file contains test cases of d-special and the expected behavior under
+// neovim.
+//
+// Best viewed in Vim.
 
-pub use cli::{Cli, Command};
+#V 3
+?has:nvim
+
+#M o
+#X u
+#K w
+#O d
+#R a
+#Q | < > prevent_change=0 visualmode=V selection=inclusive
+
+// Buffer: |␊···abcd␊······␊ <<<
+#B0 |␊···abcd␊······␊
+
+H b7baafb5c224523ff44cd04c6859303a66bac5070d74f9f144827094
+C 2
+Bp <␊···abc>d␊······␊
+Bo |······␊
+B1 |······␊
+S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
+
+// >>>
+
+// vim: foldmethod=marker foldmarker=<<<,>>> foldlevel=0

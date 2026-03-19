@@ -15,16 +15,108 @@
 // This file contains failed test cases in bootstrap verification.
 // Best viewed in Vim.
 
-H c5fecc2f2d4d97c1080f86aaf0bc1afbba9de6d0b62d0602d802b686
+H 25151d2964ae69d9af0795a3294254101a7daf85d84df80f28139360
+X u
+M o
+K w
+O c
+R a
+B0 |␊␊
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+Bp <␊>␊
+Bo |␊␊
+B1 |␊␊
+S1 "a=\<Newline>
+
+H a642a7d6e9d8c233efa80168f2d2da9574b61f5b6b075a803d5477a7
 X u
 M o
 K w
 O d
 R a
-B0 abc|de␊
+B0 |abc␊def␊ghi␊
+C 2
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+Bp <abc␊de>f␊ghi␊
+Bo |ghi␊
+B1 |ghi␊
+S1 "a=abc\<Newline>def\<Newline>
+
+H 7ff70abf1025766b8a58eb532687cde68df56dafd6d6bdbc0060c11f
+X u
+M o
+K w
+O c
+R a
+B0 |␊␊
+C 2
+Q | < > prevent_change=0 visualmode=v selection=colon
+Bp <␊>␊
+Bo |␊␊
+B1 |␊␊
+S1 "a=\<Newline>
+
+H 1f49b50c1d9d85ccac4bb61d06f2c14a77188c89e1ea6eaa17f0ff1e
+X u
+M o
+K w
+O d
+R a
+B0 ·|···␊···␊
+C 2
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+Bp ·<···␊···>␊
+Bo |␀
+B1 |␀
+S1 "a=\<Space>\<Space>\<Space>\<Space>\<Newline>\<Space>\<Space>\<Space>\<Newline>
+
+H b8f788ace4573074794da3dbf377cd841aae728386718a33458ce82a
+X u
+M o
+K w
+O d
+R a
+B0 |abc␊···␊
+C 2
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+Bp <abc␊···>␊
+Bo |␀
+B1 |␀
+S1 "a=abc\<Newline>\<Space>\<Space>\<Space>\<Newline>
+
+H 9d4cae3431791bd25f9432b561ea44d9bb2ae10eeff23a96cc784ab6
+X u
+M o
+K w
+O d
+R a
+B0 |␊··␊␊·␊
+C 3
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+Bp <␊··␊␊·>␊
+Bo |␀
+B1 |␀
+S1 "a=\<Newline>\<Space>\<Space>\<Newline>\<Newline>\<Space>\<Newline>
+
+H 5413349d6322d39f58edf1db61e6e8df89e09bb163dc05ec366cba5c
+X u
+M n
+K e
+B0 |······␊
 C 0
-Q | \ < > prevent_change=0 visualmode=v
-Bp abc<d>e␊
-Bo ab|c␊
-B1 ab|c␊
-S1 "a=de
+Q | prevent_change=1
+Bo ·····|·␊
+B1 ·····|·␊
+
+H 8d43d87ad40795a5e4f0cfbac9368bd903cb6dfd2571a8d13a4d27df
+X u
+M o
+K b
+O d
+B0 ␊|···␊
+C 0
+Q | < > prevent_change=0 visualmode=v selection=colon
+Bp >␊<···␊
+Bo |···␊
+B1 ··|·␊

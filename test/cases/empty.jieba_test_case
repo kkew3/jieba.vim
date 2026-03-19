@@ -20,25 +20,25 @@
 #X u
 #M n
 #K w
-#Q | \
+#Q |
 
-H 698e57d0555d71c2d35a6b462c2af57b8ff017a14aff967cf1c3afbe
+H c49507d01cdbea465d32314ceb801d9c8f254abc9c6f69815f182df8
 B0 |␊
 Bo |␊
 B1 |␊
 
-H 706d85f12b47c3d525af804374cbc7e241aa86cc95e22e64264096ba
+H 8cce72cc00faa068725a1fe04b88053850a3f2000273e4f4730c6053
 C 1000
 B0 |␊
 Bo |␊
 B1 |␊
 
-H 80079981ca7ca6dd775d356f8d924c607deffc768fa0018f8b12be2a
+H 03a125e3f6590812f466d308ddc74afb24d01987a305b40f4eb8d9b1
 B0 |\␊
 Bo |␊
 B1 |␊
 
-H 8296af34e1f15c6444a53271d4d5f75a7eae56f85b851e01798dca1f
+H 10b646de08ba83ad3a6d33fabcde1c1c5fadc694e8d3a5b4088a3744
 C 1000
 B0 |\␊
 Bo |␊
@@ -50,25 +50,25 @@ B1 |␊
 #X u
 #M n
 #K b
-#Q | \
+#Q |
 
-H 797f49bf8ea25f1bafdb3b8d59477ea2447dfbbd137facedb78198ce
+H 3a6b4a36a2338d2844f0df72ced159c538450f9783bb8b3e0cf9e472
 B0 |␊
 Bo |␊
 B1 |␊
 
-H 7015f41f9bfabaa3bfc6ae2697658484cfee45d53c4341f34edc0f10
+H 329b00bed6a566f63230dff020b2d3c73b5123e211812ddd9f57429b
 C 1000
 B0 |␊
 Bo |␊
 B1 |␊
 
-H c209f30411450c7334ad40b70090d535cb0fa726ee00a3773550a0c5
+H f09570f84730fa18dae7fff574e9d718d9fde747f5cc3fe797069d47
 B0 |\␊
 Bo |␊
 B1 |␊
 
-H 202e4390a90c3411730e2a0c0d8c6684d00266d1e0231de11107d539
+H 4ab46fe2887d1522e96230eccb0894f4adb901a241a5b428612d9b14
 C 1000
 B0 |\␊
 Bo |␊
@@ -80,25 +80,25 @@ B1 |␊
 #X u
 #M n
 #K e
-#Q | \
+#Q |
 
-H 52135bf88ac6b5780b7c45bce3e75aceaff381984bad60d4a07aa516
+H cf51bdeb6cae4ca1d663f0040b03ef23d3364c5f1a5bdb63f7be2b23
 B0 |␊
 Bo |␊
 B1 |␊
 
-H 4c0437ad690881933de761f489767067a0c46e5ae6e6d26e49d4d92c
+H 2e06b3142444ec8d799820b31e62d6d33c60e501e69922c682043f13
 C 1000
 B0 |␊
 Bo |␊
 B1 |␊
 
-H 4122b22abea40181a71e20fd6f0f4fe698b0eb1b43ed678e8cfe19bb
+H a23235e47791c4c2df0c9b13493a3c9832e4caa21cede2dba0b86cd9
 B0 |\␊
 Bo |␊
 B1 |␊
 
-H 1e77aa1259b352d0424c4810c2c06e8210f88200edad7cd574f28425
+H 38600c9b3ad5e0e4ddb5625882bf02c84436780f9a6296e16b2a1de3
 C 1000
 B0 |\␊
 Bo |␊
@@ -110,25 +110,25 @@ B1 |␊
 #X u
 #M n
 #K ge
-#Q | \
+#Q |
 
-H 46f6b57c58a49bc312b67f455da23cf0bcfb9a5b869466586a9a05d0
+H be520fc284952bcd9583f04fa1c63ad706c032517f4df840518cdffc
 B0 |␊
 Bo |␊
 B1 |␊
 
-H d7dd1d63585a4759bdcf74ac3497bf8383aac9be662bf228f908342e
+H a96daab181124c5a19a423777f5aee4ce188f1c837f5b4ee5c9ca04a
 C 1000
 B0 |␊
 Bo |␊
 B1 |␊
 
-H b84918bb3e786c4d846a9e78e010500fea8f291803b6bda22850955b
+H 69aeb41ce405f3b2dcdc586ea6e1aaffcf3630053e14b5bc9fccc7de
 B0 |\␊
 Bo |␊
 B1 |␊
 
-H 6c6aa33a9bc7195ba3f736ebd073cc9fb0106e09465b343f773279b3
+H 1820a6b27c57b06f594755069925c9ac174c225dc6b6d9bc02161bb6
 C 1000
 B0 |\␊
 Bo |␊
@@ -393,9 +393,9 @@ S1 visualmode()=\<C-v>
 #M o
 #K w
 #O d
-#Q | \ < > prevent_change=0 visualmode=v
+#Q | < > prevent_change=0 visualmode=v selection=exclusive
 
-H 81795c390b7e7b8a0f8a95b952f4c63241e5c10d7a3b1f3ea80b3bc0 visual mode unchanged
+H 14249057c9a711969be139e683dd34fc746302b9294c9819986a565a visual mode unchanged
 S0 visualmode()=V
 B0 |[]␊
 Bp <>␊
@@ -403,7 +403,7 @@ Bo |␊
 B1 |[]␊
 S1 visualmode()=V
 
-H d60bad19a6a163309feeab4b814f244a59e505ee593956fe07862824 visual mode unchanged
+H 2b9fbbb5eebb73cd5fd5f62a056edbed7ee126e580aa0f7b1cb949c3 visual mode unchanged
 S0 visualmode()=
 B0 |␊
 Bp <>␊

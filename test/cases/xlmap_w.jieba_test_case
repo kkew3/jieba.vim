@@ -77,7 +77,8 @@ S1 visualmode()=V
 // Buffer: abc[]d␊ <<<
 #B0 abc[]d␊
 
-H 02764b2eb776862c0becec28c9f29c6d255df5c6a90b6955f19c28e1
+H 99084f0b4aa1192dca310bb7df79093da9cdfa1f3d951ba3bc6d81ab
+Q < > visualmode=V prevent_change=1
 C 1
 Bo abc<d>␊
 B1 abc[d]␊
@@ -176,7 +177,8 @@ Bo a<bcd␊>␊
 B1 a[bcd␊]␊
 S1 visualmode()=V
 
-H 943d7a6ffb0331839ed9b00b0765c3c870abbe9d13c0c01cf17344ea
+H 5a728991fd5ed4d14d9f3ba8dfb4b3b8755f2679267133986f0025de
+Q < > visualmode=V prevent_change=1
 C 2
 Bo a<bcd␊>␊
 B1 a[bcd␊]␊

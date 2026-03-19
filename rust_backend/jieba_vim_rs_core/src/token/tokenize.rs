@@ -859,6 +859,17 @@ pub struct Token {
     pub(crate) ty: TokenType,
 }
 
+impl Token {
+    /// Used to shift `self` one column to the right, such that the columns
+    /// are indexed from 1. This is a quick patch so that the indexing basis
+    /// comforms to Vim's rule.
+    fn shift1(&mut self) {
+        self.col.start_byte_index += 1;
+        self.col.incl_end_byte_index += 1;
+        self.col.excl_end_byte_index += 1;
+    }
+}
+
 /// Token types.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TokenType {
@@ -893,21 +904,6 @@ impl Token {
 }
 
 impl_token_like_from_col!(Token);
-
-// `None` is used to denote the empty line.
-impl TokenLike for Option<Token> {
-    fn first_char(&self) -> usize {
-        self.map(|t| t.first_char()).unwrap_or(0)
-    }
-
-    fn last_char(&self) -> usize {
-        self.map(|t| t.last_char()).unwrap_or(0)
-    }
-
-    fn last_char1(&self) -> usize {
-        self.map(|t| t.last_char1()).unwrap_or(0)
-    }
-}
 
 impl From<CharTokenGroup> for Token {
     fn from(g: CharTokenGroup) -> Self {
@@ -1014,7 +1010,7 @@ impl<C: JiebaPlaceholder> Tokenizer<C> {
 impl<C: JiebaPlaceholder> Tokenizer<C> {
     /// Parse `line` into tokens. If `into_word` is `true`, the non-space
     /// tokens will be interpretable as `word`s; otherwise, they will be
-    /// `WORD`s.
+    /// `WORD`s. The columns of the resulting [`Token`]s are indexed from 0.
     pub fn parse_str(&self, line: &str, into_word: bool) -> Vec<Token> {
         let chars = self.parse_str_into_chars(line, 0);
         if into_word {
@@ -1022,6 +1018,17 @@ impl<C: JiebaPlaceholder> Tokenizer<C> {
         } else {
             self.parse_chars_into_WORDs(line, chars)
         }
+    }
+
+    /// Call [`shift1`](Token::shift1) patch after
+    /// [`parse_str`](Tokenizer::parse_str) and return the result such that the
+    /// columns of the resulting [`Token`]s are indexed from 1.
+    pub fn parse_str1(&self, line: &str, into_word: bool) -> Vec<Token> {
+        let mut tokens = self.parse_str(line, into_word);
+        for t in tokens.iter_mut() {
+            t.shift1();
+        }
+        tokens
     }
 }
 
