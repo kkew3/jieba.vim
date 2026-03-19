@@ -39,15 +39,15 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ///   buffer, no further jump should be made.
     /// - If there is no previous word to the left of current cursor, jump to
     ///   the first character of the first token in the buffer.
-    pub fn xmap_b<'a, B: BufferLike + ?Sized>(
+    pub fn xmap_b<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        visualmode: VisualMode<'a>,
+        visualmode: VisualMode,
         visual_begin: Position,
         mut visual_end: Position,
         count: u64,
         word: bool,
-    ) -> Result<XmapOutput<'a>, B::Error> {
+    ) -> Result<XmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let mut motion = BackwardWord::new(false);
         let s = motion.map(&mut buffer, count, &mut visual_end)?;
