@@ -269,7 +269,12 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
 
         " Cursor re-positioning of d-special in case 'startofline' is 0.
         if &startofline ==# 0 && l:need_repos && l:result_dict["visualmode"] ==# "V"
-            execute "normal! " . l:orig_curpos[4] . "|"
+            if has("patch-8.2.5034") || has("nvim")
+                call cursor(0, virtcol2col(0, line("."), l:orig_curpos[4]))
+            else
+                execute "normal! " . l:orig_curpos[4] . "|"
+                call cursor(0, col("."))
+            endif
         endif
 
         " Special treatment to |c| which needs to drop the user in insert mode.
