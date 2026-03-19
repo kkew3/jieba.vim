@@ -514,7 +514,7 @@ jobs:
           # removed. But the issue might not be resolved yet. See more at
           # https://github.com/kkew3/jieba.vim/issues/8.
           - target: aarch64-unknown-linux-gnu
-            os: ubuntu-22.04
+            os: ubuntu-22.04-arm
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
           - target: aarch64-apple-darwin
