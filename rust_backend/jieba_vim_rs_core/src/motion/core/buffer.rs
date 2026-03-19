@@ -75,3 +75,83 @@ impl<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder> ParsedBufferLike
         Ok(self.parsed_lines.get(&lnum).unwrap())
     }
 }
+
+#[cfg(test)]
+mod pre_tokenized_buffer {
+    use crate::BufferLike;
+    use crate::token::{Token, TokenLike, TokenType};
+
+    use super::ParsedBufferLike;
+
+    /// Pre-tokenized [`ParsedBufferLike`] used in tests.
+    pub struct PreTokenizedBuffer {
+        /// The lnum of `parsed_lines[0]`.
+        base_lnum: usize,
+        parsed_lines: Vec<Vec<Token>>,
+    }
+
+    impl PreTokenizedBuffer {
+        pub fn new<I: IntoIterator<Item = J>, J: IntoIterator<Item = Token>>(
+            base_lnum: usize,
+            tokens: I,
+        ) -> Self {
+            let mut parsed_lines = Vec::new();
+            for line in tokens {
+                parsed_lines.push(line.into_iter().collect());
+            }
+            Self {
+                base_lnum,
+                parsed_lines,
+            }
+        }
+
+        fn getline_parsed_helper(
+            &self,
+            lnum: usize,
+        ) -> Result<&[Token], <Self as BufferLike>::Error> {
+            Ok(self
+                .parsed_lines
+                .get(lnum.checked_sub(self.base_lnum).ok_or(())?)
+                .ok_or(())?)
+        }
+    }
+
+    fn repeat_push(c: char, count: usize, to_string: &mut String) {
+        for _ in 0..count {
+            to_string.push(c);
+        }
+    }
+
+    impl BufferLike for PreTokenizedBuffer {
+        type Error = ();
+
+        fn getline(&self, lnum: usize) -> Result<String, Self::Error> {
+            let tokens = self.getline_parsed_helper(lnum)?;
+            let mut line = String::new();
+            for t in tokens {
+                let c = match t.ty {
+                    TokenType::Space => ' ',
+                    TokenType::Word => 'a',
+                };
+                repeat_push(c, t.last_char1() - t.first_char(), &mut line);
+            }
+            Ok(line)
+        }
+
+        fn lines(&self) -> Result<usize, Self::Error> {
+            Ok(self.parsed_lines.len())
+        }
+    }
+
+    impl ParsedBufferLike for PreTokenizedBuffer {
+        fn getline_parsed(
+            &mut self,
+            lnum: usize,
+        ) -> Result<&[Token], Self::Error> {
+            self.getline_parsed_helper(lnum)
+        }
+    }
+}
+
+#[cfg(test)]
+pub use pre_tokenized_buffer::PreTokenizedBuffer;

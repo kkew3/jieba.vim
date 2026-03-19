@@ -1102,7 +1102,7 @@ impl Cli {
             let mut written_anything_to_unit_info = false;
             for path in self.test_case_file {
                 let cases = parsing::parse_metatest_file(&path).unwrap();
-                eprintln!("I: {}: found {} test cases", path, cases.len());
+                println!("I: {}: found {} test cases", path, cases.len());
                 'cases_loop: for mut c in cases {
                     let old_hash = c.fix_hash_id();
                     let fixed_hash = c.hash_id();

@@ -22,7 +22,7 @@ jobs:
       - name: Build meta-test binary
         shell: bash
         run: cargo install --locked --path rust_backend/jieba_vim_rs_metatest
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: jieba-metatest-binary
           path: ~/.cargo/bin/jieba_vim_rs_metatest
@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: echo ~/.cargo/bin >> $GITHUB_PATH
       - name: Get prebuilt jieba_vim_rs_metatest binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: jieba-metatest-binary
           path: ~/.cargo/bin
@@ -67,7 +67,7 @@ jobs:
       - name: Expand bootstrap case template
         shell: bash
         run: make -C test/cases/bootstrap clean all
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: bootstrap-test-cases
           path: test/cases/bootstrap/*.jieba_test_case
@@ -84,7 +84,7 @@ jobs:
         run: |
           cargo build --manifest-path rust_backend/Cargo.toml --locked -r
           mv rust_backend/target/release/libjieba_vim_rs.so jieba_vim_rs.so
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: jieba-vim-cdylib-python
           path: jieba_vim_rs.so
@@ -124,18 +124,18 @@ jobs:
         shell: bash
         run: echo ~/.cargo/bin >> $GITHUB_PATH
       - name: Get prebuilt jieba_vim_rs_metatest binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: jieba-metatest-binary
           path: ~/.cargo/bin
       - name: Get bootstrap test cases
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: bootstrap-test-cases
           path: test/cases/bootstrap
       - name: Get jieba.vim cdylib for +python3
         if: matrix.glue-lang == 'py311'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
@@ -162,6 +162,9 @@ jobs:
             finish
           endif
           set nocompatible
+          if has("nvim")
+            set shada="NONE"
+          endif
           set sessionoptions=globals
           set rtp+=${{ github.workspace }}
           filetype plugin indent on
@@ -221,7 +224,7 @@ jobs:
       - name: Check and fix bootstrapped cases
         shell: bash
         run: jieba_vim_rs_metatest check --fix ${{ steps.run-bootstrap-case-verification.outputs.output_test_case }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: bootstrapped-test-case-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
           path: ${{ steps.run-bootstrap-case-verification.outputs.output_test_case }}
@@ -235,7 +238,7 @@ jobs:
           cat <<EOF > "$TOFILE"
           ${{ steps.run-bootstrap-case-verification.outcome == 'failure' && 'failure' || 'success' }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.glue-lang }}
           EOF
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
           path: ${{ steps.indicate-state.outputs.tofile }}
@@ -248,7 +251,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: bootstrap-case-verification
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           pattern: bootstrap-success-*
           merge-multiple: true
@@ -293,19 +296,19 @@ jobs:
         shell: bash
         run: echo ~/.cargo/bin >> $GITHUB_PATH
       - name: Get prebuilt jieba_vim_rs_metatest binary
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: jieba-metatest-binary
           path: ~/.cargo/bin
       - name: Get bootstrapped jieba test cases
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           path: test/cases/bootstrapped
           pattern: bootstrapped-test-case-*
           merge-multiple: true
       - name: Get jieba.vim cdylib for +python3
         if: matrix.glue-lang == 'py311'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
@@ -327,6 +330,9 @@ jobs:
             finish
           endif
           set nocompatible
+          if has("nvim")
+            set shada="NONE"
+          endif
           set rtp+=${{ github.workspace }}
           filetype plugin indent on
           EOF
@@ -385,7 +391,7 @@ jobs:
             unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl \
             unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl
       - name: Collect rust test info jsonl files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
           path: unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl
@@ -409,12 +415,12 @@ jobs:
           ref: ${{ github.head_ref }}
           persist-credentials: true
       - name: Get expanded bootstrap templates
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: bootstrap-test-cases
           path: test/cases/bootstrap
       - name: Get bootstrapped jieba test cases
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           path: test/cases/bootstrapped
           pattern: bootstrapped-test-case-*
@@ -440,7 +446,7 @@ jobs:
       - name: Run unit tests of jieba_vim_rs_core
         shell: bash
         run: cargo test -r --manifest-path rust_backend/jieba_vim_rs_core/Cargo.toml
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           path: rust_backend/jieba_vim_rs_core
           pattern: rust-core-test-info-*
@@ -471,7 +477,7 @@ jobs:
       - name: Show cargo-tarpaulin version
         shell: bash
         run: cargo tarpaulin --version
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           path: rust_backend/jieba_vim_rs_core/golden_master_records
           pattern: rust-core-test-info-*

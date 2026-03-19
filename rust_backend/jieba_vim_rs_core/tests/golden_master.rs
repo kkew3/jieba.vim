@@ -38,6 +38,9 @@ struct Cli {
     /// Be quiet.
     #[arg(short, long, default_value_t = false)]
     quiet: bool,
+    /// Run test cases that contain this string only.
+    #[arg(short, long)]
+    case: Option<String>,
     /// The jsonl files containing model inputs/outputs origined from last unit
     /// verification. If the files are named ending with ".gz", they will be
     /// decompressed automatically. Will also read all jsonl or jsonl.gz files
@@ -68,19 +71,27 @@ fn main() {
             }
         }
     }
-    for file in cli.test_info_jsonl {
-        let reader = BufReader::new(File::open(&file).unwrap_or_else(|err| {
-            panic!("can't open file `{}` due to: {}", file.display(), err)
-        }));
-        if file.extension().is_some_and(|ext| ext == "gz") {
-            let reader = BufReader::new(GzDecoder::new(reader));
-            push_trials_from_jsonlines(&mut trials, reader);
-        } else {
-            push_trials_from_jsonlines(&mut trials, reader);
+    for path in cli.test_info_jsonl {
+        match File::open(&path) {
+            Err(err) => eprintln!(
+                "can't open file `{}` due to: {}",
+                path.display(),
+                err
+            ),
+            Ok(file) => {
+                let reader = BufReader::new(file);
+                if path.extension().is_some_and(|ext| ext == "gz") {
+                    let reader = BufReader::new(GzDecoder::new(reader));
+                    push_trials_from_jsonlines(&mut trials, reader);
+                } else {
+                    push_trials_from_jsonlines(&mut trials, reader);
+                }
+            }
         }
     }
     let mut args = Arguments::default();
     args.quiet = cli.quiet;
+    args.filter = cli.case;
     libtest_mimic::run(&args, trials).exit();
 }
 

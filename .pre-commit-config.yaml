@@ -47,4 +47,4 @@ repos:
         name: check that machine-generated files are not modified locally
         entry: machine-generated files maintained by the CI pipeline should not be modified locally
         language: fail
-        files: '^(rust_backend/jieba_vim_rs_core/tests/n?vim_.*\.rs|test/cases/bootstrap/main\.jieba_test_case|test/cases/bootstrapped/[^_].*\.jieba_test_case)$'
+        files: '^(test/cases/bootstrap/main\.jieba_test_case|test/cases/bootstrapped/[^_].*\.jieba_test_case)$'

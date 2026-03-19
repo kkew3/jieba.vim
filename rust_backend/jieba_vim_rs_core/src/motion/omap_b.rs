@@ -12,13 +12,18 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use crate::BufferLike;
 use crate::token::JiebaPlaceholder;
-use crate::{BufferLike, CursorPositionCurswant};
 
-use super::nmap_b::UnitNmapB;
-use super::parsed_buffer::ParsedBuffer;
-use super::word_motion::{Markovian, Motion, MotionState};
-use super::{OmapOutput, WordMotion};
+use super::api::{OmapOutput, WordMotion};
+use super::core::buffer::ParsedBuffer;
+use super::core::motion::{Motion, MotionState};
+use super::core::position::{OperatorRange, Position};
+use super::policy::d_special::DSpecial;
+use super::policy::exclusive_special::ExclusiveSpecial;
+use super::policy::position_cursor::PositionCursor;
+use super::policy::yank_linewise::YankLinewise;
+use super::primitives::text_object::BackwardWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `b` (if `word` is `true`) or `B` (if `word` is `false`) in
@@ -40,44 +45,36 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn omap_b<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: CursorPositionCurswant,
+        cursor_pos: Position,
         count: u64,
         word: bool,
-        _operator: &[u8],
+        operator: &[u8],
     ) -> Result<OmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let [bufnum, lnum, col, off, _] = cursor_pos;
-        let langle = [bufnum, lnum, col, off];
-        let mut rangle = langle;
-        let mut motion = Markovian::new(UnitNmapB);
-        // Motion state is transitive from nmap_b to omap_b.
-        let output = match motion.map(&mut buffer, count, &mut rangle)? {
-            MotionState::Failure => OmapOutput {
-                cursor: rangle,
-                langle,
-                rangle,
-                visualmode: b"v", // is arbitrary due to the failure
-                selection: b"exclusive", // is arbitrary due to the failure
-                prevent_change: b"1",
-            },
-            MotionState::Success => {
-                // Apply operator-colon trick whatsoever.
-                // A bit weird, but seems to work.
-                OmapOutput {
-                    // When using operator-colon trick, `cursor` value is
-                    // arbitrary. We pick this value to ensure that the
-                    // verifier is satisfactory, as it's always a valid
-                    // position even if the buffer becomes empty due to
-                    // d-special.
-                    cursor: [bufnum, 1, 1, 0],
-                    langle,
-                    rangle,
-                    visualmode: b"v",
-                    selection: b"colon",
-                    prevent_change: b"0",
-                }
-            }
-        };
-        Ok(output)
+        let mut orng = OperatorRange::new_exclusive(cursor_pos, operator);
+        orng.langle.off = 0;
+        let mut motion_rangle = BackwardWord::new(false);
+        let s = motion_rangle.map(&mut buffer, count, &mut orng.rangle)?;
+        if s == MotionState::Success {
+            orng.exclusive_special(&mut buffer)?;
+            orng.d_special(&mut buffer)?;
+            orng.yank_linewise();
+        }
+        orng.cursor = orng.rangle;
+        orng.position_cursor(&mut buffer)?;
+        let OperatorRange {
+            cursor,
+            langle,
+            rangle,
+            mtype,
+            ..
+        } = orng;
+        Ok(OmapOutput {
+            cursor,
+            langle,
+            rangle,
+            mtype,
+            prevent_change: s.into_prevent_change(),
+        })
     }
 }
