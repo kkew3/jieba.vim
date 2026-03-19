@@ -330,15 +330,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5692dd7b5a1978a5aeb0ce83b7655c58ca8efdcb79d21036ea249da95afec2c6"
 
 [[package]]
-name = "expose-shared-library"
-version = "0.1.4"
-source = "git+https://github.com/kkew3/expose-shared-library.git?tag=0.1.4#afe09cb67e4265442a072aaa58354c9ef770cdee"
-dependencies = [
- "cfg-if",
- "symlink",
-]
-
-[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -483,17 +474,6 @@ dependencies = [
  "phf",
  "regex",
  "rustc-hash",
-]
-
-[[package]]
-name = "jieba_vim_rs"
-version = "0.3.1"
-dependencies = [
- "expose-shared-library",
- "jieba-rs",
- "jieba_vim_rs_core",
- "pyo3",
- "pyo3-build-config",
 ]
 
 [[package]]
@@ -1037,12 +1017,6 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
-
-[[package]]
-name = "symlink"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7973cce6668464ea31f176d85b13c7ab3bba2cb3b77a2ed26abd7801688010a"
 
 [[package]]
 name = "syn"
