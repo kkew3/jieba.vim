@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,29 +12,22 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::BufferLike;
-use crate::token::token_iter::{ForwardTokenIterator, TokenIteratorItem};
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
+use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::{MotionOutput, WordMotion};
-
-/// Test if a token is stoppable for `nmap_e`.
-fn is_stoppable(item: &TokenIteratorItem) -> bool {
-    match item.token {
-        None => false,
-        Some(token) => match token.ty {
-            TokenType::Word => true,
-            TokenType::Space => false,
-        },
-    }
-}
+use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
+use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
+use super::word_motion::{
+    AbsolutelyIntolerable, ExtendedMotionState, Markovian, MarkovianUnit,
+    Motion, UnitMotion,
+};
+use super::{NmapOutput, WordMotion};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
-    /// Vim motion `e` (if `word` is `true`) or `E` (if `word` is `false`)
-    /// in normal mode. Take in current `cursor_pos` (lnum, col), and return
-    /// the new cursor position. Note that `lnum` is 1-indexed, and `col`
-    /// is 0-indexed. We denote both `word` and `WORD` with the English word
-    /// "word" below.
+    /// Vim motion `e` (if `word` is `true`) or `E` (if `word` is `false`) in
+    /// normal mode. Take in current `cursor_pos` (0, lnum, col, off, _), and
+    /// return the new cursor position. We denote both `word` and `WORD` with
+    /// the English word "word" below.
     ///
     /// # Basics
     ///
@@ -44,103 +37,156 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ///
     /// # Edge cases
     ///
-    /// - If current cursor is on the last character of the last token in the
-    ///   buffer, no further jump should be made.
     /// - If there is no next word to the right of current cursor, jump to the
-    ///   last character of the last token in the buffer.
-    ///
-    /// # Panics
-    ///
-    /// - If current cursor `col` is to the right of the last token in current
-    ///   line of the buffer.
+    ///   last character of the last token in the buffer. And the motion should
+    ///   be taken as a failure.
     pub fn nmap_e<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: (usize, usize),
-        mut count: u64,
+        cursor_pos: CursorPositionCurswant,
+        count: u64,
         word: bool,
-    ) -> Result<MotionOutput, B::Error> {
-        let (mut lnum, mut col) = cursor_pos;
-        let mut it = ForwardTokenIterator::new(
-            buffer,
-            &self.tokenizer,
-            lnum,
-            col,
-            word,
-        )?
-        .peekable();
-        while count > 0 && it.peek().is_some() {
-            let item = it.next().unwrap()?;
-            if !is_stoppable(&item) {
-                lnum = item.lnum;
-                col = item.token.last_char();
-            } else if !(item.cursor && col == item.token.last_char()) {
-                lnum = item.lnum;
-                col = item.token.last_char();
-                count -= 1;
-            }
-        }
-        Ok(MotionOutput {
-            new_cursor_pos: (lnum, col),
-            d_special: false,
-            prevent_change: false,
+    ) -> Result<NmapOutput, B::Error> {
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let [bufnum, lnum, col, off, _] = cursor_pos;
+        let mut cursor = [bufnum, lnum, col, off];
+        let mut motion = Markovian::new(UnitNmapE);
+        let s = motion.map(&mut buffer, count, &mut cursor)?;
+        Ok(NmapOutput {
+            cursor,
+            prevent_change: s.into_prevent_change(),
         })
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[cfg(feature = "verifiable_case")]
-    use jieba_vim_rs_test_macro::verified_cases;
-    #[cfg(not(feature = "verifiable_case"))]
-    use jieba_vim_rs_test_macro::verified_cases_dry_run as verified_cases;
+pub struct UnitNmapE;
 
-    #[verified_cases(
-        mode = "n",
-        motion = "e",
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["{}"])]
-    #[vcase(name = "one_word", buffer = ["aaa{}a"])]
-    #[vcase(name = "one_word", buffer = ["a{aa}a"])]
-    #[vcase(name = "one_word", buffer = ["a{aa}a"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["a{aa}a    "])]
-    #[vcase(name = "one_word_space", buffer = ["aaa{a   } "])]
-    #[vcase(name = "one_word_space", buffer = ["aaaa {  } "])]
-    #[vcase(name = "space_one_word", buffer = ["{    aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["   { aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["    {aaa}a"])]
-    #[vcase(name = "space_one_word", buffer = ["    aaa{}a"])]
-    #[vcase(name = "two_words", buffer = ["a{aa}a  aaa"])]
-    #[vcase(name = "two_words", buffer = ["a{aaa  aa}a"], count = 2)]
-    #[vcase(name = "two_words", buffer = ["aaa{a aa}a"])]
-    #[vcase(name = "two_words", buffer = ["aaa{a aa}a"], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["    {aaa}a   "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   aaa}a   "])]
-    #[vcase(name = "space_one_word_space", buffer = [" {   aaaa  } "], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["a{aa}a", ""])]
-    #[vcase(name = "one_word_newline", buffer = ["a{aaa", "}"], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["aaa{a", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["a{aa}a    ", ""])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaa{a     ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa{    ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaaa {   ", "}"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "  ", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaaa", "{  ", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["aaa{a", "", "   } "])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", " ", "", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["aaa{a", "", "", "}"])]
-    #[vcase(name = "word_newline_word", buffer = ["a{aa}a", "", " ", "", "aaa"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", " ", "", "aa}a"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "  ", "", " ", "aaa}a"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", "aa}a", "", "aaaa"])]
-    #[vcase(name = "word_newline_word", buffer = ["aaa{a", "", "aaa", "", "aaa}a"], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["a{aa aaa}a"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["aaa {aaa}a"], count = 10293949403)]
-    mod motion_nmap_e {}
+impl UnitMotion<Position> for UnitNmapE {
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        cursor: &mut Position,
+    ) -> Result<ExtendedMotionState, B::Error> {
+        let [_, lnum, col, off] = cursor;
+        *off = 0;
+
+        let n_lines = buffer.lines()?;
+        let tokens = buffer.getline_parsed(*lnum)?;
+        let mut line = ExtendedInlineTokensIter::new(&tokens)
+            .skip_col(*col)
+            .expect("col too large")
+            .peekable();
+        let cursor_token = line.next().unwrap();
+
+        if *lnum == n_lines {
+            match line.peek() {
+                None => {
+                    assert!(cursor_token.is_empty());
+                    return Ok(ExtendedMotionState::Failure);
+                }
+                Some(next_t) => {
+                    // If `next_t` exists, `cursor_token` can't be empty.
+                    assert!(!cursor_token.is_empty());
+                    if cursor_token.at_end(*col) && next_t.is_empty() {
+                        // If `cursor_token` is at eof and `col` is at end of
+                        // `cursor_token` ..
+                        //
+                        // TODO we should be able to jump to the first_char of
+                        // `next_t` in 'virtualedit' mode, and then return
+                        // Failure.
+                        return Ok(ExtendedMotionState::Failure);
+                    }
+                    if next_t.is_empty()
+                        && let GToken::T(t) = &cursor_token
+                    {
+                        *col = t.last_char();
+                        let s = match t.ty {
+                            TokenType::Space => ExtendedMotionState::Pending,
+                            TokenType::Word => ExtendedMotionState::Success,
+                        };
+                        return Ok(s);
+                    }
+                }
+            }
+        }
+
+        if let GToken::T(t) = &cursor_token
+            && t.ty == TokenType::Word
+            && !t.at_end(*col)
+        {
+            *col = t.last_char();
+            return Ok(ExtendedMotionState::Success);
+        }
+
+        fn is_not_non_empty_line_eol(token: &GToken) -> bool {
+            match token {
+                GToken::T(_) => true,
+                GToken::Eol(1) => true,
+                GToken::Eol(_) => false,
+            }
+        }
+
+        // We need to filter out non-empty line Eol because they occur after
+        // all other tokens in a line, and thus prevents us from collecting the
+        // last regular token (or empty line Eol) of each line.
+        let line = line.filter(is_not_non_empty_line_eol);
+        let s = match find_stop_point(line, col) {
+            // `find_stop_point` only return Ok(Word).
+            Ok(_) => ExtendedMotionState::Success,
+            Err(mut last_t) => loop {
+                if *lnum >= n_lines {
+                    // If `lnum` == n_lines, `last_t` can't be None; and if
+                    // `last_t` is None, `lnum` can't be `n_lines`.
+                    let s = match last_t.unwrap() {
+                        GToken::T(t) => match t.ty {
+                            // If `last_t` were a word, it should already
+                            // be captured by `find_stop_point`.
+                            TokenType::Word => unreachable!(),
+                            TokenType::Space => ExtendedMotionState::Pending,
+                        },
+                        GToken::Eol(1) => ExtendedMotionState::SemiFailure,
+                        // Due to the filtering.
+                        GToken::Eol(_) => unreachable!(),
+                    };
+                    break s;
+                }
+                *lnum += 1;
+                let tokens = buffer.getline_parsed(*lnum)?;
+                let line = ExtendedInlineTokensIter::new(&tokens)
+                    .filter(is_not_non_empty_line_eol);
+                match find_stop_point(line, col) {
+                    // `find_stop_point` only return Ok(Word).
+                    Ok(_) => break ExtendedMotionState::Success,
+                    Err(err) => last_t = err,
+                }
+            },
+        };
+        Ok(s)
+    }
+}
+
+impl MarkovianUnit<Position> for UnitNmapE {
+    type FoldState = AbsolutelyIntolerable;
+}
+
+/// Return either the stop point (a Word), or the last token yielded by `line`.
+fn find_stop_point<L: IntoIterator<Item = GToken>>(
+    line: L,
+    col: &mut usize,
+) -> Result<GToken, Option<GToken>> {
+    let mut last_token = None;
+    for token in line {
+        last_token = Some(token);
+        match token {
+            GToken::T(t) => {
+                *col = t.last_char();
+                if t.ty == TokenType::Word {
+                    return Ok(token);
+                }
+            }
+            GToken::Eol(1) => *col = 1,
+            GToken::Eol(_) => (),
+        }
+    }
+    Err(last_token)
 }

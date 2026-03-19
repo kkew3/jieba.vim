@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,63 +12,105 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::BufferLike;
-use crate::token::{self, JiebaPlaceholder, TokenLike, TokenType, Tokenizer};
+//! Quoted from vimhelp.org:
+//!
+//! > An exception for the d{motion} command: If the motion is not linewise,
+//! > the start and end of the motion are not in the same line, and there are
+//! > only blanks before the start and there are no non-blanks after the end of
+//! > the motion, the delete becomes linewise.  This means that the delete also
+//! > removes the line of blanks that you might expect to remain.
+//!
+//! Check <https://vimhelp.org/change.txt.html#d-special> for details.
+
+use crate::Position;
+use crate::token::TokenType;
+
+use super::parsed_buffer::ParsedBufferLike;
+use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 
 /// Check if current motion satisfies d-special case. See
 /// https://vimhelp.org/change.txt.html#d-special.
-pub fn is_d_special<B: BufferLike + ?Sized, C: JiebaPlaceholder>(
-    buffer: &B,
-    tokenizer: &Tokenizer<C>,
-    start_cursor_pos: (usize, usize),
-    end_cursor_pos: (usize, usize),
-    word: bool,
+pub fn is_d_special<B: ParsedBufferLike + ?Sized>(
+    buffer: &mut B,
+    langle: Position,
+    rangle: Position,
+    inclusive: bool,
 ) -> Result<bool, B::Error> {
-    let (start_lnum, start_col) = start_cursor_pos;
-    let (end_lnum, end_col) = end_cursor_pos;
-
-    if start_lnum == end_lnum {
+    let (langle, rangle) = if langle <= rangle {
+        (langle, rangle)
+    } else {
+        (rangle, langle)
+    };
+    let [_, llnum, lcol, _] = langle;
+    let [_, rlnum, rcol, _] = rangle;
+    if rcol == 1 && !inclusive {
+        panic!(
+            "`exclusive + rcol=1` case must be handled first by \
+            `exclusive_special` mod"
+        );
+    }
+    if llnum == rlnum {
         return Ok(false);
     }
 
-    let tokens_cursor_line =
-        tokenizer.parse_str(&buffer.getline(start_lnum)?, word);
-    if !tokens_cursor_line.is_empty() {
-        let i = token::index_tokens(&tokens_cursor_line, start_col).unwrap();
-        if tokens_cursor_line[..i].iter().any(|tok| match tok.ty {
-            TokenType::Space => false,
-            TokenType::Word => true,
-        }) {
-            return Ok(false);
-        }
-        let cursor_token = &tokens_cursor_line[i];
-        if let TokenType::Word = cursor_token.ty {
-            if start_col > cursor_token.first_char() {
-                return Ok(false);
-            }
-        }
+    let lline = buffer.getline_parsed(llnum)?;
+    let mut ltokens = ExtendedInlineTokensIter::new(&lline)
+        .take_col_rev(lcol)
+        .expect("col of langle too large");
+    if let GToken::T(t) = ltokens.next().unwrap()
+        && t.ty == TokenType::Word
+        && !t.at_start(lcol)
+    {
+        return Ok(false);
     }
-
-    let tokens_new_cursor_line =
-        tokenizer.parse_str(&buffer.getline(end_lnum)?, word);
-    if !tokens_new_cursor_line.is_empty() {
-        let j = token::index_tokens(&tokens_new_cursor_line, end_col).unwrap();
-        if tokens_new_cursor_line[j + 1..]
-            .iter()
-            .any(|tok| match tok.ty {
-                TokenType::Space => false,
-                TokenType::Word => true,
-            })
+    for token in ltokens {
+        if let GToken::T(t) = token
+            && t.ty == TokenType::Word
         {
             return Ok(false);
         }
-        let new_cursor_token = &tokens_new_cursor_line[j];
-        if let TokenType::Word = new_cursor_token.ty {
-            if end_col < new_cursor_token.last_char() {
-                return Ok(false);
-            }
+    }
+
+    let rline = buffer.getline_parsed(rlnum)?;
+    let mut rtokens = ExtendedInlineTokensIter::new(&rline)
+        .skip_col(rcol)
+        .expect("col of rangle too large");
+    if let GToken::T(t) = rtokens.next().unwrap()
+        && t.ty == TokenType::Word
+    {
+        if !inclusive {
+            return Ok(false);
+        }
+        if !t.at_end(rcol) {
+            return Ok(false);
+        }
+    }
+    for token in rtokens {
+        if let GToken::T(t) = token
+            && t.ty == TokenType::Word
+        {
+            return Ok(false);
         }
     }
 
     Ok(true)
+}
+
+/// `cursor` is essentially arbitrary for d-special; setting `cursor` to
+/// (lnum=1, col=1, off=0) to please the verifier, in case d-special deletes
+/// the entire buffer.
+pub fn reset_cursor_when_d_special(
+    n_lines: usize,
+    langle: &Position,
+    rangle: &Position,
+    cursor: &mut Position,
+) {
+    let [_, llnum, _, _] = langle;
+    let [_, rlnum, _, _] = rangle;
+    let [_, lnum, col, off] = cursor;
+    if *llnum == 1 && *rlnum == n_lines {
+        *lnum = 1;
+        *col = 1;
+        *off = 0;
+    }
 }

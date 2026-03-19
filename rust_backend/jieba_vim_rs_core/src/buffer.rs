@@ -23,31 +23,7 @@ pub trait BufferLike {
     fn lines(&self) -> Result<usize, Self::Error>;
 }
 
-impl BufferLike for Vec<&str> {
-    type Error = ();
-
-    fn getline(&self, lnum: usize) -> Result<String, Self::Error> {
-        self.get(lnum - 1).map(|s| s.to_string()).ok_or(())
-    }
-
-    fn lines(&self) -> Result<usize, Self::Error> {
-        Ok(self.len())
-    }
-}
-
 impl BufferLike for Vec<String> {
-    type Error = ();
-
-    fn getline(&self, lnum: usize) -> Result<String, Self::Error> {
-        self.get(lnum - 1).map(|s| s.to_string()).ok_or(())
-    }
-
-    fn lines(&self) -> Result<usize, Self::Error> {
-        Ok(self.len())
-    }
-}
-
-impl BufferLike for [&str] {
     type Error = ();
 
     fn getline(&self, lnum: usize) -> Result<String, Self::Error> {

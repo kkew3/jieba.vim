@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,50 +12,28 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::BufferLike;
-use crate::token::token_iter::{ForwardTokenIterator, TokenIteratorItem};
+use std::marker::PhantomData;
+
 use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
+use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::{MotionOutput, WordMotion};
-
-/// Test if a token is stoppable for `omap_w`.
-fn is_stoppable(item: &TokenIteratorItem) -> bool {
-    match item.token {
-        None => true,
-        Some(token) => match token.ty {
-            TokenType::Word => true,
-            TokenType::Space => false,
-        },
-    }
-}
-
-// Checkout https://vimhelp.org/intro.txt.html#%7Bmotion%7D, on the subsection
-// "Ex commands". We may opt to set 'virtualedit' before `omap`, and do not use
-// `o_v` to invert the exclusiveness. Example omap:
-//
-//     function! MoveToEOL()
-//         set ve=all  " Can't be placed outside the cursor position function
-//         call cursor(line('.'), col('$'))
-//     endfunction
-//
-//     onoremap $ :<c-u>call MoveToEOL()<cr>:set ve=none<cr>
+use super::omap_e::UnitOmapERangle;
+use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
+use super::token_iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
+use super::word_motion::{
+    ExtendedMotionState, FoldState, Intolerable, Markovian, MarkovianUnit,
+    Motion, MotionState, UnitMotion,
+};
+use super::xmap_w::UnitXmapW;
+use super::{OmapOutput, WordMotion, d_special};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
-    /// in operator-pending mode. Since Vim's help states in section
-    /// "exclusive-linewise" that:
+    /// in operator-pending mode.
     ///
-    /// > When using ":" any motion becomes characterwise exclusive.
-    ///
-    /// with plain onoremap we won't be able to operate on the last character
-    /// in a line. Therefore, we assume that `+virtualedit` feature is enabled
-    /// and `set virtualedit=onemore` temporarily to circumvent this issue.
-    /// See also about this trick at https://vimhelp.org/intro.txt.html#%7Bmotion%7D
-    /// and https://github.com/svermeulen/vim-NotableFt/blob/master/plugin/NotableFt.vim.
-    ///
-    /// Take in current `cursor_pos` (lnum, col), and return the new cursor
-    /// position. Note that `lnum` is 1-indexed, and `col` is 0-indexed. We
-    /// denote both `word` and `WORD` with the English word "word" below.
+    /// Take in current `cursor_pos` (0, lnum, col, off, _), and return the
+    /// operation range and the new cursor position. We denote both `word` and
+    /// `WORD` with the English word "word" below.
     ///
     /// # Basics
     ///
@@ -64,214 +42,486 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ///
     /// # Edge cases
     ///
-    /// - If there is no next word to the right of current cursor, jump to one
-    ///   character after the last token in the buffer (`virtualedit`).
     /// - Quoted from Vim's help section "WORD": "When using the `w` motion in
     ///   combination with an operator and the last word moved over is at the
     ///   end of a line, the end of that word becomes the end of the operated
-    ///   text, not the first word in the next line."
-    ///
-    /// # Panics
-    ///
-    /// - If current cursor `col` is to the right of the last token in current
-    ///   line of the buffer.
+    ///   text, not the first word in the next line." (*)
+    /// - Quoted from Vim's help section "WORD": "cw" and "cW" are treated like
+    ///   "ce" and "cE" if the cursor is on a non-blank. This is because "cw"
+    ///   is interpreted as change-word, and a word does not include the
+    ///   following white space (see also cw). (**)
     pub fn omap_w<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: (usize, usize),
-        mut count: u64,
+        cursor: CursorPositionCurswant,
+        count: u64,
         word: bool,
-    ) -> Result<MotionOutput, B::Error> {
-        let (mut lnum, mut col) = cursor_pos;
-        let mut it = ForwardTokenIterator::new(
-            buffer,
-            &self.tokenizer,
-            lnum,
-            col,
-            word,
-        )?
-        .peekable();
-        while count > 0 && it.peek().is_some() {
-            let item = it.next().unwrap()?;
-            if !is_stoppable(&item) {
-                lnum = item.lnum;
-                if it.peek().is_none() || (count == 1 && item.eol) {
-                    col = item.token.last_char1();
-                    count -= 1;
-                } else {
-                    col = item.token.last_char();
-                }
-            } else {
-                if !item.cursor {
-                    lnum = item.lnum;
-                    col = item.token.first_char();
-                    count -= 1;
-                }
-                if count > 0 && it.peek().is_none() {
-                    col = item.token.last_char1();
-                    count -= 1;
-                } else if count == 1 && item.eol && it.peek().is_some() {
-                    if item.token.is_none() {
-                        let next_item = it.next().unwrap()?;
-                        lnum = next_item.lnum;
-                        col = next_item.token.first_char();
-                    } else {
-                        col = item.token.last_char1();
+        operator: &[u8],
+    ) -> Result<OmapOutput, B::Error> {
+        assert!(count >= 1);
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let [bufnum, lnum, col, off, _] = cursor;
+        let langle = [bufnum, lnum, col, off];
+        let mut rangle = langle;
+
+        let tokens = buffer.getline_parsed(lnum)?;
+        let mut line = ExtendedInlineTokensIter::new(&tokens)
+            .skip_col(col)
+            .expect("col too large")
+            .peekable();
+        let cursor_token = line.peek().unwrap();
+
+        // |cw| special case (**).
+        if let GToken::T(t) = cursor_token
+            && t.ty == TokenType::Word
+            && operator == b"c"
+        {
+            let mut motion = Markovian::new(UnitOmapERangle);
+            let prevent_change = motion
+                .map(&mut buffer, count, &mut rangle)?
+                .into_prevent_change();
+            return Ok(OmapOutput {
+                cursor: langle,
+                langle,
+                rangle,
+                visualmode: b"v",
+                selection: b"inclusive",
+                prevent_change,
+            });
+        }
+
+        // First stage.
+        let mut motion_rangle_first_stage =
+            MarkovianOmapW::new(UnitOmapWRangleFirstStage);
+        let _ =
+            motion_rangle_first_stage.map(&mut buffer, count, &mut rangle)?;
+
+        // Operator-pending w special case (*).
+        let output = match motion_rangle_first_stage.cursor_before_last_motion {
+            None => OmapOutput {
+                cursor: langle,
+                langle,
+                rangle,
+                visualmode: b"v",
+                selection: b"exclusive",
+                prevent_change: b"0",
+            },
+            Some(prev_cursor) => {
+                let n_lines = buffer.lines()?;
+                let selection = operator_w_special_case(
+                    &mut buffer,
+                    &langle,
+                    &mut rangle,
+                    prev_cursor,
+                    count == 1,
+                    motion_rangle_first_stage.last_motion_ends_with_failure,
+                )?;
+                match selection {
+                    Selection::Colon => OmapOutput {
+                        cursor: langle,
+                        langle,
+                        rangle,
+                        visualmode: b"v",
+                        selection: b"colon",
+                        prevent_change: b"0",
+                    },
+                    Selection::Exclusive => {
+                        if operator == b"d"
+                            && d_special::is_d_special(
+                                &mut buffer,
+                                langle,
+                                rangle,
+                                false,
+                            )?
+                        {
+                            let mut cursor = langle;
+                            d_special::reset_cursor_when_d_special(
+                                n_lines,
+                                &langle,
+                                &rangle,
+                                &mut cursor,
+                            );
+                            OmapOutput {
+                                cursor,
+                                langle,
+                                rangle,
+                                visualmode: b"V",
+                                selection: b"inclusive",
+                                prevent_change: b"0",
+                            }
+                        } else {
+                            OmapOutput {
+                                cursor: langle,
+                                langle,
+                                rangle,
+                                visualmode: b"v",
+                                selection: b"exclusive",
+                                prevent_change: b"0",
+                            }
+                        }
                     }
-                    count -= 1;
+                    Selection::Inclusive => {
+                        if operator == b"d"
+                            && d_special::is_d_special(
+                                &mut buffer,
+                                langle,
+                                rangle,
+                                true,
+                            )?
+                        {
+                            let mut cursor = langle;
+                            d_special::reset_cursor_when_d_special(
+                                n_lines,
+                                &langle,
+                                &rangle,
+                                &mut cursor,
+                            );
+                            OmapOutput {
+                                cursor,
+                                langle,
+                                rangle,
+                                visualmode: b"V",
+                                selection: b"inclusive",
+                                prevent_change: b"0",
+                            }
+                        } else {
+                            OmapOutput {
+                                cursor: langle,
+                                langle,
+                                rangle,
+                                visualmode: b"v",
+                                selection: b"inclusive",
+                                prevent_change: b"0",
+                            }
+                        }
+                    }
                 }
             }
-        }
-        Ok(MotionOutput {
-            new_cursor_pos: (lnum, col),
-            d_special: false,
-            prevent_change: false,
-        })
+        };
+
+        Ok(output)
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[cfg(feature = "verifiable_case")]
-    use jieba_vim_rs_test_macro::verified_cases;
-    #[cfg(not(feature = "verifiable_case"))]
-    use jieba_vim_rs_test_macro::verified_cases_dry_run as verified_cases;
+/// The first stage of omap w for rangle.
+pub struct UnitOmapWRangleFirstStage;
 
-    #[verified_cases(
-        mode = "o",
-        operator = "d",
-        motion = "w",
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["{}"])]
-    #[vcase(name = "empty_empty", buffer = ["{", "}"])]
-    #[vcase(name = "space_newline", buffer = ["   { }", ""])]
-    #[vcase(name = "space_newline", buffer = ["   { }", "  "])]
-    #[vcase(name = "space_newline", buffer = ["{   }", ""])]
-    #[vcase(name = "space_newline", buffer = ["{   }", "  "])]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "}       ", ""])]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "}       abcd", ""])]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "}abcd", ""])]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "   abcd}", "       ", "  ef"], count = 2)]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "   abcd}", "         efg", "  hi"], count = 2)]
-    #[vcase(name = "empty_word", buffer = ["{", "}abc  def"])]
-    #[vcase(name = "empty_word", buffer = ["{", "abc  }def"], count = 2)]
-    #[vcase(name = "one_word", buffer = ["{abcd}"])]
-    #[vcase(name = "one_word", buffer = ["a{bcd}"])]
-    #[vcase(name = "one_word", buffer = ["abc{d}"])]
-    #[vcase(name = "one_word_space", buffer = ["{abcd   }"])]
-    #[vcase(name = "one_word_space", buffer = ["ab{cd   }"])]
-    #[vcase(name = "space_word", buffer = ["{    }abc"])]
-    #[vcase(name = "space_word", buffer = [" {   }abc"])]
-    #[vcase(name = "space_word", buffer = ["{    abc  }def"], count = 2)]
-    #[vcase(name = "space_word", buffer = ["{    abc  def}"], count = 3)]
-    #[vcase(name = "two_words", buffer = ["{abcd    }efg"])]
-    #[vcase(name = "two_words", buffer = ["ab{cd    }efg"])]
-    #[vcase(name = "two_words", buffer = ["abc{d    }efg"])]
-    #[vcase(name = "two_words", buffer = ["abcd{    }efg"])]
-    #[vcase(name = "two_words", buffer = ["abcd {   }efg"])]
-    #[vcase(name = "two_words", buffer = ["abcd   { }efg"])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh}", ""])]
-    #[vcase(name = "word_newline", buffer = ["abcd   e{fgh}", ""])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh}", "  "])]
-    #[vcase(name = "word_newline", buffer = ["abcd   efg{h}", "  "])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh}", "  ijkl"])]
-    #[vcase(name = "word_newline", buffer = ["abcd   efg{h}", "  ijkl"])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh}", "ijkl  "])]
-    #[vcase(name = "word_newline", buffer = ["abcd   efg{h}", "ijkl  "])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh", "   ijkl}"], count = 2)]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh", "ijkl   }"], count = 2)]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh", "   ijkl   }"], count = 2)]
-    #[vcase(name = "word_newline_word", buffer = ["{abc}", "def"])]
-    #[vcase(name = "word_newline_word", buffer = ["{abc", "def}"], count = 2)]
-    #[vcase(name = "word_newline_word", buffer = ["abc", "{def}"])]
-    #[vcase(name = "word_newline_newline", buffer = ["abcd", "{   }", "   "])]
-    #[vcase(name = "word_newline_newline", buffer = ["abcd", "{   ", "   }"], count = 2)]
-    #[vcase(name = "space_newline_space", buffer = ["    {  }", "       "])]
-    #[vcase(name = "space_newline_space", buffer = ["    {  ", "       }"], count = 2)]
-    #[vcase(name = "space_newline_space", buffer = ["  {    ", "   ", "    }"], count = 2)]
-    #[vcase(name = "space_newline_space", buffer = ["  {    ", "   ", "", "}    "], count = 2)]
-    #[vcase(name = "space_newline_space", buffer = ["  {    ", "   ", "", "    }"], count = 3)]
-    #[vcase(name = "word_space_newline_space", buffer = ["a{bcd     }", "    "])]
-    #[vcase(name = "word_space_newline_space", buffer = ["a{bcd     ", "     }"], count = 2)]
-    #[vcase(name = "word_space_newline_space", buffer = ["a{bcd     ", "      ", "  }"], count = 2)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", " ", "  hij}", ""], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", "", "}  hij"], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg}", ""], count = 2)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg}", " ", "  ", "  ", "  hij"], count = 2)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", " ", "  ", "  ", "  hij}", "  ", ""], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", "", "} ", "  hij"], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", " ", "  hij   }", ""], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", " ", "  ", "  ", "  hij  }", "  ", ""], count = 3)]
-    mod motion_omap_d_w {}
+impl UnitMotion<Position> for UnitOmapWRangleFirstStage {
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        cursor: &mut Position,
+    ) -> Result<ExtendedMotionState, B::Error> {
+        UnitXmapW.unit_map(buffer, cursor)
+    }
+}
 
-    // Copied from omap_d_w above.
-    #[verified_cases(
-        mode = "o",
-        operator = "y",
-        motion = "w",
-        timeout = 50,
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["{}"])]
-    #[vcase(name = "empty_empty", buffer = ["{", "}"])]
-    #[vcase(name = "space_newline", buffer = ["   { }", ""])]
-    #[vcase(name = "space_newline", buffer = ["   { }", "  "])]
-    #[vcase(name = "space_newline", buffer = ["{   }", ""])]
-    #[vcase(name = "space_newline", buffer = ["{   }", "  "])]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "}       ", ""])]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "}       abcd", ""])]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "}abcd", ""])]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "   abcd}", "       ", "  ef"], count = 2)]
-    #[vcase(name = "empty_space_empty", buffer = ["{", "   abcd}", "         efg", "  hi"], count = 2)]
-    #[vcase(name = "empty_word", buffer = ["{", "}abc  def"])]
-    #[vcase(name = "empty_word", buffer = ["{", "abc  }def"], count = 2)]
-    #[vcase(name = "one_word", buffer = ["{abcd}"])]
-    #[vcase(name = "one_word", buffer = ["a{bcd}"])]
-    #[vcase(name = "one_word", buffer = ["abc{d}"])]
-    #[vcase(name = "one_word_space", buffer = ["{abcd   }"])]
-    #[vcase(name = "one_word_space", buffer = ["ab{cd   }"])]
-    #[vcase(name = "space_word", buffer = ["{    }abc"])]
-    #[vcase(name = "space_word", buffer = [" {   }abc"])]
-    #[vcase(name = "space_word", buffer = ["{    abc  }def"], count = 2)]
-    #[vcase(name = "space_word", buffer = ["{    abc  def}"], count = 3)]
-    #[vcase(name = "two_words", buffer = ["{abcd    }efg"])]
-    #[vcase(name = "two_words", buffer = ["ab{cd    }efg"])]
-    #[vcase(name = "two_words", buffer = ["abc{d    }efg"])]
-    #[vcase(name = "two_words", buffer = ["abcd{    }efg"])]
-    #[vcase(name = "two_words", buffer = ["abcd {   }efg"])]
-    #[vcase(name = "two_words", buffer = ["abcd   { }efg"])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh}", ""])]
-    #[vcase(name = "word_newline", buffer = ["abcd   e{fgh}", ""])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh}", "  "])]
-    #[vcase(name = "word_newline", buffer = ["abcd   efg{h}", "  "])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh}", "  ijkl"])]
-    #[vcase(name = "word_newline", buffer = ["abcd   efg{h}", "  ijkl"])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh}", "ijkl  "])]
-    #[vcase(name = "word_newline", buffer = ["abcd   efg{h}", "ijkl  "])]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh", "   ijkl}"], count = 2)]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh", "ijkl   }"], count = 2)]
-    #[vcase(name = "word_newline", buffer = ["abcd   {efgh", "   ijkl   }"], count = 2)]
-    #[vcase(name = "word_newline_word", buffer = ["{abc}", "def"])]
-    #[vcase(name = "word_newline_word", buffer = ["{abc", "def}"], count = 2)]
-    #[vcase(name = "word_newline_word", buffer = ["abc", "{def}"])]
-    #[vcase(name = "word_newline_newline", buffer = ["abcd", "{   }", "   "])]
-    #[vcase(name = "word_newline_newline", buffer = ["abcd", "{   ", "   }"], count = 2)]
-    #[vcase(name = "space_newline_space", buffer = ["    {  }", "       "])]
-    #[vcase(name = "space_newline_space", buffer = ["    {  ", "       }"], count = 2)]
-    #[vcase(name = "space_newline_space", buffer = ["  {    ", "   ", "    }"], count = 2)]
-    #[vcase(name = "space_newline_space", buffer = ["  {    ", "   ", "", "}    "], count = 2)]
-    #[vcase(name = "space_newline_space", buffer = ["  {    ", "   ", "", "    }"], count = 3)]
-    #[vcase(name = "word_space_newline_space", buffer = ["a{bcd     }", "    "])]
-    #[vcase(name = "word_space_newline_space", buffer = ["a{bcd     ", "     }"], count = 2)]
-    #[vcase(name = "word_space_newline_space", buffer = ["a{bcd     ", "      ", "  }"], count = 2)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", " ", "  hij}", ""], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", "", "}  hij"], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg}", ""], count = 2)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg}", " ", "  ", "  ", "  hij"], count = 2)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", " ", "  ", "  ", "  hij}", "  ", ""], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", "", "} ", "  hij"], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", " ", "  hij   }", ""], count = 3)]
-    #[vcase(name = "word_newline_counts", buffer = ["ab{cd  efg", " ", "  ", "  ", "  hij  }", "  ", ""], count = 3)]
-    mod motion_omap_y_w {}
+impl MarkovianUnit<Position> for UnitOmapWRangleFirstStage {
+    type FoldState = Intolerable;
+}
+
+pub struct MarkovianOmapW<M, S, P> {
+    unit_motion: M,
+    phantom_data: PhantomData<S>,
+    cursor_before_last_motion: Option<P>,
+    last_motion_ends_with_failure: bool,
+}
+
+impl<M, S, P> MarkovianOmapW<M, S, P> {
+    pub fn new(unit_motion: M) -> Self {
+        Self {
+            unit_motion,
+            phantom_data: PhantomData,
+            cursor_before_last_motion: None,
+            last_motion_ends_with_failure: false,
+        }
+    }
+}
+
+impl<P, M> Motion<P> for MarkovianOmapW<M, M::FoldState, P>
+where
+    M: MarkovianUnit<P>,
+    P: Clone,
+{
+    fn map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        mut count: u64,
+        cursor: &mut P,
+    ) -> Result<MotionState, B::Error> {
+        let mut state = M::FoldState::default();
+        self.cursor_before_last_motion = None;
+        while count > 0 {
+            let current_cursor_before_motion = cursor.clone();
+            let s = self.unit_motion.unit_map(buffer, cursor)?;
+            if s != ExtendedMotionState::Failure {
+                self.cursor_before_last_motion =
+                    Some(current_cursor_before_motion);
+            }
+            self.last_motion_ends_with_failure =
+                s == ExtendedMotionState::Failure;
+            if let Some(absorbing_state) = state.update(s) {
+                return Ok(absorbing_state);
+            }
+            count -= 1;
+        }
+        Ok(state.finalize())
+    }
+}
+
+enum Selection {
+    Exclusive,
+    Inclusive,
+    /// The operator-colon trick. Works when the last token moved over is an
+    /// Eol.
+    Colon,
+}
+
+/// Return the selection type of the resulting operation range.
+fn operator_w_special_case<'b, 'p, B, C>(
+    buffer: &mut ParsedBuffer<'b, 'p, B, C>,
+    langle: &Position,
+    rangle: &mut Position,
+    prev_cursor: Position,
+    count_eq_1: bool,
+    last_motion_ends_with_failure: bool,
+) -> Result<Selection, B::Error>
+where
+    B: BufferLike + ?Sized,
+    C: JiebaPlaceholder,
+{
+    let [_, lnum0, col0, _] = langle;
+    let [_, lnum1, col1, _] = rangle;
+
+    let tokens = buffer.getline_parsed(*lnum0)?;
+    // This is how the `langle_token` (commented below) would be defined:
+    //
+    // ```
+    // let langle_token = ExtendedInlineTokensIter::new(&tokens)
+    //     .skip_col(*col0)
+    //     .expect("col0 too large")
+    //     .next()
+    //     .unwrap();
+    // ```
+    //
+    // But we will postpone actually defining it until it's needed.
+    if *lnum0 == *lnum1 {
+        let rangle_token = ExtendedInlineTokensIter::new(&tokens)
+            .take_col_rev(*col1)
+            .expect("col1 too large")
+            .next()
+            .unwrap();
+
+        // `rangle_token` can't be a Space, since xmap |w| never stops on a
+        // Space, even if it's at eof.
+        //
+        // If `rangle_token` is a Word, then the last word moved over by |w|
+        // can't be at the end of a line. First, `col0` < `col1`, since if
+        // they are equal, then `col1` would have jumped over `rangle_token`.
+        // Second, `col0` and `col1` are on two different tokens, since
+        // `col1` must be at the start of `rangle_token`. Third, the last word
+        // moved over by |w|, if exists, can't be at the end of a line, since
+        // `rangle_token` is a Word token after `langle_token`. Don't need to
+        // move langle/rangle in this case.
+        //
+        // If `rangle_token` is an Eol(_), then it must be at eof, since it's
+        // the only circumstance where |w| would stop at an Eol(_). In this
+        // case, we simply set the range up to `rangle_token`; though both
+        // inclusive and exclusive leads to the same operation range, we will
+        // pick exclusive. Don't need to move langle/rangle in this case.
+        let s = match rangle_token {
+            GToken::Eol(_) => Selection::Exclusive,
+            GToken::T(t) => match t.ty {
+                TokenType::Space => unreachable!(),
+                TokenType::Word => Selection::Exclusive,
+            },
+        };
+        return Ok(s);
+    }
+
+    // Else, `lnum0` < `lnum1`. Hence, `lnum0` can't be the last line.
+
+    if count_eq_1 {
+        // First, if `count` == 1 and `langle_token` is an Eol(_), then the
+        // last "word" moved over is an Eol, and we simply apply operator-colon
+        // trick and let Vim to handle the complexity.
+        //
+        // Second, if `count` == 1 and `langle_token` is a Space, then the last
+        // "word" moved over must be `langle_token`, the Space. The next token
+        // after `langle_token` can't be a Word, since otherwise |w| will land
+        // the cursor on the start of that Word, but we have been asserted that
+        // `langle_token` and `rangle_token` are on different lines. The next
+        // token can't be a Space either, since two adjacent Spaces would have
+        // been merged during tokenization. Thus, the next token must be an
+        // Eol(_), and thus the conclusion.
+        //
+        // Third, if `count` == 1 and `langle_token` is a Word, then the last
+        // "word" moved over must be `langle_token`, plus some trailing Spaces,
+        // if any. The following tokens in the same line as `langle_token`
+        // can't be Words, since otherwise, `rangle_token` would be on the same
+        // line as `langle_token`, which we have asserted not.
+        let mut line = ExtendedInlineTokensIter::new(&tokens)
+            .skip_col(*col0)
+            .expect("col0 too large")
+            .peekable();
+        let langle_token = line.next().unwrap();
+        let s = match langle_token {
+            GToken::Eol(_) => {
+                *lnum1 = *lnum0 + 1;
+                *col1 = 1;
+                Selection::Colon
+            }
+            GToken::T(t) => match t.ty {
+                TokenType::Space => {
+                    *lnum1 = *lnum0;
+                    *col1 = t.last_char();
+                    Selection::Inclusive
+                }
+                TokenType::Word => {
+                    *lnum1 = *lnum0;
+                    *col1 = t.last_char();
+                    if line.peek().is_some_and(|token| !token.is_empty()) {
+                        let next_token = line.next().unwrap();
+                        match next_token {
+                            GToken::Eol(_) => unreachable!(),
+                            GToken::T(next_t) => match next_t.ty {
+                                TokenType::Space => *col1 = next_t.last_char(),
+                                TokenType::Word => {
+                                    unreachable!("can't be a Word")
+                                }
+                            },
+                        }
+                    }
+                    Selection::Inclusive
+                }
+            },
+        };
+        return Ok(s);
+    }
+
+    if last_motion_ends_with_failure {
+        // If last motion ends with Failure, then `rangle` must be an Eol at
+        // eof. This means that the operation intends to span till eof. Thus,
+        // if `rangle` is an empty line, we simply apply operator-colon trick;
+        // else, span the motion range exclusively up to `rangle`.
+
+        let [_, rangle_lnum, rangle_col, _] = *rangle;
+        let rangle_token =
+            ExtendedInlineTokensIter::new(&buffer.getline_parsed(rangle_lnum)?)
+                .take_col_rev(rangle_col)
+                .expect("rangle_col too large")
+                .next()
+                .unwrap();
+        let s = match rangle_token {
+            GToken::T(_) => unreachable!(),
+            GToken::Eol(1) => {
+                // Apply operator-colon trick. Since `rangle` must be
+                // at eof, don't need to set `lnum1` here. And since at
+                // empty line `col1` is already 1, don't need to set it
+                // either.
+                Selection::Colon
+            }
+            GToken::Eol(_) => Selection::Exclusive,
+        };
+        return Ok(s);
+    }
+
+    // Else, since `count` > 1, we focus on the last jump. The starting
+    // point of the last jump can't be a Space. If it's a Space, it must be
+    // `langle`, since |w| never stops in a Space. But this will contradict our
+    // assumption that `count` > 1 and there is no failure in the motion. The
+    // starting point can't be `langle` due to the same argument.
+    //
+    // If the starting point of the last jump is an Eol(1), then we simply
+    // apply operator-colon trick.
+    //
+    // If the starting point of the last jump is a Word, then we need to see if
+    // we should use exclusive or inclusive. Denote word by 'w', space by 's',
+    // eol by 'l'. We will brute force all possible jumps up to `rangle_token`
+    // (excluding `rangle_token`) below:
+    //
+    //  1: w        -- inclusive up to 'w'
+    //  2: w s      -- exclusive up to `rangle_token` if `rangle_token` is a
+    //                 Word, else inclusive up to 's'
+    //  3: w l      -- inclusive up to 'w'
+    //  4: w w      -- IMPOSSIBLE, because 'w' -> 'w' is a second jump
+    //  5: w s s    -- IMPOSSIBLE, because two 's' would have been merged into
+    //                 one 's' during tokenization
+    //  6: w s l    -- inclusive up to 's'
+    //  7: w s w    -- IMPOSSIBLE, because 'w' -> 'w' is a second jump
+    //  8: w l s    -- inclusive up to 'w'
+    //  9: w l l    -- IMPOSSIBLE, because 'w' -> 'l' is a second jump
+    // 10: w l w    -- IMPOSSIBLE, because 'w' -> 'w' is a second jump
+    // 11: w w _    -- IMPOSSIBLE, because 'w' -> 'w' is a second jump
+    // 12: w s s _  -- IMPOSSIBLE, because two 's' would have been merged into
+    //                 one 's' during tokenization
+    // 13: w s l s  -- inclusive up to first 's'
+    // 14: w s l l  -- IMPOSSIBLE, because 'l' -> 'l' is a second jump
+    // 15: w s l w  -- IMPOSSIBLE, because 'w' -> 'w' is a second jump
+    //  ...
+    //
+    // Basically, valid last jumps are:
+    //
+    //     w [alternating occurrences of {s, l}]..
+    //
+    // From above, we know that:
+    //
+    // - The selection is inclusive up to 'l' (excluding 'l') if:
+    //   * 'w' -> 'l' where 'l' is `rangle_token`
+    //   * 'w' -> 's' -> 'l' where 'l' is `rangle_token`
+    //   * 'w' -> 'l' -> ...
+    //   * 'w' -> 's' -> 'l' -> ...
+    // - The selection is exclusive up to 'w' (including 'w') if:
+    //   * 'w' -> 'w' where the 2nd 'w' is `rangle_token`
+    //   * 'w' -> 's' -> 'w' where the 2nd 'w' is `rangle_token`
+    // - The selection is colon (operator-colon trick) if:
+    //   * 'l' -> ...
+
+    // Revert one jump to `prev_cursor`.
+    let [_, prev_lnum, prev_col, _] = prev_cursor;
+    let tokens = buffer.getline_parsed(prev_lnum)?;
+    let mut line = ExtendedInlineTokensIter::new(&tokens)
+        .skip_col(prev_col)
+        .expect("prev_cursor col too large")
+        .peekable();
+    let mut prev_token = line.next().unwrap();
+    let s = match prev_token {
+        GToken::Eol(1) => {
+            // Apply operator-colon trick.
+            assert!(*lnum1 >= prev_lnum + 1);
+            *lnum1 = prev_lnum + 1;
+            *col1 = 1;
+            Selection::Colon
+        }
+        GToken::Eol(_) => unreachable!(),
+        GToken::T(t) => match t.ty {
+            TokenType::Space => unreachable!(),
+            TokenType::Word => {
+                let mut exclusive = false;
+                for token in line {
+                    match token {
+                        GToken::Eol(_) => break,
+                        GToken::T(t) => match t.ty {
+                            TokenType::Space => prev_token = token,
+                            TokenType::Word => {
+                                exclusive = true;
+                                break;
+                            }
+                        },
+                    }
+                }
+                if exclusive {
+                    assert_eq!(*lnum1, prev_lnum);
+                    *col1 = prev_token.last_char1();
+                    Selection::Exclusive
+                } else {
+                    assert!(*lnum1 >= prev_lnum);
+                    *lnum1 = prev_lnum;
+                    *col1 = prev_token.last_char();
+                    Selection::Inclusive
+                }
+            }
+        },
+    };
+    Ok(s)
 }

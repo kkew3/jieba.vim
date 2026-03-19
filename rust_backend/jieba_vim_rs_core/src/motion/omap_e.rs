@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -12,22 +12,21 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::BufferLike;
 use crate::token::JiebaPlaceholder;
+use crate::{BufferLike, CursorPositionCurswant, Position};
 
-use super::{MotionOutput, WordMotion};
+use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
+use super::word_motion::{
+    ExtendedMotionState, Intolerable, Markovian, MarkovianUnit, Motion,
+    OneOffMotion, OneOffUnit, SuppressFailure, UnitMotion,
+};
+use super::xmap_e::UnitXmapE;
+use super::{OmapOutput, WordMotion, d_special};
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `e` (if `word` is `true`) or `E` (if `word` is `false`) in
-    /// operator-pending mode while used with operator `d`. Since Vim's help
-    /// states in section "exclusive-linewise" that:
-    ///
-    /// > When using ":" any motion becomes characterwise exclusive,
-    ///
-    /// But since `e`/`E` is itself inclusive, and `o_v`
-    /// (https://vimhelp.org/motion.txt.html#o_v) can be used to invert
-    /// exclusiveness to inclusiveness, we may use prefix the colon command
-    /// with it and reuse most code from `nmap e`.
+    /// operator-pending mode. Take in current `cursor_pos` (0, lnum, col, off,
+    /// _), and return the operation range and the new cursor position.
     ///
     /// # Basics
     ///
@@ -38,160 +37,93 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     /// # Edge cases
     ///
     /// - If current cursor is on the last character of the last token in the
-    ///   buffer, no further jump should be made.
+    ///   buffer, no further jump should be made. But the motion should *not*
+    ///   be taken as a failure.
     /// - If there is no next word to the right of current cursor, jump to the
     ///   last character of the last token in the buffer.
-    ///
-    /// # Panics
-    ///
-    /// - If current cursor `col` is to the right of the last token in current
-    ///   line of the buffer.
     pub fn omap_e<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: (usize, usize),
+        cursor_pos: CursorPositionCurswant,
         count: u64,
         word: bool,
-    ) -> Result<MotionOutput, B::Error> {
-        let mo = self.nmap_e(buffer, cursor_pos, count, word)?;
-        Ok(MotionOutput {
-            new_cursor_pos: mo.new_cursor_pos,
-            d_special: false,
-            prevent_change: false,
-        })
+        operator: &[u8],
+    ) -> Result<OmapOutput, B::Error> {
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let [bufnum, lnum, col, off, _] = cursor_pos;
+        let mut langle = [bufnum, lnum, col, off];
+        let mut rangle = langle;
+        let mut motion_langle = OneOffMotion::new(UnitOmapELangle);
+        let mut motion_rangle = Markovian::new(UnitOmapERangle);
+        let _ = motion_langle.map(&mut buffer, count, &mut langle)?;
+        let prevent_change = motion_rangle
+            .map(&mut buffer, count, &mut rangle)?
+            .into_prevent_change();
+        let output = if operator == b"d"
+            && d_special::is_d_special(&mut buffer, langle, rangle, true)?
+        {
+            let mut cursor = langle;
+            let n_lines = buffer.lines()?;
+            d_special::reset_cursor_when_d_special(
+                n_lines,
+                &langle,
+                &rangle,
+                &mut cursor,
+            );
+            OmapOutput {
+                cursor,
+                langle,
+                rangle,
+                visualmode: b"V",
+                selection: b"inclusive",
+                prevent_change,
+            }
+        } else {
+            OmapOutput {
+                cursor: langle,
+                langle,
+                rangle,
+                visualmode: b"v",
+                selection: b"inclusive",
+                prevent_change,
+            }
+        };
+        Ok(output)
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[cfg(feature = "verifiable_case")]
-    use jieba_vim_rs_test_macro::verified_cases;
-    #[cfg(not(feature = "verifiable_case"))]
-    use jieba_vim_rs_test_macro::verified_cases_dry_run as verified_cases;
+pub struct UnitOmapELangle;
 
-    #[verified_cases(
-        mode = "o",
-        operator = "c",
-        motion = "e",
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["{}"])]
-    #[vcase(name = "one_word", buffer = ["abc{}d"])]
-    #[vcase(name = "one_word", buffer = ["abc{}d"], count = 2)]
-    #[vcase(name = "one_word", buffer = ["a{bc}d"])]
-    #[vcase(name = "one_word", buffer = ["a{bc}d"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["a{bc}d    "])]
-    #[vcase(name = "one_word_space", buffer = ["a{bcd   } "], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["abc{d   } "])]
-    #[vcase(name = "one_word_space", buffer = ["abc{d   } "], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["abcd {  } "])]
-    #[vcase(name = "one_word_space", buffer = ["abcd {  } "], count = 2)]
-    #[vcase(name = "space_word", buffer = ["{    ab}c"])]
-    #[vcase(name = "space_word", buffer = [" {   ab}c"])]
-    #[vcase(name = "space_word", buffer = ["{    ab}c  def"])]
-    #[vcase(name = "space_word", buffer = ["{    abc  de}f"], count = 2)]
-    #[vcase(name = "space_word", buffer = ["{    abc  de}f"], count = 3)]
-    #[vcase(name = "two_words", buffer = ["a{bc}d  efg"])]
-    #[vcase(name = "two_words", buffer = ["a{bcd  ef}g"], count = 2)]
-    #[vcase(name = "two_words", buffer = ["a{bcd  ef}g"], count = 3)]
-    #[vcase(name = "two_words", buffer = ["abc{d ef}g"])]
-    #[vcase(name = "two_words", buffer = ["abc{d ef}g"], count = 2)]
-    #[vcase(name = "two_words", buffer = ["abc{d efg  } "], count = 3)]
-    #[vcase(name = "one_word_newline", buffer = ["a{bc}d", ""])]
-    #[vcase(name = "one_word_newline", buffer = ["a{bcd", "}"], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["abc{d", "}"])]
-    #[vcase(name = "newline_one_word", buffer = ["{", "", "abc}d"])]
-    #[vcase(name = "newline_one_word", buffer = ["{", "  ", "abc}d"])]
-    #[vcase(name = "newline_two_words", buffer = ["{", "", "abc}d", "efg"])]
-    #[vcase(name = "newline_one_word_space", buffer = ["{", "", "abc}d    "])]
-    #[vcase(name = "newline_one_word_space_word", buffer = ["{", "", "abc}d    e"])]
-    #[vcase(name = "word_newline_newline", buffer = ["abcd", "{   ", "  } "])]
-    #[vcase(name = "word_newline_newline", buffer = ["abcd", "{   ", "  } "], count = 2)]
-    #[vcase(name = "one_word_space_newline", buffer = ["a{bc}d    ", ""])]
-    #[vcase(name = "one_word_space_newline", buffer = ["abc{d     ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["abcd{    ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["abcd {   ", "}"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["abc{d", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["abc{d", "  ", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["abcd", "{  ", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["abc{d", "", "   } "])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", " ", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", "", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", " ", "", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", "", "", "}"])]
-    #[vcase(name = "word_newline_word", buffer = ["a{bc}d", "", " ", "", "efg"])]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "", " ", "", "ef}g  "])]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "  ", "", " ", "efg}h"])]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "", "ef}g", "", "efgh"])]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "", "efg", "", "efg}h"], count = 2)]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "", "efg", "", "efg}h  "], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["a{bc def}g"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["abc {def}g"], count = 10293949403)]
-    mod motion_omap_c_e {}
+impl UnitMotion<Position> for UnitOmapELangle {
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        _buffer: &mut B,
+        cursor: &mut Position,
+    ) -> Result<ExtendedMotionState, B::Error> {
+        let [_, _, _, off] = cursor;
+        *off = 0;
+        Ok(ExtendedMotionState::Success)
+    }
+}
 
-    // Copied from omap_c_e above.
-    #[verified_cases(
-        mode = "o",
-        operator = "y",
-        motion = "e",
-        timeout = 50,
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["{}"])]
-    #[vcase(name = "one_word", buffer = ["abc{}d"])]
-    #[vcase(name = "one_word", buffer = ["abc{}d"], count = 2)]
-    #[vcase(name = "one_word", buffer = ["a{bc}d"])]
-    #[vcase(name = "one_word", buffer = ["a{bc}d"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["a{bc}d    "])]
-    #[vcase(name = "one_word_space", buffer = ["a{bcd   } "], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["abc{d   } "])]
-    #[vcase(name = "one_word_space", buffer = ["abc{d   } "], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["abcd {  } "])]
-    #[vcase(name = "one_word_space", buffer = ["abcd {  } "], count = 2)]
-    #[vcase(name = "space_word", buffer = ["{    ab}c"])]
-    #[vcase(name = "space_word", buffer = [" {   ab}c"])]
-    #[vcase(name = "space_word", buffer = ["{    ab}c  def"])]
-    #[vcase(name = "space_word", buffer = ["{    abc  de}f"], count = 2)]
-    #[vcase(name = "space_word", buffer = ["{    abc  de}f"], count = 3)]
-    #[vcase(name = "two_words", buffer = ["a{bc}d  efg"])]
-    #[vcase(name = "two_words", buffer = ["a{bcd  ef}g"], count = 2)]
-    #[vcase(name = "two_words", buffer = ["a{bcd  ef}g"], count = 3)]
-    #[vcase(name = "two_words", buffer = ["abc{d ef}g"])]
-    #[vcase(name = "two_words", buffer = ["abc{d ef}g"], count = 2)]
-    #[vcase(name = "two_words", buffer = ["abc{d efg  } "], count = 3)]
-    #[vcase(name = "one_word_newline", buffer = ["a{bc}d", ""])]
-    #[vcase(name = "one_word_newline", buffer = ["a{bcd", "}"], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["abc{d", "}"])]
-    #[vcase(name = "newline_one_word", buffer = ["{", "", "abc}d"])]
-    #[vcase(name = "newline_one_word", buffer = ["{", "  ", "abc}d"])]
-    #[vcase(name = "newline_two_words", buffer = ["{", "", "abc}d", "efg"])]
-    #[vcase(name = "newline_one_word_space", buffer = ["{", "", "abc}d    "])]
-    #[vcase(name = "newline_one_word_space_word", buffer = ["{", "", "abc}d    e"])]
-    #[vcase(name = "word_newline_newline", buffer = ["abcd", "{   ", "  } "])]
-    #[vcase(name = "word_newline_newline", buffer = ["abcd", "{   ", "  } "], count = 2)]
-    #[vcase(name = "one_word_space_newline", buffer = ["a{bc}d    ", ""])]
-    #[vcase(name = "one_word_space_newline", buffer = ["abc{d     ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["abcd{    ", "}"])]
-    #[vcase(name = "one_word_space_newline", buffer = ["abcd {   ", "}"])]
-    #[vcase(name = "one_word_newline_space", buffer = ["abc{d", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["abc{d", "  ", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["abcd", "{  ", "   } "])]
-    #[vcase(name = "one_word_newline_space", buffer = ["abc{d", "", "   } "])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", " ", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", "", " ", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", " ", "", "}"])]
-    #[vcase(name = "one_word_newline_space_newline", buffer = ["abc{d", "", "", "}"])]
-    #[vcase(name = "word_newline_word", buffer = ["a{bc}d", "", " ", "", "efg"])]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "", " ", "", "ef}g  "])]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "  ", "", " ", "efg}h"])]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "", "ef}g", "", "efgh"])]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "", "efg", "", "efg}h"], count = 2)]
-    #[vcase(name = "word_newline_word", buffer = ["abc{d", "", "efg", "", "efg}h  "], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["{}"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["a{bc def}g"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["abc {def}g"], count = 10293949403)]
-    mod motion_omap_y_e {}
+impl OneOffUnit<Position> for UnitOmapELangle {
+    type FoldState = Intolerable;
+}
+
+pub struct UnitOmapERangle;
+
+impl UnitMotion<Position> for UnitOmapERangle {
+    fn unit_map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        cursor: &mut Position,
+    ) -> Result<ExtendedMotionState, B::Error> {
+        UnitXmapE.unit_map(buffer, cursor)
+    }
+}
+
+impl MarkovianUnit<Position> for UnitOmapERangle {
+    // The `omap_e` motion always succeeds.
+    type FoldState =
+        SuppressFailure<<UnitXmapE as MarkovianUnit<Position>>::FoldState>;
 }

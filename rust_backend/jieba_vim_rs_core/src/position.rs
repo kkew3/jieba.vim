@@ -14,12 +14,35 @@
 
 //! Positions in a buffer.
 
+use std::fmt::{self, Display};
+
 /// The 4-element list of numbers \[0, lnum, col, off] as returned by Vim's
-/// `getpos(...)` where ... equals `.` or `'{local_mark}``. `lnum` and `col` are
-/// indexed from 1. `off` is indexed from 0.
+/// `getpos(...)` where ... equals `.` or `'{local_mark}`. `lnum` and `col`
+/// are indexed from 1. `off` is indexed from 0.
 pub type Position = [usize; 4];
 
 /// The 5-element list of numbers \[0, lnum, col, off, curswant] as returned by
 /// Vim's `getcurpos()`. `lnum`, `col` and `curswant` are indexed from 1. `off`
 /// is indexed from 0.
 pub type CursorPositionCurswant = [usize; 5];
+
+/// The 2-element list of numbers \[col, off], used when `lnum` is irrelevant
+/// in context of [`CurrentBufferPosition`].
+pub type ColumnPosition = [usize; 2];
+
+#[derive(Debug)]
+pub enum PositionError {
+    ColTooLarge,
+}
+
+impl Display for PositionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ColTooLarge => {
+                f.write_str("col is larger than one plus the line length")
+            }
+        }
+    }
+}
+
+impl std::error::Error for PositionError {}

@@ -18,7 +18,7 @@
 
 {%- for key in ['w', 'e'] %}
   {%- for count in [0, 1, 2, 3, 4, 10293949403] %}
-    {%- for buffer in forward_buffers.normal %}
+    {%- for buffer in forward_buffers %}
 
 H ?
 M n
@@ -35,7 +35,7 @@ B0 {{ buffer }}
 C {{ count }}
       {%- endfor %}
     {%- endfor %}
-    {%- for buffer in forward_buffers.visual %}
+    {%- for buffer in visual_buffers %}
       {%- for visualmode in ['v', 'V', '\\<C-v>'] %}
 
 H ?
@@ -50,7 +50,7 @@ C {{ count }}
 
 {%- for key in ['b', 'ge'] %}
   {%- for count in [0, 1, 2, 3, 4, 10293949403] %}
-    {%- for buffer in backward_buffers.normal %}
+    {%- for buffer in backward_buffers %}
 
 H ?
 M n
@@ -67,7 +67,7 @@ B0 {{ buffer }}
 C {{ count }}
       {%- endfor %}
     {%- endfor %}
-    {%- for buffer in backward_buffers.visual %}
+    {%- for buffer in visual_buffers %}
       {%- for visualmode in ['v', 'V', '\\<C-v>'] %}
 
 H ?
