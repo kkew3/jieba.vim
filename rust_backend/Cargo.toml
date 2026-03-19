@@ -5,3 +5,4 @@ members = [
     "jieba_vim_rs_metatest",
     "jieba_vim_rs_binding_py3",
 ]
+resolver = "3"
