@@ -57,18 +57,22 @@ mod inner {
 
     /// Visualmode used in xmap.
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    pub enum VisualMode {
+    pub enum VisualMode<'a> {
         Char,
         Line,
-        Block,
+        // Vim and neovim do not agree on the byte representation value
+        // (neovim: b"\x16", vim: br"\u0016"). We have to save the original
+        // bytes here and output using the exact same bytes to please the
+        // verifier.
+        Block(&'a [u8]),
     }
 
-    impl From<&[u8]> for VisualMode {
-        fn from(value: &[u8]) -> Self {
+    impl<'a> VisualMode<'a> {
+        pub fn from_u8(value: &'a [u8]) -> Self {
             match value {
                 b"v" => Self::Char,
                 b"V" => Self::Line,
-                b"\x16" | br"\<C-v>" | br"\u0016" => Self::Block,
+                b"\x16" | br"\<C-v>" | br"\u0016" => Self::Block(value),
                 bs => panic!("cannot convert bytes `{:?}` to VisualMode", bs),
             }
         }
@@ -90,10 +94,10 @@ mod inner {
         pub prevent_change: bool,
     }
 
-    pub struct XmapOutput {
+    pub struct XmapOutput<'a> {
         pub langle: Position,
         pub rangle: Position,
-        pub visualmode: VisualMode,
+        pub visualmode: VisualMode<'a>,
         pub prevent_change: bool,
     }
 
@@ -118,15 +122,15 @@ mod inner {
         }
     }
 
-    impl<'a> From<XmapOutput> for ffi::XmapOutput<'a> {
-        fn from(value: XmapOutput) -> Self {
+    impl<'a> From<XmapOutput<'a>> for ffi::XmapOutput<'a> {
+        fn from(value: XmapOutput<'a>) -> Self {
             Self {
                 langle: value.langle.into(),
                 rangle: value.rangle.into(),
                 visualmode: match value.visualmode {
                     VisualMode::Char => b"v",
                     VisualMode::Line => b"V",
-                    VisualMode::Block => b"\x16",
+                    VisualMode::Block(v) => v,
                 },
                 prevent_change: to_prevent_change(value.prevent_change),
             }
@@ -204,7 +208,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         count: u64,
     ) -> Result<ffi::XmapOutput<'a>, B::Error> {
         let count = count.max(1);
-        let visualmode = visualmode.into();
+        let visualmode = VisualMode::from_u8(visualmode);
         let visual_begin = visual_begin.into();
         let visual_end = visual_end.into();
         let output = match motion {
