@@ -15,7 +15,7 @@
 // This file contains failed test cases in bootstrap verification.
 // Best viewed in Vim.
 
-H 25151d2964ae69d9af0795a3294254101a7daf85d84df80f28139360
+H eec99b0526725db32aa8897d5268b4117f672754d7a7189e0791e5fa
 X u
 M o
 K w
@@ -23,8 +23,8 @@ O c
 R a
 B0 |␊␊
 C 0
-Q | < > prevent_change=0 visualmode=v selection=colon
-Bp <␊>␊
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+Bp <>␊␊
 Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>
@@ -43,7 +43,7 @@ Bo |ghi␊
 B1 |ghi␊
 S1 "a=abc\<Newline>def\<Newline>
 
-H 7ff70abf1025766b8a58eb532687cde68df56dafd6d6bdbc0060c11f
+H d2533ae76ca610d5003cc06d51ea01a1cfe6ea42d57a3e581ce0fa97
 X u
 M o
 K w
@@ -51,13 +51,13 @@ O c
 R a
 B0 |␊␊
 C 2
-Q | < > prevent_change=0 visualmode=v selection=colon
-Bp <␊>␊
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+Bp <>␊␊
 Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>
 
-H 1f49b50c1d9d85ccac4bb61d06f2c14a77188c89e1ea6eaa17f0ff1e
+H 50f46a7a00aa8c037ee97e95eb0cd59b6e11280edfbf4b5322e9851e
 X u
 M o
 K w
@@ -66,12 +66,12 @@ R a
 B0 ·|···␊···␊
 C 2
 Q | < > prevent_change=0 visualmode=V selection=inclusive
-Bp ·<···␊···>␊
+Bp ·<···␊··>·␊
 Bo |␀
 B1 |␀
 S1 "a=\<Space>\<Space>\<Space>\<Space>\<Newline>\<Space>\<Space>\<Space>\<Newline>
 
-H b8f788ace4573074794da3dbf377cd841aae728386718a33458ce82a
+H 2cbab73fddc6509e5957834456dcf384be26f080e6e4843c53ef2f26
 X u
 M o
 K w
@@ -80,12 +80,12 @@ R a
 B0 |abc␊···␊
 C 2
 Q | < > prevent_change=0 visualmode=V selection=inclusive
-Bp <abc␊···>␊
+Bp <abc␊··>·␊
 Bo |␀
 B1 |␀
 S1 "a=abc\<Newline>\<Space>\<Space>\<Space>\<Newline>
 
-H 9d4cae3431791bd25f9432b561ea44d9bb2ae10eeff23a96cc784ab6
+H 88b43078c9ddb06a93124338d69354f8a6e4c6317b3afa0ee1123429
 X u
 M o
 K w
@@ -94,7 +94,7 @@ R a
 B0 |␊··␊␊·␊
 C 3
 Q | < > prevent_change=0 visualmode=V selection=inclusive
-Bp <␊··␊␊·>␊
+Bp <␊··␊␊>·␊
 Bo |␀
 B1 |␀
 S1 "a=\<Newline>\<Space>\<Space>\<Newline>\<Newline>\<Space>\<Newline>
@@ -109,14 +109,29 @@ Q | prevent_change=1
 Bo ·····|·␊
 B1 ·····|·␊
 
-H 8d43d87ad40795a5e4f0cfbac9368bd903cb6dfd2571a8d13a4d27df
+H 4b8ce5207c294349042cfef02addecd36e594adbf8d45d307b85f311
 X u
 M o
 K b
 O d
 B0 ␊|···␊
 C 0
-Q | < > prevent_change=0 visualmode=v selection=colon
-Bp >␊<···␊
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+Bp ><␊···␊
 Bo |···␊
 B1 ··|·␊
+
+H 5a682bb552faae7618fa52bec898ae0e2c017db031fbf0e120357ac1
+X u
+M o
+K ge
+O d
+R a
+B0 abcd|e␊
+C 2
+S1 "a=
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+Bp >abcd<e␊
+Bo |␊
+B1 |␊
+S1 "a=abcde

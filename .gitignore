@@ -4,3 +4,6 @@
 venv/
 .idea/
 .vscode/
+
+# Home to several local auxiliary files for dev.
+/.dev/

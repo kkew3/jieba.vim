@@ -12,21 +12,19 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::motion::token_iter::TokenLikeExt;
-use crate::token::{JiebaPlaceholder, TokenLike, TokenType};
-use crate::{BufferLike, CursorPositionCurswant, Position};
+use crate::BufferLike;
+use crate::token::JiebaPlaceholder;
 
-use super::parsed_buffer::{ParsedBuffer, ParsedBufferLike};
-use super::token_iter::{ExtendedInlineTokensIter, GToken};
-use super::word_motion::{
-    ExtendedMotionState, Markovian, MarkovianUnit, Motion, SemiTolerable,
-    UnitMotion,
-};
-use super::{NmapOutput, WordMotion};
+use super::api::{NmapOutput, WordMotion};
+use super::core::buffer::ParsedBuffer;
+use super::core::motion::Motion;
+use super::core::position::Position;
+use super::policy::adjust_cursor::AdjustCursor;
+use super::primitives::text_object::ForwardWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
-    /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`) in
-    /// normal mode. Take in current `cursor_pos` (0, lnum, col, off, _), and
+    /// Vim motion `w` (if `word` is `true`) or `W` (if `word` is `false`)
+    /// in normal mode. Take in current `cursor` (0, lnum, col, off, _), and
     /// return the new cursor position. We denote both `word` and `WORD` with
     /// the English word "word" below.
     ///
@@ -45,126 +43,17 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn nmap_w<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: CursorPositionCurswant,
+        mut cursor: Position,
         count: u64,
         word: bool,
     ) -> Result<NmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let [bufnum, lnum, col, off, _] = cursor_pos;
-        let mut cursor = [bufnum, lnum, col, off];
-        let mut motion = Markovian::new(UnitNmapW);
+        let mut motion = ForwardWord::new(false);
         let s = motion.map(&mut buffer, count, &mut cursor)?;
+        cursor.adjust_cursor(&mut buffer)?;
         Ok(NmapOutput {
             cursor,
             prevent_change: s.into_prevent_change(),
         })
     }
-}
-
-pub struct UnitNmapW;
-
-impl UnitMotion<Position> for UnitNmapW {
-    fn unit_map<B: ParsedBufferLike + ?Sized>(
-        &mut self,
-        buffer: &mut B,
-        cursor: &mut Position,
-    ) -> Result<ExtendedMotionState, B::Error> {
-        let [_, lnum, col, off] = cursor;
-        *off = 0;
-
-        let n_lines = buffer.lines()?;
-        let tokens = buffer.getline_parsed(*lnum)?;
-        let mut line = ExtendedInlineTokensIter::new(&tokens)
-            .skip_col(*col)
-            .expect("col too large")
-            .peekable();
-        let cursor_token = line.next().unwrap();
-
-        if *lnum == n_lines {
-            match line.peek() {
-                None => {
-                    assert!(cursor_token.is_empty());
-                    return Ok(ExtendedMotionState::Failure);
-                }
-                Some(next_t) => {
-                    // If `next_t` exists, `cursor_token` can't be empty.
-                    if cursor_token.at_end(*col) && next_t.is_empty() {
-                        // If `cursor_token` is at eof and `col` is at end of
-                        // `cursor_token` ..
-                        //
-                        // TODO we should be able to jump to the first_char of
-                        // `next_t` in 'virtualedit' mode, and then return
-                        // Failure.
-                        return Ok(ExtendedMotionState::Failure);
-                    }
-                    if next_t.is_empty() {
-                        // If `cursor_token` is at eof and `col` is *not* at
-                        // end of `cursor_token` ..
-                        let s = match cursor_token {
-                            // As above, if `next_t` exists, `cursor_token`
-                            // can't be empty.
-                            GToken::Eol(_) => unreachable!(),
-                            GToken::T(t) => {
-                                *col = t.last_char();
-                                ExtendedMotionState::Pending
-                            }
-                        };
-                        return Ok(s);
-                    }
-                    // Till here, there must be at least one non-empty token
-                    // after `cursor_token`, if we are in the last line of the
-                    // buffer.
-                }
-            }
-        }
-
-        let s = match find_stop_point(line, col) {
-            // `unwrap` is safe because `find_stop_point` return only empty
-            // line or words.
-            Some(t) => ExtendedMotionState::from_dest_token(t).unwrap(),
-            None => loop {
-                // `line` can't be empty when `lnum` == `n_lines`, as we have
-                // covered above.
-                if *lnum >= n_lines {
-                    // Calling |w| on a Space at bof ..
-                    break ExtendedMotionState::Pending;
-                }
-                *lnum += 1;
-                let tokens = buffer.getline_parsed(*lnum)?;
-                let line = ExtendedInlineTokensIter::new(&tokens);
-                if let Some(t) = find_stop_point(line, col) {
-                    break ExtendedMotionState::from_dest_token(t).unwrap();
-                }
-            },
-        };
-        Ok(s)
-    }
-}
-
-impl MarkovianUnit<Position> for UnitNmapW {
-    type FoldState = SemiTolerable;
-}
-
-fn find_stop_point<L: IntoIterator<Item = GToken>>(
-    line: L,
-    col: &mut usize,
-) -> Option<GToken> {
-    for token in line {
-        *col = token.first_char();
-        match token {
-            GToken::Eol(1) => {
-                *col = token.first_char();
-                return Some(token);
-            }
-            GToken::Eol(_) => *col = token.first_char(),
-            GToken::T(t) => match t.ty {
-                TokenType::Word => {
-                    *col = token.first_char();
-                    return Some(token);
-                }
-                TokenType::Space => *col = token.last_char(),
-            },
-        }
-    }
-    None
 }

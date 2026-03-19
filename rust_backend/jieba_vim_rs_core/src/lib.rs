@@ -14,8 +14,6 @@
 
 mod buffer;
 pub mod motion;
-mod position;
 pub mod token;
 
 pub use buffer::BufferLike;
-pub use position::{CursorPositionCurswant, Position};

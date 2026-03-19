@@ -219,41 +219,34 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
             endif
         endif
         let l:orig_selection = &selection
+        let l:orig_startofline = &startofline
 
-        " Select and execute.
-        if l:result_dict["selection"] ==# "colon"
-            execute "normal! v\<Esc>"
-            " Use '< and '> to sort op_begin and op_end so that op_begin
-            " appears before op_end.
-            call setpos("'<", l:result_dict["langle"])
-            call setpos("'>", l:result_dict["rangle"])
-            let l:op_begin = getpos("'<")[1:2]
-            let l:op_end = getpos("'>")[1:2]
-            call cursor(l:op_begin)
-            if a:operator ==# "c" && a:repeat
-                silent execute 'normal! "' . a:register . a:operator
-                    \ . ":call cursor(" . l:op_end[0] . ", "
-                    \ . l:op_end[1] . ")\<CR>"
-                    \ . @.
-            else
-                silent execute 'normal! "' . a:register . a:operator
-                    \ . ":call cursor(" . l:op_end[0] . ", "
-                    \ . l:op_end[1] . ")\<CR>"
-            endif
+        " We need this option for cursor to be correctly positioned after
+        " d-special.
+        set startofline
+
+        " ===
+        " Select ..
+        execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
+        call setpos("'<", l:result_dict["langle"])
+        call setpos("'>", l:result_dict["rangle"])
+
+        " We need this line of code to decide whether to re-position cursor
+        " after d-special when 'startofline' is unset.
+        let l:need_repos = getline(getpos("'>")[1]) !=# ""
+
+        " .. and execute.
+        let &selection = l:result_dict["selection"]
+        if a:operator ==# "c" && a:repeat
+            execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
         else
-            execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
-            call setpos("'<", l:result_dict["langle"])
-            call setpos("'>", l:result_dict["rangle"])
-            let &selection = l:result_dict["selection"]
-            if a:operator ==# "c" && a:repeat
-                execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
-            else
-                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
-            endif
+            execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
         endif
+        " ===
 
         " Restore original states.
         let &selection = l:orig_selection
+        let &startofline = l:orig_startofline
         if l:orig_visualmode ==# ""
             call visualmode(1)
         else
@@ -268,15 +261,20 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         endif
 
         " Land the cursor to potentially a new position.
-        " If we have used colon-trick or d-special, the cursor should already
-        " be placed by Vim.
-        if !(l:result_dict["selection"] ==# "colon" || l:result_dict["visualmode"] ==# "V")
+        " If we have used d-special, the cursor should already be placed by
+        " Vim.
+        if l:result_dict["visualmode"] !=# "V"
             call cursor(l:result_dict["cursor"][1:2])
         endif
 
-        " Special treatment of d-special in nvim.
-        if has("nvim") && a:operator ==# "d" && l:result_dict["visualmode"] ==# "V"
-            call cursor(0, virtcol2col(0, line("."), l:orig_curpos[4]))
+        " Cursor re-positioning of d-special in case 'startofline' is 0.
+        if &startofline ==# 0 && l:need_repos && l:result_dict["visualmode"] ==# "V"
+            if has("patch-8.2.5034") || has("nvim")
+                call cursor(0, virtcol2col(0, line("."), l:orig_curpos[4]))
+            else
+                execute "normal! " . l:orig_curpos[4] . "|"
+                call cursor(0, col("."))
+            endif
         endif
 
         " Special treatment to |c| which needs to drop the user in insert mode.
