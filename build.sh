@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 has() {
     while [ -n "$1" ]; do
@@ -45,7 +45,22 @@ build_from_source() {
     else
         color_when=auto
     fi
-    cd rust_backend && cargo build -r -F expose-shared-library --color=$color_when
+    case "$(uname -s)" in
+        Darwin)
+            cdylib_name=libjieba_vim_rs.dylib
+            dest_name=jieba_vim_rs.so
+            ;;
+        *)
+            # Assume that build.sh is never run on Windows.
+            cdylib_name=libjieba_vim_rs.so
+            dest_name=jieba_vim_rs.so
+            ;;
+    esac
+    # rm: used to delete $dest_name in case it's a symlink
+    cd rust_backend \
+        && cargo build -r --color=$color_when \
+        && rm -f ../pythonx/jieba_vim/$dest_name \
+        && cp target/release/$cdylib_name ../pythonx/jieba_vim/$dest_name
 }
 
 if has git uname curl; then
