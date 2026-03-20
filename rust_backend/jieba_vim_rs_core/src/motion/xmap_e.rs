@@ -39,15 +39,15 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     /// - If there is no next word to the right of current cursor, jump to one
     ///   character to the right of the last character of the last token in the
     ///   buffer. And the motion should be taken as a failure.
-    pub fn xmap_e<'a, B: BufferLike + ?Sized>(
+    pub fn xmap_e<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        visualmode: VisualMode<'a>,
+        visualmode: VisualMode,
         visual_begin: Position,
         mut visual_end: Position,
         count: u64,
         word: bool,
-    ) -> Result<XmapOutput<'a>, B::Error> {
+    ) -> Result<XmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let mut motion = EndWord::new(false, false);
         let s = motion.map(&mut buffer, count, &mut visual_end)?;

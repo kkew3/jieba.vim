@@ -104,9 +104,9 @@ impl<'py> IntoPyObject<'py> for NmapOutputWrapper {
     }
 }
 
-pub struct XmapOutputWrapper<'a>(XmapOutput<'a>);
+pub struct XmapOutputWrapper(XmapOutput);
 
-impl<'a, 'py> IntoPyObject<'py> for XmapOutputWrapper<'a> {
+impl<'py> IntoPyObject<'py> for XmapOutputWrapper {
     type Target = PyDict;
     type Output = Bound<'py, Self::Target>;
     type Error = PyErr;
@@ -221,15 +221,15 @@ impl WordMotionWrapper {
         )?))
     }
 
-    pub fn xmap<'a>(
+    pub fn xmap(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        visualmode: &'a [u8],
+        visualmode: &[u8],
         motion: &[u8],
         visual_begin: Vec<usize>,
         visual_end: Vec<usize>,
         count: u64,
-    ) -> PyResult<XmapOutputWrapper<'a>> {
+    ) -> PyResult<XmapOutputWrapper> {
         if visual_begin.len() != 4 {
             return Err(PyValueError::new_err(
                 "visual_begin must contain exactly 4 elements",
@@ -372,15 +372,15 @@ impl LazyWordMotionWrapper {
         )?))
     }
 
-    pub fn xmap<'a>(
+    pub fn xmap(
         &mut self,
         buffer: &Bound<'_, PyAny>,
-        visualmode: &'a [u8],
+        visualmode: &[u8],
         motion: &[u8],
         visual_begin: Vec<usize>,
         visual_end: Vec<usize>,
         count: u64,
-    ) -> PyResult<XmapOutputWrapper<'a>> {
+    ) -> PyResult<XmapOutputWrapper> {
         if visual_begin.len() != 4 {
             return Err(PyValueError::new_err(
                 "visual_begin must contain exactly 4 elements",

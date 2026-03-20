@@ -73,20 +73,42 @@ jobs:
           path: test/cases/bootstrap/*.jieba_test_case
           retention-days: 5
 
-  build-jieba-vim-cdylib-python:
-    name: Build jieba.vim cdylib required in bootstrap case verification (+python3)
+  build-jieba-vim-cdylib:
+    name: Build jieba.vim cdylib required in verifications
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build
+      - name: Build py3 binding
         shell: bash
         run: |
-          cargo build --manifest-path rust_backend/Cargo.toml --locked -r
+          rm -f jieba_vim_rs.so
+          cargo clean \
+            --manifest-path rust_backend/Cargo.toml
+          cargo build --locked -r \
+            --manifest-path rust_backend/Cargo.toml \
+            --package jieba_vim_rs_binding_py3
           mv rust_backend/target/release/libjieba_vim_rs.so jieba_vim_rs.so
       - uses: actions/upload-artifact@v6
         with:
           name: jieba-vim-cdylib-python
+          path: jieba_vim_rs.so
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+      - name: Build lua51 binding
+        shell: bash
+        run: |
+          rm -f jieba_vim_rs.so
+          cargo clean \
+            --manifest-path rust_backend/Cargo.toml
+          cargo build --locked -r \
+            --manifest-path rust_backend/Cargo.toml \
+            --package jieba_vim_rs_binding_lua51
+          mv rust_backend/target/release/libjieba_vim_jieba_vim_rs.so jieba_vim_rs.so
+      - uses: actions/upload-artifact@v6
+        with:
+          name: jieba-vim-cdylib-lua
           path: jieba_vim_rs.so
           if-no-files-found: error
           retention-days: 1
@@ -101,7 +123,7 @@ jobs:
     needs:
       - build-metatest-binary
       - bootstrap-case-template-expansion
-      - build-jieba-vim-cdylib-python
+      - build-jieba-vim-cdylib
     strategy:
       fail-fast: false
       matrix:
@@ -137,11 +159,22 @@ jobs:
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
+      - name: Get jieba.vim cdylib for nvim/+lua
+        if: matrix.glue-lang == 'lua51'
+        uses: actions/download-artifact@v7
+        with:
+          name: jieba-vim-cdylib-lua
+          path: lua/jieba_vim
       - name: Recover file modes due to download-artifact's limitation
         shell: bash
         run: |
           chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
-          chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
+          if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
+            chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
+          fi
+          if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
+            chmod 755 lua/jieba_vim/jieba_vim_rs.so
+          fi
       - name: Write vimrc
         shell: bash
         run: |
@@ -157,6 +190,11 @@ jobs:
           if "${{ matrix.glue-lang }}" ==# "py311" && !has("python3")
             echoerr "+python3 is required to run the tests"
             cquit 11
+            finish
+          endif
+          if "${{ matrix.glue-lang }}" ==# "lua51" && !has("nvim") && !has("lua")
+            echoerr "+lua is required to run the tests"
+            cquit 12
             finish
           endif
           set nocompatible
@@ -262,26 +300,34 @@ jobs:
     name: >
       Unit case verification for
       ${{ matrix.vim.distr }}@${{ matrix.vim.version }}
-      +${{ matrix.glue-lang }}
+      +${{ matrix.vim.glue-lang }}
     runs-on: ubuntu-24.04
     needs:
       - build-metatest-binary
-      - build-jieba-vim-cdylib-python
+      - build-jieba-vim-cdylib
       - bootstrap-case-verification
     strategy:
       fail-fast: false
       matrix:
-        glue-lang:
-          - py311
         vim:
           - distr: vim
             version: v8.2.2876
+            glue-lang: py311
           - distr: vim
             version: v9.1.0000
+            glue-lang: py311
           - distr: nvim
             version: v0.10.2
+            glue-lang: py311
           - distr: nvim
             version: v0.11.5
+            glue-lang: py311
+          - distr: nvim
+            version: v0.10.2
+            glue-lang: lua51
+          - distr: nvim
+            version: v0.11.5
+            glue-lang: lua51
     steps:
       # Prepare env.
       - uses: actions/checkout@v6
@@ -289,7 +335,7 @@ jobs:
         with:
           vim-distr: ${{ matrix.vim.distr }}
           vim-version: ${{ matrix.vim.version }}
-          glue-lang: ${{ matrix.glue-lang }}
+          glue-lang: ${{ matrix.vim.glue-lang }}
       - name: Add ~/.cargo/bin to PATH
         shell: bash
         run: echo ~/.cargo/bin >> $GITHUB_PATH
@@ -305,26 +351,42 @@ jobs:
           pattern: bootstrapped-test-case-*
           merge-multiple: true
       - name: Get jieba.vim cdylib for +python3
-        if: matrix.glue-lang == 'py311'
+        if: matrix.vim.glue-lang == 'py311'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
+      - name: Get jieba.vim cdylib for nvim/+lua
+        if: matrix.vim.glue-lang == 'lua51'
+        uses: actions/download-artifact@v7
+        with:
+          name: jieba-vim-cdylib-lua
+          path: lua/jieba_vim
       - name: Recover file modes due to download-artifact's limitation
         shell: bash
         run: |
           chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
-          chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
+          if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
+            chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
+          fi
+          if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
+            chmod 755 lua/jieba_vim/jieba_vim_rs.so
+          fi
       - name: Write vimrc
         shell: bash
         run: |
           cat <<EOF > vimrc
-          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py311"
+          if has("nvim") && "${{ matrix.vim.glue-lang }}" ==# "py311"
             let g:python3_host_prog = trim(system("which python3.11"))
           endif
-          if "${{ matrix.glue-lang }}" ==# "py311" && !has("python3")
+          if "${{ matrix.vim.glue-lang }}" ==# "py311" && !has("python3")
             echoerr "+python3 is required to run the tests"
             cquit 11
+            finish
+          endif
+          if "${{ matrix.vim.glue-lang }}" ==# "lua51" && !has("nvim") && !has("lua")
+            echoerr "+lua is required to run the tests"
+            cquit 12
             finish
           endif
           set nocompatible
@@ -355,8 +417,8 @@ jobs:
       - name: Cache verified cases
         uses: actions/cache@v5
         with:
-          path: unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl
-          key: verified-unit-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          path: unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl
+          key: verified-unit-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
 
       # Do the job.
       - name: Run unit case verification
@@ -368,31 +430,31 @@ jobs:
             vim)
               jieba_vim_rs_metatest verify-unit \
                 --rc vimrc -v vim \
-                -n vim_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }} \
+                -n vim_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }} \
                 -d unit_verification \
-                -C unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl \
+                -C unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl \
                 test/cases/*.jieba_test_case \
                 test/cases/bootstrapped/*.jieba_test_case
               ;;
             nvim)
               jieba_vim_rs_metatest verify-unit \
                 --rc vimrc -v nvim --neovim \
-                -n nvim_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }} \
+                -n nvim_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }} \
                 -d unit_verification \
-                -C unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl \
+                -C unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl \
                 test/cases/*.jieba_test_case \
                 test/cases/bootstrapped/*.jieba_test_case
                 ;;
           esac
           # Update the cache.
           cp \
-            unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl \
-            unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl
+            unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl \
+            unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl
       - name: Collect rust test info jsonl files
         uses: actions/upload-artifact@v6
         with:
-          name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
-          path: unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.glue-lang }}.jsonl
+          name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
+          path: unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl
           if-no-files-found: error
           retention-days: 5
 
@@ -493,7 +555,8 @@ jobs:
             --exclude-files 'jieba_vim_rs_test/*' \
             --exclude-files 'jieba_vim_rs_metatest/*' \
             --exclude-files 'jieba_vim_rs_core/tests/*' \
-            --exclude-files 'src/*' \
+            --exclude-files 'jieba_vim_rs_binding_lua51/*' \
+            --exclude-files 'jieba_vim_rs_binding_py3/*' \
             --packages jieba_vim_rs_core
       - uses: codecov/codecov-action@v5
         with:
@@ -505,7 +568,6 @@ jobs:
   build:
     name: Build for ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
-    needs: rust-core-test
     strategy:
       fail-fast: false
       matrix:

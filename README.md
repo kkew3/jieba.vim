@@ -22,7 +22,7 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 
 ## 安装
 
-本插件使用 Python3 + Rust 开发，Vim/Neovim 需要 `+python3` 特性以正常使用。
+本插件使用 Vimscript + Rust 开发，通过 python3 (vim) 或 lua5.1 (neovim) 桥接 Vimscript 与 Rust，因此 Vim 需要 `+python3` 特性以正常使用。
 
 对于 [vim-plug][6]，使用如下代码安装最新稳定版：
 
@@ -139,8 +139,8 @@ Features overview:
 
 ## Installation
 
-This plugin was developed using Python3 + Rust.
-`+python3` features is required for Vim/Neovim to use the jieba.vim.
+This plugin was developed using Vimscript + Rust, bridged by python3 (on vim) or lua5.1 (on neovim).
+Hence, `+python3` features is required for Vim to use jieba.vim.
 
 For [vim-plug][6], the latest stable version is installable using:
 

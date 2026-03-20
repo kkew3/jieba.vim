@@ -38,23 +38,27 @@ let g:jieba_vim_user_dict = get(g:, 'jieba_vim_user_dict', '')
 " (默认 0)：是/否 (1/0) 自动开启 keymap（不包含预览）。
 let g:jieba_vim_keymap = get(g:, 'jieba_vim_keymap', 0)
 
-if !has('python3')
+if !has("nvim") && !has('python3')
     echoerr "python3 is required by jieba.vim"
     finish
 endif
 
-py3 import jieba_vim.navigation
+if has("nvim")
+    lua jieba_vim = require("jieba_vim")
+else
+    py3 import jieba_vim.navigation
+endif
 
 function! s:InitWordMotion()
     let l:args = [g:jieba_vim_user_dict, &iskeyword, str2nr(g:jieba_vim_lazy)]
-    let l:init_word_motion_err = py3eval(
-        \ "jieba_vim.navigation.init_word_motion(*vim.eval('l:args'))")
     if has("nvim")
-        " Nvim does not seem to define v:none.
-        if l:init_word_motion_err !=# "" && l:init_word_motion_err !=# v:null
+        let l:init_word_motion_err = luaeval("jieba_vim:init_word_motion(unpack(_A))", l:args)
+        if l:init_word_motion_err !=# ""
             echoerr l:init_word_motion_err
         endif
     else
+        let l:init_word_motion_err = py3eval(
+            \ "jieba_vim.navigation.init_word_motion(*vim.eval('l:args'))")
         if l:init_word_motion_err !=# "" && l:init_word_motion_err !=# v:none
             echoerr l:init_word_motion_err
         endif
@@ -98,17 +102,27 @@ function s:JiebaPreviewCancel()
     execute "hi clear JiebaPreview"
 endfunction
 
+function s:JiebaModelPreview(...)
+    if has("nvim")
+        return luaeval("jieba_vim:preview_nmap(jieba_vim.buffer, unpack(_A))",
+            \ a:000)
+    else
+        " In patch-9.1.0844 Vim introduced py3eval({expr}, [{locals}]) api.
+        " But in order to work with Vim before that patch, we have to work
+        " with this awkward syntax. The same applies below for all calls to
+        " `py3eval()`.
+        let l:args = a:000
+        return py3eval(
+            \ "jieba_vim.navigation.preview_nmap(vim.current.buffer, *vim.eval('l:args'))")
+    endif
+endfunction
+
 function! s:JiebaPreview(motion)
     let l:limit = get(g:, "jieba_vim_preview_limits", 0)
     if l:limit < 0
         let l:limit = 99999
     endif
-    " In patch-9.1.0844 Vim introduced py3eval({expr}, [{locals}]) api. But in
-    " order to work with Vim before that patch, we have to work with this
-    " awkward syntax. The same applies below for all calls to `py3eval()`.
-    let l:args = [a:motion, getcurpos(), l:limit]
-    let l:cursor_positions = py3eval(
-        \ "jieba_vim.navigation.preview_nmap(vim.current.buffer, *vim.eval('l:args'))")
+    let l:cursor_positions = s:JiebaModelPreview(a:motion, getcurpos(), l:limit)
     if empty(l:cursor_positions)
         call s:JiebaPreviewCancel()
     else
@@ -129,18 +143,30 @@ endfor
 nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>call <SID>JiebaPreviewCancel()<CR>
 
 function! JiebaModelNmap(...)
-    return py3eval(
-        \ "jieba_vim.navigation.nmap(vim.current.buffer, *vim.eval('a:000'))")
+    if has("nvim")
+        return luaeval("jieba_vim:nmap(jieba_vim.buffer, unpack(_A))", a:000)
+    else
+        return py3eval(
+            \ "jieba_vim.navigation.nmap(vim.current.buffer, *vim.eval('a:000'))")
+    endif
 endfunction
 
 function! JiebaModelXmap(...)
-    return py3eval(
-        \ "jieba_vim.navigation.xmap(vim.current.buffer, *vim.eval('a:000'))")
+    if has("nvim")
+        return luaeval("jieba_vim:xmap(jieba_vim.buffer, unpack(_A))", a:000)
+    else
+        return py3eval(
+            \ "jieba_vim.navigation.xmap(vim.current.buffer, *vim.eval('a:000'))")
+    endif
 endfunction
 
 function! JiebaModelOmap(...)
-    return py3eval(
-        \ "jieba_vim.navigation.omap(vim.current.buffer, *vim.eval('a:000'))")
+    if has("nvim")
+        return luaeval("jieba_vim:omap(jieba_vim.buffer, unpack(_A))", a:000)
+    else
+        return py3eval(
+            \ "jieba_vim.navigation.omap(vim.current.buffer, *vim.eval('a:000'))")
+    endif
 endfunction
 
 function! JiebaNmap(motion, count, model_funcname)
@@ -501,7 +527,15 @@ if g:jieba_vim_keymap
     endfor
 endif
 
+function s:UpdateIsk()
+    if has("nvim")
+        lua jieba_vim:update_isk(vim.o.iskeyword)
+    else
+        py3 jieba_vim.navigation.update_isk(vim.eval('&iskeyword'))
+    endif
+endfunction
+
 augroup jieba_vim_update_isk
     autocmd!
-    autocmd OptionSet iskeyword call py3eval("jieba_vim.navigation.update_isk(vim.eval('&iskeyword'))")
+    autocmd OptionSet iskeyword call s:UpdateIsk()
 augroup END

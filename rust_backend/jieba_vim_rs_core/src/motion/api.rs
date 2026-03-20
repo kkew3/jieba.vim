@@ -32,10 +32,10 @@ pub mod ffi {
         pub prevent_change: &'static [u8],
     }
 
-    pub struct XmapOutput<'a> {
+    pub struct XmapOutput {
         pub langle: Position,
         pub rangle: Position,
-        pub visualmode: &'a [u8],
+        pub visualmode: &'static [u8],
         pub prevent_change: &'static [u8],
     }
 
@@ -57,22 +57,24 @@ mod inner {
 
     /// Visualmode used in xmap.
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    pub enum VisualMode<'a> {
+    pub enum VisualMode {
         Char,
         Line,
         // Vim and neovim do not agree on the byte representation value
         // (neovim: b"\x16", vim: br"\u0016"). We have to save the original
         // bytes here and output using the exact same bytes to please the
         // verifier.
-        Block(&'a [u8]),
+        Block(&'static [u8]),
     }
 
-    impl<'a> VisualMode<'a> {
-        pub fn from_u8(value: &'a [u8]) -> Self {
+    impl From<&[u8]> for VisualMode {
+        fn from(value: &[u8]) -> Self {
             match value {
                 b"v" => Self::Char,
                 b"V" => Self::Line,
-                b"\x16" | br"\<C-v>" | br"\u0016" => Self::Block(value),
+                b"\x16" => Self::Block(b"\x16"),
+                br"\<C-v>" => Self::Block(br"\<C-v>"),
+                br"\u0016" => Self::Block(br"\u0016"),
                 bs => panic!("cannot convert bytes `{:?}` to VisualMode", bs),
             }
         }
@@ -94,10 +96,10 @@ mod inner {
         pub prevent_change: bool,
     }
 
-    pub struct XmapOutput<'a> {
+    pub struct XmapOutput {
         pub langle: Position,
         pub rangle: Position,
-        pub visualmode: VisualMode<'a>,
+        pub visualmode: VisualMode,
         pub prevent_change: bool,
     }
 
@@ -122,8 +124,8 @@ mod inner {
         }
     }
 
-    impl<'a> From<XmapOutput<'a>> for ffi::XmapOutput<'a> {
-        fn from(value: XmapOutput<'a>) -> Self {
+    impl From<XmapOutput> for ffi::XmapOutput {
+        fn from(value: XmapOutput) -> Self {
             Self {
                 langle: value.langle.into(),
                 rangle: value.rangle.into(),
@@ -198,17 +200,17 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         Ok(output.into())
     }
 
-    pub fn xmap<'a, B: BufferLike + ?Sized>(
+    pub fn xmap<B: BufferLike + ?Sized>(
         &mut self,
         buffer: &B,
-        visualmode: &'a [u8],
+        visualmode: &[u8],
         motion: &[u8],
         visual_begin: ffi::Position,
         visual_end: ffi::Position,
         count: u64,
-    ) -> Result<ffi::XmapOutput<'a>, B::Error> {
+    ) -> Result<ffi::XmapOutput, B::Error> {
         let count = count.max(1);
-        let visualmode = VisualMode::from_u8(visualmode);
+        let visualmode = visualmode.into();
         let visual_begin = visual_begin.into();
         let visual_end = visual_end.into();
         let output = match motion {
