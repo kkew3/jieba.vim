@@ -20,16 +20,20 @@ download_release() {
     url=""
     case "$arch-$os" in
         x86_64-Darwin)
-            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-x86_64-apple-darwin.dylib;
-            name=jieba_vim_rs.so;
+            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-x86_64-apple-darwin.dylib
+            name=jieba_vim_rs.so
             ;;
-        aarch64-Darwin)
-            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-aarch64-apple-darwin.dylib;
-            name=jieba_vim_rs.so;
+        aarch64-Darwin | arm64-Darwin)
+            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-aarch64-apple-darwin.dylib
+            name=jieba_vim_rs.so
             ;;
-        x86_64-Linux)
-            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-x86_64-unknown-linux-gnu.so;
-            name=jieba_vim_rs.so;
+        x86_64-Linux | amd64-Linux)
+            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-x86_64-unknown-linux-gnu.so
+            name=jieba_vim_rs.so
+            ;;
+        aarch64-Linux | arm64-Linux)
+            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-aarch64-unknown-linux-gnu.so
+            name=jieba_vim_rs.so
             ;;
     esac
     if [ -z "$url" ]; then
