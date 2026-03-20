@@ -26,13 +26,13 @@ runs:
       uses: leafo/gh-actions-lua@master
       with:
         luaVersion: '5.1'
-      if: ${{ inputs.glue-lang == 'lua51' }}
+      if: ${{ inputs.glue-lang == 'lua51' && inputs.vim-distr == 'vim' }}
     - name: Copy lua libs and includes to /usr
       shell: bash
       run: |
         sudo cp -r .lua/include/* /usr/include
         sudo cp -r .lua/lib/* /usr/lib
-      if: ${{ inputs.glue-lang == 'lua51' }}
+      if: ${{ inputs.glue-lang == 'lua51' && inputs.vim-distr == 'vim' }}
     - name: Cache vim/nvim directory
       id: cache-vim
       uses: actions/cache@v5
