@@ -112,7 +112,7 @@ cargo test
 
 ## 许可
 
-Apache license v2.
+Apache license v2；部分文件参照 [vim-LICENSE.txt](./vim-LICENSE.txt).
 
 ---
 
@@ -233,7 +233,7 @@ See [TODO.md](./TODO.md).
 
 ## License
 
-Apache license v2.
+Apache license v2; with a handful of files following [vim-LICENSE.txt](./vim-LICENSE.txt).
 
 
 [1]: https://vimdoc.sourceforge.net/htmldoc/motion.html#word-motions
