@@ -41,7 +41,7 @@ jobs:
   # Reference: https://github.com/sharkdp/fd/blob/master/.github/workflows/CICD.yml
   # Reference: https://github.com/mlua-rs/mlua/blob/main/.github/workflows/main.yml
   build:
-    name: Build for ${{ matrix.job.target }}
+    name: Build binding ${{ matrix.binding }} for ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
     needs: check-for-release
     if: ${{ needs.check-for-release.outputs.is-release == 'true' }}
