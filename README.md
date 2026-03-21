@@ -92,19 +92,13 @@ map w <Plug>(Jieba_w)
 
 ## 对于开发者
 
-若想在本地运行针对 rust 实现的测试，
+若想在本地运行针对 rust 实现的测试，部分测试可通过如下命令运行：
 
 ```bash
-# 核心代码
-cd rust_backend/jieba_vim_rs_core
-cargo test
-# 可开启 verifiable_case 来验证测试本身是否正确，需要安装 junegunn/vader.vim
-# (https://github.com/junegunn/vader.vim).
-#cargo test -F verifiable_case
-# 测试工具代码
-cd ../jieba_vim_rs_test
-cargo test
+cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 ```
+
+其余测试比较复杂，请参见 [CI](./.github/workflows/ci.yml)。
 
 ## Roadmap
 
@@ -213,19 +207,13 @@ A convenient option `g:jieba_vim_keymap` is provided. When set to 1, the keymap 
 
 ## For developers
 
-To run tests against rust implementation locally,
+To run tests against rust implementation locally, a part of tests can be run with the following command:
 
 ```bash
-# Core logic
-cd rust_backend/jieba_vim_rs_core
-cargo test
-# verifiable_case feature can be enabled to verify the correctness of the tests.
-# junegunn/vader.vim (https://github.com/junegunn/vader.vim) is required.
-#cargo test -F verifiable_case
-# Test utilities
-cd ../jieba_vim_rs_test
-cargo test
+cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 ```
+
+Otherwise, please refer to [CI](./.github/workflows/ci.yml) for details.
 
 ## Roadmap
 
