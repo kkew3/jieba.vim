@@ -458,41 +458,6 @@ jobs:
           if-no-files-found: error
           retention-days: 5
 
-  commit_changes:
-    name: Collect artifacts and commit changes
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    needs:
-      - bootstrap-case-template-expansion
-      - bootstrap-case-verification
-      # We don't rely on the artifacts produced by unit-case-verification; yet
-      # we require the correctness guarantee of the bootstrapped cases from it.
-      - unit-case-verification
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref }}
-          persist-credentials: true
-      - name: Get expanded bootstrap templates
-        uses: actions/download-artifact@v7
-        with:
-          name: bootstrap-test-cases
-          path: test/cases/bootstrap
-      - name: Get bootstrapped jieba test cases
-        uses: actions/download-artifact@v7
-        with:
-          path: test/cases/bootstrapped
-          pattern: bootstrapped-test-case-*
-          merge-multiple: true
-      - name: Commit the changes
-        uses: stefanzweifel/git-auto-commit-action@v7
-        with:
-          commit_message: Update tests
-          file_pattern: >
-            test/cases/bootstrap/*.jieba_test_case
-            test/cases/bootstrapped/*.jieba_test_case
-
   rust-core-test:
     name: Run rust core tests
     runs-on: ubuntu-24.04
