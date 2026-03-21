@@ -6,13 +6,14 @@ on:
     branches:
       rust
     types:
+      - opened
+      - synchronize
       - closed
 
 jobs:
   check-for-release:
     name: Check for release
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.merged == true }}
     outputs:
       is-release: ${{ steps.is-release.outputs.IS_RELEASE }}
       release-tag-name: ${{ steps.is-release.outputs.RELEASE_TAG_NAME }}
@@ -133,9 +134,11 @@ jobs:
           mkdir -p "$PKG_BASEDIR" && cd "$PKG_BASEDIR"
           TO_NAME="${LIB_NAME}-${{ matrix.job.target }}-${{ matrix.binding }}${{ steps.cdylib.outputs.CDYLIB_SUFFIX }}"
           cp "${{ steps.cdylib.outputs.LIB_PATH }}" "$TO_NAME"
+          test -f "${PKG_BASEDIR}/${TO_NAME}"
           echo "PKG_PATH=${PKG_BASEDIR}/${TO_NAME}" >> $GITHUB_OUTPUT
 
       - name: Publish cdylib
+        if: ${{ github.event.pull_request.merged == true }}
         uses: softprops/action-gh-release@v2
         with:
           files: |
