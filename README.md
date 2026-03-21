@@ -27,12 +27,10 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 对于 [vim-plug][6]，使用如下代码安装最新稳定版：
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': { -> jieba_vim#install() } }
 ```
 
-其中 `./build.sh` 用于下载预编译链接库，然后如果没有找到的话再尝试本地编译。
-
-Windows 用户可以把 `'do': './build.sh'` 替换为 `'do': '.\build.ps1'` 以运行 powershell 安装脚本。
+其中 `jieba_vim#install()` 用于下载预编译链接库，然后如果没有找到的话再尝试本地编译。
 
 虽然通常不需要，但在极少数情况下可能需要进入插件目录调整 `rust_backend/Cargo.toml` 中的 pyo3 python ABI 版本，以匹配 vim 中 python3 的版本。可以在终端使用
 
@@ -48,7 +46,7 @@ vim +"py3 print(sys.version)"
 {
     "kkew3/jieba.vim",
     tag = "v1.0.5",
-    build = "./build.sh",
+    build = ":call jieba_vim#install()",
     init = function()
       vim.g.jieba_vim_lazy = 1
       vim.g.jieba_vim_keymap = 1
@@ -147,13 +145,11 @@ Hence, `+python3` features is required for Vim to use jieba.vim.
 For [vim-plug][6], the latest stable version is installable using:
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': { -> jieba_vim#install() } }
 ```
 
-where `./build.sh` is used to download precompiled shared library.
+where `jieba_vim#install()` is used to download precompiled shared library.
 Local compilation will be attempted only if the shared library cannot be found.
-
-On Windows, `'do': './build.sh'` can be replaced with `'do': '.\build.ps1'` in order to run the build script in powershell.
 
 Though not always necessary, user may need to adjust the pyo3 python ABI in `rust_backend/Cargo.toml` under the plugin directory after downloading the plugin, in order to match with the python3 version vim is compiled against.
 The vim's python3 version may be checked by the following command at terminal:
@@ -168,7 +164,7 @@ For Neovim users, it can be installed using lazy.nvim:
 {
   "kkew3/jieba.vim",
   tag = "v1.0.5",
-  build = "./build.sh",
+  build = ":call jieba_vim#install()",
   init = function()
     vim.g.jieba_vim_lazy = 1
     vim.g.jieba_vim_keymap = 1
