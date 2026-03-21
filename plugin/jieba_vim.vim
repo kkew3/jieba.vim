@@ -43,13 +43,44 @@ if !has("nvim") && !has('python3')
     finish
 endif
 
-if has("nvim")
-    lua jieba_vim = require("jieba_vim")
+" Reference: https://github.com/junegunn/fzf/blob/master/plugin/fzf.vim
+let s:is_win = has("win32") || has("win64")
+if s:is_win && &shellslash
+    set noshellslash
+    let s:base_dir = expand("<sfile>:h:h")
+    set shellslash
 else
-    py3 import jieba_vim.navigation
+    let s:base_dir = expand("<sfile>:h:h")
 endif
 
-function! s:InitWordMotion()
+if s:is_win && !has("win32unix") && has("nvim")
+    let s:cdylib_suffix = ".dll"
+elseif s:is_win && !has("win32unix")
+    let s:cdylib_suffix = ".pyd"
+else
+    let s:cdylib_suffix = ".so"
+endif
+
+if has("nvim")
+    if filereadable(s:base_dir . "/lua/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
+        lua jieba_vim = require("jieba_vim")
+        let s:loaded_jieba_vim_cdylib = 1
+    else
+        let s:loaded_jieba_vim_cdylib = 0
+    endif
+else
+    if filereadable(s:base_dir . "/pythonx/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
+        py3 import jieba_vim.navigation
+        let s:loaded_jieba_vim_cdylib = 1
+    else
+        let s:loaded_jieba_vim_cdylib = 0
+    endif
+endif
+
+function! s:InitWordMotion() abort
+    if !s:loaded_jieba_vim_cdylib
+        return
+    endif
     let l:args = [g:jieba_vim_user_dict, &iskeyword, str2nr(g:jieba_vim_lazy)]
     if has("nvim")
         let l:init_word_motion_err = luaeval("jieba_vim:init_word_motion(unpack(_A))", l:args)
@@ -63,8 +94,10 @@ function! s:InitWordMotion()
             echoerr l:init_word_motion_err
         endif
     endif
+    let s:loaded_jieba_vim_word_motion = 1
 endfunction
 
+let s:loaded_jieba_vim_word_motion = 0
 call s:InitWordMotion()
 
 ""
@@ -103,6 +136,13 @@ function s:JiebaPreviewCancel()
 endfunction
 
 function s:JiebaModelPreview(...)
+    if !s:loaded_jieba_vim_cdylib 
+        throw "cdylib unloaded; run jieba_vim#install() first"
+    endif
+    if !s:loaded_jieba_vim_word_motion
+        throw "word_motion uninitialized; check jieba_vim config"
+    endif
+
     if has("nvim")
         return luaeval("jieba_vim:preview_nmap(jieba_vim.buffer, unpack(_A))",
             \ a:000)
@@ -143,6 +183,13 @@ endfor
 nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>call <SID>JiebaPreviewCancel()<CR>
 
 function! JiebaModelNmap(...)
+    if !s:loaded_jieba_vim_cdylib
+        throw "cdylib unloaded; run jieba_vim#install() first"
+    endif
+    if !s:loaded_jieba_vim_word_motion
+        throw "word_motion uninitialized; check jieba_vim config"
+    endif
+
     if has("nvim")
         return luaeval("jieba_vim:nmap(jieba_vim.buffer, unpack(_A))", a:000)
     else
@@ -152,6 +199,13 @@ function! JiebaModelNmap(...)
 endfunction
 
 function! JiebaModelXmap(...)
+    if !s:loaded_jieba_vim_cdylib
+        throw "cdylib unloaded; run jieba_vim#install() first"
+    endif
+    if !s:loaded_jieba_vim_word_motion
+        throw "word_motion uninitialized; check jieba_vim config"
+    endif
+
     if has("nvim")
         return luaeval("jieba_vim:xmap(jieba_vim.buffer, unpack(_A))", a:000)
     else
@@ -161,6 +215,13 @@ function! JiebaModelXmap(...)
 endfunction
 
 function! JiebaModelOmap(...)
+    if !s:loaded_jieba_vim_cdylib
+        throw "cdylib unloaded; run jieba_vim#install() first"
+    endif
+    if !s:loaded_jieba_vim_word_motion
+        throw "word_motion uninitialized; check jieba_vim config"
+    endif
+
     if has("nvim")
         return luaeval("jieba_vim:omap(jieba_vim.buffer, unpack(_A))", a:000)
     else
@@ -539,3 +600,21 @@ augroup jieba_vim_update_isk
     autocmd!
     autocmd OptionSet iskeyword call s:UpdateIsk()
 augroup END
+
+
+" Reference: https://github.com/junegunn/fzf/blob/master/plugin/fzf.vim
+function! jieba_vim#install()
+    if s:is_win && !has("win32unix")
+        let l:script = s:base_dir . "/build.ps1"
+        let l:script = "powershell -ExecutionPolicy Bypass -file " . shellescape(l:script)
+    else
+        let l:script = s:base_dir . "/build.sh"
+    endif
+    if has("nvim")
+        let $JIEBA_VIM_INSTALL_NVIM = "1"
+    endif
+    call system(l:script)
+    if v:shell_error
+        throw "Failed to run build script: " . l:script
+    endif
+endfunction

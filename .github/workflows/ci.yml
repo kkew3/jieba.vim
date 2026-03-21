@@ -578,6 +578,15 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          cargo clean \
+            --manifest-path rust_backend/Cargo.toml
           cargo build --locked -r \
             --target=${{ matrix.job.target }} \
+            --package jieba_vim_rs_binding_lua51 \
+            --manifest-path rust_backend/Cargo.toml
+          cargo clean \
+            --manifest-path rust_backend/Cargo.toml
+          cargo build --locked -r \
+            --target=${{ matrix.job.target }} \
+            --package jieba_vim_rs_binding_py3 \
             --manifest-path rust_backend/Cargo.toml
