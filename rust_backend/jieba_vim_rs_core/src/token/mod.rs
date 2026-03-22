@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -15,11 +15,9 @@
 mod char;
 mod isk;
 pub(crate) mod jieba;
-pub mod token_iter;
 mod tokenize;
 mod utils;
 
 pub use jieba::JiebaPlaceholder;
 pub use tokenize::{Token, TokenLike, TokenType, Tokenizer};
 use utils::ascii_or;
-pub(crate) use utils::index_tokens;

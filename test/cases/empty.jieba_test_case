@@ -1,0 +1,416 @@
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy
+// of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+#V 3
+
+#B0 ␊
+
+## normal w {{{
+#X u
+#M n
+#K w
+#Q |
+
+H c49507d01cdbea465d32314ceb801d9c8f254abc9c6f69815f182df8
+B0 |␊
+Bo |␊
+B1 |␊
+
+H 8cce72cc00faa068725a1fe04b88053850a3f2000273e4f4730c6053
+C 1000
+B0 |␊
+Bo |␊
+B1 |␊
+
+H 03a125e3f6590812f466d308ddc74afb24d01987a305b40f4eb8d9b1
+B0 |\␊
+Bo |␊
+B1 |␊
+
+H 10b646de08ba83ad3a6d33fabcde1c1c5fadc694e8d3a5b4088a3744
+C 1000
+B0 |\␊
+Bo |␊
+B1 |␊
+
+// }}}
+
+## normal b {{{
+#X u
+#M n
+#K b
+#Q |
+
+H 3a6b4a36a2338d2844f0df72ced159c538450f9783bb8b3e0cf9e472
+B0 |␊
+Bo |␊
+B1 |␊
+
+H 329b00bed6a566f63230dff020b2d3c73b5123e211812ddd9f57429b
+C 1000
+B0 |␊
+Bo |␊
+B1 |␊
+
+H f09570f84730fa18dae7fff574e9d718d9fde747f5cc3fe797069d47
+B0 |\␊
+Bo |␊
+B1 |␊
+
+H 4ab46fe2887d1522e96230eccb0894f4adb901a241a5b428612d9b14
+C 1000
+B0 |\␊
+Bo |␊
+B1 |␊
+
+// }}}
+
+## normal e {{{
+#X u
+#M n
+#K e
+#Q |
+
+H cf51bdeb6cae4ca1d663f0040b03ef23d3364c5f1a5bdb63f7be2b23
+B0 |␊
+Bo |␊
+B1 |␊
+
+H 2e06b3142444ec8d799820b31e62d6d33c60e501e69922c682043f13
+C 1000
+B0 |␊
+Bo |␊
+B1 |␊
+
+H a23235e47791c4c2df0c9b13493a3c9832e4caa21cede2dba0b86cd9
+B0 |\␊
+Bo |␊
+B1 |␊
+
+H 38600c9b3ad5e0e4ddb5625882bf02c84436780f9a6296e16b2a1de3
+C 1000
+B0 |\␊
+Bo |␊
+B1 |␊
+
+// }}}
+
+## normal ge {{{
+#X u
+#M n
+#K ge
+#Q |
+
+H be520fc284952bcd9583f04fa1c63ad706c032517f4df840518cdffc
+B0 |␊
+Bo |␊
+B1 |␊
+
+H a96daab181124c5a19a423777f5aee4ce188f1c837f5b4ee5c9ca04a
+C 1000
+B0 |␊
+Bo |␊
+B1 |␊
+
+H 69aeb41ce405f3b2dcdc586ea6e1aaffcf3630053e14b5bc9fccc7de
+B0 |\␊
+Bo |␊
+B1 |␊
+
+H 1820a6b27c57b06f594755069925c9ac174c225dc6b6d9bc02161bb6
+C 1000
+B0 |\␊
+Bo |␊
+B1 |␊
+
+// }}}
+
+## visual char w {{{
+#X u
+#M v
+#K w
+#Q < > visualmode=v
+
+H 4078888539eccc6bffdcef08262cd6c3b09d1cfc7fe366b8734f25a9
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+H d7b8e0ff058e700ae0f6045d97ef5ec9b5f0b1f5e2c5198438f50ca9
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+// }}}
+
+## visual line w {{{
+#X u
+#M V
+#K w
+#Q < > visualmode=V
+
+H 18f9b788249ce5eff1f9e5c6d630f1a904e75f27a91bc3ef18422156
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=V
+
+H 6a249e923ee02c2142e96f3a9aa111e421190f6a36cc3295e250c09c
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=V
+
+// }}}
+
+## visual block w {{{
+#X u
+#M \<C-v>
+#K w
+#Q < > visualmode=\<C-v>
+
+H 8557957c8b648bb861e1e433a958e0fb0e791f0ee909c8cf60930788
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=\<C-v>
+
+H 72109414997ffbf1600776311e813c91f970a7557e20b1d5865258b0
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=\<C-v>
+
+// }}}
+
+## visual char b {{{
+#X u
+#M v
+#K b
+#Q < > visualmode=v
+
+H 8dfbeceb78d5b1d4cdf792a81e56e8f04b35182b48db2dbf48d4afb8
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+H 6e711cca63b6273383977597d24c972d70f3389a397d0c1b7ffec219
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+// }}}
+
+## visual line b {{{
+#X u
+#M V
+#K b
+#Q < > visualmode=V
+
+H 2a1cc6f747b0ccb6229bf602a6525b76978c5afabc48d542c188f5d4
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=V
+
+H 3221902797eaafa175f3bfbf561b834f94df8b79fd7ae13d339beee9
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=V
+
+// }}}
+
+## visual block b {{{
+#X u
+#M \<C-v>
+#K b
+#Q < > visualmode=\<C-v>
+
+H f3c705d061fd0639017c829d48676bd4f1d2cd3b1f5c9247d89fadbb
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=\<C-v>
+
+H 3f8fed22e25a74033318504dfa9a105c4f1a5a7e17ea5b57ce6158de
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=\<C-v>
+
+// }}}
+
+## visual char e {{{
+#X u
+#M v
+#K e
+#Q < > visualmode=v
+
+H e7d8a0fc019b7c4cf2ea7d0dbe0c39077bd04cfa890b6457a05840cb
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+H fda4ef30b7744319368c7123ff8e148b80a430caa5778e349ff8041c
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+// }}}
+
+## visual line e {{{
+#X u
+#M V
+#K e
+#Q < > visualmode=V
+
+H 7e495581c3fb7722efff3c4812ea4ba8986133fa55ef113a105c11c1
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=V
+
+H 43c9a4ef55a4028142a8297fccaf8c8a21671d3f10b2e7daeaf32f48
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=V
+
+// }}}
+
+## visual block e {{{
+#X u
+#M \<C-v>
+#K e
+#Q < > visualmode=\<C-v>
+
+H e5651ebd0db855dd84a9f7b1bdf2b4e34047bda7387edb90f796ed69
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=\<C-v>
+
+H 92357ce5218c4116afb1551bbfbd28bd0e21ad69f51751895bd2ca9d
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=\<C-v>
+
+// }}}
+
+## visual char ge {{{
+#X u
+#M v
+#K ge
+#Q < > visualmode=v
+
+H 976361542306e3ae2579d7068fc4d1454be46faea61d8c27fd7290fe
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+H 24aadcdb26920fb756fafde4666e75910be14622b9c695377d6bfaa1
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=v
+
+// }}}
+
+## visual line ge {{{
+#X u
+#M V
+#K ge
+#Q < > visualmode=V
+
+H d273d9c4114c2bff11b3653c5e5a6d9fad1e6ff952eaca2721c1531d
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=V
+
+H 8486ed1e2fd561f266507ee08b84d5c12bf9e6703836c8e6e5140783
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=V
+
+// }}}
+
+## visual block ge {{{
+#X u
+#M \<C-v>
+#K ge
+#Q < > visualmode=\<C-v>
+
+H f4d28cce3d791ffaa666bf1053b896379bd54af22ffae29f1413fe36
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=\<C-v>
+
+H 179910635d6c8841031d9b99aa239b76bf7dda8c81732a7f46b42e02
+C 1000
+B0 []␊
+Bo <>␊
+B1 []␊
+S1 visualmode()=\<C-v>
+
+// }}}
+
+## operator-pending d w {{{
+#X u
+#M o
+#K w
+#O d
+#Q | < > prevent_change=0 visualmode=v selection=exclusive
+
+H 14249057c9a711969be139e683dd34fc746302b9294c9819986a565a visual mode unchanged
+S0 visualmode()=V
+B0 |[]␊
+Bp <>␊
+Bo |␊
+B1 |[]␊
+S1 visualmode()=V
+
+H 2b9fbbb5eebb73cd5fd5f62a056edbed7ee126e580aa0f7b1cb949c3 visual mode unchanged
+S0 visualmode()=
+B0 |␊
+Bp <>␊
+Bo |␊
+B1 |␊
+S1 visualmode()=
+
+// }}}
+
+// vim: foldmethod=marker foldlevel=1

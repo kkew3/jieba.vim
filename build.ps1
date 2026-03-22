@@ -13,6 +13,10 @@ function Has-Command {
 }
 
 function Download-Release {
+	if ($env:JIEBA_VIM_BUILD_FROM_SORUCE -eq "1") {
+		return $false
+	}
+
 	if (-not (Has-Command git)) { return $false }
  	try {
  		$curr_commit = (& git rev-parse HEAD) -join ''
@@ -23,16 +27,26 @@ function Download-Release {
  	if (-not $curr_tag) { return $false }
  	$baseUrl = "https://github.com/kkew3/jieba.vim/releases/download/$curr_tag/"
 
+	if ($env:JIEBA_VIM_INSTALL_NVIM -eq "1") {
+		$binding = "lua51"
+		$dest_dir = 'lua\jieba_vim'
+		$dest_name = 'jieba_vim_rs.dll'
+	} else {
+		$binding = "py3"
+		$dest_dir = 'pythonx\jieba_vim'
+		$dest_name = 'jieba_vim_rs.pyd'
+	}
+
  	# 简化：release 中只有 x86_64 Windows 的 DLL
- 	$name = 'jieba_vim_rs-x86_64-pc-windows-msvc.dll'
+ 	$name = "jieba_vim_rs-x86_64-pc-windows-msvc-$binding.dll"
 
  	$scriptDir = $PSScriptRoot
  	if (-not $scriptDir) { $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition }
- 	$saveDir = Join-Path $scriptDir 'pythonx\jieba_vim'
+ 	$saveDir = Join-Path $scriptDir $dest_dir
  	if (-not (Test-Path $saveDir)) { New-Item -ItemType Directory -Force -Path $saveDir | Out-Null }
 
  	$url = $baseUrl + $name
- 	$dest = Join-Path $saveDir 'jieba_vim_rs.pyd'
+ 	$dest = Join-Path $saveDir $dest_name
  	try {
  		if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
  			& curl.exe -fsSL -o $dest $url
@@ -48,29 +62,41 @@ function Download-Release {
 
 function Build-From-Source {
 	$color_when = if ($env:VIMRUNTIME) { 'never' } else { 'auto' }
+
 	# Assume that build.ps1 only runs on Windows.
-	$cdylib_name = 'jieba_vim_rs.dll'
-	$dest_name = 'jieba_vim_rs.pyd'
-	Push-Location 'rust_backend'
-	try {
-		& cargo build -r --color=$color_when
-		if ($LASTEXITCODE -ne 0) { return $false }
-
-		# Remove-Item: used to delete $dest_name in case it's a symlink
-		Remove-Item "..\pythonx\jieba_vim\$dest_name" -Force -ErrorAction SilentlyContinue
-		Copy-Item "target\release\$cdylib_name" -Destination "..\pythonx\jieba_vim\$dest_name"
-		return $?
-	} finally {
-		Pop-Location
+	if ($env:JIEBA_VIM_INSTALL_NVIM -eq "1") {
+		$binding = "lua51"
+		$dest_dir = 'lua\jieba_vim'
+		$cdylib_name = 'jieba_vim_jieba_vim_rs.dll'
+		$dest_name = 'jieba_vim_rs.dll'
+	} else {
+		$binding = "py3"
+		$dest_dir = 'pythonx\jieba_vim'
+		$cdylib_name = 'jieba_vim_rs.dll'
+		$dest_name = 'jieba_vim_rs.pyd'
 	}
+
+	& cargo clean --color=$color_when --manifest-path rust_backend\Cargo.toml
+	& cargo build -r --color=$color_when --manifest-path rust_backend\Cargo.toml --package jieba_vim_rs_binding_$binding
+	if ($LASTEXITCODE -ne 0) { return $false }
+
+	# Remove-Item: used to delete $dest_name in case it's a symlink
+	Remove-Item "$dest_dir\$dest_name" -Force -ErrorAction SilentlyContinue
+	Copy-Item "rust_backend\target\release\$cdylib_name" -Destination "$dest_dir\$dest_name"
+	return $?
 }
 
-if (Has-Command git) {
-	if (Download-Release) { exit 0 }
-}
-if (Has-Command cargo) {
-	if (Build-From-Source) { exit 0 } else { exit 1 }
-} else {
-	Write-Error 'cargo not found; cannot build from source.'
-	exit 1
+Push-Location -Path $PSScriptRoot
+try {
+	if (Has-Command git) {
+		if (Download-Release) { exit 0 }
+	}
+	if (Has-Command cargo) {
+		if (Build-From-Source) { exit 0 } else { exit 1 }
+	} else {
+		Write-Error 'cargo not found; cannot build from source.'
+		exit 1
+	}
+} finally {
+	Pop-Location
 }

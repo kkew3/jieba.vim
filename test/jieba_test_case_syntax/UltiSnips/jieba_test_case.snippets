@@ -1,0 +1,42 @@
+snippet n "normal mode case"
+H ?
+M n
+Q | \
+K ${1}
+C ${2}
+Bo `!v get(b:, "buffer", "␊")`
+B1 `!v get(b:, "buffer", "␊")`
+endsnippet
+
+snippet o "operator-pending mode case"
+H ?
+M o
+Q | \ < > prevent_change=
+O ${1}
+K ${2}
+C ${3}
+R 
+Bp `!v get(b:, "buffer", "␊")`
+Bo `!v get(b:, "buffer", "␊")`
+B1 `!v get(b:, "buffer", "␊")`
+S1 
+endsnippet
+
+snippet v "visual mode case"
+H ?
+M ${1:v}
+Q < > visualmode=${1:v}
+K ${2}
+C ${3}
+Bo `!v get(b:, "buffer", "␊")`
+B1 `!v get(b:, "buffer", "␊")`
+S1 visualmode()=${1:v}
+endsnippet
+
+snippet "<<" "fold marker" r
+<<<$1
+
+$0
+
+// >>>$1
+endsnippet

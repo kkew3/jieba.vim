@@ -1,2 +1,2 @@
-# See crate ../jieba_vim_rs_test_verifiable_case.
-/.verified_cases/
+# See the CI pipeline about Golden Master tests.
+/golden_master_records/

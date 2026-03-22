@@ -22,17 +22,15 @@ Vim (以及很多其它文本编辑器) 使用 [word motions][1] 在一行内移
 
 ## 安装
 
-本插件使用 Python3 + Rust 开发，Vim/Neovim 需要 `+python3` 特性以正常使用。
+本插件使用 Vimscript + Rust 开发，通过 python3 (vim) 或 lua5.1 (neovim) 桥接 Vimscript 与 Rust，因此 Vim 需要 `+python3` 特性以正常使用。
 
 对于 [vim-plug][6]，使用如下代码安装最新稳定版：
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'tag': 'v2.0.0', 'do': { -> jieba_vim#install() } }
 ```
 
-其中 `./build.sh` 用于下载预编译链接库，然后如果没有找到的话再尝试本地编译。
-
-Windows 用户可以把 `'do': './build.sh'` 替换为 `'do': '.\build.ps1'` 以运行 powershell 安装脚本。
+其中 `jieba_vim#install()` 用于下载预编译链接库，然后如果没有找到的话再尝试本地编译。
 
 虽然通常不需要，但在极少数情况下可能需要进入插件目录调整 `rust_backend/Cargo.toml` 中的 pyo3 python ABI 版本，以匹配 vim 中 python3 的版本。可以在终端使用
 
@@ -47,8 +45,8 @@ vim +"py3 print(sys.version)"
 ```lua
 {
     "kkew3/jieba.vim",
-    tag = "v1.0.5",
-    build = "./build.sh",
+    tag = "v2.0.0",
+    build = ":call jieba_vim#install()",
     init = function()
       vim.g.jieba_vim_lazy = 1
       vim.g.jieba_vim_keymap = 1
@@ -94,19 +92,13 @@ map w <Plug>(Jieba_w)
 
 ## 对于开发者
 
-若想在本地运行针对 rust 实现的测试，
+若想在本地运行针对 rust 实现的测试，部分测试可通过如下命令运行：
 
 ```bash
-# 核心代码
-cd rust_backend/jieba_vim_rs_core
-cargo test
-# 可开启 verifiable_case 来验证测试本身是否正确，需要安装 junegunn/vader.vim
-# (https://github.com/junegunn/vader.vim).
-#cargo test -F verifiable_case
-# 测试工具代码
-cd ../jieba_vim_rs_test
-cargo test
+cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 ```
+
+其余测试比较复杂，请参见 [CI](./.github/workflows/ci.yml)。
 
 ## Roadmap
 
@@ -114,7 +106,7 @@ cargo test
 
 ## 许可
 
-Apache license v2.
+Apache license v2；部分文件参照 [vim-LICENSE.txt](./vim-LICENSE.txt).
 
 ---
 
@@ -141,19 +133,17 @@ Features overview:
 
 ## Installation
 
-This plugin was developed using Python3 + Rust.
-`+python3` features is required for Vim/Neovim to use the jieba.vim.
+This plugin was developed using Vimscript + Rust, bridged by python3 (on vim) or lua5.1 (on neovim).
+Hence, `+python3` features is required for Vim to use jieba.vim.
 
 For [vim-plug][6], the latest stable version is installable using:
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v1.0.5', 'do': './build.sh' }
+Plug 'kkew3/jieba.vim', { 'tag': 'v2.0.0', 'do': { -> jieba_vim#install() } }
 ```
 
-where `./build.sh` is used to download precompiled shared library.
+where `jieba_vim#install()` is used to download precompiled shared library.
 Local compilation will be attempted only if the shared library cannot be found.
-
-On Windows, `'do': './build.sh'` can be replaced with `'do': '.\build.ps1'` in order to run the build script in powershell.
 
 Though not always necessary, user may need to adjust the pyo3 python ABI in `rust_backend/Cargo.toml` under the plugin directory after downloading the plugin, in order to match with the python3 version vim is compiled against.
 The vim's python3 version may be checked by the following command at terminal:
@@ -167,8 +157,8 @@ For Neovim users, it can be installed using lazy.nvim:
 ```lua
 {
   "kkew3/jieba.vim",
-  tag = "v1.0.5",
-  build = "./build.sh",
+  tag = "v2.0.0",
+  build = ":call jieba_vim#install()",
   init = function()
     vim.g.jieba_vim_lazy = 1
     vim.g.jieba_vim_keymap = 1
@@ -217,19 +207,13 @@ A convenient option `g:jieba_vim_keymap` is provided. When set to 1, the keymap 
 
 ## For developers
 
-To run tests against rust implementation locally,
+To run tests against rust implementation locally, a part of tests can be run with the following command:
 
 ```bash
-# Core logic
-cd rust_backend/jieba_vim_rs_core
-cargo test
-# verifiable_case feature can be enabled to verify the correctness of the tests.
-# junegunn/vader.vim (https://github.com/junegunn/vader.vim) is required.
-#cargo test -F verifiable_case
-# Test utilities
-cd ../jieba_vim_rs_test
-cargo test
+cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 ```
+
+Otherwise, please refer to [CI](./.github/workflows/ci.yml) for details.
 
 ## Roadmap
 
@@ -237,7 +221,7 @@ See [TODO.md](./TODO.md).
 
 ## License
 
-Apache license v2.
+Apache license v2; with a handful of files following [vim-LICENSE.txt](./vim-LICENSE.txt).
 
 
 [1]: https://vimdoc.sourceforge.net/htmldoc/motion.html#word-motions

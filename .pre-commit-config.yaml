@@ -11,11 +11,17 @@ repos:
       - id: ruff-check
       # Run the formatter.
       - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        files: '\.ya?ml$'
+      - id: check-yaml
   - repo: local
     hooks:
       - id: cargo-check
         name: cargo clippy check (rust_backend)
-        entry: cargo clippy --all-targets --workspace --manifest-path rust_backend/Cargo.toml
+        entry: cargo clippy --workspace --manifest-path rust_backend/Cargo.toml
         language: system
         always_run: true
         pass_filenames: false
@@ -37,3 +43,8 @@ repos:
         language: system
         types: [rust]
         pass_filenames: true
+      - id: dont-touch-machine-generated-files
+        name: check that machine-generated files are not modified locally
+        entry: machine-generated files maintained by the CI pipeline should not be modified locally
+        language: fail
+        files: '^(test/cases/bootstrap/main\.jieba_test_case|test/cases/bootstrapped/[^_].*\.jieba_test_case)$'

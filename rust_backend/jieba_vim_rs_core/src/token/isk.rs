@@ -51,11 +51,10 @@ impl WordPredicate {
         }
     }
 
-    pub fn from_isk_opt(value: &str) -> Option<Self> {
+    pub fn from_isk_opt(value: &[u8]) -> Option<Self> {
         let mut wp = Self::new();
-        let chars = value.as_bytes();
         let mut i = 0;
-        let n = chars.len();
+        let n = value.len();
         const ZERO: u8 = '0' as u8;
         const NINE: u8 = ZERO + 9;
         // The pre-computed segment values of '@' in `Set256`.
@@ -69,18 +68,18 @@ impl WordPredicate {
             if *i >= n {
                 return None;
             }
-            let c = chars.next(i);
+            let c = value.next(i);
             if (ZERO..=NINE).contains(c) {
                 let mut num = (*c - ZERO) as u32;
                 while *i < n {
-                    let c = chars.next(i);
+                    let c = value.next(i);
                     if (ZERO..=NINE).contains(c) {
                         num = num * 10 + (*c - ZERO) as u32;
                         if num > 255 {
                             return None;
                         }
                     } else {
-                        chars.prev(i);
+                        value.prev(i);
                         break;
                     }
                 }
@@ -97,15 +96,15 @@ impl WordPredicate {
             if *i >= n {
                 return None;
             }
-            if chars.next(i) != &c {
-                chars.prev(i);
+            if value.next(i) != &c {
+                value.prev(i);
                 return None;
             }
             Some(c)
         };
 
         while i < n {
-            let c1 = chars.next(&mut i);
+            let c1 = value.next(&mut i);
             if c1 == &b'^' {
                 // If a leading '^' is found, ...
                 if i >= n {
@@ -158,7 +157,7 @@ impl WordPredicate {
                     }
                 }
             } else {
-                chars.prev(&mut i);
+                value.prev(&mut i);
                 let lhs = expect_arg(&mut i)?;
                 if i >= n {
                     if lhs == b'@' {
@@ -220,11 +219,19 @@ impl WordPredicate {
     }
 }
 
+impl TryFrom<&[u8]> for WordPredicate {
+    type Error = ();
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        WordPredicate::from_isk_opt(value).ok_or(())
+    }
+}
+
 impl TryFrom<&str> for WordPredicate {
     type Error = ();
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        WordPredicate::from_isk_opt(value).ok_or(())
+        WordPredicate::from_isk_opt(value.as_bytes()).ok_or(())
     }
 }
 
@@ -232,7 +239,7 @@ impl TryFrom<String> for WordPredicate {
     type Error = ();
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        WordPredicate::from_isk_opt(&value).ok_or(())
+        WordPredicate::from_isk_opt(value.as_bytes()).ok_or(())
     }
 }
 
@@ -243,7 +250,7 @@ mod tests {
     use super::WordPredicate;
 
     fn get_ascii_set(isk: &str) -> Result<Set256, ()> {
-        WordPredicate::from_isk_opt(isk)
+        WordPredicate::from_isk_opt(isk.as_bytes())
             .map(|wp| wp.ascii_set)
             .ok_or(())
     }

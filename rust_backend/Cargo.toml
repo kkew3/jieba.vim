@@ -2,30 +2,8 @@
 members = [
     "jieba_vim_rs_core",
     "jieba_vim_rs_test",
-    "jieba_vim_rs_test_macro",
+    "jieba_vim_rs_metatest",
+    "jieba_vim_rs_binding_py3",
+    "jieba_vim_rs_binding_lua51"
 ]
-
-[package]
-name = "jieba_vim_rs"
-version = "0.2.1"
-edition = "2024"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-name = "jieba_vim_rs"
-crate-type = ["cdylib"]
-
-[dependencies]
-# Put vim-compatible python abi in pyo3 features.
-pyo3 = { version = "0.28.2", features = ["extension-module", "abi3-py37"] }
-jieba-rs = { version = "0.8" }
-jieba_vim_rs_core = { path = "jieba_vim_rs_core" }
-
-[dev-dependencies]
-
-[build-dependencies]
-pyo3-build-config = "0.28.0"
-expose-shared-library = { git = "https://github.com/kkew3/expose-shared-library.git", tag = "0.1.4", version = "0.1.4", optional = true }
-
-[features]
-expose-shared-library = ["dep:expose-shared-library", "expose-shared-library/py"]
+resolver = "3"

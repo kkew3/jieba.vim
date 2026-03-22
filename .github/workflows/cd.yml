@@ -6,13 +6,14 @@ on:
     branches:
       rust
     types:
+      - opened
+      - synchronize
       - closed
 
 jobs:
   check-for-release:
     name: Check for release
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.merged == true }}
     outputs:
       is-release: ${{ steps.is-release.outputs.IS_RELEASE }}
       release-tag-name: ${{ steps.is-release.outputs.RELEASE_TAG_NAME }}
@@ -40,19 +41,22 @@ jobs:
   # Reference: https://github.com/sharkdp/fd/blob/master/.github/workflows/CICD.yml
   # Reference: https://github.com/mlua-rs/mlua/blob/main/.github/workflows/main.yml
   build:
-    name: Build for ${{ matrix.job.target }}
+    name: Build binding ${{ matrix.binding }} for ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
     needs: check-for-release
     if: ${{ needs.check-for-release.outputs.is-release == 'true' }}
     strategy:
       fail-fast: true
       matrix:
+        binding:
+          - py3
+          - lua51
         job:
           # This is enabled because wall time check in unit tests has been
           # removed. But the issue might not be resolved yet. See more at
           # https://github.com/kkew3/jieba.vim/issues/8.
           - target: aarch64-unknown-linux-gnu
-            os: ubuntu-22.04
+            os: ubuntu-22.04-arm
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
           - target: aarch64-apple-darwin
@@ -64,9 +68,7 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-2022
     steps:
-      - uses: actions/checkout@v5
-        with:
-          path: jieba_vim
+      - uses: actions/checkout@v6
 
       - name: Install ARM compiler toolchain
         shell: bash
@@ -98,13 +100,18 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          cd "$GITHUB_WORKSPACE/jieba_vim/rust_backend" && cargo build --locked --release --target=${{ matrix.job.target }}
+          cargo build --locked --release --target=${{ matrix.job.target }} \
+            --manifest-path rust_backend/Cargo.toml \
+            --package jieba_vim_rs_binding_${{ matrix.binding }}
 
       - name: Set cdylib name and path
         id: cdylib
         shell: bash
         run: |
-          LIB_NAME=jieba_vim_rs
+          case ${{ matrix.binding }} in
+            py3)            LIB_NAME=jieba_vim_rs;                       ;;
+            lua51)          LIB_NAME=jieba_vim_jieba_vim_rs;             ;;
+          esac
           case ${{ matrix.job.target }} in
             *-linux-*)      CDYLIB_SUFFIX=".so";    CDYLIB_PREFIX="lib"; ;;
             *-apple-darwin) CDYLIB_SUFFIX=".dylib"; CDYLIB_PREFIX="lib"; ;;
@@ -112,7 +119,7 @@ jobs:
           esac
 
           CDYLIB_NAME=${CDYLIB_PREFIX}${LIB_NAME}${CDYLIB_SUFFIX}
-          LIB_PATH="$GITHUB_WORKSPACE/jieba_vim/rust_backend/target/${{ matrix.job.target }}/release/${CDYLIB_NAME}"
+          LIB_PATH="$GITHUB_WORKSPACE/rust_backend/target/${{ matrix.job.target }}/release/${CDYLIB_NAME}"
           test -f "$LIB_PATH"
 
           echo "CDYLIB_SUFFIX=$CDYLIB_SUFFIX" >> $GITHUB_OUTPUT
@@ -125,11 +132,13 @@ jobs:
           LIB_NAME=jieba_vim_rs
           PKG_BASEDIR="$GITHUB_WORKSPACE/packages"
           mkdir -p "$PKG_BASEDIR" && cd "$PKG_BASEDIR"
-          TO_NAME="${LIB_NAME}-${{ matrix.job.target }}${{ steps.cdylib.outputs.CDYLIB_SUFFIX }}"
+          TO_NAME="${LIB_NAME}-${{ matrix.job.target }}-${{ matrix.binding }}${{ steps.cdylib.outputs.CDYLIB_SUFFIX }}"
           cp "${{ steps.cdylib.outputs.LIB_PATH }}" "$TO_NAME"
+          test -f "${PKG_BASEDIR}/${TO_NAME}"
           echo "PKG_PATH=${PKG_BASEDIR}/${TO_NAME}" >> $GITHUB_OUTPUT
 
       - name: Publish cdylib
+        if: ${{ github.event.pull_request.merged == true }}
         uses: softprops/action-gh-release@v2
         with:
           files: |

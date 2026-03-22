@@ -1,9 +1,0 @@
-Execute:
-  call cursor({{ lnum_before }}, {{ col_before }})
-  normal! {{ count }}{{ motion }}
-  let g:groundtruth_lnum = line(".")
-  let g:groundtruth_col = col(".")
-
-Then:
-  AssertEqual g:groundtruth_lnum, {{ lnum_after }}
-  AssertEqual g:groundtruth_col, {{ col_after }}

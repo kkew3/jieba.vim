@@ -1,4 +1,4 @@
-// Copyright 2024-2025 Kaiwen Wu. All Rights Reserved.
+// Copyright 2024-2026 Kaiwen Wu. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -23,20 +23,6 @@ pub trait BufferLike {
     fn lines(&self) -> Result<usize, Self::Error>;
 }
 
-#[cfg(test)]
-impl BufferLike for Vec<&'static str> {
-    type Error = ();
-
-    fn getline(&self, lnum: usize) -> Result<String, Self::Error> {
-        self.get(lnum - 1).map(|s| s.to_string()).ok_or(())
-    }
-
-    fn lines(&self) -> Result<usize, Self::Error> {
-        Ok(self.len())
-    }
-}
-
-#[cfg(test)]
 impl BufferLike for Vec<String> {
     type Error = ();
 

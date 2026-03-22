@@ -1,0 +1,198 @@
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy
+// of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+// Best viewed in Vim.
+
+#V 3
+?!has:nvim
+
+#M o
+#X u
+#K w
+#O d
+#R a
+
+// Buffer: |␊ <<<
+#B0 |␊
+
+H 66ae702dfd2fdae576134d036e3a44d7ad71f295b3f4902cc17527f8
+Q | < > prevent_change=0 visualmode=v selection=exclusive
+C 1
+Bp <>␊
+Bo |␊
+B1 |␊
+
+// >>>
+// Buffer: |······␊ <<<
+#B0 |······␊
+
+H f42ade7712f8a0c23834488503a8e4c22540d1300afa4499b9e54c8c
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+C 1
+Bp <·····>·␊
+Bo |␊
+B1 |␊
+S1 "a=\<Space>\<Space>\<Space>\<Space>\<Space>\<Space>
+
+H 8b4f1e510fc7abdbea2bdb3f2051bc21ac64d50d849072a58406025a
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+C 10293949403
+Bp <·····>·␊
+Bo |␊
+B1 |␊
+S1 "a=\<Space>\<Space>\<Space>\<Space>\<Space>\<Space>
+
+// >>>
+// Buffer: ··|····␊ <<<
+#B0 ··|····␊
+
+H 99102a9425628c12366eabb3e26e9795c21078a9d9b04ef2ce13e008
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+C 1
+Bp ··<···>·␊
+Bo ··|␊
+B1 ·|·␊
+S1 "a=\<Space>\<Space>\<Space>\<Space>
+
+// >>>
+// Buffer: |␊␊ <<<
+#B0 |␊␊
+
+H 5147d945afb6222eee912515388d0c6de9628ce590b005aac79e54fd
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+C 1
+Bp <>␊␊
+Bo |␊
+B1 |␊
+S1 "a=\<Newline>
+
+// >>>
+// Buffer: ··|····␊␊ <<<
+#B0 ··|····␊␊
+
+H 39a5fb1c5c30fc3993da8b1c64e6d619c94808ae5f6aab4d94bbfab2
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+C 1
+Bp ··<···>·␊␊
+Bo ··|␊␊
+B1 ·|·␊␊
+S1 "a=\<Space>\<Space>\<Space>\<Space>
+
+// >>>
+// Buffer: ··|····␊··␊ <<<
+#B0 ··|····␊··␊
+
+H 496f94d0a4577e4b4549ee93fc69aee3be01d4a9994978522882d1fd
+Q | < > prevent_change=0 visualmode=v selection=inclusive
+C 1
+Bp ··<···>·␊··␊
+Bo ··|␊··␊
+B1 ·|·␊··␊
+S1 "a=\<Space>\<Space>\<Space>\<Space>
+
+// >>>
+// Buffer: |␊······␊␊ <<<
+#B0 |␊······␊␊
+
+H db55ad47b6d43d0cfcd4f87450dc8e8542074e36fcbf74bbc78538ac
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+C 1
+Bp <>␊······␊␊
+Bo |······␊␊
+B1 ·····|·␊␊
+S1 "a=\<Newline>
+
+// >>>
+// Buffer: |␊···abcd␊␊ <<<
+#B0 |␊···abcd␊␊
+
+H 591ee23ebbe9d92d871fa361c7bd1c6aabf1d7e25528d6ebb4f787ca
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+C 1
+Bp <>␊···abcd␊␊
+Bo |···abcd␊␊
+B1 ···|abcd␊␊
+S1 "a=\<Newline>
+
+// d-special
+H 7ad13fb8d987db3843c8e0bdae3c218c4fd1441a7640f95f175bfc77
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+C 2
+Bp <␊···abc>d␊␊
+Bo |␊
+B1 |␊
+S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
+
+// >>>
+// Buffer: |␊···abcd␊ <<<
+#B0 |␊···abcd␊
+
+// d-special
+H 9d09e27d12055c68d9958ae37cc3aa1ab1ec960224a30fc0fad4c4d5
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+C 2
+Bp <␊···abc>d␊
+Bo |␀
+B1 |␀
+S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
+
+// >>>
+// Buffer: |␊···abcd␊······␊ <<<
+#B0 |␊···abcd␊······␊
+
+// d-special
+H 21c63609f5e0d5f0d7bdb2229f971aee262871c153b4737d3b246947
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+C 2
+Bp <␊···abc>d␊······␊
+Bo |······␊
+B1 ·····|·␊
+S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
+
+// >>>
+// Buffer: |␊···abcd␊······efg␊ <<<
+#B0 |␊···abcd␊······efg␊
+
+H 9b6b026ee806d7064b12c7ed09bb7725f962e136e93dd06946e416f0
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+C 2
+Bp <␊···abc>d␊······efg␊
+Bo |······efg␊
+B1 ······|efg␊
+S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
+
+// >>>
+// Buffer: |␊···abcd␊··␊·␊···efg␊ <<<
+#B0 |␊···abcd␊··␊·␊···efg␊
+
+H fed7f6df63ce3b1d56d1396ebd2fd97d7c75e44248bfcaeeda9571f6
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+C 2
+Bp <␊···abc>d␊··␊·␊···efg␊
+Bo |··␊·␊···efg␊
+B1 ·|·␊·␊···efg␊
+S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
+
+// d-special
+H a8173fe7afca2e57b38c49866950552ed9b375cf02f4ebc9b8b2fd57
+Q | < > prevent_change=0 visualmode=V selection=inclusive
+C 3
+Bp <␊···abcd␊··␊·␊···ef>g␊
+Bo |␀
+B1 |␀
+S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>\<Space>\<Space>\<Newline>\<Space>\<Newline>\<Space>\<Space>\<Space>efg\<Newline>
+
+// >>>
+
+// vim: foldmethod=marker foldmarker=<<<,>>> foldlevel=0

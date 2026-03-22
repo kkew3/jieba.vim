@@ -1,0 +1,13 @@
+[package]
+name = "jieba_vim_rs_binding_lua51"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "jieba_vim_jieba_vim_rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+mlua = { version = "0.11.6", features = ["lua51", "module"] }
+jieba-rs = { version = "0.8" }
+jieba_vim_rs_core = { path = "../jieba_vim_rs_core" }

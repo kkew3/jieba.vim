@@ -231,7 +231,7 @@ mod tests {
     #[test]
     fn test_categorize_char() {
         // Empty iskeyword.
-        let wp = WordPredicate::from_isk_opt("").unwrap();
+        let wp = WordPredicate::from_isk_opt(b"").unwrap();
         assert!(matches!(
             categorize_char('a', &wp),
             CharType::NonWord(NonWordCharType::Other)
@@ -282,7 +282,7 @@ mod tests {
         ));
 
         // Lowercase ASCII iskeyword.
-        let wp = WordPredicate::from_isk_opt("a-z").unwrap();
+        let wp = WordPredicate::from_isk_opt(b"a-z").unwrap();
         assert!(matches!(
             categorize_char('a', &wp),
             CharType::Word(WordCharType::Other)
@@ -333,7 +333,7 @@ mod tests {
         ));
 
         // Lowercase ASCII, digits and 汉字 iskeyword.
-        let wp = WordPredicate::from_isk_opt("@,^A-Z,48-57").unwrap();
+        let wp = WordPredicate::from_isk_opt(b"@,^A-Z,48-57").unwrap();
         assert!(matches!(
             categorize_char('a', &wp),
             CharType::Word(WordCharType::Other)
@@ -384,7 +384,7 @@ mod tests {
         ));
 
         // Digits and '>' iskeyword.
-        let wp = WordPredicate::from_isk_opt("48-57,>").unwrap();
+        let wp = WordPredicate::from_isk_opt(b"48-57,>").unwrap();
         assert!(matches!(
             categorize_char('a', &wp),
             CharType::NonWord(NonWordCharType::Other)

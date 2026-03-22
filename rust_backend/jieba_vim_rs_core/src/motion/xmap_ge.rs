@@ -15,13 +15,18 @@
 use crate::BufferLike;
 use crate::token::JiebaPlaceholder;
 
-use super::{MotionOutput, WordMotion};
+use super::api::{VisualMode, WordMotion, XmapOutput};
+use super::core::buffer::ParsedBuffer;
+use super::core::motion::Motion;
+use super::core::position::Position;
+use super::primitives::text_object::BackwardEndWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Vim motion `ge` (if `word` is `true`) or `gE` (if `word` is `false`)
-    /// in visual mode. Take in `cursor_pos` (lnum, col), and return the new
-    /// cursor position. Note that `lnum` is 1-indexed, and `col` is 0-indexed.
-    /// We denote both `word` and `WORD` with the English word "word" below.
+    /// in visual mode. Take in current `visual_end` (0, lnum, col, off), and
+    /// return the new `visual_end`. Note that `visual_begin` will be left
+    /// intact. We denote both `word` and `WORD` with the English word "word"
+    /// below.
     ///
     /// # Basics
     ///
@@ -37,208 +42,21 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn xmap_ge<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
-        cursor_pos: (usize, usize),
+        visualmode: VisualMode,
+        visual_begin: Position,
+        mut visual_end: Position,
         count: u64,
         word: bool,
-    ) -> Result<MotionOutput, B::Error> {
-        self.nmap_ge(buffer, cursor_pos, count, word)
+    ) -> Result<XmapOutput, B::Error> {
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let mut motion = BackwardEndWord::new(false);
+        let s = motion.map(&mut buffer, count, &mut visual_end)?;
+        let prevent_change = s.into_prevent_change();
+        Ok(XmapOutput {
+            langle: visual_begin,
+            rangle: visual_end,
+            visualmode,
+            prevent_change,
+        })
     }
-}
-
-#[cfg(test)]
-mod tests {
-    #[cfg(feature = "verifiable_case")]
-    use jieba_vim_rs_test_macro::verified_cases;
-    #[cfg(not(feature = "verifiable_case"))]
-    use jieba_vim_rs_test_macro::verified_cases_dry_run as verified_cases;
-
-    #[verified_cases(
-        mode = "xc",
-        motion = "ge",
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["}{"])]
-    #[vcase(name = "space", buffer = ["}{ "])]
-    #[vcase(name = "space", buffer = ["}   { "])]
-    #[vcase(name = "newline_newline", buffer = ["}", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["  ", "}", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "  ", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "   {  "])]
-    #[vcase(name = "newline_space_newline", buffer = ["  ", "}", "   {  "])]
-    #[vcase(name = "one_word", buffer = ["}{aaaa"])]
-    #[vcase(name = "one_word", buffer = ["}aa{aa"])]
-    #[vcase(name = "one_word", buffer = ["}aaa{a"])]
-    #[vcase(name = "one_word", buffer = ["}aaa{a"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["aaa}a{   "])]
-    #[vcase(name = "one_word_space", buffer = ["aaa}a  { "])]
-    #[vcase(name = "space_one_word", buffer = ["}   aaa{a"])]
-    #[vcase(name = "space_one_word", buffer = ["}   aaa{a"], count = 2)]
-    #[vcase(name = "space_one_word", buffer = ["}   {aaaa"])]
-    #[vcase(name = "two_words", buffer = ["aaa}a  {aaa"])]
-    #[vcase(name = "two_words", buffer = ["aaa}a  aa{a"])]
-    #[vcase(name = "two_words", buffer = ["}aaaa  aa{a"], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["   aaa}a  { "])]
-    #[vcase(name = "space_one_word_space", buffer = ["}   aaaa  { "], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["   aaa}a{   "])]
-    #[vcase(name = "space_one_word_space", buffer = ["}   aaaa{   "], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["aaa}a", "{"])]
-    #[vcase(name = "newline_one_word", buffer = ["}", "aaa{a"])]
-    #[vcase(name = "newline_one_word", buffer = ["}", "aaa{a"], count = 2)]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaa}a    ", "{"])]
-    #[vcase(name = "two_words_space_newline", buffer = ["aaaa aa}a    ", "  ", "{"])]
-    #[vcase(name = "two_words_space_newline", buffer = ["aaaa aa}a    ", "  ", "  { "])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaa{a"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaa{a"], count = 2)]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   {aaaa"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "  { aaaa"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["", "   aaa}a  { "])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaaa  { "], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "aaa{a"])]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "", "aaa{a"], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["     ", "}", "", "aaa{a"], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "", "", "aaa{a"], count = 3)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", " ", " ", "aaa{a"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaa}a", " ", "  ", "{"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aa}a aaaa", " ", "  ", "{"], count = 2)]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaaa", "}", "  ", "{"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaa}a", "", "  ", "{"], count = 2)]
-    #[vcase(name = "newline_space_newline_one_word", buffer = ["", "  ", "}", "aa{a"])]
-    #[vcase(name = "newline_space_newline_one_word", buffer = ["}", "  ", "", "aa{a"], count = 2)]
-    #[vcase(name = "two_words_newline_one_word", buffer = ["aaaa aa}a", "", "  ", "{aaa"], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["}{"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["}aaa  aaa{aa"], count = 10293949403)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaa}a{", "   aaa"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aaa aaa}a{"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aa}a     {"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["   aaa}a", "     {"], count = 1)]
-    mod motion_xcmap_ge {}
-
-    // Copied from xcmap_ge above.
-    #[verified_cases(
-        mode = "xl",
-        motion = "ge",
-        timeout = 50,
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["}{"])]
-    #[vcase(name = "space", buffer = ["}{ "])]
-    #[vcase(name = "space", buffer = ["}   { "])]
-    #[vcase(name = "newline_newline", buffer = ["}", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["  ", "}", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "  ", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "   {  "])]
-    #[vcase(name = "newline_space_newline", buffer = ["  ", "}", "   {  "])]
-    #[vcase(name = "one_word", buffer = ["}{aaaa"])]
-    #[vcase(name = "one_word", buffer = ["}aa{aa"])]
-    #[vcase(name = "one_word", buffer = ["}aaa{a"])]
-    #[vcase(name = "one_word", buffer = ["}aaa{a"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["aaa}a{   "])]
-    #[vcase(name = "one_word_space", buffer = ["aaa}a  { "])]
-    #[vcase(name = "space_one_word", buffer = ["}   aaa{a"])]
-    #[vcase(name = "space_one_word", buffer = ["}   aaa{a"], count = 2)]
-    #[vcase(name = "space_one_word", buffer = ["}   {aaaa"])]
-    #[vcase(name = "two_words", buffer = ["aaa}a  {aaa"])]
-    #[vcase(name = "two_words", buffer = ["aaa}a  aa{a"])]
-    #[vcase(name = "two_words", buffer = ["}aaaa  aa{a"], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["   aaa}a  { "])]
-    #[vcase(name = "space_one_word_space", buffer = ["}   aaaa  { "], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["   aaa}a{   "])]
-    #[vcase(name = "space_one_word_space", buffer = ["}   aaaa{   "], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["aaa}a", "{"])]
-    #[vcase(name = "newline_one_word", buffer = ["}", "aaa{a"])]
-    #[vcase(name = "newline_one_word", buffer = ["}", "aaa{a"], count = 2)]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaa}a    ", "{"])]
-    #[vcase(name = "two_words_space_newline", buffer = ["aaaa aa}a    ", "  ", "{"])]
-    #[vcase(name = "two_words_space_newline", buffer = ["aaaa aa}a    ", "  ", "  { "])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaa{a"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaa{a"], count = 2)]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   {aaaa"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "  { aaaa"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["", "   aaa}a  { "])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaaa  { "], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "aaa{a"])]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "", "aaa{a"], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["     ", "}", "", "aaa{a"], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "", "", "aaa{a"], count = 3)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", " ", " ", "aaa{a"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaa}a", " ", "  ", "{"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aa}a aaaa", " ", "  ", "{"], count = 2)]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaaa", "}", "  ", "{"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaa}a", "", "  ", "{"], count = 2)]
-    #[vcase(name = "newline_space_newline_one_word", buffer = ["", "  ", "}", "aa{a"])]
-    #[vcase(name = "newline_space_newline_one_word", buffer = ["}", "  ", "", "aa{a"], count = 2)]
-    #[vcase(name = "two_words_newline_one_word", buffer = ["aaaa aa}a", "", "  ", "{aaa"], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["}{"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["}aaa  aaa{aa"], count = 10293949403)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaa}a{", "   aaa"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aaa aaa}a{"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aa}a     {"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["   aaa}a", "     {"], count = 1)]
-    mod motion_xlmap_ge {}
-
-    // Copied from xcmap_ge above.
-    #[verified_cases(
-        mode = "xb",
-        motion = "ge",
-        timeout = 50,
-        backend_path = "crate::motion::WORD_MOTION"
-    )]
-    #[vcase(name = "empty", buffer = ["}{"])]
-    #[vcase(name = "space", buffer = ["}{ "])]
-    #[vcase(name = "space", buffer = ["}   { "])]
-    #[vcase(name = "newline_newline", buffer = ["}", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["  ", "}", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "  ", "{"])]
-    #[vcase(name = "newline_space_newline", buffer = ["}  ", "   {  "])]
-    #[vcase(name = "newline_space_newline", buffer = ["  ", "}", "   {  "])]
-    #[vcase(name = "one_word", buffer = ["}{aaaa"])]
-    #[vcase(name = "one_word", buffer = ["}aa{aa"])]
-    #[vcase(name = "one_word", buffer = ["}aaa{a"])]
-    #[vcase(name = "one_word", buffer = ["}aaa{a"], count = 2)]
-    #[vcase(name = "one_word_space", buffer = ["aaa}a{   "])]
-    #[vcase(name = "one_word_space", buffer = ["aaa}a  { "])]
-    #[vcase(name = "space_one_word", buffer = ["}   aaa{a"])]
-    #[vcase(name = "space_one_word", buffer = ["}   aaa{a"], count = 2)]
-    #[vcase(name = "space_one_word", buffer = ["}   {aaaa"])]
-    #[vcase(name = "two_words", buffer = ["aaa}a  {aaa"])]
-    #[vcase(name = "two_words", buffer = ["aaa}a  aa{a"])]
-    #[vcase(name = "two_words", buffer = ["}aaaa  aa{a"], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["   aaa}a  { "])]
-    #[vcase(name = "space_one_word_space", buffer = ["}   aaaa  { "], count = 2)]
-    #[vcase(name = "space_one_word_space", buffer = ["   aaa}a{   "])]
-    #[vcase(name = "space_one_word_space", buffer = ["}   aaaa{   "], count = 2)]
-    #[vcase(name = "one_word_newline", buffer = ["aaa}a", "{"])]
-    #[vcase(name = "newline_one_word", buffer = ["}", "aaa{a"])]
-    #[vcase(name = "newline_one_word", buffer = ["}", "aaa{a"], count = 2)]
-    #[vcase(name = "one_word_space_newline", buffer = ["aaa}a    ", "{"])]
-    #[vcase(name = "two_words_space_newline", buffer = ["aaaa aa}a    ", "  ", "{"])]
-    #[vcase(name = "two_words_space_newline", buffer = ["aaaa aa}a    ", "  ", "  { "])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaa{a"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaa{a"], count = 2)]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   {aaaa"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "  { aaaa"])]
-    #[vcase(name = "newline_space_one_word", buffer = ["", "   aaa}a  { "])]
-    #[vcase(name = "newline_space_one_word", buffer = ["}", "   aaaa  { "], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "aaa{a"])]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "", "aaa{a"], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["     ", "}", "", "aaa{a"], count = 2)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", "", "", "aaa{a"], count = 3)]
-    #[vcase(name = "space_newline_one_word", buffer = ["}     ", " ", " ", "aaa{a"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaa}a", " ", "  ", "{"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aa}a aaaa", " ", "  ", "{"], count = 2)]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaaa", "}", "  ", "{"])]
-    #[vcase(name = "two_words_newline_space_newline", buffer = ["aaa aaa}a", "", "  ", "{"], count = 2)]
-    #[vcase(name = "newline_space_newline_one_word", buffer = ["", "  ", "}", "aa{a"])]
-    #[vcase(name = "newline_space_newline_one_word", buffer = ["}", "  ", "", "aa{a"], count = 2)]
-    #[vcase(name = "two_words_newline_one_word", buffer = ["aaaa aa}a", "", "  ", "{aaa"], count = 2)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["}{"], count = 10293949403)]
-    #[vcase(name = "large_unnecessary_count", buffer = ["}aaa  aaa{aa"], count = 10293949403)]
-    #[vcase(name = "end_of_line", buffer = ["aaa aaa}a{", "   aaa"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aaa aaa}a{"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["aa}a     {"], count = 1)]
-    #[vcase(name = "end_of_buffer", buffer = ["   aaa}a", "     {"], count = 1)]
-    mod motion_xbmap_ge {}
 }
