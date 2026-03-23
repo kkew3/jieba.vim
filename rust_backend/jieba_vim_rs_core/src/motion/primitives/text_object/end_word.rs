@@ -80,7 +80,6 @@ impl UnitMotion<Position> for UnitEndWord {
         let tokens = buffer.getline_parsed(*lnum)?;
         let mut line = ExtendedInlineTokensIter::new(&tokens)
             .skip_col(*col)
-            .expect("col too large")
             .peekable();
         let cursor_token = line.next().unwrap();
 

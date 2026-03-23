@@ -71,9 +71,7 @@ impl<'o> DSpecial for OperatorRange<'o> {
         let rcol = end.col;
 
         let rline = buffer.getline_parsed(rlnum)?;
-        let mut rtokens = ExtendedInlineTokensIter::new(&rline)
-            .skip_col(rcol)
-            .expect("end.col too large");
+        let mut rtokens = ExtendedInlineTokensIter::new(&rline).skip_col(rcol);
         if let GToken::T(t) = rtokens.next().unwrap()
             && t.ty == TokenType::Word
         {

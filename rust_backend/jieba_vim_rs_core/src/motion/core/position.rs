@@ -14,8 +14,6 @@
 
 //! Positions in a buffer.
 
-use std::fmt::{self, Display};
-
 use crate::motion::api::MotionType;
 
 /// Position types related to FFI bindings.
@@ -70,23 +68,6 @@ impl From<Position> for ffi::Position {
         [0, value.lnum, value.col, value.off]
     }
 }
-
-#[derive(Debug)]
-pub enum PositionError {
-    ColTooLarge,
-}
-
-impl Display for PositionError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ColTooLarge => {
-                f.write_str("col is larger than one plus the line length")
-            }
-        }
-    }
-}
-
-impl std::error::Error for PositionError {}
 
 /// An operator-pending range.
 #[derive(Debug, PartialEq, Eq, Clone)]

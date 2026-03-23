@@ -26,8 +26,6 @@ use std::iter::{Rev, Skip, Take};
 
 use crate::token::{Token, TokenLike};
 
-use super::position::PositionError;
-
 pub trait TokenLikeExt: TokenLike {
     // This is how we define the cursor being "on" a token:
     //
@@ -146,22 +144,22 @@ fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
 }
 
 /// Get the index of the token in `tokens` where `col` is contained. Return
-/// `tokens.len()` if `col` is at the Eol of `tokens`.
-fn index_tokens_extended(
-    tokens: &[Token],
-    col: usize,
-) -> Result<usize, PositionError> {
+/// `tokens.len()` if `col` is at the Eol of `tokens`. Panics otherwise.
+fn index_tokens_extended(tokens: &[Token], col: usize) -> usize {
     match index_tokens(&tokens, col) {
-        Some(i) => Ok(i),
+        Some(i) => i,
         None => {
             // If `col_at_eol` is true, it means `col` lies on/off the Eol of
             // current lnum.
             let col_at_eol =
                 col == tokens.last().map_or(1, TokenLike::last_char1);
             if !col_at_eol {
-                return Err(PositionError::ColTooLarge);
+                panic!(
+                    "col ({}) too large when index_tokens_extended for tokens: {:?}",
+                    col, tokens
+                );
             }
-            Ok(tokens.len())
+            tokens.len()
         }
     }
 }
@@ -189,19 +187,16 @@ impl<'p> ExtendedInlineTokensIter<'p> {
 
     /// Take up to `col`'s token (inclusive) and reverse. The resulting
     /// iterator is guaranteed to contain at least one item.
-    pub fn take_col_rev(
-        self,
-        col: usize,
-    ) -> Result<Rev<Take<Self>>, PositionError> {
-        let i = index_tokens_extended(&self.line, col)?;
-        Ok(self.take(i + 1).rev())
+    pub fn take_col_rev(self, col: usize) -> Rev<Take<Self>> {
+        let i = index_tokens_extended(&self.line, col);
+        self.take(i + 1).rev()
     }
 
     /// Skip up to `col`'s token (exclusive). The resulting iterator is
     /// guaranteed to contain at least one item.
-    pub fn skip_col(self, col: usize) -> Result<Skip<Self>, PositionError> {
-        let i = index_tokens_extended(&self.line, col)?;
-        Ok(self.skip(i))
+    pub fn skip_col(self, col: usize) -> Skip<Self> {
+        let i = index_tokens_extended(&self.line, col);
+        self.skip(i)
     }
 }
 

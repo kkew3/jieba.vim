@@ -74,7 +74,6 @@ impl UnitMotion<Position> for UnitBackwardWord {
         let tokens = buffer.getline_parsed(*lnum)?;
         let mut line = ExtendedInlineTokensIter::new(&tokens)
             .take_col_rev(*col)
-            .expect("col too large")
             .peekable();
         // `unwrap` is safe because `take_col_rev` yields at least one
         // item.
