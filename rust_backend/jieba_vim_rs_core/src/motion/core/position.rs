@@ -29,10 +29,6 @@ pub mod ffi {
     /// Vim's `getcurpos()`. `lnum`, `col` and `curswant` are indexed from 1. `off`
     /// is indexed from 0.
     pub type CursorPositionCurswant = [usize; 5];
-
-    /// The 2-element list of numbers \[col, off], used when `lnum` is irrelevant
-    /// in context of [`CurrentBufferPosition`].
-    pub type ColumnPosition = [usize; 2];
 }
 
 /// A position in current text buffer.

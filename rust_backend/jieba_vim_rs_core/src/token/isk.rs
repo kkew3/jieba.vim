@@ -235,14 +235,6 @@ impl TryFrom<&str> for WordPredicate {
     }
 }
 
-impl TryFrom<String> for WordPredicate {
-    type Error = ();
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        WordPredicate::from_isk_opt(value.as_bytes()).ok_or(())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::token::utils::Set256;

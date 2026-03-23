@@ -27,34 +27,36 @@ use std::iter::{Rev, Skip, Take};
 use crate::token::{Token, TokenLike};
 
 use super::position::PositionError;
-use super::position::ffi::ColumnPosition;
 
 pub trait TokenLikeExt: TokenLike {
-    /// `true` if `(col, off)` is on self token.
-    #[allow(unused)]
-    fn is_on(&self, [col, off]: ColumnPosition) -> bool {
-        let fc = self.first_char();
-        let lc = self.last_char();
-        (col >= fc && col < lc) || (col == lc && off == 0)
-    }
+    // This is how we define the cursor being "on" a token:
+    //
+    // /// `true` if `(col, off)` is on self token.
+    // fn is_on(&self, [col, off]: [usize; 2]) -> bool {
+    //     let fc = self.first_char();
+    //     let lc = self.last_char();
+    //     (col >= fc && col < lc) || (col == lc && off == 0)
+    // }
 
-    /// `true` if `(col, off)` is off self token.
-    #[allow(unused)]
-    fn is_off(&self, [col, off]: ColumnPosition) -> bool {
-        let lc = self.last_char();
-        let lc1 = self.last_char1();
-        (col == lc && off > 0) || (col > lc && col < lc1)
-    }
+    // This is how we define the cursor being "off" a token:
+    //
+    // /// `true` if `(col, off)` is off self token.
+    // fn is_off(&self, [col, off]: [usize; 2]) -> bool {
+    //     let lc = self.last_char();
+    //     let lc1 = self.last_char1();
+    //     (col == lc && off > 0) || (col > lc && col < lc1)
+    // }
 
-    /// `true` if the columnn `col` of a [`crate::position::ColumnPosition`] is
-    /// on or off (in one word, over) self token. In other words, return `true`
-    /// if the column position is contained in self token.
-    #[allow(unused)]
-    fn is_over(&self, col: usize) -> bool {
-        let fc = self.first_char();
-        let lc1 = self.last_char1();
-        (fc..lc1).contains(&col)
-    }
+    // This is how we define the cursor being "over" a token:
+    //
+    // /// `true` if the columnn `col` is on or off (in one word, over) self
+    // /// token. In other words, return `true` if the column position is
+    // /// contained in self token.
+    // fn is_over(&self, col: usize) -> bool {
+    //     let fc = self.first_char();
+    //     let lc1 = self.last_char1();
+    //     (fc..lc1).contains(&col)
+    // }
 
     /// Return a total order between a `col` and self token.
     fn cmp(&self, col: usize) -> Ordering {
