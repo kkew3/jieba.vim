@@ -55,7 +55,7 @@ impl WordPredicate {
         let mut wp = Self::new();
         let mut i = 0;
         let n = value.len();
-        const ZERO: u8 = '0' as u8;
+        const ZERO: u8 = b'0';
         const NINE: u8 = ZERO + 9;
         // The pre-computed segment values of '@' in `Set256`.
         const ALPHA: [u64; 4] =

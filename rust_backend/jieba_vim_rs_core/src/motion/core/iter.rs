@@ -146,7 +146,7 @@ fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
 /// Get the index of the token in `tokens` where `col` is contained. Return
 /// `tokens.len()` if `col` is at the Eol of `tokens`. Panics otherwise.
 fn index_tokens_extended(tokens: &[Token], col: usize) -> usize {
-    match index_tokens(&tokens, col) {
+    match index_tokens(tokens, col) {
         Some(i) => i,
         None => {
             // If `col_at_eol` is true, it means `col` lies on/off the Eol of
@@ -188,14 +188,14 @@ impl<'p> ExtendedInlineTokensIter<'p> {
     /// Take up to `col`'s token (inclusive) and reverse. The resulting
     /// iterator is guaranteed to contain at least one item.
     pub fn take_col_rev(self, col: usize) -> Rev<Take<Self>> {
-        let i = index_tokens_extended(&self.line, col);
+        let i = index_tokens_extended(self.line, col);
         self.take(i + 1).rev()
     }
 
     /// Skip up to `col`'s token (exclusive). The resulting iterator is
     /// guaranteed to contain at least one item.
     pub fn skip_col(self, col: usize) -> Skip<Self> {
-        let i = index_tokens_extended(&self.line, col);
+        let i = index_tokens_extended(self.line, col);
         self.skip(i)
     }
 }

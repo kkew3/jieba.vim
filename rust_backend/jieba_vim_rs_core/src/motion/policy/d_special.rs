@@ -71,7 +71,7 @@ impl<'o> DSpecial for OperatorRange<'o> {
         let rcol = end.col;
 
         let rtokens = buffer.getline_parsed(rlnum)?;
-        let mut rline = ExtendedInlineTokensIter::new(&rtokens).skip_col(rcol);
+        let mut rline = ExtendedInlineTokensIter::new(rtokens).skip_col(rcol);
         if let GToken::T(t) = rline.next().unwrap()
             && t.ty == TokenType::Word
         {

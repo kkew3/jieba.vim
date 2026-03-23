@@ -36,13 +36,13 @@ impl DotsProgress {
         print!(".");
         io::stdout().flush().ok();
         self.dots += 1;
-        if self.dots % self.n_dots_in_a_row == 0 {
+        if self.dots.is_multiple_of(self.n_dots_in_a_row) {
             println!(" {}", self.dots);
         }
     }
 
     pub fn reset(&mut self) {
-        if self.dots % self.n_dots_in_a_row > 0 {
+        if !self.dots.is_multiple_of(self.n_dots_in_a_row) {
             println!(" {}", self.dots);
         }
         self.dots = 0;

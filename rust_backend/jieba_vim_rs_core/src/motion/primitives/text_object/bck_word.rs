@@ -72,7 +72,7 @@ impl UnitMotion<Position> for UnitBackwardWord {
         }
 
         let tokens = buffer.getline_parsed(*lnum)?;
-        let mut line = ExtendedInlineTokensIter::new(&tokens)
+        let mut line = ExtendedInlineTokensIter::new(tokens)
             .take_col_rev(*col)
             .peekable();
         // `unwrap` is safe because `take_col_rev` yields at least one
@@ -123,7 +123,7 @@ impl UnitMotion<Position> for UnitBackwardWord {
                 }
                 *lnum -= 1;
                 let tokens = buffer.getline_parsed(*lnum)?;
-                let line = ExtendedInlineTokensIter::new(&tokens).rev();
+                let line = ExtendedInlineTokensIter::new(tokens).rev();
                 if let Some(t) = find_stop_point(line, col) {
                     // `unwrap` is safe because `find_stop_point` return
                     // only empty line or words.

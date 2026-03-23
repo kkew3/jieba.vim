@@ -103,15 +103,11 @@ impl OracleModel {
         for i in block.model_output.iter() {
             match i {
                 ModelOutputItem::Cursor | ModelOutputItem::CursorCurswant => {
-                    if block.buffer_output.cursor.is_none() {
-                        return None;
-                    }
+                    block.buffer_output.cursor?;
                 }
                 ModelOutputItem::Langle => match &block.buffer_pending {
                     None => {
-                        if block.buffer_output.langle.is_none() {
-                            return None;
-                        }
+                        block.buffer_output.langle?;
                     }
                     Some(buffer_pending) => {
                         if (block.buffer_output.langle.is_none()
@@ -125,9 +121,7 @@ impl OracleModel {
                 },
                 ModelOutputItem::Rangle => match &block.buffer_pending {
                     None => {
-                        if block.buffer_output.rangle.is_none() {
-                            return None;
-                        }
+                        block.buffer_output.rangle?;
                     }
                     Some(buffer_pending) => {
                         if (block.buffer_output.rangle.is_none()
@@ -649,9 +643,9 @@ impl ToVimscript for StdRun {
         };
         match self.0.editor_mode {
             UnitEditorMode::Normal => {
-                write!(
+                writeln!(
                     stream,
-                    "normal! {}{}\n",
+                    "normal! {}{}",
                     count,
                     self.0.key_sequence.as_ref()
                 )
@@ -660,9 +654,9 @@ impl ToVimscript for StdRun {
             UnitEditorMode::VisualChar
             | UnitEditorMode::VisualLine
             | UnitEditorMode::VisualBlock => {
-                write!(
+                writeln!(
                     stream,
-                    "normal! gv{}{}\n",
+                    "normal! gv{}{}",
                     count,
                     self.0.key_sequence.as_ref()
                 )
@@ -675,9 +669,9 @@ impl ToVimscript for StdRun {
                 let operator = self.0.operator.as_ref().ok_or_else(|| {
                     TranspilingError("missing operator `O`".into())
                 })?;
-                write!(
+                writeln!(
                     stream,
-                    "normal! \"{}{}{}{}\n",
+                    "normal! \"{}{}{}{}",
                     register,
                     operator,
                     count,
@@ -1080,8 +1074,7 @@ impl Cli {
             .or(self
                 .vim_bin
                 .as_ref()
-                .map(|p| p.file_name())
-                .flatten()
+                .and_then(|p| p.file_name())
                 .map(Into::into))
             .unwrap_or("vim".into());
         let vim_bin = self.vim_bin.map(VimBin::Path).unwrap_or(VimBin::DryRun);

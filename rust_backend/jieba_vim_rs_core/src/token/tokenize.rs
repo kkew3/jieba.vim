@@ -715,10 +715,10 @@ fn cut_hanzi_group_and_count_chars<C: JiebaPlaceholder>(
     let mut marks = Vec::new();
     let group_string_no_marks: String = get_token(line, group)
         .chars()
-        .filter_map(|c| {
-            let is_mark = char::is_combining_diacritical_mark(c);
+        .filter(|c| {
+            let is_mark = char::is_combining_diacritical_mark(*c);
             marks.push(is_mark);
-            if is_mark { None } else { Some(c) }
+            !is_mark
         })
         .collect();
     let cut_char_counts0 = chain_into_vec(

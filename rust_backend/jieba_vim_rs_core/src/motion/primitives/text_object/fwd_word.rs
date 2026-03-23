@@ -78,7 +78,7 @@ impl UnitMotion<Position> for UnitForwardWord {
 
         let n_lines = buffer.lines()?;
         let tokens = buffer.getline_parsed(*lnum)?;
-        let mut line = ExtendedInlineTokensIter::new(&tokens)
+        let mut line = ExtendedInlineTokensIter::new(tokens)
             .skip_col(*col)
             .peekable();
         let cursor_token = line.next().unwrap();
@@ -138,7 +138,7 @@ impl UnitMotion<Position> for UnitForwardWord {
                 }
 
                 let tokens = buffer.getline_parsed(*lnum)?;
-                let line = ExtendedInlineTokensIter::new(&tokens);
+                let line = ExtendedInlineTokensIter::new(tokens);
                 match find_stop_point(line, col, self.eol) {
                     Some(GToken::T(t)) => {
                         break ExtendedMotionState::from_dest_token(GToken::T(
