@@ -32,13 +32,12 @@ use crate::parsing::{
     StateExprFunction, TestCaseBlock, TestHashId, UnitEditorMode,
     UnitTestCaseBlock,
 };
-
-use super::vimscript_transpiler::{
-    Concat, EchoJson, EmbeddedLua, Flush, Func, Identifier, IdentifierString,
-    Map, MapItem, MarkStr, Negate, NotEqTest, OptionVar, TranspilingError,
-    TranspilingResult, VarAssign, VimCommand, VimLt, VimVariable,
+use crate::vimscript_transpiler::{
+    Concat, EchoJson, EmbeddedLua, Error, Flush, Func, Identifier,
+    IdentifierString, Map, MapItem, MarkStr, Negate, NotEqTest, OptionVar,
+    ToVimscript, TranspilingError, TranspilingResult, VarAssign, VimCommand,
+    VimLt, VimVariable,
 };
-use super::{Error, ToVimscript};
 
 impl ToVimscript for HeadConditional {
     fn to_vimscript(&self, stream: &mut Vec<u8>) -> TranspilingResult {

@@ -12,9 +12,7 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use crate::parsing;
-use crate::vimscript_transpiler::bootstrap;
-use crate::vimscript_transpiler::unit_verification;
+use crate::{bootstrap, parsing, unit_verification};
 
 use clap::{Parser, Subcommand};
 
