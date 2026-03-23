@@ -25,9 +25,9 @@ pub mod ffi {
     /// are indexed from 1. `off` is indexed from 0.
     pub type Position = [usize; 4];
 
-    /// The 5-element list of numbers \[0, lnum, col, off, curswant] as returned by
-    /// Vim's `getcurpos()`. `lnum`, `col` and `curswant` are indexed from 1. `off`
-    /// is indexed from 0.
+    /// The 5-element list of numbers \[0, lnum, col, off, curswant] as
+    /// returned by Vim's `getcurpos()`. `lnum`, `col` and `curswant` are
+    /// indexed from 1. `off` is indexed from 0.
     pub type CursorPositionCurswant = [usize; 5];
 }
 
