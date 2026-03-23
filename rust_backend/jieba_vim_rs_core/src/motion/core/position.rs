@@ -14,8 +14,6 @@
 
 //! Positions in a buffer.
 
-use std::fmt::{self, Display};
-
 use crate::motion::api::MotionType;
 
 /// Position types related to FFI bindings.
@@ -25,14 +23,10 @@ pub mod ffi {
     /// are indexed from 1. `off` is indexed from 0.
     pub type Position = [usize; 4];
 
-    /// The 5-element list of numbers \[0, lnum, col, off, curswant] as returned by
-    /// Vim's `getcurpos()`. `lnum`, `col` and `curswant` are indexed from 1. `off`
-    /// is indexed from 0.
+    /// The 5-element list of numbers \[0, lnum, col, off, curswant] as
+    /// returned by Vim's `getcurpos()`. `lnum`, `col` and `curswant` are
+    /// indexed from 1. `off` is indexed from 0.
     pub type CursorPositionCurswant = [usize; 5];
-
-    /// The 2-element list of numbers \[col, off], used when `lnum` is irrelevant
-    /// in context of [`CurrentBufferPosition`].
-    pub type ColumnPosition = [usize; 2];
 }
 
 /// A position in current text buffer.
@@ -74,23 +68,6 @@ impl From<Position> for ffi::Position {
         [0, value.lnum, value.col, value.off]
     }
 }
-
-#[derive(Debug)]
-pub enum PositionError {
-    ColTooLarge,
-}
-
-impl Display for PositionError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ColTooLarge => {
-                f.write_str("col is larger than one plus the line length")
-            }
-        }
-    }
-}
-
-impl std::error::Error for PositionError {}
 
 /// An operator-pending range.
 #[derive(Debug, PartialEq, Eq, Clone)]

@@ -26,35 +26,35 @@ use std::iter::{Rev, Skip, Take};
 
 use crate::token::{Token, TokenLike};
 
-use super::position::PositionError;
-use super::position::ffi::ColumnPosition;
-
 pub trait TokenLikeExt: TokenLike {
-    /// `true` if `(col, off)` is on self token.
-    #[allow(unused)]
-    fn is_on(&self, [col, off]: ColumnPosition) -> bool {
-        let fc = self.first_char();
-        let lc = self.last_char();
-        (col >= fc && col < lc) || (col == lc && off == 0)
-    }
+    // This is how we define the cursor being "on" a token:
+    //
+    // /// `true` if `(col, off)` is on self token.
+    // fn is_on(&self, [col, off]: [usize; 2]) -> bool {
+    //     let fc = self.first_char();
+    //     let lc = self.last_char();
+    //     (col >= fc && col < lc) || (col == lc && off == 0)
+    // }
 
-    /// `true` if `(col, off)` is off self token.
-    #[allow(unused)]
-    fn is_off(&self, [col, off]: ColumnPosition) -> bool {
-        let lc = self.last_char();
-        let lc1 = self.last_char1();
-        (col == lc && off > 0) || (col > lc && col < lc1)
-    }
+    // This is how we define the cursor being "off" a token:
+    //
+    // /// `true` if `(col, off)` is off self token.
+    // fn is_off(&self, [col, off]: [usize; 2]) -> bool {
+    //     let lc = self.last_char();
+    //     let lc1 = self.last_char1();
+    //     (col == lc && off > 0) || (col > lc && col < lc1)
+    // }
 
-    /// `true` if the columnn `col` of a [`crate::position::ColumnPosition`] is
-    /// on or off (in one word, over) self token. In other words, return `true`
-    /// if the column position is contained in self token.
-    #[allow(unused)]
-    fn is_over(&self, col: usize) -> bool {
-        let fc = self.first_char();
-        let lc1 = self.last_char1();
-        (fc..lc1).contains(&col)
-    }
+    // This is how we define the cursor being "over" a token:
+    //
+    // /// `true` if the columnn `col` is on or off (in one word, over) self
+    // /// token. In other words, return `true` if the column position is
+    // /// contained in self token.
+    // fn is_over(&self, col: usize) -> bool {
+    //     let fc = self.first_char();
+    //     let lc1 = self.last_char1();
+    //     (fc..lc1).contains(&col)
+    // }
 
     /// Return a total order between a `col` and self token.
     fn cmp(&self, col: usize) -> Ordering {
@@ -144,22 +144,22 @@ fn index_tokens(tokens: &[Token], col: usize) -> Option<usize> {
 }
 
 /// Get the index of the token in `tokens` where `col` is contained. Return
-/// `tokens.len()` if `col` is at the Eol of `tokens`.
-fn index_tokens_extended(
-    tokens: &[Token],
-    col: usize,
-) -> Result<usize, PositionError> {
-    match index_tokens(&tokens, col) {
-        Some(i) => Ok(i),
+/// `tokens.len()` if `col` is at the Eol of `tokens`. Panics otherwise.
+fn index_tokens_extended(tokens: &[Token], col: usize) -> usize {
+    match index_tokens(tokens, col) {
+        Some(i) => i,
         None => {
             // If `col_at_eol` is true, it means `col` lies on/off the Eol of
             // current lnum.
             let col_at_eol =
                 col == tokens.last().map_or(1, TokenLike::last_char1);
             if !col_at_eol {
-                return Err(PositionError::ColTooLarge);
+                panic!(
+                    "col ({}) too large when index_tokens_extended for tokens: {:?}",
+                    col, tokens
+                );
             }
-            Ok(tokens.len())
+            tokens.len()
         }
     }
 }
@@ -187,19 +187,16 @@ impl<'p> ExtendedInlineTokensIter<'p> {
 
     /// Take up to `col`'s token (inclusive) and reverse. The resulting
     /// iterator is guaranteed to contain at least one item.
-    pub fn take_col_rev(
-        self,
-        col: usize,
-    ) -> Result<Rev<Take<Self>>, PositionError> {
-        let i = index_tokens_extended(&self.line, col)?;
-        Ok(self.take(i + 1).rev())
+    pub fn take_col_rev(self, col: usize) -> Rev<Take<Self>> {
+        let i = index_tokens_extended(self.line, col);
+        self.take(i + 1).rev()
     }
 
     /// Skip up to `col`'s token (exclusive). The resulting iterator is
     /// guaranteed to contain at least one item.
-    pub fn skip_col(self, col: usize) -> Result<Skip<Self>, PositionError> {
-        let i = index_tokens_extended(&self.line, col)?;
-        Ok(self.skip(i))
+    pub fn skip_col(self, col: usize) -> Skip<Self> {
+        let i = index_tokens_extended(self.line, col);
+        self.skip(i)
     }
 }
 

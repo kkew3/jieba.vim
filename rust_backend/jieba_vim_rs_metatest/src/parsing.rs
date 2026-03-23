@@ -46,8 +46,8 @@ pub struct TestHash {
 
 fn is_hex_char(c: char) -> Option<u8> {
     match c {
-        '0'..='9' => Some(c as u8 - '0' as u8),
-        'a'..='f' => Some(c as u8 - 'a' as u8 + 10),
+        '0'..='9' => Some(c as u8 - b'0'),
+        'a'..='f' => Some(c as u8 - b'a' + 10),
         _ => None,
     }
 }
@@ -103,15 +103,15 @@ impl fmt::Display for TestHashId {
                 for b in bytes {
                     let x1 = b >> 4;
                     if x1 < 10 {
-                        write!(f, "{}", ('0' as u8 + x1) as char)?;
+                        write!(f, "{}", (b'0' + x1) as char)?;
                     } else {
-                        write!(f, "{}", ('a' as u8 + (x1 - 10)) as char)?;
+                        write!(f, "{}", (b'a' + (x1 - 10)) as char)?;
                     }
                     let x2 = b & 0x0F;
                     if x2 < 10 {
-                        write!(f, "{}", ('0' as u8 + x2) as char)?;
+                        write!(f, "{}", (b'0' + x2) as char)?;
                     } else {
-                        write!(f, "{}", ('a' as u8 + (x2 - 10)) as char)?;
+                        write!(f, "{}", (b'a' + (x2 - 10)) as char)?;
                     }
                 }
                 Ok(())
@@ -424,14 +424,8 @@ impl Register {
 }
 
 /// The count (`C`).
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 struct Count(u64);
-
-impl Default for Count {
-    fn default() -> Self {
-        Self(0)
-    }
-}
 
 impl Count {
     fn parse(
@@ -745,10 +739,8 @@ impl BufferExpr {
             ];
 
             let n_clean = clean_chars.len();
-            for v in vars {
-                if let Some(c) = v {
-                    *c = n_clean - *c;
-                }
+            for c in vars.into_iter().flatten() {
+                *c = n_clean - *c;
             }
 
             // Compute (col, off) and prune auxiliary chars.
@@ -1588,7 +1580,7 @@ fn parse_test_case_block(
     mut case: RawTestCaseBlock,
 ) -> Result<(TestCaseBlock, usize), Error> {
     let mut lineno_offset = 0;
-    while let Some(line) = lines.next() {
+    for line in lines.by_ref() {
         lineno_offset += 1;
         let line = line?;
         let line = line.trim();
@@ -1705,7 +1697,7 @@ fn parse_test_case_block(
     }
     span.as_line_range_span(lineno, lineno + lineno_offset);
     if case.export_type.is_none() {
-        return Err(span.to_parse_error("export type directive (X) not found"))?;
+        Err(span.to_parse_error("export type directive (X) not found"))?;
     }
     let case = match case.export_type.unwrap() {
         ExportType::Unit | ExportType::UnitIntegration => {
@@ -2790,21 +2782,20 @@ fn fix_new_hash<R: BufRead, W: Write>(
         let mut line = line?;
         match lineno_to_hash.get(&lineno) {
             None => {
-                write!(writer, "{}\n", line)?;
+                writeln!(writer, "{}", line)?;
             }
             Some(new_hash) => {
                 let hash_index = line[1..]
                     .find(|c: char| !c.is_ascii_whitespace())
                     .expect("hash id not found")
                     + 1;
-                let hash_index_end =
-                    if line[hash_index..].chars().next().unwrap() == '?' {
-                        hash_index + 1
-                    } else {
-                        hash_index + ID_LEN * 2
-                    };
+                let hash_index_end = if line[hash_index..].starts_with('?') {
+                    hash_index + 1
+                } else {
+                    hash_index + ID_LEN * 2
+                };
                 line.replace_range(hash_index..hash_index_end, new_hash);
-                write!(writer, "{}\n", line)?;
+                writeln!(writer, "{}", line)?;
             }
         }
     }
@@ -2837,12 +2828,12 @@ fn fix_dup<R: BufRead, W: Write>(
         let lineno = lineno + 1;
         let line = line?;
         match dup_lines.last() {
-            None => write!(writer, "{}\n", line)?,
+            None => writeln!(writer, "{}", line)?,
             Some(dup_lineno) => {
                 if dup_lineno == &lineno {
                     dup_lines.pop();
                 } else {
-                    write!(writer, "{}\n", line)?;
+                    writeln!(writer, "{}", line)?;
                 }
             }
         }

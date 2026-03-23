@@ -65,9 +65,8 @@ impl UnitMotion<Position> for UnitBackwardEndWord {
         }
 
         let tokens = buffer.getline_parsed(*lnum)?;
-        let mut line = ExtendedInlineTokensIter::new(&tokens)
+        let mut line = ExtendedInlineTokensIter::new(tokens)
             .take_col_rev(*col)
-            .expect("col too large")
             .peekable();
         let cursor_token = line.next().unwrap();
 
@@ -108,7 +107,7 @@ impl UnitMotion<Position> for UnitBackwardEndWord {
                 }
                 *lnum -= 1;
                 let tokens = buffer.getline_parsed(*lnum)?;
-                let line = ExtendedInlineTokensIter::new(&tokens).rev();
+                let line = ExtendedInlineTokensIter::new(tokens).rev();
                 if let Some(t) = find_stop_point(line, col, self.eol) {
                     let s = match t {
                         // `unwrap` is safe because `t` can only be words

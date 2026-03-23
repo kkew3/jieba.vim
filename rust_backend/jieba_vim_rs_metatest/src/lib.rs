@@ -12,10 +12,11 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+mod bootstrap;
 mod cli;
 mod dots_progress;
 mod parsing;
-mod rust_transpiler;
+mod unit_verification;
 mod vimscript_transpiler;
 
 pub use cli::{Cli, Command};

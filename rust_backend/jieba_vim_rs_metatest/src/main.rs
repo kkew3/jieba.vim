@@ -20,7 +20,6 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
         Command::Check(check) => check.run()?,
         Command::VerifyUnit(verify_unit) => verify_unit.run()?,
-        Command::GenUnit(gen_unit) => gen_unit.run()?,
         Command::Bootstrap(bootstrap) => bootstrap.run()?,
     }
     Ok(())

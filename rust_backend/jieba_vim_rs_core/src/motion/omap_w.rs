@@ -100,7 +100,6 @@ fn on_word<B: ParsedBufferLike + ?Sized>(
     let tokens = buffer.getline_parsed(cursor.lnum)?;
     let cursor_token = ExtendedInlineTokensIter::new(tokens)
         .skip_col(cursor.col)
-        .expect("cursor col too large")
         .next()
         .unwrap();
     let on_word = match cursor_token {

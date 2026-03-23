@@ -45,9 +45,8 @@ impl AdjustCursor for Position {
         buffer: &mut B,
     ) -> Result<(), B::Error> {
         let tokens = buffer.getline_parsed(self.lnum)?;
-        let mut line = ExtendedInlineTokensIter::new(tokens)
-            .take_col_rev(self.col)
-            .expect("cursor col too large");
+        let mut line =
+            ExtendedInlineTokensIter::new(tokens).take_col_rev(self.col);
         let cursor_token = line.next().unwrap();
         if let GToken::Eol(col) = cursor_token
             && col > 1

@@ -36,13 +36,10 @@ use crate::parsing::{
     PositionCurswant, RawTestCaseBlock, StateExpr, StateExprFunction,
     TestCaseBlock, TestHashId, UnitEditorMode, UnitTestCaseBlock,
 };
-use crate::vimscript_transpiler::unit_verification::{self, StateExprBefore};
-use crate::vimscript_transpiler::vimscript_transpiler::Flush;
-
-use super::ToVimscript;
-use super::vimscript_transpiler::{
-    Concat, EchoJson, EmbeddedLua, Func, Identifier, IdentifierString, Map,
-    MapItem, MarkStr, NotEqTest, OptionVar, TranspilingError,
+use crate::unit_verification::{self, StateExprBefore};
+use crate::vimscript_transpiler::{
+    Concat, EchoJson, EmbeddedLua, Flush, Func, Identifier, IdentifierString,
+    Map, MapItem, MarkStr, NotEqTest, OptionVar, ToVimscript, TranspilingError,
     TranspilingResult, VimCommand, VimVariable,
 };
 
@@ -219,9 +216,9 @@ impl ToVimscript for StdRun {
         };
         match self.0.editor_mode {
             UnitEditorMode::Normal => {
-                write!(
+                writeln!(
                     stream,
-                    "normal! {}{}\n",
+                    "normal! {}{}",
                     count,
                     self.0.key_sequence.as_ref()
                 )
@@ -230,9 +227,9 @@ impl ToVimscript for StdRun {
             UnitEditorMode::VisualChar
             | UnitEditorMode::VisualLine
             | UnitEditorMode::VisualBlock => {
-                write!(
+                writeln!(
                     stream,
-                    "normal! gv{}{}\n",
+                    "normal! gv{}{}",
                     count,
                     self.0.key_sequence.as_ref()
                 )
@@ -245,9 +242,9 @@ impl ToVimscript for StdRun {
                 let operator = self.0.operator.as_ref().ok_or_else(|| {
                     TranspilingError("missing operator `O`".into())
                 })?;
-                write!(
+                writeln!(
                     stream,
-                    "normal! \"{}{}{}{}\n",
+                    "normal! \"{}{}{}{}",
                     register,
                     operator,
                     count,
@@ -979,10 +976,10 @@ impl BootstrapTestCaseBlock {
                         id: TestHashId::Unspecified,
                     },
                     export_type: UnitExportType::Unit,
-                    editor_mode: self_.editor_mode.clone(),
-                    key_sequence: self_.key_sequence.clone(),
+                    editor_mode: self_.editor_mode,
+                    key_sequence: self_.key_sequence,
                     operator: self_.operator.clone(),
-                    register: self_.register.clone(),
+                    register: self_.register,
                     count: self_.count,
                     state_before: self_.state_before.clone(),
                     state_after: vec![],

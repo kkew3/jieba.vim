@@ -70,11 +70,9 @@ impl<'o> DSpecial for OperatorRange<'o> {
         let rlnum = end.lnum;
         let rcol = end.col;
 
-        let rline = buffer.getline_parsed(rlnum)?;
-        let mut rtokens = ExtendedInlineTokensIter::new(&rline)
-            .skip_col(rcol)
-            .expect("end.col too large");
-        if let GToken::T(t) = rtokens.next().unwrap()
+        let rtokens = buffer.getline_parsed(rlnum)?;
+        let mut rline = ExtendedInlineTokensIter::new(rtokens).skip_col(rcol);
+        if let GToken::T(t) = rline.next().unwrap()
             && t.ty == TokenType::Word
         {
             if self.mtype == MotionType::CharExclusive {
@@ -84,7 +82,7 @@ impl<'o> DSpecial for OperatorRange<'o> {
                 return Ok(());
             }
         }
-        for token in rtokens {
+        for token in rline {
             if let GToken::T(t) = token
                 && t.ty == TokenType::Word
             {

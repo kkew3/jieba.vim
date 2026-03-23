@@ -497,7 +497,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_core"
-version = "0.3.1"
+version = "0.3.4"
 dependencies = [
  "bstr",
  "clap",
@@ -512,7 +512,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_metatest"
-version = "0.2.22"
+version = "0.2.23"
 dependencies = [
  "anyhow",
  "camino",
