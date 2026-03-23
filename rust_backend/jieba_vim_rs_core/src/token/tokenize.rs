@@ -14,6 +14,8 @@
 
 //! This module defines the tokens, and the tokenizer.
 
+use std::fmt::{self, Debug};
+
 use super::JiebaPlaceholder;
 use super::char::{self, CharType, NonWordCharType, WordCharType};
 use super::isk::WordPredicate;
@@ -825,10 +827,22 @@ fn cut_hanzi<C: JiebaPlaceholder>(
     })
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Token {
     col: Col,
     pub(crate) ty: TokenType,
+}
+
+impl Debug for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Token")
+            .field(&self.first_char())
+            .field(&self.first_char1())
+            .field(&self.last_char())
+            .field(&self.last_char1())
+            .field(&self.ty)
+            .finish()
+    }
 }
 
 impl Token {
