@@ -249,57 +249,12 @@ impl From<CharToken> for CharTokenGroup {
 
 /// An implicit whitespace.
 #[derive(Debug)]
-struct ImplicitWhitespace {
-    start_byte_index: usize,
-}
-
-impl TokenLike for ImplicitWhitespace {
-    fn first_char(&self) -> usize {
-        self.start_byte_index
-    }
-
-    fn last_char(&self) -> usize {
-        self.start_byte_index
-    }
-
-    fn last_char1(&self) -> usize {
-        self.start_byte_index
-    }
-}
-
-impl ImplicitWhitespace {
-    fn new(start_byte_index: usize) -> Self {
-        Self { start_byte_index }
-    }
-}
+struct ImplicitWhitespace;
 
 /// Either a [`CharTokenGroup`] or an [`ImplicitWhitespace`].
 enum MaybeImplicitCharTokenGroup {
     CharTokenGroup(CharTokenGroup),
     ImplicitWhitespace(ImplicitWhitespace),
-}
-
-impl TokenLike for MaybeImplicitCharTokenGroup {
-    fn first_char(&self) -> usize {
-        match self {
-            Self::CharTokenGroup(cg) => cg.first_char(),
-            Self::ImplicitWhitespace(iw) => iw.first_char(),
-        }
-    }
-
-    fn last_char(&self) -> usize {
-        match self {
-            Self::CharTokenGroup(cg) => cg.last_char(),
-            Self::ImplicitWhitespace(iw) => iw.last_char(),
-        }
-    }
-
-    fn last_char1(&self) -> usize {
-        match self {
-            Self::CharTokenGroup(cg) => cg.last_char1(),
-            Self::ImplicitWhitespace(iw) => iw.last_char1(),
-        }
-    }
 }
 
 impl From<CharTokenGroup> for MaybeImplicitCharTokenGroup {
@@ -457,7 +412,7 @@ impl CharTokenGroup {
             }
             (G::NonWord(NG::RightPuncEnding), Word(_)) => {
                 let c = CharTokenGroup::from(c);
-                let ispace = ImplicitWhitespace::new(c.col.start_byte_index);
+                let ispace = ImplicitWhitespace;
                 Err(CharTokenGroupPushError::WithImplicitSpace(ispace, c))
             }
             (G::NonWord(_), Space)
@@ -682,8 +637,7 @@ fn insert_implicit_whitespace_in_cut_result_rule(
                     vec![prev_group]
                 }
                 (Word(_), Word(_)) => {
-                    let ispace =
-                        ImplicitWhitespace::new(group.col.start_byte_index);
+                    let ispace = ImplicitWhitespace;
                     vec![prev_group, ispace.into(), group.into()]
                 }
                 _ => panic!("prev_group or group is not word"),
