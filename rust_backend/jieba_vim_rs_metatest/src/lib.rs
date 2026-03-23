@@ -15,7 +15,6 @@
 mod cli;
 mod dots_progress;
 mod parsing;
-mod rust_transpiler;
 mod vimscript_transpiler;
 
 pub use cli::{Cli, Command};

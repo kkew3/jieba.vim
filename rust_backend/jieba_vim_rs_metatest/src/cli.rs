@@ -13,7 +13,6 @@
 // under the License.
 
 use crate::parsing;
-use crate::rust_transpiler::rust_test;
 use crate::vimscript_transpiler::bootstrap;
 use crate::vimscript_transpiler::unit_verification;
 
@@ -32,8 +31,6 @@ pub enum Command {
     Check(parsing::Cli),
     /// Run unit test verification.
     VerifyUnit(unit_verification::Cli),
-    /// Generate rust tests from unit test verification outputs.
-    GenUnit(rust_test::Cli),
     /// Run bootstrap test verification.
     Bootstrap(bootstrap::Cli),
 }
