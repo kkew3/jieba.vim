@@ -203,7 +203,7 @@ mod tests {
     fn test_newline_space_newline() {
         let mut buffer = PreTokenizedBuffer::new(
             1,
-            [vec![], vec![Token::new(1, 3, 4, TokenType::Space)]],
+            [vec![], vec![Token::new(1, 2, 3, 4, TokenType::Space)]],
         );
         let mut motion = ForwardWord::new(false);
         let mut cursor = Position::new(1, 1);
@@ -216,7 +216,7 @@ mod tests {
     fn test_newline_space_newline_eol() {
         let mut buffer = PreTokenizedBuffer::new(
             1,
-            [vec![], vec![Token::new(1, 3, 4, TokenType::Space)]],
+            [vec![], vec![Token::new(1, 2, 3, 4, TokenType::Space)]],
         );
         let mut motion = ForwardWord::new(true);
         let mut cursor = Position::new(1, 1);
