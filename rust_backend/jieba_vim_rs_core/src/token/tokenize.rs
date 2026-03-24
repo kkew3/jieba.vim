@@ -76,6 +76,9 @@ pub trait TokenLike {
     /// The byte position of the first character in the token.
     fn first_char(&self) -> usize;
 
+    /// The byte position of the end of the first character in the token.
+    fn first_char1(&self) -> usize;
+
     /// The byte position of the last character in the token.
     fn last_char(&self) -> usize;
 
@@ -116,6 +119,10 @@ macro_rules! impl_token_like_from_col {
         impl TokenLike for $cls {
             fn first_char(&self) -> usize {
                 self.col.start_byte_index
+            }
+
+            fn first_char1(&self) -> usize {
+                self.col.excl_start_byte_index
             }
 
             fn last_char(&self) -> usize {

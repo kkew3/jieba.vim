@@ -116,6 +116,13 @@ impl TokenLike for GToken {
         }
     }
 
+    fn first_char1(&self) -> usize {
+        match self {
+            Self::T(t) => t.first_char1(),
+            Self::Eol(len) => *len,
+        }
+    }
+
     fn last_char(&self) -> usize {
         match self {
             Self::T(t) => t.last_char(),
