@@ -16,7 +16,7 @@
 
 use std::fmt::{self, Debug};
 
-use crate::motion::api::MotionType;
+use crate::motion::api::{MotionType, VisualMode};
 
 /// Position types related to FFI bindings.
 pub mod ffi {
@@ -79,6 +79,14 @@ impl From<Position> for ffi::Position {
     fn from(value: Position) -> Self {
         [0, value.lnum, value.col, value.off]
     }
+}
+
+/// A visual range.
+#[derive(Debug, PartialEq, Eq)]
+pub struct VisualRange {
+    pub langle: Position,
+    pub rangle: Position,
+    pub visualmode: VisualMode,
 }
 
 /// An operator-pending range.
