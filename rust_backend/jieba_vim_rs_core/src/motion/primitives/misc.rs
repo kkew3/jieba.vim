@@ -107,6 +107,26 @@ impl Motion<Position> for Dec {
     }
 }
 
+/// A wrapper of `Dec(eol=false, line=true)`.
+pub struct Decl(Dec);
+
+impl Default for Decl {
+    fn default() -> Self {
+        Self(Dec::new(false, true))
+    }
+}
+
+impl Motion<Position> for Decl {
+    fn map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        count: u64,
+        cursor: &mut Position,
+    ) -> Result<MotionState, B::Error> {
+        self.0.map(buffer, count, cursor)
+    }
+}
+
 /// Move cursor 1 char forward. Panics if cursor is not already on the
 /// start/end of a token.
 pub struct Inc {
@@ -179,6 +199,26 @@ impl Motion<Position> for Inc {
             );
         };
         Ok(s)
+    }
+}
+
+/// A wrapper of `Dec(eol=false, line=true)`.
+pub struct Incl(Inc);
+
+impl Default for Incl {
+    fn default() -> Self {
+        Self(Inc::new(false, true))
+    }
+}
+
+impl Motion<Position> for Incl {
+    fn map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        count: u64,
+        cursor: &mut Position,
+    ) -> Result<MotionState, B::Error> {
+        self.0.map(buffer, count, cursor)
     }
 }
 

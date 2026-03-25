@@ -193,35 +193,126 @@ fn find_stop_point<L: IntoIterator<Item = GToken>>(
     None
 }
 
+/// A combination of `Incl + ForwardWord`.
+pub struct InclForwardWord {
+    incl: Incl,
+    fwd: ForwardWord,
+}
+
+impl Motion<Position> for InclForwardWord {
+    /// Panics if `count` is not 1.
+    fn map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        count: u64,
+        cursor: &mut Position,
+    ) -> Result<MotionState, B::Error> {
+        assert_eq!(count, 1);
+
+        let mut line =
+            ExtendedInlineTokensIter::new(buffer.getline_parsed(cursor.lnum)?)
+                .skip_col(cursor.col);
+        let cursor_token = line.next().unwrap();
+        let need_incl = match cursor_token {
+            GToken::Eol(_) => true,
+            GToken::T(t) => t.at_end(cursor.col),
+        };
+        if need_incl {
+            if self.incl.map(buffer, 1, cursor)? == MotionState::Failure {
+                return Ok(MotionState::Failure);
+            }
+        }
+        self.fwd.map(buffer, 1, cursor)
+    }
+}
+
+impl Chain<ForwardWord> for Incl {
+    type Output = InclForwardWord;
+
+    fn chain(self, rhs: ForwardWord) -> Self::Output {
+        InclForwardWord {
+            incl: self,
+            fwd: rhs,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::motion::core::buffer::PreTokenizedBuffer;
-
-    use super::{ForwardWord, Motion, MotionState, Position, Token, TokenType};
+    use super::*;
 
     #[test]
-    fn test_newline_space_newline() {
-        let mut buffer = PreTokenizedBuffer::new(
+    fn test_forward_word_count1_noeol() -> Result<(), ()> {
+        let mut b = PreTokenizedBuffer::new(
             1,
-            [vec![], vec![Token::new(1, 2, 3, 4, TokenType::Space)]],
+            vec![atoken_vec![], atoken_vec![1..4 as Space]],
         );
-        let mut motion = ForwardWord::new(false);
-        let mut cursor = Position::new(1, 1);
-        let s = motion.map(&mut buffer, 1, &mut cursor).unwrap();
-        assert_eq!(s, MotionState::Success);
-        assert_eq!(cursor, Position::new(2, 4));
+        let mut f = ForwardWord::new(false);
+        assert_move!(f, b: (1, 1) => (2, 4));
+
+        Ok(())
     }
 
     #[test]
-    fn test_newline_space_newline_eol() {
-        let mut buffer = PreTokenizedBuffer::new(
+    fn test_forward_word_count1_eol() -> Result<(), ()> {
+        let mut b = PreTokenizedBuffer::new(
             1,
-            [vec![], vec![Token::new(1, 2, 3, 4, TokenType::Space)]],
+            vec![atoken_vec![], atoken_vec![1..4 as Space]],
         );
-        let mut motion = ForwardWord::new(true);
-        let mut cursor = Position::new(1, 1);
-        let s = motion.map(&mut buffer, 1, &mut cursor).unwrap();
-        assert_eq!(s, MotionState::Success);
-        assert_eq!(cursor, Position::new(2, 1));
+        let mut f = ForwardWord::new(true);
+        assert_move!(f, b: (1, 1) => (2, 1));
+
+        let mut b = PreTokenizedBuffer::new(
+            1,
+            vec![
+                atoken_vec![1..4 as Word, 4..6 as Space, 6..9 as Word],
+                atoken_vec![1..2 as Space, 2..5 as Word],
+            ],
+        );
+        assert_move!(f, b: (1, 1) => (1, 6));
+        assert_move!(f, b: (1, 3) => (1, 6));
+        assert_move!(f, b: (1, 5) => (1, 6));
+        assert_move!(f, b: (1, 6) => (1, 9));
+        assert_move!(f, b: (1, 8) => (1, 9));
+        assert_move!(f, b: (1, 9) => (2, 1));
+        assert_move!(f, b: (2, 1) => (2, 2));
+        assert_move!(f, b: (2, 2) => (2, 5));
+        assert_move!(f, b: (2, 3) => (2, 5));
+        assert_move!(f, b: (2, 4) => Failure (2, 5));
+        assert_move!(f, b: (2, 5) => Failure);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_incl_forward_word() -> Result<(), ()> {
+        let mut b = PreTokenizedBuffer::new(
+            1,
+            vec![
+                atoken_vec![],
+                atoken_vec![1..2 as Space],
+                atoken_vec![],
+                atoken_vec![1..5 as Word, 5..7 as Space],
+                atoken_vec![1..2 as Space],
+                atoken_vec![],
+            ],
+        );
+        let mut inf = Incl::default().chain(ForwardWord::new(true));
+        assert_move!(inf, b: (1, 1) => (2, 2));
+        assert_move!(inf, b: (2, 1) => (4, 1));
+        assert_move!(inf, b: (2, 2) => (4, 1));
+        assert_move!(inf, b: (3, 1) => (4, 7));
+        assert_move!(inf, b: (4, 1) => (4, 7));
+        assert_move!(inf, b: (4, 2) => (4, 7));
+        assert_move!(inf, b: (4, 3) => (4, 7));
+        assert_move!(inf, b: (4, 4) => (4, 7));
+        assert_move!(inf, b: (4, 5) => (4, 7));
+        assert_move!(inf, b: (4, 6) => (5, 2));
+        assert_move!(inf, b: (4, 7) => (5, 2));
+        assert_move!(inf, b: (5, 1) => Failure (6, 1));
+        assert_move!(inf, b: (5, 2) => Failure (6, 1));
+        assert_move!(inf, b: (6, 1) => Failure);
+
+        Ok(())
     }
 }

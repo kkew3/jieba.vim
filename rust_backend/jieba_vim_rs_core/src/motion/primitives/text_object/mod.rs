@@ -29,20 +29,31 @@
 use crate::token::{Token, TokenLike, TokenType};
 
 use super::core::buffer::ParsedBufferLike;
+#[cfg(test)]
+use super::core::buffer::PreTokenizedBuffer;
 use super::core::failure::{Intolerable, SemiTolerable, Tolerable};
 use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::motion::{
-    ExtendedMotionState, FoldState, Markovian, MarkovianUnit, Motion,
+    Chain, ExtendedMotionState, FoldState, Markovian, MarkovianUnit, Motion,
     MotionState, UnitMotion,
 };
 use super::core::position::Position;
+use super::misc::{Decl, Incl};
+
+/// Construct a vec of ASCII tokens to be used in tests.
+#[cfg(test)]
+macro_rules! atoken_vec {
+    ($($start:literal..$end:literal as $ty:ident),*) => {
+        vec![$(Token::new($start, $start + 1, $end - 1, $end, TokenType::$ty)),*]
+    };
+}
 
 mod bck_word;
 mod bckend_word;
 mod end_word;
 mod fwd_word;
 
-pub use bck_word::BackwardWord;
-pub use bckend_word::BackwardEndWord;
-pub use end_word::EndWord;
-pub use fwd_word::ForwardWord;
+pub use bck_word::{BackwardWord, DeclBackwardWord};
+pub use bckend_word::{BackwardEndWord, DeclBackwardEndWord};
+pub use end_word::{EndWord, InclEndWord};
+pub use fwd_word::{ForwardWord, InclForwardWord};

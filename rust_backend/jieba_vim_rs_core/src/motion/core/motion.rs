@@ -123,3 +123,23 @@ where
         Ok(state.finalize())
     }
 }
+
+/// `motion1.chain(motion2)` returns a new motion that, in its simplest form,
+/// runs (motion1; motion2;) `count` times.
+pub trait Chain<Rhs>: Sized {
+    type Output;
+
+    fn chain(self, rhs: Rhs) -> Self::Output;
+}
+
+/// Ergonomic extension trait: gives `a.chain(b)`.
+pub trait Chained {
+    fn chain<Rhs>(self, rhs: Rhs) -> <Self as Chain<Rhs>>::Output
+    where
+        Self: Chain<Rhs>,
+    {
+        <Self as Chain<Rhs>>::chain(self, rhs)
+    }
+}
+
+impl<T> Chained for T {}
