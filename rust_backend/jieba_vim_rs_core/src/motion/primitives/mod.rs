@@ -14,6 +14,99 @@
 
 //! The primitive motions and position predicates.
 
+#[cfg(test)]
+macro_rules! assert_move {
+    ($motion:ident, $buffer:ident: ($lnum_before:expr, $col_before:expr) => ($lnum_after:expr, $col_after:expr)) => {
+        let mut cursor = crate::motion::core::position::Position::new(
+            $lnum_before,
+            $col_before,
+        );
+        assert_eq!(
+            $motion.map(&mut $buffer, 1, &mut cursor)?,
+            crate::motion::core::motion::MotionState::Success
+        );
+        assert_eq!(
+            cursor,
+            crate::motion::core::position::Position::new(
+                $lnum_after,
+                $col_after
+            )
+        );
+    };
+    ($motion:ident, $buffer:ident: ($lnum_before:expr, $col_before:expr) => Failure) => {
+        let mut cursor = crate::motion::core::position::Position::new(
+            $lnum_before,
+            $col_before,
+        );
+        assert_eq!(
+            $motion.map(&mut $buffer, 1, &mut cursor)?,
+            crate::motion::core::motion::MotionState::Failure
+        );
+    };
+    ($motion:ident, $buffer:ident: ($lnum_before:expr, $col_before:expr) => Failure ($lnum_after:expr, $col_after:expr)) => {
+        let mut cursor = crate::motion::core::position::Position::new(
+            $lnum_before,
+            $col_before,
+        );
+        assert_eq!(
+            $motion.map(&mut $buffer, 1, &mut cursor)?,
+            crate::motion::core::motion::MotionState::Failure
+        );
+        assert_eq!(
+            cursor,
+            crate::motion::core::position::Position::new(
+                $lnum_after,
+                $col_after
+            )
+        );
+    };
+    ($motion:ident, $buffer:ident, $count:literal: ($lnum_before:expr, $col_before:expr) => ($lnum_after:expr, $col_after:expr)) => {
+        let mut cursor = crate::motion::core::position::Position::new(
+            $lnum_before,
+            $col_before,
+        );
+        assert_eq!(
+            $motion.map(&mut $buffer, $count, &mut cursor)?,
+            crate::motion::core::motion::MotionState::Success
+        );
+        assert_eq!(
+            cursor,
+            crate::motion::core::position::Position::new(
+                $lnum_after,
+                $col_after
+            )
+        );
+    };
+    ($motion:ident, $buffer:ident, $count:literal: ($lnum_before:expr, $col_before:expr) => Failure) => {
+        let mut cursor = crate::motion::core::position::Position::new(
+            $lnum_before,
+            $col_before,
+        );
+        assert_eq!(
+            $motion.map(&mut $buffer, $count, &mut cursor)?,
+            crate::motion::core::motion::MotionState::Failure
+        );
+    };
+    ($motion:ident, $buffer:ident, $count:literal: ($lnum_before:expr, $col_before:expr) => Failure ($lnum_after:expr, $col_after:expr)) => {
+        let mut cursor = crate::motion::core::position::Position::new(
+            $lnum_before,
+            $col_before,
+        );
+        assert_eq!(
+            $motion.map(&mut $buffer, $count, &mut cursor)?,
+            crate::motion::core::motion::MotionState::Failure
+        );
+        assert_eq!(
+            cursor,
+            crate::motion::core::position::Position::new(
+                $lnum_after,
+                $col_after
+            )
+        );
+    };
+}
+
+mod misc;
 pub mod predicate;
 pub mod text_object;
 
