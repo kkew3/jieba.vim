@@ -236,6 +236,14 @@ pub enum MotionKey {
     Ges,
     /// gE
     Gel,
+    /// iw
+    Iws,
+    /// iW
+    Iwl,
+    /// aw
+    Aws,
+    /// aW
+    Awl,
 }
 
 impl AsRef<str> for MotionKey {
@@ -249,6 +257,10 @@ impl AsRef<str> for MotionKey {
             Self::El => "E",
             Self::Ges => "ge",
             Self::Gel => "gE",
+            Self::Iws => "iw",
+            Self::Iwl => "iW",
+            Self::Aws => "aw",
+            Self::Awl => "aW",
         }
     }
 }
@@ -281,6 +293,10 @@ impl KeySequence {
                 "E" => Ok(Self::Motion(MotionKey::El)),
                 "ge" => Ok(Self::Motion(MotionKey::Ges)),
                 "gE" => Ok(Self::Motion(MotionKey::Gel)),
+                "iw" => Ok(Self::Motion(MotionKey::Iws)),
+                "iW" => Ok(Self::Motion(MotionKey::Iwl)),
+                "aw" => Ok(Self::Motion(MotionKey::Aws)),
+                "aW" => Ok(Self::Motion(MotionKey::Awl)),
                 ks => Ok(Self::AnyNormal(ks.into())),
             }
         } else {
@@ -306,6 +322,10 @@ impl KeySequence {
             Self::Motion(MotionKey::El) => "E".into(),
             Self::Motion(MotionKey::Ges) => "ge".into(),
             Self::Motion(MotionKey::Gel) => "gE".into(),
+            Self::Motion(MotionKey::Iws) => "iw".into(),
+            Self::Motion(MotionKey::Iwl) => "iW".into(),
+            Self::Motion(MotionKey::Aws) => "aw".into(),
+            Self::Motion(MotionKey::Awl) => "aW".into(),
         }
     }
 }
@@ -2441,6 +2461,10 @@ pub mod unparsing {
                     MotionKey::El => "E",
                     MotionKey::Ges => "ge",
                     MotionKey::Gel => "gE",
+                    MotionKey::Iws => "iw",
+                    MotionKey::Iwl => "iW",
+                    MotionKey::Aws => "aw",
+                    MotionKey::Awl => "aW",
                 },
             };
             writeln!(stream, "K {}", key_sequence)?;
