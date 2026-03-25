@@ -205,6 +205,11 @@ impl<'p> ExtendedInlineTokensIter<'p> {
         let i = index_tokens_extended(self.line, col);
         self.skip(i)
     }
+
+    /// Get the token under `col`.
+    pub fn into_col(self, col: usize) -> GToken {
+        self.take_col_rev(col).next().unwrap()
+    }
 }
 
 impl<'p> Iterator for ExtendedInlineTokensIter<'p> {

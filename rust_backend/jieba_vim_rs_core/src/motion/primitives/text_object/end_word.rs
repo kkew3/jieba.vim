@@ -255,10 +255,9 @@ impl Motion<Position> for InclEndWord {
             unimplemented!();
         }
 
-        let mut line =
+        let cursor_token =
             ExtendedInlineTokensIter::new(buffer.getline_parsed(cursor.lnum)?)
-                .skip_col(cursor.col);
-        let cursor_token = line.next().unwrap();
+                .into_col(cursor.col);
         let need_incl = match cursor_token {
             GToken::T(t) => match t.ty {
                 TokenType::Word => {

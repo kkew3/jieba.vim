@@ -209,10 +209,9 @@ impl Motion<Position> for InclForwardWord {
     ) -> Result<MotionState, B::Error> {
         assert_eq!(count, 1);
 
-        let mut line =
+        let cursor_token =
             ExtendedInlineTokensIter::new(buffer.getline_parsed(cursor.lnum)?)
-                .skip_col(cursor.col);
-        let cursor_token = line.next().unwrap();
+                .into_col(cursor.col);
         let need_incl = match cursor_token {
             GToken::Eol(_) => true,
             GToken::T(t) => t.at_end(cursor.col),

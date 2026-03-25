@@ -178,10 +178,9 @@ impl Motion<Position> for DeclBackwardEndWord {
             return Ok(MotionState::Failure);
         }
 
-        let tokens = buffer.getline_parsed(cursor.lnum)?;
-        let mut line =
-            ExtendedInlineTokensIter::new(tokens).take_col_rev(cursor.col);
-        let cursor_token = line.next().unwrap();
+        let cursor_token =
+            ExtendedInlineTokensIter::new(buffer.getline_parsed(cursor.lnum)?)
+                .into_col(cursor.col);
         let need_decl = match cursor_token {
             GToken::T(t) => cursor.col <= t.first_char1(),
             GToken::Eol(_) => true,
