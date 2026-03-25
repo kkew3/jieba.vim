@@ -29,6 +29,13 @@ pub struct CurrentWordVisual {
     include: bool,
 }
 
+impl CurrentWordVisual {
+    /// Pass true to `include` to include word and whitespace.
+    pub fn new(include: bool) -> Self {
+        Self { include }
+    }
+}
+
 impl Motion<VisualRange> for CurrentWordVisual {
     fn map<B: ParsedBufferLike + ?Sized>(
         &mut self,

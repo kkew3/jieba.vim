@@ -246,6 +246,22 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
                 count,
                 motion[1] == b'e',
             ),
+            b"iw" | b"iW" => self.xmap_iw(
+                buffer,
+                visualmode,
+                visual_begin,
+                visual_end,
+                count,
+                motion[1] == b'w',
+            ),
+            b"aw" | b"aW" => self.xmap_aw(
+                buffer,
+                visualmode,
+                visual_begin,
+                visual_end,
+                count,
+                motion[1] == b'w',
+            ),
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
         }?;
         Ok(output.into())

@@ -24,9 +24,11 @@ mod omap_ge;
 mod omap_w;
 pub(crate) mod policy;
 pub(crate) mod primitives;
+mod xmap_aw;
 mod xmap_b;
 mod xmap_e;
 mod xmap_ge;
+mod xmap_iw;
 mod xmap_w;
 
 pub use api::WordMotion;
