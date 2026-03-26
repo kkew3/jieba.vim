@@ -177,6 +177,118 @@ impl Motion<VisualRange> for CurrentWord {
     }
 }
 
+impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
+    fn map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        mut count: u64,
+        cursor: &mut OperatorRange,
+    ) -> Result<MotionState, B::Error> {
+        let mut include_white = false;
+        let mut start_pos = None;
+        if count > 0 {
+            let cursor_token = get_cursor_token(&mut cursor.rangle, buffer)?;
+            let start_col = cursor_token.first_char();
+            cursor.rangle.col = start_col;
+            start_pos = Some(cursor.rangle);
+            if is_empty_or_whitespace(&cursor_token) == self.include {
+                if EndWord::new(true, true).map(
+                    buffer,
+                    1,
+                    &mut cursor.rangle,
+                )? == MotionState::Failure
+                {
+                    return Ok(MotionState::Failure);
+                }
+            } else {
+                let _ = ForwardWord::new(true).map(
+                    buffer,
+                    1,
+                    &mut cursor.rangle,
+                )?;
+                // Won't panic because we are either at the start of a word or
+                // at an Eol.
+                Decl::default().map(buffer, 1, &mut cursor.rangle)?;
+
+                include_white = self.include;
+            }
+
+            cursor.langle.col = start_col;
+
+            count -= 1;
+        }
+
+        let mut inclusive = true;
+        while count > 0 {
+            inclusive = true;
+
+            match incl_is_empty_or_whitespace(&cursor.rangle, buffer)? {
+                None => {
+                    // Inc to one pass last char in the buffer and fail.
+                    Incl::default().map(buffer, 1, &mut cursor.rangle)?;
+                    return Ok(MotionState::Failure);
+                }
+                Some(cls_eq_0) => {
+                    // In Bram's code this was written as:
+                    // > if (include != (cls() == 0))
+                    if self.include != cls_eq_0 {
+                        if Incl::default().chain(ForwardWord::new(true)).map(
+                            buffer,
+                            1,
+                            &mut cursor.rangle,
+                        )? == MotionState::Failure
+                            && count > 1
+                        {
+                            return Ok(MotionState::Failure);
+                        }
+                        if Dec::new(false, false).map(
+                            buffer,
+                            1,
+                            &mut cursor.rangle,
+                        )? == MotionState::Failure
+                        {
+                            inclusive = false;
+                        }
+                    } else {
+                        if Incl::default().chain(EndWord::new(true, true)).map(
+                            buffer,
+                            1,
+                            &mut cursor.rangle,
+                        )? == MotionState::Failure
+                        {
+                            return Ok(MotionState::Failure);
+                        }
+                    }
+                }
+            }
+
+            count -= 1;
+        }
+
+        let cursor_token = get_cursor_token(&cursor.rangle, buffer)?;
+        if include_white
+            && (!is_empty_or_whitespace(&cursor_token)
+                || (cursor.rangle.col == 1 && !inclusive))
+            && let Some(start_pos) = start_pos.as_mut()
+            && Dec::new(false, false).map(buffer, 1, start_pos)?
+                == MotionState::Success
+        {
+            let cursor_token = get_cursor_token(start_pos, buffer)?;
+            start_pos.col = cursor_token.first_char();
+            if is_empty_or_whitespace(&cursor_token) && start_pos.col > 1 {
+                cursor.langle = *start_pos;
+            }
+        }
+
+        cursor.mtype = if inclusive {
+            MotionType::CharInclusive
+        } else {
+            MotionType::CharExclusive
+        };
+        Ok(MotionState::Success)
+    }
+}
+
 fn get_cursor_token<B: ParsedBufferLike + ?Sized>(
     cursor: &Position,
     buffer: &mut B,

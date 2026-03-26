@@ -26,7 +26,7 @@
 //! Note that the term "text objects" is quoted from Bram's C code. It refers
 //! to all atomic word motions underneath |w|, |b|, |e|, |ge|, |iw|, |aw|.
 
-use crate::motion::api::VisualMode;
+use crate::motion::api::{MotionType, VisualMode};
 use crate::token::{Token, TokenLike, TokenType};
 
 use super::core::buffer::ParsedBufferLike;
@@ -38,7 +38,7 @@ use super::core::motion::{
     Chain, ExtendedMotionState, FoldState, Markovian, MarkovianUnit, Motion,
     MotionState, UnitMotion,
 };
-use super::core::position::{Position, VisualRange};
+use super::core::position::{OperatorRange, Position, VisualRange};
 use super::misc::{Dec, Decl, Incl};
 
 /// Construct a vec of ASCII tokens to be used in tests.
