@@ -105,16 +105,18 @@ call s:InitWordMotion()
 command! JiebaPreviewCancel call <SID>JiebaPreviewCancel()
 
 let s:motions = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
+let s:objects = ["iw", "iW", "aw", "aW"]
 
 ""
 " @section Mappings, mappings
-" 提供以下 `<Plug>()` 映射，其中 X 表示 Vim word motion 按键，即
-" b、B、ge、gE、w、W、e、E：
+" 提供以下 `<Plug>()` 映射，其中 X 表示 Vim word motion/text object 按键，即
+" b、B、ge、gE、w、W、e、E、iw、iW、aw、aW：
 "
 "   - `<Plug>(Jieba_preview_cancel)`：即 |:JiebaPreviewCancel| 命令
 "   - `<Plug>(Jieba_preview_X)`：预览增强了的 X 的跳转位置
 "   - `<Plug>(Jieba_X)`: 增强了的 X，同时在 normal、operator-pending、visual 三种模式下可用，以及可与 count 协同使用。例如假设 w 被映射到 `<Plug>(Jieba_w)`，那么 3w 将是向后跳三个词，d3w 是删除后三个词
 "
+" 注意 word text object (即 iw、iW、aw、aW 没有 normal 模式下的映射)。
 "
 " 用户可自行在 .vimrc 中将按键映射到这些 `<Plug>()` 映射。例如：
 " >
@@ -123,8 +125,8 @@ let s:motions = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
 "   map w <Plug>(Jieba_w)
 "   " 等等
 " <
-" 提供快捷开关 g:jieba_vim_keymap，可通过在 .vimrc 中将其设为 1 来开启对八个
-" word motion 的 nmap, xmap 和 omap。
+" 提供快捷开关 g:jieba_vim_keymap，可通过在 .vimrc 中将其设为 1 来开启对十二个
+" word motion/text object 的 nmap, xmap 和 omap。
 
 ""
 " @section Optional Dependency, opt-dependency
@@ -271,6 +273,20 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     " This no-op line effectively sets an undoable checkpoint such that |u|
     " undos all operations up to this line.
     call setline(".", getline("."))
+
+    " Check if we are selecting an empty region.
+    if l:result_dict["langle"] ==# l:result_dict["rangle"]
+        \ && l:result_dict["selection"] ==# "exclusive"
+        \ && l:result_dict["visualmode"] !=# "V"
+        \ && !l:result_dict["prevent_change"]
+        if stridx(&cpoptions, "E") >= 0
+            let l:result_dict["prevent_change"] = 1
+        endif
+        let l:empty_region = 1
+    else
+        let l:empty_region = 0
+    endif
+
     if l:result_dict["prevent_change"]
         " Land the cursor to potentially a new position.
         call cursor(l:result_dict["cursor"][1:2])
@@ -322,10 +338,26 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         " after d-special when 'startofline' is unset.
         let l:need_repos = getline(getpos("'>")[1]) !=# ""
 
-        " .. and execute.
+        " .. and execute, provided that we are not selecting an empty region.
         let &selection = l:result_dict["selection"]
-        if a:operator ==# "c" && a:repeat
-            execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
+        if a:operator ==# "c"
+            if a:repeat && l:empty_region
+                execute "normal! i" . @.
+            elseif a:repeat
+                execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
+            elseif !l:empty_region
+                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
+            endif
+        elseif a:operator ==# "d"
+            if !l:empty_region
+                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
+            endif
+        elseif a:operator ==# "y"
+            if !l:empty_region
+                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
+            else
+                silent call setreg(a:register, "")
+            endif
         else
             execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
         endif
@@ -456,6 +488,22 @@ function! s:JiebaXmap_gE()
     call JiebaXmap("gE", v:count1, "")
 endfunction
 
+function! s:JiebaXmap_iw()
+    call JiebaXmap("iw", v:count1, "")
+endfunction
+
+function! s:JiebaXmap_iW()
+    call JiebaXmap("iW", v:count1, "")
+endfunction
+
+function! s:JiebaXmap_aw()
+    call JiebaXmap("aw", v:count1, "")
+endfunction
+
+function! s:JiebaXmap_aW()
+    call JiebaXmap("aW", v:count1, "")
+endfunction
+
 xnoremap <silent> <Plug>(Jieba_w) <Esc>:<C-u>call <SID>JiebaXmap_w()<CR>
 xnoremap <silent> <Plug>(Jieba_W) <Esc>:<C-u>call <SID>JiebaXmap_W()<CR>
 xnoremap <silent> <Plug>(Jieba_e) <Esc>:<C-u>call <SID>JiebaXmap_e()<CR>
@@ -464,6 +512,10 @@ xnoremap <silent> <Plug>(Jieba_b) <Esc>:<C-u>call <SID>JiebaXmap_b()<CR>
 xnoremap <silent> <Plug>(Jieba_B) <Esc>:<C-u>call <SID>JiebaXmap_B()<CR>
 xnoremap <silent> <Plug>(Jieba_ge) <Esc>:<C-u>call <SID>JiebaXmap_ge()<CR>
 xnoremap <silent> <Plug>(Jieba_gE) <Esc>:<C-u>call <SID>JiebaXmap_gE()<CR>
+xnoremap <silent> <Plug>(Jieba_iw) <Esc>:<C-u>call <SID>JiebaXmap_iw()<CR>
+xnoremap <silent> <Plug>(Jieba_iW) <Esc>:<C-u>call <SID>JiebaXmap_iW()<CR>
+xnoremap <silent> <Plug>(Jieba_aw) <Esc>:<C-u>call <SID>JiebaXmap_aw()<CR>
+xnoremap <silent> <Plug>(Jieba_aW) <Esc>:<C-u>call <SID>JiebaXmap_aW()<CR>
 
 function s:JiebaOmap_internal_w()
     silent! call repeat#setreg("\<Plug>(Jieba_internal_o_w)", v:register)
@@ -561,6 +613,54 @@ function! s:JiebaOmap_gE()
     silent! call repeat#set("\<Plug>(Jieba_internal_o_gE)", v:count1)
 endfunction
 
+function! s:JiebaOmap_internal_iw()
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_iw)", v:register)
+    call JiebaOmap("iw", 1, v:count1, v:operator, v:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_iw)", v:count1)
+endfunction
+
+function! s:JiebaOmap_iw()
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_iw)", v:register)
+    call JiebaOmap("iw", 0, v:count1, v:operator, v:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_iw)", v:count1)
+endfunction
+
+function! s:JiebaOmap_internal_iW()
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_iW)", v:register)
+    call JiebaOmap("iW", 1, v:count1, v:operator, v:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_iW)", v:count1)
+endfunction
+
+function! s:JiebaOmap_iW()
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_iW)", v:register)
+    call JiebaOmap("iW", 0, v:count1, v:operator, v:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_iW)", v:count1)
+endfunction
+
+function! s:JiebaOmap_internal_aw()
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_aw)", v:register)
+    call JiebaOmap("aw", 1, v:count1, v:operator, v:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_aw)", v:count1)
+endfunction
+
+function! s:JiebaOmap_aw()
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_aw)", v:register)
+    call JiebaOmap("aw", 0, v:count1, v:operator, v:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_aw)", v:count1)
+endfunction
+
+function! s:JiebaOmap_internal_aW()
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_aW)", v:register)
+    call JiebaOmap("aW", 1, v:count1, v:operator, v:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_aW)", v:count1)
+endfunction
+
+function! s:JiebaOmap_aW()
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_aW)", v:register)
+    call JiebaOmap("aW", 0, v:count1, v:operator, v:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_aW)", v:count1)
+endfunction
+
 nnoremap <silent> <Plug>(Jieba_internal_o_w) :<C-u>call <SID>JiebaOmap_internal_w()<CR>
 nnoremap <silent> <Plug>(Jieba_internal_o_W) :<C-u>call <SID>JiebaOmap_internal_W()<CR>
 nnoremap <silent> <Plug>(Jieba_internal_o_e) :<C-u>call <SID>JiebaOmap_internal_e()<CR>
@@ -569,6 +669,10 @@ nnoremap <silent> <Plug>(Jieba_internal_o_b) :<C-u>call <SID>JiebaOmap_internal_
 nnoremap <silent> <Plug>(Jieba_internal_o_B) :<C-u>call <SID>JiebaOmap_internal_B()<CR>
 nnoremap <silent> <Plug>(Jieba_internal_o_ge) :<C-u>call <SID>JiebaOmap_internal_ge()<CR>
 nnoremap <silent> <Plug>(Jieba_internal_o_gE) :<C-u>call <SID>JiebaOmap_internal_gE()<CR>
+nnoremap <silent> <Plug>(Jieba_internal_o_iw) :<C-u>call <SID>JiebaOmap_internal_iw()<CR>
+nnoremap <silent> <Plug>(Jieba_internal_o_iW) :<C-u>call <SID>JiebaOmap_internal_iW()<CR>
+nnoremap <silent> <Plug>(Jieba_internal_o_aw) :<C-u>call <SID>JiebaOmap_internal_aw()<CR>
+nnoremap <silent> <Plug>(Jieba_internal_o_aW) :<C-u>call <SID>JiebaOmap_internal_aW()<CR>
 
 onoremap <silent> <Plug>(Jieba_w) <Esc>:<C-u>call <SID>JiebaOmap_w()<CR>
 onoremap <silent> <Plug>(Jieba_W) <Esc>:<C-u>call <SID>JiebaOmap_W()<CR>
@@ -578,12 +682,23 @@ onoremap <silent> <Plug>(Jieba_b) <Esc>:<C-u>call <SID>JiebaOmap_b()<CR>
 onoremap <silent> <Plug>(Jieba_B) <Esc>:<C-u>call <SID>JiebaOmap_B()<CR>
 onoremap <silent> <Plug>(Jieba_ge) <Esc>:<C-u>call <SID>JiebaOmap_ge()<CR>
 onoremap <silent> <Plug>(Jieba_gE) <Esc>:<C-u>call <SID>JiebaOmap_gE()<CR>
+onoremap <silent> <Plug>(Jieba_iw) <Esc>:<C-u>call <SID>JiebaOmap_iw()<CR>
+onoremap <silent> <Plug>(Jieba_iW) <Esc>:<C-u>call <SID>JiebaOmap_iW()<CR>
+onoremap <silent> <Plug>(Jieba_aw) <Esc>:<C-u>call <SID>JiebaOmap_aw()<CR>
+onoremap <silent> <Plug>(Jieba_aW) <Esc>:<C-u>call <SID>JiebaOmap_aW()<CR>
 
 let s:modes = ["n", "x", "o"]
 if g:jieba_vim_keymap
     for ky in s:motions
         for md in s:modes
             execute md . "map " . ky . " <Plug>(Jieba_" . ky . ")"
+        endfor
+    endfor
+    for ky in s:objects
+        for md in s:modes
+            if md !=# "n"
+                execute md . "map " . ky . " <Plug>(Jieba_" . ky . ")"
+            endif
         endfor
     endfor
 endif

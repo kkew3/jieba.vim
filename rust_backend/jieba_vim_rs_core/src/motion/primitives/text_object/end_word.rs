@@ -161,7 +161,7 @@ impl UnitMotion<Position> for UnitEndWord {
         let s = match find_stop_point(line, col, self.empty) {
             Ok(GToken::T(_)) => ExtendedMotionState::Success,
             // This branch will be reached only if `self.empty` is true.
-            Ok(GToken::Eol(_)) => ExtendedMotionState::SemiFailure,
+            Ok(GToken::Eol(_)) => ExtendedMotionState::Success,
             Err(mut last_t) => loop {
                 if *lnum >= n_lines {
                     // If `lnum` == `n_lines`, `last_t` can't be None; and
@@ -176,6 +176,8 @@ impl UnitMotion<Position> for UnitEndWord {
                                 ExtendedMotionState::Pending
                             }
                         },
+                        // This branch will be reached only if `self.empty` is
+                        // false.
                         GToken::Eol(1) => ExtendedMotionState::SemiFailure,
                         // Due to the filtering.
                         GToken::Eol(_) => unreachable!(),
@@ -191,7 +193,7 @@ impl UnitMotion<Position> for UnitEndWord {
                     // This branch will be reached only if `self.empty`
                     // is true.
                     Ok(GToken::Eol(_)) => {
-                        break ExtendedMotionState::SemiFailure;
+                        break ExtendedMotionState::Success;
                     }
                     Err(curr_last_t) => last_t = curr_last_t,
                 }
@@ -232,4 +234,129 @@ fn find_stop_point<L: IntoIterator<Item = GToken>>(
         }
     }
     Err(last_token)
+}
+
+/// A combination of `Incl + EndWord`.
+pub struct InclEndWord {
+    incl: Incl,
+    end: EndWord,
+}
+
+impl Motion<Position> for InclEndWord {
+    /// Panics if `count` is not 1.
+    fn map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        count: u64,
+        cursor: &mut Position,
+    ) -> Result<MotionState, B::Error> {
+        assert_eq!(count, 1);
+        if !self.end.stop {
+            unimplemented!();
+        }
+
+        let cursor_token =
+            ExtendedInlineTokensIter::new(buffer.getline_parsed(cursor.lnum)?)
+                .into_col(cursor.col);
+        let need_incl = match cursor_token {
+            GToken::T(t) => match t.ty {
+                TokenType::Word => {
+                    if !t.at_end(cursor.col) {
+                        cursor.col = t.last_char();
+                        return Ok(MotionState::Success);
+                    }
+                    true
+                }
+                TokenType::Space => t.at_end(cursor.col),
+            },
+            GToken::Eol(_) => true,
+        };
+        if need_incl {
+            if self.incl.map(buffer, 1, cursor)? == MotionState::Failure {
+                return Ok(MotionState::Failure);
+            }
+        }
+        self.end.map(buffer, 1, cursor)
+    }
+}
+
+impl Chain<EndWord> for Incl {
+    type Output = InclEndWord;
+
+    fn chain(self, rhs: EndWord) -> Self::Output {
+        InclEndWord {
+            incl: self,
+            end: rhs,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_end_word_count1_stop_empty() -> Result<(), ()> {
+        let mut e = EndWord::new(true, true);
+        let mut b = PreTokenizedBuffer::new(
+            1,
+            vec![
+                atoken_vec![1..4 as Word, 4..6 as Space, 6..9 as Word],
+                atoken_vec![1..3 as Space],
+                atoken_vec![],
+                atoken_vec![1..2 as Space, 2..5 as Word],
+            ],
+        );
+        assert_move!(e, b: (1, 1) => (1, 3));
+        assert_move!(e, b: (1, 2) => (1, 3));
+        assert_move!(e, b: (1, 3) => (1, 3));
+        assert_move!(e, b: (1, 4) => (1, 8));
+        assert_move!(e, b: (1, 6) => (1, 8));
+        assert_move!(e, b: (1, 7) => (1, 8));
+        assert_move!(e, b: (1, 8) => (1, 8));
+        assert_move!(e, b: (1, 9) => (3, 1));
+        assert_move!(e, b: (2, 1) => (3, 1));
+        assert_move!(e, b: (2, 3) => (3, 1));
+        assert_move!(e, b: (3, 1) => (4, 4));
+        assert_move!(e, b: (4, 1) => (4, 4));
+        assert_move!(e, b: (4, 3) => (4, 4));
+        assert_move!(e, b: (4, 4) => (4, 4));
+        assert_move!(e, b: (4, 5) => Failure);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_incl_end_word() -> Result<(), ()> {
+        let mut ie = Incl::default().chain(EndWord::new(true, true));
+        let mut b = PreTokenizedBuffer::new(
+            1,
+            vec![
+                atoken_vec![1..4 as Word, 4..6 as Space, 6..9 as Word],
+                atoken_vec![1..3 as Space],
+                atoken_vec![],
+                atoken_vec![1..2 as Space, 2..5 as Word],
+            ],
+        );
+        assert_move!(ie, b: (1, 1) => (1, 3));
+        assert_move!(ie, b: (1, 2) => (1, 3));
+        assert_move!(ie, b: (1, 3) => (1, 8));
+        assert_move!(ie, b: (1, 4) => (1, 8));
+        assert_move!(ie, b: (1, 5) => (1, 8));
+        assert_move!(ie, b: (1, 6) => (1, 8));
+        assert_move!(ie, b: (1, 7) => (1, 8));
+        assert_move!(ie, b: (1, 8) => (3, 1));
+        assert_move!(ie, b: (1, 9) => (3, 1));
+        assert_move!(ie, b: (2, 1) => (3, 1));
+        assert_move!(ie, b: (2, 2) => (4, 4));
+        assert_move!(ie, b: (2, 3) => (4, 4));
+        assert_move!(ie, b: (3, 1) => (4, 4));
+        assert_move!(ie, b: (4, 1) => (4, 4));
+        assert_move!(ie, b: (4, 2) => (4, 4));
+        assert_move!(ie, b: (4, 3) => (4, 4));
+        assert_move!(ie, b: (4, 4) => Failure (4, 5));
+        assert_move!(ie, b: (4, 5) => Failure);
+
+        Ok(())
+    }
 }

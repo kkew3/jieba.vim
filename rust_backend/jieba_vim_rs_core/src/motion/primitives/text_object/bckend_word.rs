@@ -158,3 +158,108 @@ fn find_stop_point<L: IntoIterator<Item = GToken>>(
     }
     None
 }
+
+/// A combination of `Decl + BackwardEndWord` in one step.
+pub struct DeclBackwardEndWord {
+    decl: Decl,
+    bckend: BackwardEndWord,
+}
+
+impl Motion<Position> for DeclBackwardEndWord {
+    /// Panics if `count` is not 1.
+    fn map<B: ParsedBufferLike + ?Sized>(
+        &mut self,
+        buffer: &mut B,
+        count: u64,
+        cursor: &mut Position,
+    ) -> Result<MotionState, B::Error> {
+        assert_eq!(count, 1);
+        if cursor.lnum == 1 && cursor.col == 1 {
+            return Ok(MotionState::Failure);
+        }
+
+        let cursor_token =
+            ExtendedInlineTokensIter::new(buffer.getline_parsed(cursor.lnum)?)
+                .into_col(cursor.col);
+        let need_decl = match cursor_token {
+            GToken::T(t) => cursor.col <= t.first_char1(),
+            GToken::Eol(_) => true,
+        };
+        if need_decl {
+            // Must return success since we have tested above that we are not
+            // at bof.
+            self.decl.map(buffer, 1, cursor)?;
+        }
+        self.bckend.map(buffer, 1, cursor)
+    }
+}
+
+impl Chain<BackwardEndWord> for Decl {
+    type Output = DeclBackwardEndWord;
+
+    fn chain(self, rhs: BackwardEndWord) -> Self::Output {
+        DeclBackwardEndWord {
+            decl: self,
+            bckend: rhs,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_backward_end_word_count1_eol() -> Result<(), ()> {
+        let mut bckend = BackwardEndWord::new(true);
+        let mut b = PreTokenizedBuffer::new(
+            1,
+            vec![
+                atoken_vec![1..4 as Word, 4..6 as Space, 6..9 as Word],
+                atoken_vec![1..2 as Space, 2..5 as Word],
+            ],
+        );
+        assert_move!(bckend, b: (1, 1) => Failure);
+        assert_move!(bckend, b: (1, 2) => (1, 1));
+        assert_move!(bckend, b: (1, 4) => (1, 3));
+        assert_move!(bckend, b: (1, 5) => (1, 3));
+        assert_move!(bckend, b: (1, 6) => (1, 3));
+        assert_move!(bckend, b: (1, 7) => (1, 3));
+        assert_move!(bckend, b: (1, 8) => (1, 3));
+        assert_move!(bckend, b: (1, 9) => (1, 8));
+        assert_move!(bckend, b: (2, 1) => (1, 9));
+        assert_move!(bckend, b: (2, 2) => (1, 9));
+        assert_move!(bckend, b: (2, 3) => (1, 9));
+        assert_move!(bckend, b: (2, 5) => (2, 4));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_decl_backward_end_word() -> Result<(), ()> {
+        let mut db = Decl::default().chain(BackwardEndWord::new(true));
+        let mut b = PreTokenizedBuffer::new(
+            1,
+            vec![
+                atoken_vec![1..4 as Word, 4..6 as Space, 6..9 as Word],
+                atoken_vec![1..2 as Space, 2..5 as Word],
+            ],
+        );
+        assert_move!(db, b: (1, 1) => Failure);
+        assert_move!(db, b: (1, 2) => Failure (1, 1));
+        assert_move!(db, b: (1, 3) => (1, 1));
+        assert_move!(db, b: (1, 4) => (1, 1));
+        assert_move!(db, b: (1, 5) => (1, 3));
+        assert_move!(db, b: (1, 6) => (1, 3));
+        assert_move!(db, b: (1, 7) => (1, 3));
+        assert_move!(db, b: (1, 8) => (1, 3));
+        assert_move!(db, b: (1, 9) => (1, 3));
+        assert_move!(db, b: (2, 1) => (1, 3));
+        assert_move!(db, b: (2, 2) => (1, 9));
+        assert_move!(db, b: (2, 3) => (1, 9));
+        assert_move!(db, b: (2, 4) => (1, 9));
+        assert_move!(db, b: (2, 5) => (1, 9));
+
+        Ok(())
+    }
+}

@@ -123,3 +123,11 @@ where
         Ok(state.finalize())
     }
 }
+
+/// `motion1.chain(motion2)` returns a new motion that, in its simplest form,
+/// runs (motion1; motion2;) `count` times.
+pub trait Chain<Rhs>: Sized {
+    type Output;
+
+    fn chain(self, rhs: Rhs) -> Self::Output;
+}

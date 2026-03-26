@@ -14,6 +14,8 @@
 
 //! This module defines the tokens, and the tokenizer.
 
+use std::fmt::{self, Debug};
+
 use super::JiebaPlaceholder;
 use super::char::{self, CharType, NonWordCharType, WordCharType};
 use super::isk::WordPredicate;
@@ -76,6 +78,9 @@ pub trait TokenLike {
     /// The byte position of the first character in the token.
     fn first_char(&self) -> usize;
 
+    /// The byte position of the end of the first character in the token.
+    fn first_char1(&self) -> usize;
+
     /// The byte position of the last character in the token.
     fn last_char(&self) -> usize;
 
@@ -92,6 +97,9 @@ fn get_token<'a, T: TokenLike>(line: &'a str, token: &T) -> &'a str {
 struct Col {
     /// The byte offset of the first char in the token.
     start_byte_index: usize,
+    /// [`Col::start_byte_index`] plus the byte length of the first char in
+    /// utf-8.
+    excl_start_byte_index: usize,
     /// The byte offset of the last char in the token.
     incl_end_byte_index: usize,
     /// [`Col::incl_end_byte_index`] plus the byte length of the last char in
@@ -113,6 +121,10 @@ macro_rules! impl_token_like_from_col {
         impl TokenLike for $cls {
             fn first_char(&self) -> usize {
                 self.col.start_byte_index
+            }
+
+            fn first_char1(&self) -> usize {
+                self.col.excl_start_byte_index
             }
 
             fn last_char(&self) -> usize {
@@ -140,6 +152,7 @@ impl<C> Tokenizer<C> {
         CharToken {
             col: Col {
                 start_byte_index,
+                excl_start_byte_index: start_byte_index + ch.len_utf8(),
                 incl_end_byte_index: start_byte_index,
                 excl_end_byte_index: start_byte_index + ch.len_utf8(),
             },
@@ -319,7 +332,14 @@ impl CharTokenGroup {
             // Combining diacritical marks modify previous character only, and
             // does not take space.
             match &c.ty {
-                CombiningDiacriticalMark => (),
+                CombiningDiacriticalMark => {
+                    if group.col.excl_start_byte_index
+                        == group.col.excl_end_byte_index
+                    {
+                        group.col.excl_start_byte_index =
+                            c.col.excl_end_byte_index;
+                    }
+                }
                 _ => group.col.incl_end_byte_index = c.col.incl_end_byte_index,
             }
             group.col.excl_end_byte_index = c.col.excl_end_byte_index;
@@ -807,10 +827,22 @@ fn cut_hanzi<C: JiebaPlaceholder>(
     })
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Token {
     col: Col,
     pub(crate) ty: TokenType,
+}
+
+impl Debug for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Token")
+            .field(&self.first_char())
+            .field(&self.first_char1())
+            .field(&self.last_char())
+            .field(&self.last_char1())
+            .field(&self.ty)
+            .finish()
+    }
 }
 
 impl Token {
@@ -819,6 +851,7 @@ impl Token {
     /// comforms to Vim's rule.
     fn shift1(&mut self) {
         self.col.start_byte_index += 1;
+        self.col.excl_start_byte_index += 1;
         self.col.incl_end_byte_index += 1;
         self.col.excl_end_byte_index += 1;
     }
@@ -842,6 +875,7 @@ impl Token {
     #[cfg(test)]
     pub(crate) fn new(
         start_byte_index: usize,
+        excl_start_byte_index: usize,
         incl_end_byte_index: usize,
         excl_end_byte_index: usize,
         ty: TokenType,
@@ -849,6 +883,7 @@ impl Token {
         Self {
             col: Col {
                 start_byte_index,
+                excl_start_byte_index,
                 incl_end_byte_index,
                 excl_end_byte_index,
             },
@@ -1031,6 +1066,7 @@ mod tests {
             CharTokenGroup {
                 col: Col {
                     start_byte_index: 0,
+                    excl_start_byte_index: 1,
                     incl_end_byte_index: 4,
                     excl_end_byte_index: 5,
                 },
@@ -1044,6 +1080,7 @@ mod tests {
                 CharTokenGroup {
                     col: Col {
                         start_byte_index: 0,
+                        excl_start_byte_index: 1,
                         incl_end_byte_index: 1,
                         excl_end_byte_index: 2,
                     },
@@ -1052,6 +1089,7 @@ mod tests {
                 CharTokenGroup {
                     col: Col {
                         start_byte_index: 2,
+                        excl_start_byte_index: 3,
                         incl_end_byte_index: 3,
                         excl_end_byte_index: 4,
                     },
@@ -1060,6 +1098,7 @@ mod tests {
                 CharTokenGroup {
                     col: Col {
                         start_byte_index: 4,
+                        excl_start_byte_index: 5,
                         incl_end_byte_index: 4,
                         excl_end_byte_index: 5,
                     },
@@ -1165,10 +1204,12 @@ mod tests {
         let mut start = 0;
         let mut result = Vec::with_capacity(token_data.len());
         for (s, ty) in token_data {
+            let c1 = s.chars().next().unwrap();
             let (last_char, _) = s.char_indices().last().unwrap();
             let last_char1 = s.len();
             result.push(Token::new(
                 start,
+                start + c1.len_utf8(),
                 start + last_char,
                 start + last_char1,
                 ty,
@@ -1188,14 +1229,29 @@ mod tests {
                 ("bar", Word)
             ]),
             vec![
-                Token::new(0, 2, 3, Word),
-                Token::new(3, 3, 4, Space),
-                Token::new(4, 6, 7, Word)
+                Token::new(0, 1, 2, 3, Word),
+                Token::new(3, 4, 3, 4, Space),
+                Token::new(4, 5, 6, 7, Word)
             ]
         );
         assert_eq!(
             build_simple_tokens(vec![("\u{1f596}", Word), ("bar", Word)]),
-            vec![Token::new(0, 0, 4, Word), Token::new(4, 6, 7, Word)]
+            vec![Token::new(0, 4, 0, 4, Word), Token::new(4, 5, 6, 7, Word)]
+        );
+    }
+
+    #[test]
+    fn test_parse_simple1() {
+        use TokenType::*;
+        let kc = KeywordCutter::new([]);
+        let tokenizer = Tokenizer::new(kc, "@,a-z,A-Z,48-57,_,192-255");
+        assert_eq!(
+            tokenizer.parse_str1("abcde   fghi", true),
+            vec![
+                Token::new(1, 2, 5, 6, Word),
+                Token::new(6, 7, 8, 9, Space),
+                Token::new(9, 10, 12, 13, Word)
+            ]
         );
     }
 
@@ -1837,11 +1893,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 5, Space),
-                    Token::new(5, 7, 8, Word),
-                    Token::new(8, 9, 12, Space),
-                    Token::new(12, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 5, 2, 5, Space),
+                    Token::new(5, 6, 7, 8, Word),
+                    Token::new(8, 9, 9, 12, Space),
+                    Token::new(12, 13, 13, 14, Word),
                 ]
             );
         }
@@ -1858,11 +1914,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 5, Space),
-                    Token::new(5, 7, 8, Word),
-                    Token::new(8, 9, 12, Space),
-                    Token::new(12, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 5, 2, 5, Space),
+                    Token::new(5, 6, 7, 8, Word),
+                    Token::new(8, 9, 9, 12, Space),
+                    Token::new(12, 13, 13, 14, Word),
                 ]
             );
         }
@@ -1876,11 +1932,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 5, Space),
-                    Token::new(5, 7, 8, Word),
-                    Token::new(8, 9, 12, Space),
-                    Token::new(12, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 5, 2, 5, Space),
+                    Token::new(5, 6, 7, 8, Word),
+                    Token::new(8, 9, 9, 12, Space),
+                    Token::new(12, 13, 13, 14, Word),
                 ]
             );
         }
@@ -1895,11 +1951,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 5, Space),
-                    Token::new(5, 7, 8, Word),
-                    Token::new(8, 9, 12, Space),
-                    Token::new(12, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 5, 2, 5, Space),
+                    Token::new(5, 6, 7, 8, Word),
+                    Token::new(8, 9, 9, 12, Space),
+                    Token::new(12, 13, 13, 14, Word),
                 ]
             );
         }
@@ -1915,11 +1971,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 5, Space),
-                    Token::new(5, 7, 8, Word),
-                    Token::new(8, 9, 12, Space),
-                    Token::new(12, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 5, 2, 5, Space),
+                    Token::new(5, 6, 7, 8, Word),
+                    Token::new(8, 9, 9, 12, Space),
+                    Token::new(12, 13, 13, 14, Word),
                 ]
             );
         }
@@ -1936,11 +1992,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 5, Space),
-                    Token::new(5, 7, 8, Word),
-                    Token::new(8, 9, 12, Space),
-                    Token::new(12, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 5, 2, 5, Space),
+                    Token::new(5, 6, 7, 8, Word),
+                    Token::new(8, 9, 9, 12, Space),
+                    Token::new(12, 13, 13, 14, Word),
                 ]
             );
         }
@@ -1963,11 +2019,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 3, Space),
-                    Token::new(3, 7, 8, Word),
-                    Token::new(8, 8, 9, Space),
-                    Token::new(9, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 3, 2, 3, Space),
+                    Token::new(3, 6, 7, 8, Word),
+                    Token::new(8, 9, 8, 9, Space),
+                    Token::new(9, 12, 13, 14, Word),
                 ]
             );
         }
@@ -1984,11 +2040,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 3, Space),
-                    Token::new(3, 7, 8, Word),
-                    Token::new(8, 8, 9, Space),
-                    Token::new(9, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 3, 2, 3, Space),
+                    Token::new(3, 6, 7, 8, Word),
+                    Token::new(8, 9, 8, 9, Space),
+                    Token::new(9, 12, 13, 14, Word),
                 ]
             );
         }
@@ -2002,11 +2058,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 3, Space),
-                    Token::new(3, 7, 8, Word),
-                    Token::new(8, 8, 9, Space),
-                    Token::new(9, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 3, 2, 3, Space),
+                    Token::new(3, 6, 7, 8, Word),
+                    Token::new(8, 9, 8, 9, Space),
+                    Token::new(9, 12, 13, 14, Word),
                 ]
             );
         }
@@ -2021,11 +2077,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 3, Space),
-                    Token::new(3, 7, 8, Word),
-                    Token::new(8, 8, 9, Space),
-                    Token::new(9, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 3, 2, 3, Space),
+                    Token::new(3, 6, 7, 8, Word),
+                    Token::new(8, 9, 8, 9, Space),
+                    Token::new(9, 12, 13, 14, Word),
                 ]
             );
         }
@@ -2041,14 +2097,14 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 3, Space),
-                    Token::new(3, 3, 6, Word),
-                    Token::new(6, 6, 7, Word),
-                    Token::new(7, 7, 8, Word),
-                    Token::new(8, 8, 9, Space),
-                    Token::new(9, 9, 12, Word),
-                    Token::new(12, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 3, 2, 3, Space),
+                    Token::new(3, 6, 3, 6, Word),
+                    Token::new(6, 7, 6, 7, Word),
+                    Token::new(7, 8, 7, 8, Word),
+                    Token::new(8, 9, 8, 9, Space),
+                    Token::new(9, 12, 9, 12, Word),
+                    Token::new(12, 13, 13, 14, Word),
                 ]
             );
         }
@@ -2065,11 +2121,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 1, 2, Word),
-                    Token::new(2, 2, 3, Space),
-                    Token::new(3, 7, 8, Word),
-                    Token::new(8, 8, 9, Space),
-                    Token::new(9, 13, 14, Word),
+                    Token::new(0, 1, 1, 2, Word),
+                    Token::new(2, 3, 2, 3, Space),
+                    Token::new(3, 6, 7, 8, Word),
+                    Token::new(8, 9, 8, 9, Space),
+                    Token::new(9, 12, 13, 14, Word),
                 ]
             );
         }
@@ -2100,9 +2156,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 42, 63, Word),
-                    Token::new(63, 63, 64, Space),
-                    Token::new(64, 106, 127, Word),
+                    Token::new(0, 21, 42, 63, Word),
+                    Token::new(63, 64, 63, 64, Space),
+                    Token::new(64, 85, 106, 127, Word),
                 ]
             );
         }
@@ -2119,9 +2175,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 42, 63, Word),
-                    Token::new(63, 63, 64, Space),
-                    Token::new(64, 106, 127, Word),
+                    Token::new(0, 21, 42, 63, Word),
+                    Token::new(63, 64, 63, 64, Space),
+                    Token::new(64, 85, 106, 127, Word),
                 ]
             );
         }
@@ -2135,9 +2191,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 42, 63, Word),
-                    Token::new(63, 63, 64, Space),
-                    Token::new(64, 106, 127, Word),
+                    Token::new(0, 21, 42, 63, Word),
+                    Token::new(63, 64, 63, 64, Space),
+                    Token::new(64, 85, 106, 127, Word),
                 ]
             );
         }
@@ -2152,9 +2208,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 42, 63, Word),
-                    Token::new(63, 63, 64, Space),
-                    Token::new(64, 106, 127, Word),
+                    Token::new(0, 21, 42, 63, Word),
+                    Token::new(63, 64, 63, 64, Space),
+                    Token::new(64, 85, 106, 127, Word),
                 ]
             );
         }
@@ -2170,10 +2226,10 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 42, 63, Word),
-                    Token::new(63, 63, 64, Space),
-                    Token::new(64, 64, 85, Word),
-                    Token::new(85, 106, 127, Word),
+                    Token::new(0, 21, 42, 63, Word),
+                    Token::new(63, 64, 63, 64, Space),
+                    Token::new(64, 85, 64, 85, Word),
+                    Token::new(85, 106, 106, 127, Word),
                 ]
             );
         }
@@ -2190,9 +2246,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 42, 63, Word),
-                    Token::new(63, 63, 64, Space),
-                    Token::new(64, 106, 127, Word),
+                    Token::new(0, 21, 42, 63, Word),
+                    Token::new(63, 64, 63, 64, Space),
+                    Token::new(64, 85, 106, 127, Word),
                 ]
             );
         }
@@ -2213,7 +2269,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, true);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 3, 8, Word), Token::new(8, 11, 14, Word)]
+                vec![
+                    Token::new(0, 3, 3, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
             );
         }
 
@@ -2228,7 +2287,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 3, 8, Word), Token::new(8, 11, 14, Word)]
+                vec![
+                    Token::new(0, 3, 3, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
             );
         }
 
@@ -2240,7 +2302,7 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, true);
-            assert_eq!(tokens, vec![Token::new(0, 11, 14, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 3, 11, 14, Word)]);
         }
 
         #[test]
@@ -2252,7 +2314,7 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 11, 14, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 3, 11, 14, Word)]);
         }
     }
 
@@ -2271,7 +2333,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, true);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 5, 8, Word), Token::new(8, 11, 14, Word)]
+                vec![
+                    Token::new(0, 5, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
             );
         }
 
@@ -2286,7 +2351,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 5, 8, Word), Token::new(8, 11, 14, Word)]
+                vec![
+                    Token::new(0, 5, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
             );
         }
 
@@ -2298,7 +2366,7 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, true);
-            assert_eq!(tokens, vec![Token::new(0, 11, 14, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 5, 11, 14, Word)]);
         }
 
         #[test]
@@ -2310,7 +2378,7 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 11, 14, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 5, 11, 14, Word)]);
         }
     }
 
@@ -2329,7 +2397,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, true);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 3, 6, Word), Token::new(6, 9, 14, Word)]
+                vec![
+                    Token::new(0, 3, 3, 6, Word),
+                    Token::new(6, 9, 9, 14, Word)
+                ]
             );
         }
 
@@ -2344,7 +2415,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 3, 6, Word), Token::new(6, 9, 14, Word)]
+                vec![
+                    Token::new(0, 3, 3, 6, Word),
+                    Token::new(6, 9, 9, 14, Word)
+                ]
             );
         }
 
@@ -2356,7 +2430,7 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, true);
-            assert_eq!(tokens, vec![Token::new(0, 9, 14, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 3, 9, 14, Word)]);
         }
 
         #[test]
@@ -2368,7 +2442,7 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 9, 14, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 3, 9, 14, Word)]);
         }
     }
 
@@ -2388,9 +2462,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 0, 10, Word),
-                    Token::new(10, 10, 11, Space),
-                    Token::new(11, 13, 14, Word),
+                    Token::new(0, 10, 0, 10, Word),
+                    Token::new(10, 11, 10, 11, Space),
+                    Token::new(11, 12, 13, 14, Word),
                 ]
             );
         }
@@ -2407,9 +2481,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 0, 10, Word),
-                    Token::new(10, 10, 11, Space),
-                    Token::new(11, 13, 14, Word),
+                    Token::new(0, 10, 0, 10, Word),
+                    Token::new(10, 11, 10, 11, Space),
+                    Token::new(11, 12, 13, 14, Word),
                 ]
             );
         }
@@ -2423,9 +2497,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 0, 10, Word),
-                    Token::new(10, 10, 11, Space),
-                    Token::new(11, 13, 14, Word),
+                    Token::new(0, 10, 0, 10, Word),
+                    Token::new(10, 11, 10, 11, Space),
+                    Token::new(11, 12, 13, 14, Word),
                 ]
             );
         }
@@ -2440,9 +2514,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 0, 10, Word),
-                    Token::new(10, 10, 11, Space),
-                    Token::new(11, 13, 14, Word),
+                    Token::new(0, 10, 0, 10, Word),
+                    Token::new(10, 11, 10, 11, Space),
+                    Token::new(11, 12, 13, 14, Word),
                 ]
             );
         }
@@ -2461,7 +2535,7 @@ mod tests {
                 "@,48-57,_,192-255",
             );
             let tokens = parse_str_test(&tokenizer, SENT, true);
-            assert_eq!(tokens, vec![Token::new(0, 12, 13, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 10, 12, 13, Word)]);
         }
 
         #[test]
@@ -2473,7 +2547,7 @@ mod tests {
                 "@,48-57,_,192-255",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 12, 13, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 10, 12, 13, Word)]);
         }
 
         #[test]
@@ -2484,7 +2558,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, true);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 0, 10, Word), Token::new(10, 12, 13, Word)]
+                vec![
+                    Token::new(0, 10, 0, 10, Word),
+                    Token::new(10, 11, 12, 13, Word)
+                ]
             );
         }
 
@@ -2495,7 +2572,7 @@ mod tests {
             let tokenizer =
                 Tokenizer::new(KeywordCutter::new(["你好".into()]), "");
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 12, 13, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 10, 12, 13, Word)]);
         }
 
         #[test]
@@ -2509,9 +2586,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 0, 10, Word),
-                    Token::new(10, 10, 11, Word),
-                    Token::new(11, 12, 13, Word),
+                    Token::new(0, 10, 0, 10, Word),
+                    Token::new(10, 11, 10, 11, Word),
+                    Token::new(11, 12, 12, 13, Word),
                 ]
             );
         }
@@ -2525,7 +2602,7 @@ mod tests {
                 "a-z,48-57,.,-,>",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 12, 13, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 10, 12, 13, Word)]);
         }
     }
 
@@ -2545,9 +2622,9 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 0, 2, Word),
-                    Token::new(2, 5, 8, Word),
-                    Token::new(8, 11, 14, Word),
+                    Token::new(0, 2, 0, 2, Word),
+                    Token::new(2, 5, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word),
                 ]
             );
         }
@@ -2563,7 +2640,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 5, 8, Word), Token::new(8, 11, 14, Word)]
+                vec![
+                    Token::new(0, 2, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
             );
         }
 
@@ -2577,7 +2657,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, true);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 0, 2, Word), Token::new(2, 11, 14, Word)]
+                vec![
+                    Token::new(0, 2, 0, 2, Word),
+                    Token::new(2, 5, 11, 14, Word)
+                ]
             );
         }
 
@@ -2590,7 +2673,7 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 11, 14, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 2, 11, 14, Word)]);
         }
 
         #[test]
@@ -2603,7 +2686,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, true);
             assert_eq!(
                 tokens,
-                vec![Token::new(0, 0, 2, Word), Token::new(2, 11, 14, Word)]
+                vec![
+                    Token::new(0, 2, 0, 2, Word),
+                    Token::new(2, 5, 11, 14, Word)
+                ]
             );
         }
 
@@ -2616,7 +2702,7 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 11, 14, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 2, 11, 14, Word)]);
         }
     }
 
@@ -2633,7 +2719,7 @@ mod tests {
                 "@,48-57,_,192-255",
             );
             let tokens = parse_str_test(&tokenizer, SENT, true);
-            assert_eq!(tokens, vec![Token::new(0, 0, 10, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 10, 0, 10, Word)]);
         }
 
         #[test]
@@ -2645,7 +2731,7 @@ mod tests {
                 "@,48-57,_,192-255",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 0, 10, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 10, 0, 10, Word)]);
         }
 
         #[test]
@@ -2654,7 +2740,7 @@ mod tests {
             let tokenizer =
                 Tokenizer::new(KeywordCutter::new(["你好".into()]), "");
             let tokens = parse_str_test(&tokenizer, SENT, true);
-            assert_eq!(tokens, vec![Token::new(0, 0, 10, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 10, 0, 10, Word)]);
         }
 
         #[test]
@@ -2664,7 +2750,7 @@ mod tests {
             let tokenizer =
                 Tokenizer::new(KeywordCutter::new(["你好".into()]), "");
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 0, 10, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 10, 0, 10, Word)]);
         }
     }
 
@@ -2686,13 +2772,13 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 0, 4, Word),
-                    Token::new(4, 4, 7, Word),
-                    Token::new(7, 7, 11, Word),
-                    Token::new(11, 11, 14, Word),
-                    Token::new(14, 14, 18, Word),
-                    Token::new(18, 18, 21, Word),
-                    Token::new(21, 21, 25, Word),
+                    Token::new(0, 4, 0, 4, Word),
+                    Token::new(4, 7, 4, 7, Word),
+                    Token::new(7, 11, 7, 11, Word),
+                    Token::new(11, 14, 11, 14, Word),
+                    Token::new(14, 18, 14, 18, Word),
+                    Token::new(18, 21, 18, 21, Word),
+                    Token::new(21, 25, 21, 25, Word),
                 ]
             );
         }
@@ -2706,7 +2792,7 @@ mod tests {
                 "@,48-57,_,192-255",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 21, 25, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 4, 21, 25, Word)]);
         }
 
         #[test]
@@ -2718,13 +2804,13 @@ mod tests {
             assert_eq!(
                 tokens,
                 vec![
-                    Token::new(0, 0, 4, Word),
-                    Token::new(4, 4, 7, Word),
-                    Token::new(7, 7, 11, Word),
-                    Token::new(11, 11, 14, Word),
-                    Token::new(14, 14, 18, Word),
-                    Token::new(18, 18, 21, Word),
-                    Token::new(21, 21, 25, Word),
+                    Token::new(0, 4, 0, 4, Word),
+                    Token::new(4, 7, 4, 7, Word),
+                    Token::new(7, 11, 7, 11, Word),
+                    Token::new(11, 14, 11, 14, Word),
+                    Token::new(14, 18, 14, 18, Word),
+                    Token::new(18, 21, 18, 21, Word),
+                    Token::new(21, 25, 21, 25, Word),
                 ]
             );
         }
@@ -2736,7 +2822,7 @@ mod tests {
             let tokenizer =
                 Tokenizer::new(KeywordCutter::new(["你好".into()]), "");
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 21, 25, Word)]);
+            assert_eq!(tokens, vec![Token::new(0, 4, 21, 25, Word)]);
         }
     }
 

@@ -14,7 +14,9 @@
 
 //! Positions in a buffer.
 
-use crate::motion::api::MotionType;
+use std::fmt::{self, Debug};
+
+use crate::motion::api::{MotionType, VisualMode};
 
 /// Position types related to FFI bindings.
 pub mod ffi {
@@ -30,7 +32,7 @@ pub mod ffi {
 }
 
 /// A position in current text buffer.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct Position {
     /// The line number, indexed from 1.
     pub lnum: usize,
@@ -38,6 +40,16 @@ pub struct Position {
     pub col: usize,
     /// The virtual column offset, indexed from 0.
     pub off: usize,
+}
+
+impl Debug for Position {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Position")
+            .field(&self.lnum)
+            .field(&self.col)
+            .field(&self.off)
+            .finish()
+    }
 }
 
 impl Position {
@@ -67,6 +79,14 @@ impl From<Position> for ffi::Position {
     fn from(value: Position) -> Self {
         [0, value.lnum, value.col, value.off]
     }
+}
+
+/// A visual range.
+#[derive(Debug, PartialEq, Eq)]
+pub struct VisualRange {
+    pub langle: Position,
+    pub rangle: Position,
+    pub visualmode: VisualMode,
 }
 
 /// An operator-pending range.

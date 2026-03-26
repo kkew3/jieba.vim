@@ -116,6 +116,13 @@ impl TokenLike for GToken {
         }
     }
 
+    fn first_char1(&self) -> usize {
+        match self {
+            Self::T(t) => t.first_char1(),
+            Self::Eol(len) => *len,
+        }
+    }
+
     fn last_char(&self) -> usize {
         match self {
             Self::T(t) => t.last_char(),
@@ -197,6 +204,11 @@ impl<'p> ExtendedInlineTokensIter<'p> {
     pub fn skip_col(self, col: usize) -> Skip<Self> {
         let i = index_tokens_extended(self.line, col);
         self.skip(i)
+    }
+
+    /// Get the token under `col`.
+    pub fn into_col(self, col: usize) -> GToken {
+        self.take_col_rev(col).next().unwrap()
     }
 }
 

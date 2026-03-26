@@ -18,6 +18,8 @@ pub mod adjust_cursor;
 pub mod d_special;
 pub mod exclusive_special;
 pub mod position_cursor;
+pub mod text_object_change_yank_fix_rangle;
+pub mod text_object_fix_mtype;
 pub mod yank_linewise;
 
 use super::{core, primitives};
