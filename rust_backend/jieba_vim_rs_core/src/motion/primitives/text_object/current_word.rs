@@ -187,7 +187,7 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
         let mut include_white = false;
         let mut start_pos = None;
         if count > 0 {
-            let cursor_token = get_cursor_token(&mut cursor.rangle, buffer)?;
+            let cursor_token = get_cursor_token(&cursor.rangle, buffer)?;
             let start_col = cursor_token.first_char();
             cursor.rangle.col = start_col;
             start_pos = Some(cursor.rangle);
@@ -199,6 +199,12 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
                 )? == MotionState::Failure
                 {
                     return Ok(MotionState::Failure);
+                }
+                if count == 1
+                    && (cursor.operator == b"c" || cursor.operator == b"y")
+                    && get_cursor_token(&cursor.rangle, buffer)?.is_empty()
+                {
+                    Dec::new(true, true).map(buffer, 1, &mut cursor.rangle)?;
                 }
             } else {
                 let _ = ForwardWord::new(true).map(
@@ -258,6 +264,16 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
                         {
                             return Ok(MotionState::Failure);
                         }
+                        if (cursor.operator == b"c" || cursor.operator == b"y")
+                            && get_cursor_token(&cursor.rangle, buffer)?
+                                .is_empty()
+                        {
+                            Dec::new(true, true).map(
+                                buffer,
+                                1,
+                                &mut cursor.rangle,
+                            )?;
+                        }
                     }
                 }
             }
@@ -280,7 +296,11 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
             }
         }
 
-        cursor.mtype = if inclusive {
+        cursor.mtype = if inclusive
+            && (self.include
+                || cursor.langle != cursor.rangle
+                || !get_cursor_token(&cursor.rangle, buffer)?.is_empty())
+        {
             MotionType::CharInclusive
         } else {
             MotionType::CharExclusive

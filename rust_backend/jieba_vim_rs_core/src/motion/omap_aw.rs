@@ -17,7 +17,7 @@ use crate::token::JiebaPlaceholder;
 
 use super::api::{OmapOutput, WordMotion};
 use super::core::buffer::ParsedBuffer;
-use super::core::motion::Motion;
+use super::core::motion::{Motion, MotionState};
 use super::core::position::{OperatorRange, Position};
 use super::policy::d_special::DSpecial;
 use super::policy::exclusive_special::ExclusiveSpecial;
@@ -43,9 +43,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         let mut motion_rangle = CurrentWord::new(true);
         let s = motion_rangle.map(&mut buffer, count, &mut orng)?;
         orng.cursor = orng.langle;
-        orng.exclusive_special(&mut buffer)?;
-        orng.d_special(&mut buffer)?;
-        orng.yank_linewise();
+        if s == MotionState::Success {
+            orng.exclusive_special(&mut buffer)?;
+            orng.d_special(&mut buffer)?;
+            orng.yank_linewise();
+        } else {
+            orng.cursor = orng.rangle;
+        }
         orng.position_cursor(&mut buffer)?;
         let OperatorRange {
             cursor,

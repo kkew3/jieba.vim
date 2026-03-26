@@ -271,6 +271,20 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     " This no-op line effectively sets an undoable checkpoint such that |u|
     " undos all operations up to this line.
     call setline(".", getline("."))
+
+    " Check if we are selecting an empty region.
+    if l:result_dict["langle"] ==# l:result_dict["rangle"]
+        \ && l:result_dict["selection"] ==# "exclusive"
+        \ && l:result_dict["visualmode"] !=# "V"
+        \ && !l:result_dict["prevent_change"]
+        if stridx(&cpoptions, "E") >= 0
+            let l:result_dict["prevent_change"] = 1
+        endif
+        let l:empty_region = 1
+    else
+        let l:empty_region = 0
+    endif
+
     if l:result_dict["prevent_change"]
         " Land the cursor to potentially a new position.
         call cursor(l:result_dict["cursor"][1:2])
@@ -322,10 +336,26 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         " after d-special when 'startofline' is unset.
         let l:need_repos = getline(getpos("'>")[1]) !=# ""
 
-        " .. and execute.
+        " .. and execute, provided that we are not selecting an empty region.
         let &selection = l:result_dict["selection"]
-        if a:operator ==# "c" && a:repeat
-            execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
+        if a:operator ==# "c"
+            if a:repeat && l:empty_region
+                execute "normal! i" . @.
+            elseif a:repeat
+                execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
+            elseif !l:empty_region
+                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
+            endif
+        elseif a:operator ==# "d"
+            if !l:empty_region
+                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
+            endif
+        elseif a:operator ==# "y"
+            if !l:empty_region
+                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
+            else
+                silent call setreg(a:register, "")
+            endif
         else
             execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
         endif
