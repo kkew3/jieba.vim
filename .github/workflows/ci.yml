@@ -200,6 +200,8 @@ jobs:
           set nocompatible
           if has("nvim")
             set shada="NONE"
+          else
+            set viminfo=""
           endif
           set sessionoptions=globals
           set rtp+=${{ github.workspace }}
@@ -392,6 +394,8 @@ jobs:
           set nocompatible
           if has("nvim")
             set shada="NONE"
+          else
+            set viminfo=""
           endif
           set rtp+=${{ github.workspace }}
           filetype plugin indent on
