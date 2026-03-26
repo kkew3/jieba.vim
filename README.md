@@ -56,7 +56,7 @@ vim +"py3 print(sys.version)"
 
 ## 功能
 
-1. 增强八个 Vim word motion，即 `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`，在 `nmap`, `xmap` 和 `omap` 下的功能，使其能用于中文分词（同时也保留其按空格分词的功能）。其行为与默认行为相似，例如 `w` 不会跳过中文标点而 `W` 会跳过中文标点等。
+1. 增强十二个 Vim word motion/text object，即 `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`、`iw`、`iW`、`aw`、`aW`，在 `nmap`, `xmap` 和 `omap` 下的功能，使其能用于中文分词（同时也保留其按空格分词的功能）。其行为与默认行为相似，例如 `w` 不会跳过中文标点而 `W` 会跳过中文标点等。注意 word text object（`iw`、`iW`、`aw`、`aW`）没有 `nmap`。
 2. 在无中文 ASCII 文档中与 Vim 原生 word motion 行为*完全兼容*。结合懒惰加载（见下文 `g:jieba_vim_lazy` 开关）可实现（在某些文档类型中）常开。
 3. 如果安装了 [`tpope/vim-repeat`][vim-repeat]，可使用 [`.`][dot-repeat] 重复上一次 word operation。例如 `dw.` 相当于 `dwdw`。
 4. 预览 word motion 的跳转位置。由于中文分词有时存在歧义，即使没有歧义也会有人类与 jieba 的对齐问题，因此有时中文 word motion 的跳转位置并不显然。这时用户可能想提前预览将要进行的跳转将会跳转到哪些位置。
@@ -67,10 +67,10 @@ vim +"py3 print(sys.version)"
 
 - `JiebaPreviewCancel`：用于取消按词跳转位置预览
 
-提供以下 `<Plug>()` 映射，其中 `X` 表示上文所述的八个 Vim word motion 按键，即 `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`：
+提供以下 `<Plug>()` 映射，其中 `X` 表示上文所述的十二个 Vim word motion 按键，即 `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`、`iw`、`iW`、`aw`、`aW`：
 
 - `<Plug>(Jieba_preview_cancel)`：即 `JiebaPreviewCancel` 命令
-- `<Plug>(Jieba_preview_X)`：预览增强了的 `X` 的跳转位置
+- `<Plug>(Jieba_preview_X)`：预览增强了的 `X` 的跳转位置（目前无法预览 word text objects `iw`、`iW`、`aw`、`aW`）
 - `<Plug>(Jieba_X)`: 增强了的 `X`，同时在 normal、operator-pending、visual 三种模式下可用，以及可与 count 协同使用。例如假设 `w` 被映射到 `<Plug>(Jieba_w)`，那么 `3w` 将是向后跳三个词，`d3w` 是删除后三个词
 
 用户可自行在 `.vimrc` 中将按键映射到这些 `<Plug>()` 映射。例如：
@@ -82,7 +82,7 @@ map w <Plug>(Jieba_w)
 " 等等
 ```
 
-提供快捷开关 `g:jieba_vim_keymap`，可通过在 `.vimrc` 中将其设为 1 来开启对八个 word motion 的 `nmap`, `xmap` 和 `omap`。
+提供快捷开关 `g:jieba_vim_keymap`，可通过在 `.vimrc` 中将其设为 1 来开启对十二个 word motion/text object 的 `nmap`, `xmap` 和 `omap`（text object 没有 `nmap`）。
 
 ## 开关和选项
 
@@ -168,7 +168,7 @@ For Neovim users, it can be installed using lazy.nvim:
 
 ## Functions
 
-1. Augment eight Vim word motions (i.e. `b`, `B`, `ge`, `gE`, `w`, `W`, `e`, `E`) such that they can be used in Chinese text and English text at the same time. The augmented behavior remains similar. For example, augmented `w` won't jump over Chinese punctuation whereas `W` will.
+1. Augment twelve Vim word motions/text objects (i.e. `b`, `B`, `ge`, `gE`, `w`, `W`, `e`, `E`, `iw`, `iW`, `aw`, `aW`) under `nmap`, `xmap` and `omap` such that they can be used in Chinese text and English text at the same time. The augmented behavior remains similar. For example, augmented `w` won't jump over Chinese punctuation whereas `W` will. Note that word text objects (`iw`, `iW`, `aw`, `aW`) don't have `nmap`.
 2. The behavior of the augmented word motions is compatible with Vim's original word motions when handling ASCII text without Chinese. Together with lazy loading (see the option `g:jieba_vim_lazy`), it's possible to leave this plugin on (for certain file types).
 3. If [`tpope/vim-repeat`][vim-repeat] has been installed, [`.`][dot-repeat] can be used to repeat last word operation. For example, `dw.` will be equivalent to `dwdw`.
 4. Preview the destination of the word motions beforehand. Since there's sometimes ambiguity in Chinese word segmentation, and since even when there's no ambiguity, jieba library may not align well with human users, it's not always evident where a word motion will jump to. In such circumstance, user may want to preview jumps beforehand.
@@ -181,10 +181,10 @@ Provided commands:
 
 - `JiebaPreviewCancel`: used to clear up the preview markup
 
-Provided `<Plug>()` mappings, wherein `X` denotes the eight Vim word motion keys, i.e. `b`, `B`, `ge`, `gE`, `w`, `W`, `e`, `E`:
+Provided `<Plug>()` mappings, wherein `X` denotes the eight Vim word motion keys, i.e. `b`, `B`, `ge`, `gE`, `w`, `W`, `e`, `E`, `iw`, `iW`, `aw`, `aW`:
 
 - `<Plug>(Jieba_preview_cancel)`: same as the command `JiebaPreviewCancel`
-- `<Plug>(Jieba_preview_X)`: preview the destination of the augmented `X`
+- `<Plug>(Jieba_preview_X)`: preview the destination of the augmented `X` (currently we don't provide preview mappings for word text objects `iw`, `iW`, `aw`, `aW`)
 - `<Plug>(Jieba_X)`: the augmented `X`. This mapping is usable in normal, operator-pending and visual modes, and can be used together with count. For example, assuming that `w` has been mapped to `<Plug>(Jieba_w)`, then `3w` will jump three words forward, `d3w` will delete three words forward
 
 User may map keys to these `<Plug>()` mappings on their own.
@@ -197,7 +197,7 @@ map w <Plug>(Jieba_w)
 " etc.
 ```
 
-A convenient option `g:jieba_vim_keymap` is provided. When set to 1, the keymap of the eight word motions under `nmap`, `xmap` and `omap` will be enabled.
+A convenient option `g:jieba_vim_keymap` is provided. When set to 1, the keymap of the eight word motions/text objects under `nmap`, `xmap` and `omap` will be enabled (no `nmap` for text objects).
 
 ## Switches and options
 

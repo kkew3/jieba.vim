@@ -2,8 +2,4 @@
 - [x] Vim `.` 命令重复上一个 operation
 - [x] Vim `'iskeyword'` option
 - [x] 通过 rust-lua (例如 mlua) 接口提供对 neovim 更好的兼容性。
-- [ ] 测试并实现 word text object。要求在 ASCII 文档中与 Vim 原生 word text object 完全兼容，否则视为 bug。
-    - [ ] xmap i w/W
-    - [ ] omap i w/W
-    - [ ] xmap a w/W
-    - [ ] omap a w/W
+- [x] 测试并实现 word text object。要求在 ASCII 文档中与 Vim 原生 word text object 完全兼容，否则视为 bug。
