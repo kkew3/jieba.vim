@@ -106,7 +106,7 @@ macro_rules! assert_move {
     };
 }
 
-mod misc;
+pub mod misc;
 pub mod predicate;
 pub mod text_object;
 

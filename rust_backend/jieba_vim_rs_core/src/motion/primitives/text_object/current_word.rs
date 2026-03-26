@@ -27,12 +27,17 @@ use super::*;
 pub struct CurrentWord {
     /// True to include word and whitespace.
     include: bool,
+    /// Relevant only for operator-pending mode.
+    pub need_fix_change_yank: bool,
 }
 
 impl CurrentWord {
     /// Pass true to `include` to include word and whitespace.
     pub fn new(include: bool) -> Self {
-        Self { include }
+        Self {
+            include,
+            need_fix_change_yank: false,
+        }
     }
 }
 
@@ -186,6 +191,7 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
     ) -> Result<MotionState, B::Error> {
         let mut include_white = false;
         let mut start_pos = None;
+        self.need_fix_change_yank = false;
         if count > 0 {
             let cursor_token = get_cursor_token(&cursor.rangle, buffer)?;
             let start_col = cursor_token.first_char();
@@ -200,12 +206,7 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
                 {
                     return Ok(MotionState::Failure);
                 }
-                if count == 1
-                    && (cursor.operator == b"c" || cursor.operator == b"y")
-                    && get_cursor_token(&cursor.rangle, buffer)?.is_empty()
-                {
-                    Dec::new(true, true).map(buffer, 1, &mut cursor.rangle)?;
-                }
+                self.need_fix_change_yank = count == 1;
             } else {
                 let _ = ForwardWord::new(true).map(
                     buffer,
@@ -264,16 +265,7 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
                         {
                             return Ok(MotionState::Failure);
                         }
-                        if (cursor.operator == b"c" || cursor.operator == b"y")
-                            && get_cursor_token(&cursor.rangle, buffer)?
-                                .is_empty()
-                        {
-                            Dec::new(true, true).map(
-                                buffer,
-                                1,
-                                &mut cursor.rangle,
-                            )?;
-                        }
+                        self.need_fix_change_yank = count == 1;
                     }
                 }
             }
@@ -296,11 +288,7 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
             }
         }
 
-        cursor.mtype = if inclusive
-            && (self.include
-                || cursor.langle != cursor.rangle
-                || !get_cursor_token(&cursor.rangle, buffer)?.is_empty())
-        {
+        cursor.mtype = if inclusive {
             MotionType::CharInclusive
         } else {
             MotionType::CharExclusive
