@@ -290,6 +290,12 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             b"ge" | b"gE" => {
                 self.omap_ge(buffer, cursor, count, motion[1] == b'e', operator)
             }
+            b"iw" | b"iW" => {
+                self.omap_iw(buffer, cursor, count, motion[1] == b'w', operator)
+            }
+            b"aw" | b"aW" => {
+                self.omap_aw(buffer, cursor, count, motion[1] == b'w', operator)
+            }
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
         }?;
         Ok(output.into())
