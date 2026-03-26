@@ -19,7 +19,7 @@ use super::api::{VisualMode, WordMotion, XmapOutput};
 use super::core::buffer::ParsedBuffer;
 use super::core::motion::Motion;
 use super::core::position::{Position, VisualRange};
-use super::primitives::text_object::CurrentWordVisual;
+use super::primitives::text_object::CurrentWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     pub fn xmap_iw<B: BufferLike + ?Sized>(
@@ -32,7 +32,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         word: bool,
     ) -> Result<XmapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
-        let mut motion = CurrentWordVisual::new(false);
+        let mut motion = CurrentWord::new(false);
         let mut vrng = VisualRange {
             langle: visual_begin,
             rangle: visual_end,

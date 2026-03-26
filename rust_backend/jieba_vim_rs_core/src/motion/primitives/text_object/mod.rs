@@ -57,6 +57,6 @@ mod fwd_word;
 
 pub use bck_word::BackwardWord;
 pub use bckend_word::BackwardEndWord;
-pub use current_word::CurrentWordVisual;
+pub use current_word::CurrentWord;
 pub use end_word::EndWord;
 pub use fwd_word::ForwardWord;

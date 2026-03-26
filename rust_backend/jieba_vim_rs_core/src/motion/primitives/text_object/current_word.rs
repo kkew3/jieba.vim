@@ -23,20 +23,20 @@
 
 use super::*;
 
-/// Find word under cursor in visual mode.
-pub struct CurrentWordVisual {
+/// Find word under cursor.
+pub struct CurrentWord {
     /// True to include word and whitespace.
     include: bool,
 }
 
-impl CurrentWordVisual {
+impl CurrentWord {
     /// Pass true to `include` to include word and whitespace.
     pub fn new(include: bool) -> Self {
         Self { include }
     }
 }
 
-impl Motion<VisualRange> for CurrentWordVisual {
+impl Motion<VisualRange> for CurrentWord {
     fn map<B: ParsedBufferLike + ?Sized>(
         &mut self,
         buffer: &mut B,
