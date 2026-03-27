@@ -3,3 +3,4 @@
 - [x] Vim `'iskeyword'` option
 - [x] 通过 rust-lua (例如 mlua) 接口提供对 neovim 更好的兼容性。
 - [x] 测试并实现 word text object。要求在 ASCII 文档中与 Vim 原生 word text object 完全兼容，否则视为 bug。
+- [ ] 与其它插件保持兼容并具有良好的互操作性
