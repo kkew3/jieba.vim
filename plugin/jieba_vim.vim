@@ -61,21 +61,24 @@ else
     let s:cdylib_suffix = ".so"
 endif
 
-if has("nvim")
-    if filereadable(s:base_dir . "/lua/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
-        lua jieba_vim = require("jieba_vim")
-        let s:loaded_jieba_vim_cdylib = 1
+function! s:CheckCdylib()
+    if has("nvim")
+        if filereadable(s:base_dir . "/lua/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
+            lua jieba_vim = require("jieba_vim")
+            let s:loaded_jieba_vim_cdylib = 1
+        else
+            let s:loaded_jieba_vim_cdylib = 0
+        endif
     else
-        let s:loaded_jieba_vim_cdylib = 0
+        if filereadable(s:base_dir . "/pythonx/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
+            py3 import jieba_vim.navigation
+            let s:loaded_jieba_vim_cdylib = 1
+        else
+            let s:loaded_jieba_vim_cdylib = 0
+        endif
     endif
-else
-    if filereadable(s:base_dir . "/pythonx/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
-        py3 import jieba_vim.navigation
-        let s:loaded_jieba_vim_cdylib = 1
-    else
-        let s:loaded_jieba_vim_cdylib = 0
-    endif
-endif
+endfunction
+call s:CheckCdylib()
 
 function! s:InitWordMotion() abort
     if !s:loaded_jieba_vim_cdylib
@@ -495,4 +498,7 @@ function! jieba_vim#install()
     if v:shell_error
         throw "Failed to run build script: " . l:script
     endif
+    call s:CheckCdylib()
+    let s:loaded_jieba_vim_word_motion = 0
+    call s:InitWordMotion()
 endfunction
