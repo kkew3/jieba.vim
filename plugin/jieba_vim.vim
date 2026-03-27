@@ -415,277 +415,40 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     endif
 endfunction
 
-function! s:JiebaNmap_w()
-    call JiebaNmap("w", v:count1, "")
+function! s:JiebaNmap_ky(ky, count)
+    call JiebaNmap(a:ky, a:count, "")
 endfunction
 
-function! s:JiebaNmap_W()
-    call JiebaNmap("W", v:count1, "")
+" Keep in one line to help debug. There is no readability anyway even if this
+" is properly wrapped to 80 width. Same below.
+for ky in s:motions
+    execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') ":<C-u>call <SID>JiebaNmap_ky(' . "'" . ky . "', v:count1" . ')<CR>"'
+endfor
+
+function! s:JiebaXmap_ky(ky, count)
+    call JiebaXmap(a:ky, a:count, "")
 endfunction
 
-function! s:JiebaNmap_e()
-    call JiebaNmap("e", v:count1, "")
+for ky in s:motions + s:objects
+    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') ":<C-u>call <SID>JiebaXmap_ky(' . "'" . ky . "', v:count1" . ')<CR>"'
+endfor
+
+function! s:JiebaOmap_internal_ky(ky, count, operator, register)
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_" . a:ky . ")", a:register)
+    call JiebaOmap(a:ky, 1, a:count, a:operator, a:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_" . a:ky . ")", a:count)
 endfunction
 
-function! s:JiebaNmap_E()
-    call JiebaNmap("E", v:count1, "")
+function! s:JiebaOmap_ky(ky, count, operator, register)
+    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_" . a:ky . ")", a:register)
+    call JiebaOmap(a:ky, 0, a:count, a:operator, a:register, "")
+    silent! call repeat#set("\<Plug>(Jieba_internal_o_" . a:ky . ")", a:count)
 endfunction
 
-function! s:JiebaNmap_b()
-    call JiebaNmap("b", v:count1, "")
-endfunction
-
-function! s:JiebaNmap_B()
-    call JiebaNmap("B", v:count1, "")
-endfunction
-
-function! s:JiebaNmap_ge()
-    call JiebaNmap("ge", v:count1, "")
-endfunction
-
-function! s:JiebaNmap_gE()
-    call JiebaNmap("gE", v:count1, "")
-endfunction
-
-nnoremap <silent> <Plug>(Jieba_w) :<C-u>call <SID>JiebaNmap_w()<CR>
-nnoremap <silent> <Plug>(Jieba_W) :<C-u>call <SID>JiebaNmap_W()<CR>
-nnoremap <silent> <Plug>(Jieba_e) :<C-u>call <SID>JiebaNmap_e()<CR>
-nnoremap <silent> <Plug>(Jieba_E) :<C-u>call <SID>JiebaNmap_E()<CR>
-nnoremap <silent> <Plug>(Jieba_b) :<C-u>call <SID>JiebaNmap_b()<CR>
-nnoremap <silent> <Plug>(Jieba_B) :<C-u>call <SID>JiebaNmap_B()<CR>
-nnoremap <silent> <Plug>(Jieba_ge) :<C-u>call <SID>JiebaNmap_ge()<CR>
-nnoremap <silent> <Plug>(Jieba_gE) :<C-u>call <SID>JiebaNmap_gE()<CR>
-
-function! s:JiebaXmap_w()
-    call JiebaXmap("w", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_W()
-    call JiebaXmap("W", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_e()
-    call JiebaXmap("e", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_E()
-    call JiebaXmap("E", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_b()
-    call JiebaXmap("b", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_B()
-    call JiebaXmap("B", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_ge()
-    call JiebaXmap("ge", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_gE()
-    call JiebaXmap("gE", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_iw()
-    call JiebaXmap("iw", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_iW()
-    call JiebaXmap("iW", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_aw()
-    call JiebaXmap("aw", v:count1, "")
-endfunction
-
-function! s:JiebaXmap_aW()
-    call JiebaXmap("aW", v:count1, "")
-endfunction
-
-xnoremap <silent> <Plug>(Jieba_w) <Esc>:<C-u>call <SID>JiebaXmap_w()<CR>
-xnoremap <silent> <Plug>(Jieba_W) <Esc>:<C-u>call <SID>JiebaXmap_W()<CR>
-xnoremap <silent> <Plug>(Jieba_e) <Esc>:<C-u>call <SID>JiebaXmap_e()<CR>
-xnoremap <silent> <Plug>(Jieba_E) <Esc>:<C-u>call <SID>JiebaXmap_E()<CR>
-xnoremap <silent> <Plug>(Jieba_b) <Esc>:<C-u>call <SID>JiebaXmap_b()<CR>
-xnoremap <silent> <Plug>(Jieba_B) <Esc>:<C-u>call <SID>JiebaXmap_B()<CR>
-xnoremap <silent> <Plug>(Jieba_ge) <Esc>:<C-u>call <SID>JiebaXmap_ge()<CR>
-xnoremap <silent> <Plug>(Jieba_gE) <Esc>:<C-u>call <SID>JiebaXmap_gE()<CR>
-xnoremap <silent> <Plug>(Jieba_iw) <Esc>:<C-u>call <SID>JiebaXmap_iw()<CR>
-xnoremap <silent> <Plug>(Jieba_iW) <Esc>:<C-u>call <SID>JiebaXmap_iW()<CR>
-xnoremap <silent> <Plug>(Jieba_aw) <Esc>:<C-u>call <SID>JiebaXmap_aw()<CR>
-xnoremap <silent> <Plug>(Jieba_aW) <Esc>:<C-u>call <SID>JiebaXmap_aW()<CR>
-
-function s:JiebaOmap_internal_w()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_w)", v:register)
-    call JiebaOmap("w", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_w)", v:count1)
-endfunction
-
-function! s:JiebaOmap_w()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_w)", v:register)
-    call JiebaOmap("w", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_w)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_W()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_W)", v:register)
-    call JiebaOmap("W", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_W)", v:count1)
-endfunction
-
-function! s:JiebaOmap_W()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_W)", v:register)
-    call JiebaOmap("W", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_W)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_e()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_e)", v:register)
-    call JiebaOmap("e", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_e)", v:count1)
-endfunction
-
-function! s:JiebaOmap_e()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_e)", v:register)
-    call JiebaOmap("e", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_e)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_E()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_E)", v:register)
-    call JiebaOmap("E", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_E)", v:count1)
-endfunction
-
-function! s:JiebaOmap_E()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_E)", v:register)
-    call JiebaOmap("E", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_E)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_b()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_b)", v:register)
-    call JiebaOmap("b", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_b)", v:count1)
-endfunction
-
-function! s:JiebaOmap_b()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_b)", v:register)
-    call JiebaOmap("b", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_b)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_B()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_B)", v:register)
-    call JiebaOmap("B", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_B)", v:count1)
-endfunction
-
-function! s:JiebaOmap_B()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_B)", v:register)
-    call JiebaOmap("B", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_B)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_ge()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_ge)", v:register)
-    call JiebaOmap("ge", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_ge)", v:count1)
-endfunction
-
-function! s:JiebaOmap_ge()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_ge)", v:register)
-    call JiebaOmap("ge", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_ge)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_gE()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_gE)", v:register)
-    call JiebaOmap("gE", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_gE)", v:count1)
-endfunction
-
-function! s:JiebaOmap_gE()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_gE)", v:register)
-    call JiebaOmap("gE", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_gE)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_iw()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_iw)", v:register)
-    call JiebaOmap("iw", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_iw)", v:count1)
-endfunction
-
-function! s:JiebaOmap_iw()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_iw)", v:register)
-    call JiebaOmap("iw", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_iw)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_iW()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_iW)", v:register)
-    call JiebaOmap("iW", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_iW)", v:count1)
-endfunction
-
-function! s:JiebaOmap_iW()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_iW)", v:register)
-    call JiebaOmap("iW", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_iW)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_aw()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_aw)", v:register)
-    call JiebaOmap("aw", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_aw)", v:count1)
-endfunction
-
-function! s:JiebaOmap_aw()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_aw)", v:register)
-    call JiebaOmap("aw", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_aw)", v:count1)
-endfunction
-
-function! s:JiebaOmap_internal_aW()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_aW)", v:register)
-    call JiebaOmap("aW", 1, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_aW)", v:count1)
-endfunction
-
-function! s:JiebaOmap_aW()
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_aW)", v:register)
-    call JiebaOmap("aW", 0, v:count1, v:operator, v:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_aW)", v:count1)
-endfunction
-
-nnoremap <silent> <Plug>(Jieba_internal_o_w) :<C-u>call <SID>JiebaOmap_internal_w()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_W) :<C-u>call <SID>JiebaOmap_internal_W()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_e) :<C-u>call <SID>JiebaOmap_internal_e()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_E) :<C-u>call <SID>JiebaOmap_internal_E()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_b) :<C-u>call <SID>JiebaOmap_internal_b()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_B) :<C-u>call <SID>JiebaOmap_internal_B()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_ge) :<C-u>call <SID>JiebaOmap_internal_ge()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_gE) :<C-u>call <SID>JiebaOmap_internal_gE()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_iw) :<C-u>call <SID>JiebaOmap_internal_iw()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_iW) :<C-u>call <SID>JiebaOmap_internal_iW()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_aw) :<C-u>call <SID>JiebaOmap_internal_aw()<CR>
-nnoremap <silent> <Plug>(Jieba_internal_o_aW) :<C-u>call <SID>JiebaOmap_internal_aW()<CR>
-
-onoremap <silent> <Plug>(Jieba_w) <Esc>:<C-u>call <SID>JiebaOmap_w()<CR>
-onoremap <silent> <Plug>(Jieba_W) <Esc>:<C-u>call <SID>JiebaOmap_W()<CR>
-onoremap <silent> <Plug>(Jieba_e) <Esc>:<C-u>call <SID>JiebaOmap_e()<CR>
-onoremap <silent> <Plug>(Jieba_E) <Esc>:<C-u>call <SID>JiebaOmap_E()<CR>
-onoremap <silent> <Plug>(Jieba_b) <Esc>:<C-u>call <SID>JiebaOmap_b()<CR>
-onoremap <silent> <Plug>(Jieba_B) <Esc>:<C-u>call <SID>JiebaOmap_B()<CR>
-onoremap <silent> <Plug>(Jieba_ge) <Esc>:<C-u>call <SID>JiebaOmap_ge()<CR>
-onoremap <silent> <Plug>(Jieba_gE) <Esc>:<C-u>call <SID>JiebaOmap_gE()<CR>
-onoremap <silent> <Plug>(Jieba_iw) <Esc>:<C-u>call <SID>JiebaOmap_iw()<CR>
-onoremap <silent> <Plug>(Jieba_iW) <Esc>:<C-u>call <SID>JiebaOmap_iW()<CR>
-onoremap <silent> <Plug>(Jieba_aw) <Esc>:<C-u>call <SID>JiebaOmap_aw()<CR>
-onoremap <silent> <Plug>(Jieba_aW) <Esc>:<C-u>call <SID>JiebaOmap_aW()<CR>
+for ky in s:motions + s:objects
+    execute "nnoremap <expr> <silent> <Plug>(Jieba_internal_o_" . ky . ") " . '":<C-u>call <SID>JiebaOmap_internal_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
+    execute "onoremap <expr> <silent> <Plug>(Jieba_" . ky . ") " . '"<Esc>:<C-u>call <SID>JiebaOmap_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
+endfor
 
 let s:modes = ["n", "x", "o"]
 if g:jieba_vim_keymap
