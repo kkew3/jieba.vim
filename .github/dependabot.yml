@@ -3,20 +3,16 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/rust_backend"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+    cooldown:
+      default-days: 15
+      semver-major-days: 30
+      semver-minor-days: 15
+      semver-patch-days: 7
     groups:
       rust-deps:
         patterns:
           - '*'
-  - package-ecosystem: "pip"
-    directory: "/test"
-    schedule:
-      interval: "weekly"
-    groups:
-      integration-test-deps:
-        patterns:
-          - '*'
-    # pyproject.toml is supported for pip since dependabot v2
   - package-ecosystem: "pip"
     directory: "/dev_scripts"
     schedule:
