@@ -26,21 +26,21 @@
 // Buffer: []␊ <<<
 #B0 []␊
 
-H 4b2362359a161cd443c4cbe50d2fbc0fc580238ecbb3ea5ccb10bd15
+H 075a08e6e2b936803bea88feba1b17a46926b40627a92e96fc961ffd
 Q < > visualmode=V prevent_change=1
 C 1
 Bo <>␊
 B1 []␊
 S1 visualmode()=V
 
-H 36f0d7e5708c7d5f2e062928d7a83c38ec29c7809202649607c55eaf
+H 365e69014517a0a9945c6a0bda0afd1565af34a61036c634e20da4d0
 Q < > visualmode=V prevent_change=1
 C 2
 Bo <>␊
 B1 []␊
 S1 visualmode()=V
 
-H 30bd6f7ac93592a2e6d00730ab93143b2f8380ddc51a84e8b2460279
+H 81640b38e076e187362b6cdf98e940786c826b08bd1f2989dd8a957e
 Q < > visualmode=V prevent_change=1
 C 10293949403
 Bo <>␊
@@ -51,7 +51,7 @@ S1 visualmode()=V
 // Buffer: []···␊ <<<
 #B0 []···␊
 
-H f56fd287943c7d26ffad685fc61be05ff6f8a17865b083cac86a954d
+H 75c231a96616d4ae7e29d1b90b1545209cea8a589988f7d3adef07af
 C 1
 Bo <···>␊
 B1 [···]␊
@@ -61,13 +61,13 @@ S1 visualmode()=V
 // Buffer: []abcd␊ <<<
 #B0 []abcd␊
 
-H d2f100b1dcfb94fbd5ffbf150f42ef9f60d73152a345eb498e0866e7
+H 2dc73b2e3b8d11a771b7d8cbf4578ff1fe2a90db608ccb51a7a706a2
 C 1
 Bo <abcd>␊
 B1 [abcd]␊
 S1 visualmode()=V
 
-H 754dbe974554e33b9ea8b068b188d8b5b4e4cbd028bbcf01bdaa4734
+H aca20452e2c81cc492c5fe3afca45fb0d232d1f2bcf2ddc85648db02
 C 10293949403
 Bo <abcd>␊
 B1 [abcd]␊
@@ -77,7 +77,7 @@ S1 visualmode()=V
 // Buffer: abc[]d␊ <<<
 #B0 abc[]d␊
 
-H 99084f0b4aa1192dca310bb7df79093da9cdfa1f3d951ba3bc6d81ab
+H a84ac5eadc467cc905f650218bc83eea40d0f36c4a458937285efa25
 Q < > visualmode=V prevent_change=1
 C 1
 Bo abc<d>␊
@@ -88,7 +88,7 @@ S1 visualmode()=V
 // Buffer: ]abc[d␊ <<<
 #B0 ]abc[d␊
 
-H a56a1dee5e4348aa96ab0feabf138e5a97760ee14b9e8d2e628216ab
+H 0b5c7f681f88a1bc0bc1ed91e8c16bdf0924c53e26c8399c549efe4f
 C 1
 Bo abc<d>␊
 B1 abc[d]␊
@@ -98,7 +98,7 @@ S1 visualmode()=V
 // Buffer: abc[d]␊ <<<
 #B0 abc[d]␊
 
-H c314bb1f9a8f1f28e8d7f306ef7cc376705043db7a70539ef9d498e7
+H d8d29159a3cacc63aecc8ff274656cc6fead1194347eb945f5e12c19
 Q < > visualmode=V prevent_change=1
 C 1
 Bo abc<d>␊
@@ -109,7 +109,7 @@ S1 visualmode()=V
 // Buffer: []abcd·····␊ <<<
 #B0 []abcd·····␊
 
-H 93a9d0822ed57ea8d136838a20674e4aac9a6b52eafd68f3b3f6b032
+H 93803363254114a0af447cc655c24c95eb28cbae9e758bca0db19b20
 C 1
 Bo <abcd·····>␊
 B1 [abcd·····]␊
@@ -119,7 +119,7 @@ S1 visualmode()=V
 // Buffer: abcd··[]···␊ <<<
 #B0 abcd··[]···␊
 
-H b895c740b4462b0d5da4d0bc9873849c63ac77ecd3acb6a4957dafcd
+H a87f57105a027223804adf6f88da70157a450a84893885192cb033ad
 C 1
 Bo abcd··<···>␊
 B1 abcd··[···]␊
@@ -129,7 +129,7 @@ S1 visualmode()=V
 // Buffer: []·····abcd␊ <<<
 #B0 []·····abcd␊
 
-H f189a8926387c7d64a172f20e9ec9ecfe2ab426aa10ff7ec4d5857de
+H 9e5550ca759631bdb7ba6c45da31f1d49900b984bb929da20e7653b6
 C 1
 Bo <·····>abcd␊
 B1 [·····]abcd␊
@@ -139,13 +139,13 @@ S1 visualmode()=V
 // Buffer: ··[]···abcd␊ <<<
 #B0 ··[]···abcd␊
 
-H c064e8fecf2361d59d065ee0503147c7415e6e7574bb977dbe61c8a6
+H 9d533397ac801f9c42f421b9543c9f660fdf37818b21e9e9389c193a
 C 1
 Bo ··<···>abcd␊
 B1 ··[···]abcd␊
 S1 visualmode()=V
 
-H b2b6a958c8c0172c608ccd1467031e9972ac8fd3d83a7543e0768cf8
+H f7cf0f222833ffe99af5ea95a5badaf15086d0b2d817ea2742462de0
 C 2
 Bo ··<···abcd>␊
 B1 ··[···abcd]␊
@@ -155,13 +155,13 @@ S1 visualmode()=V
 // Buffer: ··[]···abcde····␊ <<<
 #B0 ··[]···abcde····␊
 
-H eb084fccad416476c8f4389c008260d10543746f9dd563da68214a47
+H d6653b1fba7015952fa5fc8dd715ff994fe34b1dbac3e25bc4f26456
 C 1
 Bo ··<···>abcde····␊
 B1 ··[···]abcde····␊
 S1 visualmode()=V
 
-H b35e6e89d7eaecb2ca7bf00253eea35fe9cbe8ef84169267e58a55a2
+H aafb2d6117c10a241e3410dc448f65ba029066702c62d3501ba40ff8
 C 2
 Bo ··<···abcde····>␊
 B1 ··[···abcde····]␊
@@ -171,13 +171,13 @@ S1 visualmode()=V
 // Buffer: a[]bcd␊␊ <<<
 #B0 a[]bcd␊␊
 
-H e9528a711d9acf114286c2f4b547e66c90ec9712c3278a41e4d257fb
+H 93e5a52080e48245c4da16f686019c5098eaa50a89e7a6672f30e5e7
 C 1
 Bo a<bcd␊>␊
 B1 a[bcd␊]␊
 S1 visualmode()=V
 
-H 5a728991fd5ed4d14d9f3ba8dfb4b3b8755f2679267133986f0025de
+H 1b4cf9fee66343e2474313fd79be2778f7f3379da0d3e39b907f2c47
 Q < > visualmode=V prevent_change=1
 C 2
 Bo a<bcd␊>␊
@@ -188,7 +188,7 @@ S1 visualmode()=V
 // Buffer: a[]bcd····␊␊ <<<
 #B0 a[]bcd····␊␊
 
-H fd85fa40a12694effc0df53e101e7e4586c7ae4991a968ad8e0a109d
+H 37ceb7314c6e005622e0bfd5f2db4bfc27d581bcfa521fb190b29ef6
 C 1
 Bo a<bcd····␊>␊
 B1 a[bcd····␊]␊
@@ -198,7 +198,7 @@ S1 visualmode()=V
 // Buffer: abcd[]····␊␊ <<<
 #B0 abcd[]····␊␊
 
-H 8e3c789b8a8d1b676952a571c355d0eb93619bba36b9b356fca2a4b7
+H e117231fa2bdb491717b4b7e63e4f19670643796ce3fb7bc77e25e45
 C 1
 Bo abcd<····␊>␊
 B1 abcd[····␊]␊
@@ -208,7 +208,7 @@ S1 visualmode()=V
 // Buffer: []abcd␊·····␊ <<<
 #B0 []abcd␊·····␊
 
-H 8e616dc4bae980bc29bc28ffe3093c94680a72fae96b989cdcd2b073
+H e958e5d2fcbb106a7c011a74f3b4945b7c59f4127b805e236b725728
 C 1
 Bo <abcd␊·····>␊
 B1 [abcd␊·····]␊
@@ -218,7 +218,7 @@ S1 visualmode()=V
 // Buffer: []abcd··␊····␊ <<<
 #B0 []abcd··␊····␊
 
-H b8b56eba13c5fabc7bb393a47a8bce2f25ab91854dae06d759137012
+H 24fed07df87f34a0d4124576170f1f4f632451f119b580ff578556c4
 C 1
 Bo <abcd··␊····>␊
 B1 [abcd··␊····]␊
@@ -228,7 +228,7 @@ S1 visualmode()=V
 // Buffer: a[]bcd␊·␊␊ <<<
 #B0 a[]bcd␊·␊␊
 
-H 2ee9e7e8a7909c8d2208bf9ff28ad95dc75a7b146d9a8a8bcecd033d
+H fe44ca79caeacd2f601ec88449a131e3d5e8dff9abb6dccfc0464ccc
 C 1
 Bo a<bcd␊·␊>␊
 B1 a[bcd␊·␊]␊
@@ -238,7 +238,7 @@ S1 visualmode()=V
 // Buffer: a[]bcd␊·␊·␊␊··␊ <<<
 #B0 a[]bcd␊·␊·␊␊··␊
 
-H ae88a8ff592175f5d290ba3f543a8505cea2d3a85ed0818c1feb3422
+H 1a6828a718ade921d4d8653c1bb052190534be31c19390e43c2b9c6f
 C 1
 Bo a<bcd␊·␊·␊>␊··␊
 B1 a[bcd␊·␊·␊]␊··␊
@@ -248,13 +248,13 @@ S1 visualmode()=V
 // Buffer: a[]bcd␊·␊·␊efg␊ <<<
 #B0 a[]bcd␊·␊·␊efg␊
 
-H 48fd705e71c318c7cf392f7e56d916fd1cc7eebd8eb0e5ae4797f7e1
+H 8c1fb913a5c038c358105ded228117a412495f637d173e26be7b2e71
 C 1
 Bo a<bcd␊·␊·␊>efg␊
 B1 a[bcd␊·␊·␊]efg␊
 S1 visualmode()=V
 
-H bdf7114355cce5e8e22a49c10750a4fe91839d7e7bacc3f19ef83e26
+H 9a50172d5db45c7bf6d1d659dd3bdf737e96bda3c14d80f8c9380c27
 C 2
 Bo a<bcd␊·␊·␊efg>␊
 B1 a[bcd␊·␊·␊efg]␊
@@ -264,7 +264,7 @@ S1 visualmode()=V
 // Buffer: a[]bcd␊·␊·␊···efg␊ <<<
 #B0 a[]bcd␊·␊·␊···efg␊
 
-H df3529431ca94081dbceee8381fc0b893f52ab18def7de3a5e57701e
+H d7d58f796b215669647b079c0aff8720515fe0d418ec534936c650e7
 C 1
 Bo a<bcd␊·␊·␊···>efg␊
 B1 a[bcd␊·␊·␊···]efg␊
@@ -274,7 +274,7 @@ S1 visualmode()=V
 // Buffer: abc[d]␊efg␊ <<<
 #B0 abc[d]␊efg␊
 
-H 2259fbe9182f35fe5ad5e7d59cb398ce5ec04f34ec41841bd4794cf3
+H ec974ca9d29f96e2cab2d3816991e853c3a95361cef9a0d9aeb6e229
 C 1
 Bo abc<d␊>efg␊
 B1 abc[d␊]efg␊
@@ -284,7 +284,7 @@ S1 visualmode()=V
 // Buffer: abc[d]␊···efg␊ <<<
 #B0 abc[d]␊···efg␊
 
-H e9366e1fbebff1a02ccc84a9297348d15b06a6d174f62954d7ed5f68
+H fa101b9487820a3fb867129bbf64a61d834326ab34389172bd40a8ad
 C 1
 Bo abc<d␊···>efg␊
 B1 abc[d␊···]efg␊
@@ -294,19 +294,19 @@ S1 visualmode()=V
 // Buffer: abc[d]␊␊···efg␊ <<<
 #B0 abc[d]␊␊···efg␊
 
-H f5ba5092cf0ee15ea72a3cda4e84e30a332be345581645298878b260
+H 1fcc4b0e750de2f21bb9fadc3361f3aae5b86c2b71546103c8e90054
 C 1
 Bo abc<d␊>␊···efg␊
 B1 abc[d␊]␊···efg␊
 S1 visualmode()=V
 
-H bbbc9bb824f196f52cd4bf0b583a05dacfec76ec4b9e4f5190bad7f5
+H ad4c2d3450468ebcc95a20b4531d5eb2cd3599b82ff8459cb840d00c
 C 2
 Bo abc<d␊␊···>efg␊
 B1 abc[d␊␊···]efg␊
 S1 visualmode()=V
 
-H ce44d9f8f123f7d9339edd836df23a2720e567d142ea4810a278d0a5
+H 2bba4c511067d7a90f436480defd37473ff34ad33b4292a5191e3356
 C 10293949403
 Bo abc<d␊␊···efg>␊
 B1 abc[d␊␊···efg]␊
@@ -316,7 +316,7 @@ S1 visualmode()=V
 // Buffer: abc[d]␊·␊·␊·efg␊ <<<
 #B0 abc[d]␊·␊·␊·efg␊
 
-H 6eed287c325f2ad434eaab370063884f83610260256aac0d479176ee
+H cb2a769a02539cc12ab4009e394bfa780e93a63571856e6be31be0b8
 C 1
 Bo abc<d␊·␊·␊·>efg␊
 B1 abc[d␊·␊·␊·]efg␊
@@ -326,7 +326,7 @@ S1 visualmode()=V
 // Buffer: abc[d␊·␊·␊·efg]␊ <<<
 #B0 abc[d␊·␊·␊·efg]␊
 
-H 750edd71d543211b4135450d760ce7d21c0d170c1f7d7020707100da
+H 2e88ceaf99fae328283e297e8e5e08e840531c10caeba186a79dfb11
 C 1
 Q < > visualmode=V prevent_change=1
 Bo abc<d␊·␊·␊·efg>␊
