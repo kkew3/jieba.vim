@@ -28,9 +28,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::dots_progress::DotsProgress;
 use crate::parsing::{
-    self, Ascii, BufferExpr, HeadConditional, ModelOutputItem, StateExpr,
-    StateExprFunction, TestCaseBlock, TestHashId, UnitEditorMode,
-    UnitTestCaseBlock,
+    self, Ascii, AutocmdEventCount, BufferExpr, HeadConditional,
+    ModelOutputItem, StateExpr, StateExprFunction, TestCaseBlock, TestHashId,
+    UnitEditorMode, UnitTestCaseBlock,
 };
 use crate::vimscript_transpiler::{
     Concat, EchoJson, EmbeddedLua, Error, Flush, Func, Identifier,
@@ -393,6 +393,24 @@ impl ToVimscript for BufferAfter {
     }
 }
 
+impl ToVimscript for AutocmdEventCount {
+    fn to_vimscript(&self, stream: &mut Vec<u8>) -> TranspilingResult {
+        // Check StdRun and CustomRun code for the change in the name of
+        // `jieba_test_case_events_count` vim variable.
+        let events_count = VimVariable {
+            scope: Ascii::new(b's').unwrap(),
+            identifier: Identifier::new("jieba_test_case_events_count_frozen")
+                .unwrap(),
+        };
+        let t = NotEqTest {
+            a: Func::new("get", (events_count, &self.event_name, 0u64)),
+            b: self.count.unwrap_or_default(),
+            msg: format!("unexpected {} event count", self.event_name),
+        };
+        t.to_vimscript(stream)
+    }
+}
+
 fn write_shared_setup(
     block: &UnitTestCaseBlock,
     stream: &mut Vec<u8>,
@@ -534,6 +552,30 @@ fn write_shared_setup(
     }
     stream.extend(b"\n");
 
+    // Write autocmd for tests.
+    stream.extend(
+        br#"" autocmd events monitoring
+function! IncrementAutocmdEventCount(event_name)
+    let l:count = get(g:jieba_test_case_events_count, a:event_name, 0)
+    let g:jieba_test_case_events_count[a:event_name] = l:count + 1
+endfunction
+
+augroup jieba_test_case_autocmd_events_monitoring
+    autocmd!
+"#,
+    );
+    for AutocmdEventCount { event_name, .. } in
+        block.autocmd_events_count.iter()
+    {
+        writeln!(
+            stream,
+            "    au {0} * call IncrementAutocmdEventCount(\"{0}\")",
+            event_name
+        )
+        .unwrap();
+    }
+    stream.extend(b"augroup END\n\n");
+
     Ok(())
 }
 
@@ -559,6 +601,13 @@ fn write_shared_teardown(
         ba.to_vimscript(stream)?;
         stream.extend(b"\n\n");
     }
+
+    // Write autocmd events check.
+    stream.extend(b"\" autocmd events check\n");
+    for ec in block.autocmd_events_count.iter() {
+        ec.to_vimscript(stream)?;
+    }
+    stream.extend(b"\n\n");
 
     // Write run json response. See [`VimRunResponse`] below.
     let editor_mode = match block.editor_mode {
@@ -634,6 +683,7 @@ struct StdRun(UnitTestCaseBlock);
 impl ToVimscript for StdRun {
     fn to_vimscript(&self, stream: &mut Vec<u8>) -> TranspilingResult {
         write_shared_setup(&self.0, stream)?;
+        stream.extend(b"let g:jieba_test_case_events_count = {}\n");
 
         stream.extend(b"\" cursor movement\n");
         let count = if self.0.count == 0 {
@@ -681,6 +731,7 @@ impl ToVimscript for StdRun {
             }
         }
         stream.extend(b"\n");
+        stream.extend(b"let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n");
 
         write_shared_teardown(&self.0, false, stream)?;
         Ok(())
@@ -692,6 +743,7 @@ struct CustomRun(UnitTestCaseBlock);
 impl ToVimscript for CustomRun {
     fn to_vimscript(&self, stream: &mut Vec<u8>) -> TranspilingResult {
         write_shared_setup(&self.0, stream)?;
+        stream.extend(b"let g:jieba_test_case_events_count = {}\n");
 
         stream.extend(b"\" cursor movement\n");
         stream.extend(b"call ");
@@ -742,6 +794,7 @@ impl ToVimscript for CustomRun {
             }
         }
         stream.extend(b"\n");
+        stream.extend(b"let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n");
 
         write_shared_teardown(&self.0, true, stream)?;
         Ok(())

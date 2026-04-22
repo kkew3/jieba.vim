@@ -315,6 +315,23 @@ will result in the following result dictionary injected to test verification cod
 \ }
 ```
 
+## Autocmd event count
+
+```
+E ({event_name}={triggered_count})*
+```
+
+Indicate the expected number of times an autocmd event is triggered.
+More than one events can be specified.
+
+For example:
+
+```
+E ModeChanged=2 InsertLeave=1
+```
+
+indicate that `ModeChanged` event should be triggered twice, and `InsertLeave` event be triggered once.
+
 # Example test case file
 
 `this.jieba_test_case`:
