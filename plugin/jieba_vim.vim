@@ -287,16 +287,11 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     else
         " Save original states.
         let l:orig_mark_a = getpos("'a")
-        let l:orig_virtualedit = &virtualedit
         let l:orig_startofline = &startofline
 
         " We need this option for cursor to be correctly positioned after
         " d-special.
         set startofline
-
-        " We need this option to emulate inclusive motion under operator-colon
-        " operation.
-        set virtualedit=onemore
 
         " ===
         " Select ...
@@ -314,30 +309,21 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         let l:need_repos = !empty(getline(l:end_pos[1]))
 
         " .. and execute
+        let l:cont = a:operator ==# "c" && a:repeat ? @. : ""
         if l:result_dict["visualmode"] ==# "V"
             " Linewise operation.
             let l:op_lines = l:end_pos[1] - l:start_pos[1] + 1
-
-            if a:operator ==# "c" && a:repeat
-                execute 'normal! "' . a:register . l:op_lines . a:operator . a:operator . @.
-            else
-                execute 'normal! "' . a:register . l:op_lines . a:operator . a:operator
-            endif
+            execute 'normal! "' . a:register . l:op_lines . a:operator . a:operator . l:cont
         else
             " Characterwise operation.
             let l:v = l:result_dict["selection"] ==# "inclusive" ? "v" : ""
             call setpos("'a", l:end_pos)
-            if a:operator ==# "c" && a:repeat
-                execute 'normal! "' . a:register . a:operator . l:v . "`a" . @.
-            else
-                execute 'normal! "' . a:register . a:operator . l:v . "`a"
-            endif
+            execute 'normal! "' . a:register . a:operator . l:v . "`a" . l:cont
         endif
         " ===
 
         " Restore original states.
         let &startofline = l:orig_startofline
-        let &virtualedit = l:orig_virtualedit
         call setpos("'a", l:orig_mark_a)
 
         " Land the cursor to potentially a new position.
