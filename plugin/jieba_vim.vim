@@ -281,6 +281,15 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     " undos all operations up to this line.
     call setline(".", getline("."))
 
+    " Check if we are selecting an empty region.
+    if l:result_dict["langle"] ==# l:result_dict["rangle"]
+        \ && l:result_dict["selection"] ==# "exclusive"
+        \ && l:result_dict["visualmode"] !=# "V"
+        \ && !l:result_dict["prevent_change"]
+        \ && stridx(&cpoptions, "E") >= 0
+        let l:result_dict["prevent_change"] = 1
+    endif
+
     if l:result_dict["prevent_change"]
         " Land the cursor to potentially a new position.
         call cursor(l:result_dict["cursor"][1:2])
