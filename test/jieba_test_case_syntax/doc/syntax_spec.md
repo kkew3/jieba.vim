@@ -439,10 +439,10 @@ call JiebaNmap("w", 0, "JiebaOracleModel")
 {%- endif %}
 
 {%- if std_run %}
-{# State after quering #}
+{# State after querying #}
 " [..]
 
-{# Buffer after quering #}
+{# Buffer after querying #}
 let g:JiebaTestGroundtruth_cursor = json_encode(getcurpos())
 " [..]
 

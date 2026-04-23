@@ -137,7 +137,7 @@ pub struct Inc {
 }
 
 impl Inc {
-    /// Construct a new [`Dec`]. Pass true to `eol` to move into Eol(col) for
+    /// Construct a new [`Inc`]. Pass true to `eol` to move into Eol(col) for
     /// col > 1. Pass true to `line` to move across line boundaries.
     pub fn new(eol: bool, line: bool) -> Self {
         Self { eol, line }
@@ -202,7 +202,7 @@ impl Motion<Position> for Inc {
     }
 }
 
-/// A wrapper of `Dec(eol=false, line=true)`.
+/// A wrapper of `Inc(eol=false, line=true)`.
 pub struct Incl(Inc);
 
 impl Default for Incl {
@@ -354,7 +354,7 @@ mod tests {
         assert_move!(inc, b: (2, 1) => (2, 2));
         assert_move!(inc, b: (2, 4) => (2, 5));
         assert_move!(inc, b: (2, 5) => (2, 6));
-        assert_move!(inc, b: (2, 8) => Failure);
+        assert_move!(inc, b: (2, 8) => Failure (2, 9));
         assert_move!(inc, b: (2, 9) => Failure);
 
         let mut inc = Inc::new(true, false);

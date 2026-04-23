@@ -256,8 +256,8 @@ impl ToVimscript for StdRun {
         stream.extend(b"\n");
         stream.extend(b"execute \"normal! \\<Esc>\"\n\n");
 
-        // State after quering.
-        stream.extend(b"\" State after quering\n");
+        // State after querying.
+        stream.extend(b"\" State after querying\n");
         for s in self.0.state_after.iter() {
             match s {
                 StateExpr::Option { name, .. } => {
@@ -315,7 +315,7 @@ impl ToVimscript for StdRun {
         stream.push(b'\n');
 
         // Buffer after querying and echoing.
-        stream.extend(b"\" Buffer after quering\n");
+        stream.extend(b"\" Buffer after querying\n");
         match self.0.editor_mode {
             UnitEditorMode::Normal | UnitEditorMode::OperatorPending => {
                 stream.extend(b"let g:JiebaTestGroundtruthCursor = json_encode(getcurpos())\n");
