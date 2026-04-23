@@ -150,8 +150,7 @@ Bo |␊␊␊
 B1 |␊␊␊
 S1 "a=\<Newline>\<Newline>
 
-
-H 4f24eaf94f49bc36afca88dbd169cb65e0bec5a1b44b43ca1e76b7ed
+H 6ff4601871c845baef3750d595def3892c56dca5c6397f3ca7b8fc27
 X u
 M o
 K aw
@@ -160,7 +159,7 @@ R a
 B0 |␊␊␊␊␊
 Q | < > prevent_change=0 visualmode=v selection=inclusive
 C 0
-Bp <>␊␊␊␊␊
+Bp <␊>␊␊␊␊
 Bo |␊␊␊␊
 B1 |␊␊␊␊
 S1 "a=\<Newline>
@@ -193,7 +192,7 @@ Bo |␊␊␊␊␊
 B1 |␊␊␊␊␊
 S1 "a=
 
-H 1876df8748376111734eb5c18a0733aae40c57023a1d3fb6140c4987
+H a880c5d1efb9f925527b0645d58c0c3aee30dee954c3ce6618128e7b
 X u
 M o
 K aw
@@ -202,12 +201,12 @@ R a
 B0 |␊␊
 C 0
 Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp <>␊␊
+Bp <␊>␊
 Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>
 
-H 016c23a57edf690391219a83c4e7d9cd19a3638fedb317cb96f927de
+H 096146e7fe40b9dbb3b68e22395648919c03e015880fb11f8235a09f
 X u
 M o
 K aw
@@ -216,12 +215,12 @@ R a
 B0 |␊··␊␊·␊
 C 0
 Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp <␊··>␊␊·␊
+Bp <␊··␊>␊·␊
 Bo |␊·␊
 B1 |␊·␊
 S1 "a=\<Newline>\<Space>\<Space>\<Newline>
 
-H 077d0da014f2525a2227e618724e157d618b00a809ac31033544b62f
+H ac54f18f9ddd34df10dcfdf54a1914812e7fbc22fae5abfccbc3fb78
 X u
 M o
 K aw
@@ -230,12 +229,12 @@ R a
 B0 |abc···␊␊␊def··␊
 C 2
 Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp <abc···␊>␊␊def··␊
+Bp <abc···␊␊>␊def··␊
 Bo |␊def··␊
 B1 |␊def··␊
 S1 "a=abc\<Space>\<Space>\<Space>\<Newline>\<Newline>
 
-H e384f3fed935d347e128c57bcf8bd5d801268f33bbe46c3d9b12db24
+H 61501d643402b8caac53f7776e76a71544fa04fceff9fe2963eed876
 X u
 M o
 K aw
@@ -244,7 +243,7 @@ R a
 B0 |␊␊␊␊␊
 C 2
 Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp <␊␊>␊␊␊
+Bp <␊␊␊>␊␊
 Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>\<Newline>\<Newline>

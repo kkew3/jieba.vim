@@ -264,6 +264,10 @@ function! JiebaXmap(motion, count, model_funcname)
     normal! gv
 endfunction
 
+function! s:IsForwardMotion(motion)
+    return a:motion ==? "w" || a:motion ==? "e" || a:motion ==? "iw" || a:motion ==? "aw"
+endfunction
+
 function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     execute "normal! \<Esc>"
     let l:orig_curpos = getcurpos()
@@ -282,49 +286,16 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         \ && l:result_dict["selection"] ==# "exclusive"
         \ && l:result_dict["visualmode"] !=# "V"
         \ && !l:result_dict["prevent_change"]
-        if stridx(&cpoptions, "E") >= 0
-            let l:result_dict["prevent_change"] = 1
-        endif
-        let l:empty_region = 1
-    else
-        let l:empty_region = 0
+        \ && stridx(&cpoptions, "E") >= 0
+        let l:result_dict["prevent_change"] = 1
     endif
 
     if l:result_dict["prevent_change"]
         " Land the cursor to potentially a new position.
         call cursor(l:result_dict["cursor"][1:2])
     else
-        " We need to use '< and '> marks in this function. Thus the clutters
-        " here.
-
         " Save original states.
-        let l:orig_visualmode = visualmode()
-        let l:orig_langle = getpos("'<")
-        let l:orig_rangle = getpos("'>")
-        if l:orig_langle[1] == 0 || l:orig_rangle[1] == 0
-            " If either lnum is 0, then |gv| will fail and the visual selection
-            " has been lost forever.
-            let l:orig_visual_begin = [0, 0, 0, 0]
-            let l:orig_visual_end = [0, 0, 0, 0]
-        else
-            " Otherwise, we need to remember last visual selection in marks 'a
-            " and 'b. First, save the original mark positions.
-            let l:orig_mark_a = getpos("'a")
-            let l:orig_mark_b = getpos("'b")
-            " Remember the visual selection range.
-            normal! gvomaomb
-            let l:orig_visual_begin = getpos("'a")
-            let l:orig_visual_end = getpos("'b")
-            " Restore mark positions of 'a and 'b.
-            call setpos("'a", l:orig_mark_a)
-            call setpos("'b", l:orig_mark_b)
-            " |gv| will restore last visualmode even if it has been erased
-            " deliberately. Thus we need to ensure it stays erased.
-            if l:orig_visualmode ==# ""
-                call visualmode(1)
-            endif
-        endif
-        let l:orig_selection = &selection
+        let l:orig_mark_a = getpos("'a")
         let l:orig_startofline = &startofline
 
         " We need this option for cursor to be correctly positioned after
@@ -332,55 +303,37 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         set startofline
 
         " ===
-        " Select ..
-        execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
-        call setpos("'<", l:result_dict["langle"])
-        call setpos("'>", l:result_dict["rangle"])
+        " Select ...
+        if s:IsForwardMotion(a:motion)
+            let l:start_pos = l:result_dict["langle"]
+            let l:end_pos = l:result_dict["rangle"]
+        else
+            let l:start_pos = l:result_dict["rangle"]
+            let l:end_pos = l:result_dict["langle"]
+        endif
+        call cursor(l:start_pos[1:2])
 
         " We need this line of code to decide whether to re-position cursor
         " after d-special when 'startofline' is unset.
-        let l:need_repos = getline(getpos("'>")[1]) !=# ""
+        let l:need_repos = !empty(getline(l:end_pos[1]))
 
-        " .. and execute, provided that we are not selecting an empty region.
-        let &selection = l:result_dict["selection"]
-        if a:operator ==# "c"
-            if a:repeat && l:empty_region
-                execute "normal! i" . @.
-            elseif a:repeat
-                execute 'normal! gv"' . a:register . a:operator . @. . "\<Esc>"
-            elseif !l:empty_region
-                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
-            endif
-        elseif a:operator ==# "d"
-            if !l:empty_region
-                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
-            endif
-        elseif a:operator ==# "y"
-            if !l:empty_region
-                execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
-            else
-                silent call setreg(a:register, "")
-            endif
+        " .. and execute
+        let l:cont = a:operator ==# "c" && a:repeat ? @. : ""
+        if l:result_dict["visualmode"] ==# "V"
+            " Linewise operation.
+            let l:op_lines = l:end_pos[1] - l:start_pos[1] + 1
+            execute 'normal! "' . a:register . l:op_lines . a:operator . a:operator . l:cont
         else
-            execute 'normal! gv"' . a:register . a:operator . "\<Esc>"
+            " Characterwise operation.
+            let l:v = l:result_dict["selection"] ==# "inclusive" ? "v" : ""
+            call setpos("'a", l:end_pos)
+            execute 'normal! "' . a:register . a:operator . l:v . "`a" . l:cont
         endif
         " ===
 
         " Restore original states.
-        let &selection = l:orig_selection
         let &startofline = l:orig_startofline
-        if l:orig_visualmode ==# ""
-            call visualmode(1)
-        else
-            execute "normal! " . l:orig_visualmode . "\<Esc>"
-        endif
-        if l:orig_langle[1] == 0 || l:orig_rangle[1] == 0
-            call setpos("'<", l:orig_langle)
-            call setpos("'>", l:orig_rangle)
-        else
-            call setpos("'<", l:orig_visual_begin)
-            call setpos("'>", l:orig_visual_end)
-        endif
+        call setpos("'a", l:orig_mark_a)
 
         " Land the cursor to potentially a new position.
         " If we have used d-special, the cursor should already be placed by
