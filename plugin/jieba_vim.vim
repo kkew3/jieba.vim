@@ -307,9 +307,6 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
             let l:start_pos = l:result_dict["rangle"]
             let l:end_pos = l:result_dict["langle"]
         endif
-        if l:result_dict["selection"] ==# "inclusive"
-            let l:end_pos = JiebaModelInc(l:end_pos)
-        endif
         call cursor(l:start_pos[1:2])
 
         " We need this line of code to decide whether to re-position cursor
@@ -328,11 +325,12 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
             endif
         else
             " Characterwise operation.
+            let l:v = l:result_dict["selection"] ==# "inclusive" ? "v" : ""
             call setpos("'a", l:end_pos)
             if a:operator ==# "c" && a:repeat
-                execute 'normal! "' . a:register . a:operator . "`a" . @.
+                execute 'normal! "' . a:register . a:operator . l:v . "`a" . @.
             else
-                execute 'normal! "' . a:register . a:operator . "`a"
+                execute 'normal! "' . a:register . a:operator . l:v . "`a"
             endif
         endif
         " ===
