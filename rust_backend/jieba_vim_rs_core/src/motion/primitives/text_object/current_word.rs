@@ -172,7 +172,9 @@ impl Motion<VisualRange> for CurrentWord {
             }
         }
 
-        cursor.visualmode = VisualMode::Char;
+        if cursor.visualmode == VisualMode::Line {
+            cursor.visualmode = VisualMode::Char;
+        }
         Ok(MotionState::Success)
     }
 }
