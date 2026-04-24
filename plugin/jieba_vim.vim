@@ -297,10 +297,18 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         " Save original states.
         let l:orig_mark_a = getpos("'a")
         let l:orig_startofline = &startofline
+        let l:orig_eventignore = &eventignore
 
         " We need this option for cursor to be correctly positioned after
         " d-special.
         set startofline
+
+        " Ignore certain events to match the builtin behavior.
+        let l:ignored_events = "InsertEnter,InsertLeave"
+        if exists('##ModeChanged')
+            let l:ignored_events = l:ignored_events . ",ModeChanged"
+        endif
+        let &eventignore = l:ignored_events
 
         " ===
         " Select ...
@@ -332,6 +340,7 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         " ===
 
         " Restore original states.
+        let &eventignore = l:orig_eventignore
         let &startofline = l:orig_startofline
         call setpos("'a", l:orig_mark_a)
 
