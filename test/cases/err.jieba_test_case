@@ -164,28 +164,28 @@ Bo |␊␊␊␊
 B1 |␊␊␊␊
 S1 "a=\<Newline>
 
-H 5e1d076123a344cb053a244a0976dcd60da2d91df6bc3616e1e0d8bf
+H f1f6772b184f65a043acd4ab7b5c3259e82da7bdc673c01794152766
 X u
 M o
 K iw
 O d
 R a
 B0 |␊␊␊␊␊
-Q | < > prevent_change=0 visualmode=v selection=exclusive
+Q | < > prevent_change=0 visualmode=v selection=inclusive
 C 0
 Bp <>␊␊␊␊␊
 Bo |␊␊␊␊␊
 B1 |␊␊␊␊␊
 S1 "a=
 
-H 77a96d72c02a46e3d6604e9b2e2c001445e77caaab9c6037c9d668f2
+H 54c46ceb5a830c54b56d1b19dd47e7ff5d224d8fe866b19f82997b44
 X u
 M o
 K iw
 O c
 R a
 B0 |␊␊␊␊␊
-Q | < > prevent_change=0 visualmode=v selection=exclusive
+Q | < > prevent_change=0 visualmode=v selection=inclusive
 C 0
 Bp <>␊␊␊␊␊
 Bo |␊␊␊␊␊
