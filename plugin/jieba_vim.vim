@@ -253,15 +253,21 @@ function! JiebaXmap(motion, count, model_funcname)
     let l:visial_end = getpos("'b")
     call setpos("'a", l:orig_mark_a)
     call setpos("'b", l:orig_mark_b)
+    let l:vmode = visualmode()
     if a:model_funcname !=# ""
-        let l:result_dict = function(a:model_funcname)(visualmode(), a:motion, l:visual_begin, l:visial_end, a:count)
+        let l:result_dict = function(a:model_funcname)(l:vmode, a:motion, l:visual_begin, l:visial_end, a:count)
     else
-        let l:result_dict = JiebaModelXmap(visualmode(), a:motion, l:visual_begin, l:visial_end, a:count)
+        let l:result_dict = JiebaModelXmap(l:vmode, a:motion, l:visual_begin, l:visial_end, a:count)
     endif
     noautocmd execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
     call setpos("'<", l:result_dict["langle"])
     call setpos("'>", l:result_dict["rangle"])
-    noautocmd normal! gv
+    if l:result_dict["visualmode"] ==# "v" && l:vmode !=# "v"
+        " Release a ModeChanged event when the visualmode did change.
+        normal! gv
+    else
+        noautocmd normal! gv
+    endif
 endfunction
 
 function! s:IsForwardMotion(motion)
