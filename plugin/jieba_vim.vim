@@ -245,7 +245,7 @@ function! JiebaNmap(motion, count, model_funcname)
 endfunction
 
 function! JiebaXmap(motion, count, model_funcname)
-    execute "normal! \<Esc>"
+    noautocmd execute "normal! \<Esc>"
     let l:orig_mark_a = getpos("'a")
     let l:orig_mark_b = getpos("'b")
     normal! gvomaomb
@@ -258,10 +258,10 @@ function! JiebaXmap(motion, count, model_funcname)
     else
         let l:result_dict = JiebaModelXmap(visualmode(), a:motion, l:visual_begin, l:visial_end, a:count)
     endif
-    execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
+    noautocmd execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
     call setpos("'<", l:result_dict["langle"])
     call setpos("'>", l:result_dict["rangle"])
-    normal! gv
+    noautocmd normal! gv
 endfunction
 
 function! s:IsForwardMotion(motion)
@@ -269,7 +269,7 @@ function! s:IsForwardMotion(motion)
 endfunction
 
 function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
-    execute "normal! \<Esc>"
+    noautocmd execute "normal! \<Esc>"
     let l:orig_curpos = getcurpos()
     if a:model_funcname !=# ""
         let l:result_dict = function(a:model_funcname)(a:motion, l:orig_curpos, a:count, a:operator)
