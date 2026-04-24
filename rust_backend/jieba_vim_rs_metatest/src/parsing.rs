@@ -515,7 +515,7 @@ pub enum StateExpr {
         /// The mark name.
         name: Ascii,
         /// The mark position.
-        position: Position,
+        position: Option<Position>,
     },
     Register {
         /// The register name.
@@ -542,14 +542,21 @@ impl StateExpr {
                 return None;
             }
             let mark_char = Ascii::from_char(mark.chars().next().unwrap())?;
-            let pos = parse_position(position_str)?;
-            if pos.len() == 4 {
+            if position_str.is_empty() {
                 Some(Self::Mark {
                     name: mark_char,
-                    position: [pos[0], pos[1], pos[2], pos[3]],
+                    position: None,
                 })
             } else {
-                None
+                let pos = parse_position(position_str)?;
+                if pos.len() == 4 {
+                    Some(Self::Mark {
+                        name: mark_char,
+                        position: Some([pos[0], pos[1], pos[2], pos[3]]),
+                    })
+                } else {
+                    None
+                }
             }
         } else if s.starts_with('"')
             && let Some((register, value)) = s[1..].split_once("=")
@@ -2248,13 +2255,12 @@ pub mod unparsing {
                         value.to_jieba_test_case(stream)?;
                     }
                 },
-                StateExpr::Mark { name, position: p } => {
-                    write!(
-                        stream,
-                        " '{}=[{},{},{},{}]",
-                        name, p[0], p[1], p[2], p[3]
-                    )?;
-                }
+                StateExpr::Mark { name, position: p } => match p {
+                    Some([a, b, c, d]) => {
+                        write!(stream, " '{}=[{},{},{},{}]", name, a, b, c, d)?
+                    }
+                    None => write!(stream, " '{}=", name)?,
+                },
                 StateExpr::Register { name, value } => {
                     write!(stream, " \"{}=", name)?;
                     value.to_jieba_test_case(stream)?;

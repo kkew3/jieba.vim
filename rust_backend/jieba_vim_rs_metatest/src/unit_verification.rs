@@ -272,6 +272,9 @@ impl ToVimscript for StateExprBefore {
                 }
             },
             StateExpr::Mark { name, position } => {
+                let position = position.as_ref().ok_or(TranspilingError(
+                    format!("mark `{}` position is empty", name),
+                ))?;
                 stream.extend(b"call ");
                 let f = Func::new("setpos", (MarkStr(*name), &position[..]));
                 f.to_vimscript(stream)?;
@@ -312,6 +315,9 @@ impl ToVimscript for StateExprAfter {
                 }
             },
             StateExpr::Mark { name, position } => {
+                let position = position.as_ref().ok_or(TranspilingError(
+                    format!("mark `{}` position is empty", name),
+                ))?;
                 let t = NotEqTest {
                     a: Func::new("getpos", (MarkStr(*name),)),
                     b: &position[..],
@@ -1316,7 +1322,7 @@ endfunction
 
         let s = StateExprBefore(StateExpr::Mark {
             name: Ascii::new(b'a').unwrap(),
-            position: [0, 1, 5, 0],
+            position: Some([0, 1, 5, 0]),
         });
         let mut sink = Vec::new();
         s.to_vimscript(&mut sink).unwrap();

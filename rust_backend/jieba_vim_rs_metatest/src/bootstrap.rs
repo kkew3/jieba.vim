@@ -307,6 +307,8 @@ impl ToVimscript for StdRun {
                     let v = match name.into() {
                         b'<' => "JiebaTestGroundtruthMark_langle".into(),
                         b'>' => "JiebaTestGroundtruthMark_rangle".into(),
+                        b'[' => "JiebaTestGroundtruthMark_lsquare".into(),
+                        b']' => "JiebaTestGroundtruthMark_rsquare".into(),
                         b'a'..=b'z' => {
                             format!("JiebaTestGroundtruthMark_{}", name)
                         }
@@ -560,6 +562,8 @@ impl ToVimscript for CustomRun {
                     let v = match name.into() {
                         b'<' => "JiebaTestGroundtruthMark_langle".into(),
                         b'>' => "JiebaTestGroundtruthMark_rangle".into(),
+                        b'[' => "JiebaTestGroundtruthMark_lsquare".into(),
+                        b']' => "JiebaTestGroundtruthMark_rsquare".into(),
                         b'a'..=b'z' => {
                             format!("JiebaTestGroundtruthMark_{}", name)
                         }
