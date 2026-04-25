@@ -22,7 +22,7 @@
 #X u
 #Q | < > prevent_change=0 visualmode=V selection=inclusive
 
-H 69f3b99b8d61ae49d4f1a26cdce8ddd476106350d6b112f2808986fa
+H 9fdf6b71221d31ead4da67e80f220b0c4f078e03aa242ec65e0896a2
 K w
 C 2
 S0 startofline=0
@@ -31,7 +31,7 @@ Bp <a␊>␊··def␊
 Bo |··def␊
 B1 ··|def␊
 
-H 54ce17297ef3fa6f081e08eb140543629957b99f98ac9ab032ca3384
+H abf501926ae95844aa7e3a04bcef8b528681147a3703a6f3f596ecc0
 K w
 C 2
 S0 startofline=0
@@ -40,7 +40,7 @@ Bp <a␊>b␊··def␊
 Bo |··def␊
 B1 |··def␊
 
-H 77942a2f7086578b4727e2ecf2f968ed3ff75e39f22c9326a6b42def
+H c0564292d25869dbfccac5d5a00285f12e3dfe8397e3f60dfa7a5d13
 K w
 C 2
 S0 startofline=0
@@ -49,7 +49,7 @@ Bp <␊>␊··def␊
 Bo |··def␊
 B1 ··|def␊
 
-H c1e5eeee9ad3db987c185a1fba3bd1634c7e910e42fc597729e43f45
+H 2e4e5b5ad2f90758f06b5c582d66d90e997afc746c689bcbf253b9fe
 K w
 C 2
 S0 startofline=0

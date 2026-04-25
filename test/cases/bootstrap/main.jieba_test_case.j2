@@ -25,6 +25,7 @@ M n
 K {{ key }}
 B0 {{ buffer }}
 C {{ count }}
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
       {%- for operator in ['d', 'c', 'y'] %}
 
 H ?
@@ -34,7 +35,8 @@ O {{ operator }}
 R a
 B0 {{ buffer }}
 C {{ count }}
-S1 "a=
+S1 "a= '[= ']= '<= '>=
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
       {%- endfor %}
 
 H ?
@@ -43,6 +45,8 @@ K {{ key }}
 O g~
 B0 {{ buffer }}
 C {{ count }}
+S1 '[= ']= '<= '>=
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
     {%- endfor %}
     {%- for buffer in visual_buffers %}
       {%- for visualmode in ['v', 'V', '\\<C-v>'] %}
@@ -52,6 +56,8 @@ M {{ visualmode }}
 K {{ key }}
 B0 {{ buffer }}
 C {{ count }}
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
+S1 visualmode()= '[= ']=
       {%- endfor %}
     {%- endfor %}
   {%- endfor %}
@@ -66,6 +72,7 @@ M n
 K {{ key }}
 B0 {{ buffer }}
 C {{ count }}
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
       {%- for operator in ['d', 'c', 'y'] %}
 
 H ?
@@ -75,7 +82,8 @@ O {{ operator }}
 R a
 B0 {{ buffer }}
 C {{ count }}
-S1 "a=
+S1 "a= '[= ']= '<= '>=
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
       {%- endfor %}
 
 H ?
@@ -84,6 +92,8 @@ K {{ key }}
 O g~
 B0 {{ buffer }}
 C {{ count }}
+S1 '[= ']= '<= '>=
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
     {%- endfor %}
     {%- for buffer in visual_buffers %}
       {%- for visualmode in ['v', 'V', '\\<C-v>'] %}
@@ -93,6 +103,8 @@ M {{ visualmode }}
 K {{ key }}
 B0 {{ buffer }}
 C {{ count }}
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
+S1 visualmode()= '[= ']=
       {%- endfor %}
     {%- endfor %}
   {%- endfor %}
@@ -110,7 +122,8 @@ O {{ operator }}
 R a
 B0 {{ buffer }}
 C {{ count }}
-S1 "a=
+S1 "a= '[= ']= '<= '>=
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
       {%- endfor %}
 
 H ?
@@ -119,6 +132,8 @@ K {{ key }}
 O g~
 B0 {{ buffer }}
 C {{ count }}
+S1 '[= ']= '<= '>=
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
     {%- endfor %}
     {%- for buffer in visual_buffers %}
       {%- for visualmode in ['v', 'V', '\\<C-v>'] %}
@@ -128,6 +143,8 @@ M {{ visualmode }}
 K {{ key }}
 B0 {{ buffer }}
 C {{ count }}
+E CursorMoved= CursorMovedI= CmdlineChanged= CmdlineEnter= CmdlineLeave= InsertEnter= InsertChange= InsertLeave= ModeChanged= OptionSet= TextChanged= TextChangedI= TextYankPost=
+S1 visualmode()= '[= ']=
       {%- endfor %}
     {%- endfor %}
   {%- endfor %}

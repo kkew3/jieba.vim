@@ -15,7 +15,7 @@
 // This file contains failed test cases in bootstrap verification.
 // Best viewed in Vim.
 
-H eec99b0526725db32aa8897d5268b4117f672754d7a7189e0791e5fa
+H 94340d5ed7025287b4722f0ca14a3e39dc668def38ad46b6675e69da
 X u
 M o
 K w
@@ -29,7 +29,7 @@ Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>
 
-H a642a7d6e9d8c233efa80168f2d2da9574b61f5b6b075a803d5477a7
+H d19714e00fca91369acd7c3d8adf3e435398524d843769fce561f33d
 X u
 M o
 K w
@@ -43,7 +43,7 @@ Bo |ghi␊
 B1 |ghi␊
 S1 "a=abc\<Newline>def\<Newline>
 
-H d2533ae76ca610d5003cc06d51ea01a1cfe6ea42d57a3e581ce0fa97
+H 718e69711c24ec98c82349c7366c84e7148c7cd3d599200e51800a0a
 X u
 M o
 K w
@@ -57,7 +57,7 @@ Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>
 
-H 50f46a7a00aa8c037ee97e95eb0cd59b6e11280edfbf4b5322e9851e
+H 917f1ad709ba919fdd29732c0768cde9a2beead86c7137b9776beeb6
 X u
 M o
 K w
@@ -71,7 +71,7 @@ Bo |␀
 B1 |␀
 S1 "a=\<Space>\<Space>\<Space>\<Space>\<Newline>\<Space>\<Space>\<Space>\<Newline>
 
-H 2cbab73fddc6509e5957834456dcf384be26f080e6e4843c53ef2f26
+H 234f4e7ac3d407d0be28fc0c91a2ffbe882eeb3b6a42f18d415e1dd6
 X u
 M o
 K w
@@ -85,7 +85,7 @@ Bo |␀
 B1 |␀
 S1 "a=abc\<Newline>\<Space>\<Space>\<Space>\<Newline>
 
-H 88b43078c9ddb06a93124338d69354f8a6e4c6317b3afa0ee1123429
+H 58d8fd40e30855ec47788656577e0fc94ccb5eab14d27c830c61269b
 X u
 M o
 K w
@@ -99,7 +99,7 @@ Bo |␀
 B1 |␀
 S1 "a=\<Newline>\<Space>\<Space>\<Newline>\<Newline>\<Space>\<Newline>
 
-H 5413349d6322d39f58edf1db61e6e8df89e09bb163dc05ec366cba5c
+H 829f1a3d03b1e0b891f236618b06346ed10604177c6c512aa9b70faa
 X u
 M n
 K e
@@ -109,7 +109,7 @@ Q | prevent_change=1
 Bo ·····|·␊
 B1 ·····|·␊
 
-H 4b8ce5207c294349042cfef02addecd36e594adbf8d45d307b85f311
+H 74d0f0e06fbeaf2d83a4808da092e8f30110b7219ce0a5fa27030758
 X u
 M o
 K b
@@ -121,7 +121,7 @@ Bp ><␊···␊
 Bo |···␊
 B1 ··|·␊
 
-H 5a682bb552faae7618fa52bec898ae0e2c017db031fbf0e120357ac1
+H 5c730225eddbcb56309ca5e45b4dd70f496421b865577ae4f9239adf
 X u
 M o
 K ge
@@ -136,7 +136,7 @@ Bo |␊
 B1 |␊
 S1 "a=abcde
 
-H bb625d6e377a8bc960d75efd937b04f12dd5ccbea5a3b934124497c8
+H 10ecdc8512efa134226e750254e4d5eba21f0c7e3dcb13bcc72cb2cd
 X u
 M o
 K aw
@@ -150,8 +150,7 @@ Bo |␊␊␊
 B1 |␊␊␊
 S1 "a=\<Newline>\<Newline>
 
-
-H e261352ae50183c9e9da45041b83ec4628db850f874d52acb0a97975
+H 6ff4601871c845baef3750d595def3892c56dca5c6397f3ca7b8fc27
 X u
 M o
 K aw
@@ -160,40 +159,40 @@ R a
 B0 |␊␊␊␊␊
 Q | < > prevent_change=0 visualmode=v selection=inclusive
 C 0
-Bp <>␊␊␊␊␊
+Bp <␊>␊␊␊␊
 Bo |␊␊␊␊
 B1 |␊␊␊␊
 S1 "a=\<Newline>
 
-H 343e67361cce237e343107114df468a4b91121b5af60fb6b345c6949
+H f1f6772b184f65a043acd4ab7b5c3259e82da7bdc673c01794152766
 X u
 M o
 K iw
 O d
 R a
 B0 |␊␊␊␊␊
-Q | < > prevent_change=0 visualmode=v selection=exclusive
+Q | < > prevent_change=0 visualmode=v selection=inclusive
 C 0
 Bp <>␊␊␊␊␊
 Bo |␊␊␊␊␊
 B1 |␊␊␊␊␊
 S1 "a=
 
-H aa35b41882ed705743c3259fb4c49b7aaf53485de3e39286df6c08b7
+H 54c46ceb5a830c54b56d1b19dd47e7ff5d224d8fe866b19f82997b44
 X u
 M o
 K iw
 O c
 R a
 B0 |␊␊␊␊␊
-Q | < > prevent_change=0 visualmode=v selection=exclusive
+Q | < > prevent_change=0 visualmode=v selection=inclusive
 C 0
 Bp <>␊␊␊␊␊
 Bo |␊␊␊␊␊
 B1 |␊␊␊␊␊
 S1 "a=
 
-H e54ae4db182d556d6facb1e7478847b72f98f5dbaa3f8b3ca925f378
+H a880c5d1efb9f925527b0645d58c0c3aee30dee954c3ce6618128e7b
 X u
 M o
 K aw
@@ -202,12 +201,12 @@ R a
 B0 |␊␊
 C 0
 Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp <>␊␊
+Bp <␊>␊
 Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>
 
-H 6abd9ab20ec95a74df34accbd6156b6d2562c89a8fc9bd4736262c84
+H 096146e7fe40b9dbb3b68e22395648919c03e015880fb11f8235a09f
 X u
 M o
 K aw
@@ -216,12 +215,12 @@ R a
 B0 |␊··␊␊·␊
 C 0
 Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp <␊··>␊␊·␊
+Bp <␊··␊>␊·␊
 Bo |␊·␊
 B1 |␊·␊
 S1 "a=\<Newline>\<Space>\<Space>\<Newline>
 
-H b5d6cf3a437d2991d03336fc4f41a7b890644bc121356ad1686a1723
+H ac54f18f9ddd34df10dcfdf54a1914812e7fbc22fae5abfccbc3fb78
 X u
 M o
 K aw
@@ -230,12 +229,12 @@ R a
 B0 |abc···␊␊␊def··␊
 C 2
 Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp <abc···␊>␊␊def··␊
+Bp <abc···␊␊>␊def··␊
 Bo |␊def··␊
 B1 |␊def··␊
 S1 "a=abc\<Space>\<Space>\<Space>\<Newline>\<Newline>
 
-H 8b65ab31405568061024e1a6ae5620ba8e9157a1a50447c7b916ac8a
+H 61501d643402b8caac53f7776e76a71544fa04fceff9fe2963eed876
 X u
 M o
 K aw
@@ -244,7 +243,7 @@ R a
 B0 |␊␊␊␊␊
 C 2
 Q | < > prevent_change=0 visualmode=v selection=inclusive
-Bp <␊␊>␊␊␊
+Bp <␊␊␊>␊␊
 Bo |␊␊
 B1 |␊␊
 S1 "a=\<Newline>\<Newline>\<Newline>

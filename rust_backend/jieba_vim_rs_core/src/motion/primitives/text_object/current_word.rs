@@ -27,17 +27,12 @@ use super::*;
 pub struct CurrentWord {
     /// True to include word and whitespace.
     include: bool,
-    /// Relevant only for operator-pending mode.
-    pub need_fix_change_yank: bool,
 }
 
 impl CurrentWord {
     /// Pass true to `include` to include word and whitespace.
     pub fn new(include: bool) -> Self {
-        Self {
-            include,
-            need_fix_change_yank: false,
-        }
+        Self { include }
     }
 }
 
@@ -177,7 +172,9 @@ impl Motion<VisualRange> for CurrentWord {
             }
         }
 
-        cursor.visualmode = VisualMode::Char;
+        if cursor.visualmode == VisualMode::Line {
+            cursor.visualmode = VisualMode::Char;
+        }
         Ok(MotionState::Success)
     }
 }
@@ -191,7 +188,6 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
     ) -> Result<MotionState, B::Error> {
         let mut include_white = false;
         let mut start_pos = None;
-        self.need_fix_change_yank = false;
         if count > 0 {
             let cursor_token = get_cursor_token(&cursor.rangle, buffer)?;
             let start_col = cursor_token.first_char();
@@ -206,7 +202,6 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
                 {
                     return Ok(MotionState::Failure);
                 }
-                self.need_fix_change_yank = count == 1;
             } else {
                 let _ = ForwardWord::new(true).map(
                     buffer,
@@ -265,7 +260,6 @@ impl<'o> Motion<OperatorRange<'o>> for CurrentWord {
                         {
                             return Ok(MotionState::Failure);
                         }
-                        self.need_fix_change_yank = count == 1;
                     }
                 }
             }

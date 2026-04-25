@@ -32,8 +32,8 @@ use serde::Deserialize;
 use crate::dots_progress::DotsProgress;
 use crate::parsing::unparsing::Serializer;
 use crate::parsing::{
-    self, Ascii, BootstrapTestCaseBlock, HeadConditional, Position,
-    PositionCurswant, RawTestCaseBlock, StateExpr, StateExprFunction,
+    self, Ascii, AutocmdEventCount, BootstrapTestCaseBlock, HeadConditional,
+    Position, PositionCurswant, RawTestCaseBlock, StateExpr, StateExprFunction,
     TestCaseBlock, TestHashId, UnitEditorMode, UnitTestCaseBlock,
 };
 use crate::unit_verification::{self, StateExprBefore};
@@ -198,6 +198,30 @@ fn write_shared_setup(
     }
     stream.extend(b"\n");
 
+    // Write autocmd for tests.
+    stream.extend(
+        br#"" autocmd events monitoring
+function! IncrementAutocmdEventCount(event_name)
+    let l:count = get(g:jieba_test_case_events_count, a:event_name, 0)
+    let g:jieba_test_case_events_count[a:event_name] = l:count + 1
+endfunction
+
+augroup jieba_test_case_autocmd_events_monitoring
+    autocmd!
+"#,
+    );
+    for AutocmdEventCount { event_name, .. } in
+        block.autocmd_events_count.iter()
+    {
+        writeln!(
+            stream,
+            "    au {0} * call IncrementAutocmdEventCount(\"{0}\")",
+            event_name
+        )
+        .unwrap();
+    }
+    stream.extend(b"augroup END\n\n");
+
     Ok(())
 }
 
@@ -206,6 +230,7 @@ struct StdRun(BootstrapTestCaseBlock);
 impl ToVimscript for StdRun {
     fn to_vimscript(&self, stream: &mut Vec<u8>) -> TranspilingResult {
         write_shared_setup(&self.0, stream)?;
+        stream.extend(b"let g:jieba_test_case_events_count = {}\n");
 
         // Cursor movement.
         stream.extend(b"\" cursor movement\n");
@@ -255,9 +280,14 @@ impl ToVimscript for StdRun {
         }
         stream.extend(b"\n");
         stream.extend(b"execute \"normal! \\<Esc>\"\n\n");
+        stream.extend(b"let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n");
 
-        // State after quering.
-        stream.extend(b"\" State after quering\n");
+        // Autocmd event counts querying.
+        stream.extend(b"\" Autocmd event counts querying\n");
+        stream.extend(b"let g:JiebaTestGroundtruthAutocmdEventsCount = json_encode(s:jieba_test_case_events_count_frozen)\n\n");
+
+        // State after querying.
+        stream.extend(b"\" State after querying\n");
         for s in self.0.state_after.iter() {
             match s {
                 StateExpr::Option { name, .. } => {
@@ -277,6 +307,8 @@ impl ToVimscript for StdRun {
                     let v = match name.into() {
                         b'<' => "JiebaTestGroundtruthMark_langle".into(),
                         b'>' => "JiebaTestGroundtruthMark_rangle".into(),
+                        b'[' => "JiebaTestGroundtruthMark_lsquare".into(),
+                        b']' => "JiebaTestGroundtruthMark_rsquare".into(),
                         b'a'..=b'z' => {
                             format!("JiebaTestGroundtruthMark_{}", name)
                         }
@@ -315,7 +347,7 @@ impl ToVimscript for StdRun {
         stream.push(b'\n');
 
         // Buffer after querying and echoing.
-        stream.extend(b"\" Buffer after quering\n");
+        stream.extend(b"\" Buffer after querying\n");
         match self.0.editor_mode {
             UnitEditorMode::Normal | UnitEditorMode::OperatorPending => {
                 stream.extend(b"let g:JiebaTestGroundtruthCursor = json_encode(getcurpos())\n");
@@ -403,6 +435,7 @@ impl ToVimscript for CustomRun {
 
         // Setup.
         write_shared_setup(&self.0, stream)?;
+        stream.extend(b"let g:jieba_test_case_events_count = {}\n");
 
         // Cursor movement (copied primarily from unit_verification's
         // `CustomRun::to_vimscript`).
@@ -456,8 +489,36 @@ impl ToVimscript for CustomRun {
         }
         stream.extend(b"\n");
         stream.extend(b"execute \"normal! \\<Esc>\"\n\n");
+        stream.extend(b"let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n");
 
         let g = Ascii::new(b'g').unwrap();
+
+        // Autocmd event counts checking.
+        stream.extend(b"\" Autocmd event counts checking\n");
+        {
+            let actual_ec = VimVariable {
+                scope: Ascii::new(b's').unwrap(),
+                identifier: Identifier::new(
+                    "jieba_test_case_events_count_frozen",
+                )
+                .unwrap(),
+            };
+            let groundtruth_ec_encoded = VimVariable {
+                scope: g,
+                identifier: Identifier::new(
+                    "JiebaTestGroundtruthAutocmdEventsCount",
+                )
+                .unwrap(),
+            };
+
+            let t = NotEqTest {
+                a: actual_ec,
+                b: Func::new("json_decode", (groundtruth_ec_encoded,)),
+                msg: "unexpected autocmd events count".into(),
+            };
+            t.to_vimscript(stream)?;
+        }
+        stream.push(b'\n');
 
         // State after checking.
         stream.extend(b"\" State after checking\n");
@@ -501,6 +562,8 @@ impl ToVimscript for CustomRun {
                     let v = match name.into() {
                         b'<' => "JiebaTestGroundtruthMark_langle".into(),
                         b'>' => "JiebaTestGroundtruthMark_rangle".into(),
+                        b'[' => "JiebaTestGroundtruthMark_lsquare".into(),
+                        b']' => "JiebaTestGroundtruthMark_rsquare".into(),
                         b'a'..=b'z' => {
                             format!("JiebaTestGroundtruthMark_{}", name)
                         }
@@ -988,6 +1051,7 @@ impl BootstrapTestCaseBlock {
                     buffer_output,
                     buffer_after: Some(buffer_after),
                     model_output: model_output_items,
+                    autocmd_events_count: vec![],
                 };
                 block.fix_hash();
                 Ok(Some(block))

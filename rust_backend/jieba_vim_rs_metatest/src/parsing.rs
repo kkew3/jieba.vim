@@ -515,7 +515,7 @@ pub enum StateExpr {
         /// The mark name.
         name: Ascii,
         /// The mark position.
-        position: Position,
+        position: Option<Position>,
     },
     Register {
         /// The register name.
@@ -542,14 +542,21 @@ impl StateExpr {
                 return None;
             }
             let mark_char = Ascii::from_char(mark.chars().next().unwrap())?;
-            let pos = parse_position(position_str)?;
-            if pos.len() == 4 {
+            if position_str.is_empty() {
                 Some(Self::Mark {
                     name: mark_char,
-                    position: [pos[0], pos[1], pos[2], pos[3]],
+                    position: None,
                 })
             } else {
-                None
+                let pos = parse_position(position_str)?;
+                if pos.len() == 4 {
+                    Some(Self::Mark {
+                        name: mark_char,
+                        position: Some([pos[0], pos[1], pos[2], pos[3]]),
+                    })
+                } else {
+                    None
+                }
             }
         } else if s.starts_with('"')
             && let Some((register, value)) = s[1..].split_once("=")
@@ -1037,6 +1044,56 @@ impl ModelOutput {
     }
 }
 
+#[derive(Clone, Serialize)]
+pub struct AutocmdEventCount {
+    pub event_name: String,
+    pub count: Option<u64>,
+}
+
+#[derive(Default)]
+pub struct AutocmdEventsCount(Vec<AutocmdEventCount>);
+
+impl AutocmdEventsCount {
+    fn parse(span: &mut ErrorSpan, line: &str) -> Result<Self, Error> {
+        let (dr, remainder) = split_directive(span, line)?;
+        if dr == "E" {
+            span.as_col_span(dr.len() + 1);
+            let mut event_counts = Vec::new();
+            for token in remainder {
+                match token.split_once('=') {
+                    Some((event_name, count_str)) => {
+                        let ec = if count_str.is_empty() {
+                            AutocmdEventCount {
+                                event_name: event_name.to_string(),
+                                count: None,
+                            }
+                        } else {
+                            let count = count_str.parse().map_err(|_| {
+                                span.to_parse_error(format!(
+                                    "unexpected autocmd event count: {}",
+                                    token
+                                ))
+                            })?;
+                            AutocmdEventCount {
+                                event_name: event_name.to_string(),
+                                count: Some(count),
+                            }
+                        };
+                        event_counts.push(ec);
+                    }
+                    None => Err(span.to_parse_error(format!(
+                        "unexpected autocmd event count: {}",
+                        token
+                    )))?,
+                }
+            }
+            Ok(Self(event_counts))
+        } else {
+            Err(span.as_line_span().to_invalid_token_error())
+        }
+    }
+}
+
 /// The defaults (`#(M|K|O|R|C|S0|B0|P|Q)`).
 #[derive(Default)]
 struct Defaults {
@@ -1189,6 +1246,7 @@ pub struct RawTestCaseBlock {
     buffer_output: Option<BufferOutput>,
     buffer_after: Option<BufferAfter>,
     model_output: Option<ModelOutput>,
+    autocmd_events_count: Option<AutocmdEventsCount>,
 }
 
 impl RawTestCaseBlock {
@@ -1209,6 +1267,7 @@ impl RawTestCaseBlock {
             buffer_output: None,
             buffer_after: None,
             model_output: None,
+            autocmd_events_count: None,
         }
     }
 }
@@ -1291,6 +1350,7 @@ pub struct UnitTestCaseBlock {
     pub buffer_output: BufferExpr,
     pub buffer_after: Option<BufferExpr>,
     pub model_output: Vec<ModelOutputItem>,
+    pub autocmd_events_count: Vec<AutocmdEventCount>,
 }
 
 impl UnitTestCaseBlock {
@@ -1313,6 +1373,7 @@ impl UnitTestCaseBlock {
         sha.update(serde_json::to_vec(&self.buffer_pending).expect(msg));
         sha.update(serde_json::to_vec(&self.buffer_after).expect(msg));
         sha.update(serde_json::to_vec(&self.model_output).expect(msg));
+        sha.update(serde_json::to_vec(&self.autocmd_events_count).expect(msg));
         let new_hash = TestHash {
             file: old.file.clone(),
             lineno: old.lineno,
@@ -1341,6 +1402,11 @@ impl From<UnitTestCaseBlock> for RawTestCaseBlock {
             buffer_output: Some(BufferOutput(value.buffer_output)),
             buffer_after: value.buffer_after.map(BufferAfter),
             model_output: Some(ModelOutput(value.model_output)),
+            autocmd_events_count: if value.autocmd_events_count.is_empty() {
+                None
+            } else {
+                Some(AutocmdEventsCount(value.autocmd_events_count))
+            },
         }
     }
 }
@@ -1389,6 +1455,7 @@ pub struct BootstrapTestCaseBlock {
     pub state_before: Vec<StateExpr>,
     pub state_after: Vec<StateExpr>,
     pub buffer_before: BufferExpr,
+    pub autocmd_events_count: Vec<AutocmdEventCount>,
 }
 
 impl BootstrapTestCaseBlock {
@@ -1405,6 +1472,7 @@ impl BootstrapTestCaseBlock {
         sha.update(serde_json::to_vec(&self.state_before).expect(msg));
         sha.update(serde_json::to_vec(&self.state_after).expect(msg));
         sha.update(serde_json::to_vec(&self.buffer_before).expect(msg));
+        sha.update(serde_json::to_vec(&self.autocmd_events_count).expect(msg));
         let new_hash = TestHash {
             file: old.file.clone(),
             lineno: old.lineno,
@@ -1713,6 +1781,13 @@ fn parse_test_case_block(
                 line,
             )?);
             Ok(())
+        })
+        .handle_invalid_token(|| {
+            case.autocmd_events_count = Some(AutocmdEventsCount::parse(
+                span.as_line_span_full(lineno + lineno_offset),
+                line,
+            )?);
+            Ok(())
         })?;
     }
     span.as_line_range_span(lineno, lineno + lineno_offset);
@@ -1802,6 +1877,10 @@ fn parse_test_case_block(
                             "model output directive (Q) not found",
                         )
                     })?
+                    .0,
+                autocmd_events_count: case
+                    .autocmd_events_count
+                    .unwrap_or_default()
                     .0,
             };
             // Some validation on `block`.
@@ -1943,6 +2022,10 @@ fn parse_test_case_block(
                             "buffer before directive (B0) not found",
                         )
                     })?
+                    .0,
+                autocmd_events_count: case
+                    .autocmd_events_count
+                    .unwrap_or_default()
                     .0,
             };
             TestCaseBlock::Bootstrap(block)
@@ -2107,12 +2190,12 @@ pub mod unparsing {
     use thiserror::Error;
 
     use super::{
-        Ascii, BufferAfter, BufferBefore, BufferExpr, BufferOutput,
-        BufferPending, CURSWANT_MAX, Count, EditorMode, ExportType,
-        HeadConditional, HeadConditionals, KeySequence, ModelOutput,
-        ModelOutputItem, MotionKey, Operator, Position, PositionCurswant,
-        RawTestCaseBlock, Register, StateAfter, StateBefore, StateExpr,
-        StateExprFunction, TestHash,
+        Ascii, AutocmdEventCount, AutocmdEventsCount, BufferAfter,
+        BufferBefore, BufferExpr, BufferOutput, BufferPending, CURSWANT_MAX,
+        Count, EditorMode, ExportType, HeadConditional, HeadConditionals,
+        KeySequence, ModelOutput, ModelOutputItem, MotionKey, Operator,
+        Position, PositionCurswant, RawTestCaseBlock, Register, StateAfter,
+        StateBefore, StateExpr, StateExprFunction, TestHash,
     };
 
     #[derive(Debug, Error)]
@@ -2172,13 +2255,12 @@ pub mod unparsing {
                         value.to_jieba_test_case(stream)?;
                     }
                 },
-                StateExpr::Mark { name, position: p } => {
-                    write!(
-                        stream,
-                        " '{}=[{},{},{},{}]",
-                        name, p[0], p[1], p[2], p[3]
-                    )?;
-                }
+                StateExpr::Mark { name, position: p } => match p {
+                    Some([a, b, c, d]) => {
+                        write!(stream, " '{}=[{},{},{},{}]", name, a, b, c, d)?
+                    }
+                    None => write!(stream, " '{}=", name)?,
+                },
                 StateExpr::Register { name, value } => {
                     write!(stream, " \"{}=", name)?;
                     value.to_jieba_test_case(stream)?;
@@ -2613,6 +2695,35 @@ pub mod unparsing {
         }
     }
 
+    impl ToJiebaTestCase for AutocmdEventCount {
+        fn to_jieba_test_case(
+            &self,
+            stream: &mut Vec<u8>,
+        ) -> UnparsingResult<()> {
+            stream.push(b' ');
+            stream.extend(self.event_name.as_bytes());
+            stream.push(b'=');
+            if let Some(count) = &self.count {
+                write!(stream, "{}", count).unwrap();
+            }
+            Ok(())
+        }
+    }
+
+    impl ToJiebaTestCase for AutocmdEventsCount {
+        fn to_jieba_test_case(
+            &self,
+            stream: &mut Vec<u8>,
+        ) -> UnparsingResult<()> {
+            stream.push(b'E');
+            for ec in self.0.iter() {
+                ec.to_jieba_test_case(stream)?;
+            }
+            stream.push(b'\n');
+            Ok(())
+        }
+    }
+
     impl ToJiebaTestCase for RawTestCaseBlock {
         fn to_jieba_test_case(
             &self,
@@ -2652,6 +2763,9 @@ pub mod unparsing {
             }
             if let Some(buffer_after) = &self.buffer_after {
                 buffer_after.to_jieba_test_case(stream)?;
+            }
+            if let Some(autocmd_events_count) = &self.autocmd_events_count {
+                autocmd_events_count.to_jieba_test_case(stream)?;
             }
             Ok(())
         }

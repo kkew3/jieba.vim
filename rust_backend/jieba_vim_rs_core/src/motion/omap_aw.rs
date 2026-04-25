@@ -22,8 +22,6 @@ use super::core::position::{OperatorRange, Position};
 use super::policy::d_special::DSpecial;
 use super::policy::exclusive_special::ExclusiveSpecial;
 use super::policy::position_cursor::PositionCursor;
-use super::policy::text_object_change_yank_fix_rangle::TextObjectYankChangeFixRangle;
-use super::policy::text_object_fix_mtype::TextObjectMotionTypeFix;
 use super::policy::yank_linewise::YankLinewise;
 use super::primitives::text_object::CurrentWord;
 
@@ -46,10 +44,6 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         let s = motion_rangle.map(&mut buffer, count, &mut orng)?;
         orng.cursor = orng.langle;
         if s == MotionState::Success {
-            if motion_rangle.need_fix_change_yank {
-                orng.text_object_yank_change_fix(&mut buffer)?;
-            }
-            orng.text_object_motion_type_fix(true, &mut buffer)?;
             orng.exclusive_special(&mut buffer)?;
             orng.d_special(&mut buffer)?;
             orng.yank_linewise();
