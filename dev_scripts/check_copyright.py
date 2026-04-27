@@ -7,6 +7,8 @@ import warnings
 
 
 def read_first_non_empty_line(path: str) -> str | None:
+    if path[-4:] in (".pdf", ".png", ".jpg"):
+        return None
     with open(path, encoding="utf-8") as infile:
         for line in infile:
             line = line.strip()
