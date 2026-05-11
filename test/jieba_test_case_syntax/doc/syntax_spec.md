@@ -65,6 +65,20 @@ For example:
 #C 3
 ```
 
+Default directives with multiple arguments can be split into multiple lines.
+For example:
+
+```
+#S0 "a=foo "b=bar
+```
+
+can be written as:
+
+```
+#S0 "a=foo
+#S0 "b=bar
+```
+
 Use the following to reset all defaults:
 
 ```
@@ -75,6 +89,8 @@ Use the following to reset all defaults:
 
 One or more local directives in consecutive lines define a test case block.
 Blank lines separate test case blocks.
+Directives with multiple arguments can be split into multiple lines, as above.
+The order of different directives inside a block does not matter.
 
 # Comments
 
