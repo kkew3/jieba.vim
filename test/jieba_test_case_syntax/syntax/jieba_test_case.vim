@@ -11,7 +11,7 @@ endif
 syntax match jiebaTestCaseComment /^\/\/.*/
 
 " Head conditionals
-syntax match jiebaTestCaseHeadConditional /^\%(?!\?has:\|?version:\)/
+syntax match jiebaTestCaseHeadConditional /^\%(?\s!\?has:\|?\sversion:\)/
 
 syntax match jiebaTestCaseResetDefaults /^##.*$/
 

@@ -5,8 +5,8 @@ This document defines `jieba_test_case` format, a domain-specific language for s
 # Test case head conditionals
 
 ```
-?!has:nvim
-?version:820
+? !has:nvim
+? version:820
 ```
 
 means:
@@ -332,8 +332,8 @@ indicate that `ModeChanged` event should be triggered twice, and `InsertLeave` e
 ```
 #V 1
 
-?!has:nvim
-?version:900
+? !has:nvim
+? version:900
 
 H 6be7b7cd41a6d854a442dff4c3ea3eac9e3cd5f8 two words <<<
 X u
