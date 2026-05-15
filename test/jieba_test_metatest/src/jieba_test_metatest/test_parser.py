@@ -97,7 +97,6 @@ S1 "a=bar
         m.RawDirective("M", "n", span.copy_as(7)),
         m.RawDirective("S0", '"a=foo', span.copy_as(9)),
         m.RawDirective("S1", '"a=foo', span.copy_as(16)),
-        m.RawDirective("V", "4", span.copy_as(2)),
         m.RawDirective("X", "bi", span.copy_as(8)),
     ]
     assert raw_test_cases.blocks[0].span == span.copy_as(11, 16)
@@ -109,10 +108,40 @@ S1 "a=bar
         m.RawDirective("M", "n", span.copy_as(7)),
         m.RawDirective("S0", '"a=bar', span.copy_as(21)),
         m.RawDirective("S1", '"a=bar', span.copy_as(23)),
-        m.RawDirective("V", "4", span.copy_as(2)),
         m.RawDirective("X", "u", span.copy_as(19)),
     ]
     assert raw_test_cases.blocks[1].span == span.copy_as(18, 23)
+
+
+def test_raw_test_cases_extend_from_lines_wrong_version():
+    raw_test_cases = m.RawTestCases()
+    span = m.SourceSpan.for_file("foo")
+    lines = """
+#V 2
+##
+
+? !has:nvim
+
+#M n
+#X bi
+#S0 "a=foo
+
+K w
+C 3
+B0 |foo␊
+E CursorMoved= CursorMovedI=
+E CmdlineEnter=
+S1 "a=foo
+
+K b
+X u
+B0 fo|o␊
+S0 "a=bar
+E CmdlineEnter=
+S1 "a=bar
+"""
+    with pytest.raises(m.ParseError):
+        raw_test_cases.extend_from_lines(lines.splitlines(), span)
 
 
 def test_parse_state_expr():

@@ -15,6 +15,8 @@
 from dataclasses import dataclass
 from typing import Iterable, Iterator, Literal
 
+from .version import VERSION
+
 
 @dataclass
 class SourceSpan:
@@ -134,8 +136,6 @@ class RawTestCases:
         self.blocks = []
 
     def extend_from_lines(self, lines: Iterable[str], span: SourceSpan):
-        # Required version.
-        ver: list[RawDirective] = []
         # Head conditionals.
         hc: list[RawDirective] = []
         # Defaults.
@@ -186,9 +186,12 @@ class RawTestCases:
                     )
                 elif ty == "#V":
                     # Line is a global required version.
-                    ver.extend(
-                        RawDirective("V", a, line_span.copy()) for a in args
-                    )
+                    for a in args:
+                        ver_dr = RawDirective("V", a, line_span.copy())
+                        if ver_dr.arg != VERSION:
+                            raise span.to_parse_error(
+                                f"unsupported file version: {ver_dr.arg}"
+                            )
                 elif ty.startswith("#"):
                     # Line is a global default.
                     if ty[1:] not in supported_defaults:
@@ -212,7 +215,6 @@ class RawTestCases:
                     # Line is blank.
                     new_raw_block = RawBlock(current_block)
                     new_raw_block.extend_defaults(defaults)
-                    new_raw_block.extend_globals(ver)
                     new_raw_block.extend_globals(hc)
                     self.blocks.append(new_raw_block)
                     current_block = []
@@ -265,7 +267,6 @@ class RawTestCases:
         if current_block:
             new_raw_block = RawBlock(current_block)
             new_raw_block.extend_defaults(defaults)
-            new_raw_block.extend_globals(ver)
             new_raw_block.extend_globals(hc)
             self.blocks.append(new_raw_block)
 
