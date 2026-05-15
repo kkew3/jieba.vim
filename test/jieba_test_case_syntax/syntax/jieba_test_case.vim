@@ -15,9 +15,9 @@ syntax match jiebaTestCaseHeadConditional /^\%(?\s!\?has:\|?\sversion:\)/
 
 syntax match jiebaTestCaseResetDefaults /^##.*$/
 
-syntax match jiebaTestCaseGlobalDirective /^#\(V\|M\|X\|O\|K\|C\|R\|Q\)\s*.*$/ contains=jiebaTestCaseDirectiveKeywords
+syntax match jiebaTestCaseGlobalDirective /^#\(V\|M\|X\|O\|K\|C\|R\|Q\|E\)\s*.*$/ contains=jiebaTestCaseDirectiveKeywords
 syntax match jiebaTestCaseLocalDirective /^\(X\s\|M\s\|K\s\|O\s\|R\s\|C\s\|S0\s\|S1\s\|Q\s\|E\s\).*$/ contains=jiebaTestCaseDirectiveKeywords
-syntax match jiebaTestCaseDirectiveKeywords /^\(#V\|#M\|#X\|#O\|#K\|#C\|#R\|#Q\|X\|M\|K\|O\|R\|C\|S0\|S1\|Q\|E\)/ contained
+syntax match jiebaTestCaseDirectiveKeywords /^\(#V\|#M\|#X\|#O\|#K\|#C\|#R\|#Q\|#E\|X\|M\|K\|O\|R\|C\|S0\|S1\|Q\|E\)/ contained
 
 syntax match jiebaTestCaseHash /^H\s.*$/ contains=jiebaTestCaseHashKeyword
 syntax match jiebaTestCaseHashKeyword /^H/ contained nextgroup=jiebaTestCaseHashId

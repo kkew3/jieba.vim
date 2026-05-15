@@ -46,6 +46,7 @@ Supported local directives are:
 - State before `S0`
 - Buffer before `B0`
 - Model output `Q`
+- Autocmd event count `E`
 
 Use the following to reset all defaults:
 
