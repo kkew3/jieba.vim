@@ -45,7 +45,6 @@ Supported local directives are:
 - Count `C`
 - State before `S0`
 - Buffer before `B0`
-- Model input `P`
 - Model output `Q`
 
 Use the following to reset all defaults:
