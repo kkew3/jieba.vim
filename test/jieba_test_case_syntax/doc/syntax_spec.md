@@ -48,6 +48,12 @@ Supported local directives are:
 - Model input `P`
 - Model output `Q`
 
+Use the following to reset all defaults:
+
+```
+## {optional_text}
+
+```
 For example:
 
 ```
@@ -62,6 +68,10 @@ For example:
 
 // Override previous default so that we test for |d3w| from
 // now on.
+##
+#M o
+#O d
+#K w
 #C 3
 ```
 
@@ -77,12 +87,6 @@ can be written as:
 ```
 #S0 "a=foo
 #S0 "b=bar
-```
-
-Use the following to reset all defaults:
-
-```
-## {optional_text}
 ```
 
 # Test case block
