@@ -546,6 +546,26 @@ def json_encoded(obj):
     if isinstance(obj, LuaExpr):
         json_encode = LuaExpr.vim_var("json_encode").build()
         return json_encode(obj)
+    if isinstance(obj, (VimExprBuilder, LuaExprBuilder)):
+        return json_encoded(obj.unwrap())
+    raise TypeError(f"invalid type: {type(obj)}")
+
+
+def echo(err: bool, obj):
+    if isinstance(obj, VimExpr):
+        shellescape = VimExpr.var("shellescape").build()
+        exe_str = VimExpr.literal("!echo ").build() + shellescape(obj, 1)
+        if err:
+            exe_str = exe_str + " >&2"
+        return VimExpr.cmd("execute", exe_str)
+    if isinstance(obj, LuaExpr):
+        if err:
+            write = LuaExpr.lua_var("io.stderr:write").build()
+        else:
+            write = LuaExpr.lua_var("io.write").build()
+        return write(obj.build() + "\n")
+    if isinstance(obj, (VimExprBuilder, LuaExprBuilder)):
+        return echo(err, obj.unwrap())
     raise TypeError(f"invalid type: {type(obj)}")
 
 
@@ -570,17 +590,18 @@ def not_eq_test_as_str(msg: str, actual, expected):
         + json_encoded(actual_lua)
         + " expected:: "
         + expected_lua
-        + "\n"
     )
+    echo_vim = echo(True, content_vim)
+    echo_lua = echo(True, content_lua)
 
     return f"""\
 if {actual_vim} !=# {expected_vim}
     if has("nvim")
         lua <<EOF
-io.stderr:write({content_lua})
+{echo_lua}
 EOF
     else
-        execute "!echo " . shellescape({content_vim}, 1) . " >&2"
+        {echo_vim}
     endif
 endif
 """
