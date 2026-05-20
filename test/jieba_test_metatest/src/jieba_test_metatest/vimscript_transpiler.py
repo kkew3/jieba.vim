@@ -56,9 +56,15 @@ class VimExpr:
         )
 
     @classmethod
+    def cmd(cls, name: str, *args) -> "VimExpr":
+        return cls("cmd", cls.var(name), [cls.into_vimexpr(a) for a in args])
+
+    @classmethod
     def into_vimexpr(cls, v) -> "VimExpr":
         if isinstance(v, VimExpr):
             return v
+        if isinstance(v, VimExprBuilder):
+            return v.vim_expr
         if isinstance(v, int):
             return cls.int_(v)
         if isinstance(v, str):
@@ -83,6 +89,8 @@ class VimExpr:
             return (
                 "{" + ", ".join(f"{k}: {v}" for k, v in self.arg1.items()) + "}"
             )
+        if self.ty == "cmd":
+            return f"{self.arg1}" + "".join(f" {a}" for a in self.arg2)
         if self.ty in ("dict_access", "list_index"):
             return f"{self.arg1}[{self.arg2}]"
         if self.ty == "func_call":
@@ -237,8 +245,6 @@ class VimExprBuilder:
 
 
 def to_vim_expr(obj) -> VimExpr:
-    if isinstance(obj, VimExprBuilder):
-        return obj.unwrap()
     return VimExpr.into_vimexpr(obj)
 
 
@@ -300,6 +306,8 @@ class LuaExpr:
             return cls.list_(v.arg1)
         if v.ty == "dict":
             return cls.dict_(v.arg1)
+        if v.ty == "cmd":
+            raise ValueError("cannot convert VimExpr::cmd to lua")
         if v.ty == "dict_access":
             return cls(
                 "dict_access",
@@ -326,6 +334,8 @@ class LuaExpr:
     def into_luaexpr(cls, v):
         if isinstance(v, LuaExpr):
             return v
+        if isinstance(v, LuaExprBuilder):
+            return v.lua_expr
         if isinstance(v, int):
             return cls.int_(v)
         if isinstance(v, str):
@@ -426,8 +436,6 @@ class LuaExpr:
 
 
 def to_lua_expr(obj) -> LuaExpr:
-    if isinstance(obj, LuaExprBuilder):
-        return obj.unwrap()
     return LuaExpr.into_luaexpr(obj)
 
 

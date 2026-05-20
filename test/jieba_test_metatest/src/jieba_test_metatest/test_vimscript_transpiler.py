@@ -42,6 +42,13 @@ class TestVimExpr:
             == '{"a": {"aa": 3}, "b": "x"}'
         )
 
+    def test_cmd(self):
+        assert str(m.VimExpr.cmd("finish")) == "finish"
+        assert (
+            str(m.VimExpr.cmd("execute", m.lit("!echo ") + "foo"))
+            == 'execute "!echo " . "foo"'
+        )
+
     def test_into_vimexpr(self):
         assert str(m.VimExpr.into_vimexpr(4)) == "4"
         assert str(m.VimExpr.into_vimexpr("foo")) == '"foo"'
