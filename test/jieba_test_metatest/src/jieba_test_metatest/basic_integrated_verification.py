@@ -13,6 +13,7 @@
 # the License.
 
 from dataclasses import dataclass
+import string
 from typing import Literal
 
 from .parser import (
@@ -195,10 +196,28 @@ class BasicIntegratedBlock:
             )
         initial_cursor = buffer_before.cursor
 
-        states_to_verify = [
-            StateExpr.parse(dr.arg, dr.span, parse_as_incomplete=True)
-            for dr in raw_block.iter_directives_like("S1")
-        ]
+        states_to_verify = []
+        for dr in raw_block.iter_directives_like("S1"):
+            state_expr = StateExpr.parse(
+                dr.arg, dr.span, parse_as_incomplete=True
+            )
+            if (
+                state_expr.ty == "mark"
+                and state_expr.name not in string.ascii_lowercase
+                and state_expr.name not in {"<", ">", "[", "]"}
+            ):
+                raise dr.span.to_parse_error(
+                    f"unsupported mark `{state_expr.name}`"
+                )
+            elif (
+                state_expr.ty == "reg"
+                and state_expr.name not in string.ascii_lowercase
+                and state_expr.name != '"'
+            ):
+                raise dr.span.to_parse_error(
+                    f"unsupported register `{state_expr.name}`"
+                )
+            states_to_verify.append(state_expr)
 
         autocmd_events_to_verify = [
             AutocmdEventCountExpr.parse(
