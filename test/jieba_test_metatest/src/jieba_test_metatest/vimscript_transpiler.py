@@ -584,14 +584,14 @@ def not_eq_test_as_str(msg: str, actual, expected):
         + " actual:: "
         + json_encoded(actual_vim)
         + " expected:: "
-        + expected_vim
+        + json_encoded(expected_vim)
     )
     content_lua = (
         msg_lua
         + " actual:: "
         + json_encoded(actual_lua)
         + " expected:: "
-        + expected_lua
+        + json_encoded(expected_lua)
     )
     echo_vim = echo(True, content_vim)
     echo_lua = echo(True, content_lua)

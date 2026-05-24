@@ -441,10 +441,10 @@ def test_not_eq_test_as_str():
 if getreg("a") !=# "foo"
     if has("nvim")
         lua <<EOF
-io.stderr:write("unexpected register \\"a" .. " actual:: " .. vim.fn.json_encode(vim.fn.getreg("a")) .. " expected:: " .. "foo" .. "\\n")
+io.stderr:write("unexpected register \\"a" .. " actual:: " .. vim.fn.json_encode(vim.fn.getreg("a")) .. " expected:: " .. vim.fn.json_encode("foo") .. "\\n")
 EOF
     else
-        execute "!echo " . shellescape("unexpected register \\"a" . " actual:: " . escape(json_encode(getreg("a")), "\\\\") . " expected:: " . "foo", 1) . " >&2"
+        execute "!echo " . shellescape("unexpected register \\"a" . " actual:: " . escape(json_encode(getreg("a")), "\\\\") . " expected:: " . escape(json_encode("foo"), "\\\\"), 1) . " >&2"
     endif
 endif
 """
