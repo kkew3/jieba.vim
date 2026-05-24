@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+from io import StringIO
+
 from . import basic_integrated_verification as m
 from . import parser
 
@@ -168,3 +170,768 @@ S1 visualmode()= '[= ']=
             ],
         ),
     ]
+
+
+def test_write_std_run_custom_run():
+    lines = """\
+#V 4
+#X bi
+
+M n
+S0 visualmode()=v
+S0 selection=exclusive
+K w
+B0 |ab[]c·def␊
+S1 visualmode()=
+E CursorMoved=
+E CmdlineChanged=
+
+M \\<C-v>
+S0 virtualedit=onemore "a=foo
+K e
+B0 []abc·def␊
+C 1
+E CursorMoved=
+E CmdlineChanged=
+S1 visualmode()= '[= ']=
+
+M o
+K W
+O d
+R a
+B0 a|bc·def␊
+C 2
+S1 "a=
+S1 '[=
+S1 ']=
+S1 '<=
+S1 '>=
+"""
+    raw_test_cases = parser.RawTestCases()
+    span = parser.SourceSpan.for_file("foo")
+    raw_test_cases.extend_from_lines(lines.splitlines(), span)
+    basic_integrated_blocks = [
+        m.BasicIntegratedBlock.from_raw_block_opt(raw_block)
+        for raw_block in raw_test_cases.blocks
+    ]
+
+    def collect_raw_directives(*tuples):
+        return [
+            parser.RawDirective(ty, arg, span.copy_as(lineno))
+            for ty, arg, lineno in tuples
+        ]
+
+    assert basic_integrated_blocks == [
+        m.BasicIntegratedBlock(
+            raw_directives=collect_raw_directives(
+                ("B0", "|ab[]c·def␊", 8),
+                ("E", "CursorMoved=", 10),
+                ("E", "CmdlineChanged=", 11),
+                ("K", "w", 7),
+                ("M", "n", 4),
+                ("S0", "visualmode()=v", 5),
+                ("S0", "selection=exclusive", 6),
+                ("S1", "visualmode()=", 9),
+                ("X", "bi", 2),
+            ),
+            span=span.copy_as(4, 11),
+            mode="n",
+            motion_key="w",
+            count="",
+            operator=None,
+            register=None,
+            initial_visualmode="v",
+            initial_visual_begin=[0, 1, 3, 0],
+            initial_visual_end=[0, 1, 3, 0],
+            initial_cursor=[0, 1, 1, 0, 1],
+            initial_states=[
+                parser.StateExpr("func", "visualmode", "v"),
+                parser.StateExpr("opt", "selection", "exclusive"),
+            ],
+            states_to_verify=[
+                parser.StateExpr("func", "visualmode", None),
+            ],
+            autocmd_events_to_verify=[
+                "CursorMoved",
+                "CmdlineChanged",
+            ],
+        ),
+        m.BasicIntegratedBlock(
+            raw_directives=collect_raw_directives(
+                ("B0", "[]abc·def␊", 16),
+                ("C", "1", 17),
+                ("E", "CursorMoved=", 18),
+                ("E", "CmdlineChanged=", 19),
+                ("K", "e", 15),
+                ("M", "\\<C-v>", 13),
+                ("S0", "virtualedit=onemore", 14),
+                ("S0", '"a=foo', 14),
+                ("S1", "visualmode()=", 20),
+                ("S1", "'[=", 20),
+                ("S1", "']=", 20),
+                ("X", "bi", 2),
+            ),
+            span=span.copy_as(13, 20),
+            mode="x",
+            motion_key="e",
+            count="1",
+            operator=None,
+            register=None,
+            initial_visualmode="\\<C-v>",
+            initial_visual_begin=[0, 1, 1, 0],
+            initial_visual_end=[0, 1, 1, 0],
+            initial_cursor=None,
+            initial_states=[
+                parser.StateExpr("opt", "virtualedit", "onemore"),
+                parser.StateExpr("reg", "a", "foo"),
+            ],
+            states_to_verify=[
+                parser.StateExpr("func", "visualmode", None),
+                parser.StateExpr("mark", "[", None),
+                parser.StateExpr("mark", "]", None),
+            ],
+            autocmd_events_to_verify=[
+                "CursorMoved",
+                "CmdlineChanged",
+            ],
+        ),
+        m.BasicIntegratedBlock(
+            raw_directives=collect_raw_directives(
+                ("B0", "a|bc·def␊", 26),
+                ("C", "2", 27),
+                ("K", "W", 23),
+                ("M", "o", 22),
+                ("O", "d", 24),
+                ("R", "a", 25),
+                ("S1", '"a=', 28),
+                ("S1", "'[=", 29),
+                ("S1", "']=", 30),
+                ("S1", "'<=", 31),
+                ("S1", "'>=", 32),
+                ("X", "bi", 2),
+            ),
+            span=span.copy_as(22, 32),
+            mode="o",
+            motion_key="W",
+            count="2",
+            operator="d",
+            register="a",
+            initial_visualmode=None,
+            initial_visual_begin=None,
+            initial_visual_end=None,
+            initial_cursor=[0, 1, 2, 0, 2],
+            initial_states=[],
+            states_to_verify=[
+                parser.StateExpr("reg", "a", None),
+                parser.StateExpr("mark", "[", None),
+                parser.StateExpr("mark", "]", None),
+                parser.StateExpr("mark", "<", None),
+                parser.StateExpr("mark", ">", None),
+            ],
+            autocmd_events_to_verify=[],
+        ),
+    ]
+
+    sbuf = StringIO()
+    basic_integrated_blocks[0].write_std_run(sbuf)
+    assert (
+        sbuf.getvalue()
+        == """\
+" define oracle model
+function! JiebaOracleModel(...)
+    let g:model_input = a:000
+    let g:model_output = call(function("JiebaModelNmap"), a:000)
+    return g:model_output
+endfunction
+
+" state_before setup
+let &selection = "exclusive"
+
+" buffer_before setup
+call setpos(".", [0, 1, 3, 0])
+execute "normal! v\\<Esc>"
+call setpos("'>", [0, 1, 3, 0])
+call setpos(".", [0, 1, 1, 0, 1])
+
+" autocmd setup
+function! IncrementAutocmdEventCount(event_name)
+    let l:count = get(g:jieba_test_case_events_count, a:event_name, 0)
+    let g:jieba_test_case_events_count[a:event_name] = l:count + 1
+endfunction
+
+augroup jieba_test_case_autocmd_events_monitoring
+    autocmd!
+    au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
+    au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
+augroup END
+
+" state_before checking
+if visualmode() !=# "v"
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_before in function visualmode()" .. " actual:: " .. vim.fn.json_encode(vim.fn.visualmode()) .. " expected:: " .. vim.fn.json_encode("v") .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_before in function visualmode()" . " actual:: " . escape(json_encode(visualmode()), "\\\\") . " expected:: " . escape(json_encode("v"), "\\\\"), 1) . " >&2"
+    endif
+endif
+if &selection !=# "exclusive"
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_before in option 'selection'" .. " actual:: " .. vim.fn.json_encode(vim.o.selection) .. " expected:: " .. vim.fn.json_encode("exclusive") .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_before in option 'selection'" . " actual:: " . escape(json_encode(&selection), "\\\\") . " expected:: " . escape(json_encode("exclusive"), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+
+let g:jieba_test_case_events_count = {}
+" cursor movement
+normal! w
+execute "normal! \\<Esc>"
+
+let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
+
+" autocmd event counts querying
+let g:JiebaTestGroundtruthAutocmdEventsCount = json_encode(s:jieba_test_case_events_count_frozen)
+
+" state_after querying
+let g:JiebaTestGroundtruthFunc_visualmode = visualmode()
+
+" buffer_after querying
+let g:JiebaTestGroundtruthCursor = json_encode(getcurpos())
+if has("nvim")
+    lua <<EOF
+io.write(vim.fn.json_encode({cursor = vim.fn.getcurpos()}) .. "\\n")
+EOF
+else
+    execute "!echo " . shellescape(escape(json_encode({"cursor": getcurpos()}), "\\\\"), 1)
+endif
+
+execute "mksession! " . expand("%:p:h") . "/Session.vim"
+silent xit
+"""
+    )
+    sbuf = StringIO()
+    basic_integrated_blocks[0].write_custom_run(sbuf)
+    assert (
+        sbuf.getvalue()
+        == """\
+silent execute "source " . expand("%:p:h") . "/Session.vim"
+
+" define oracle model
+function! JiebaOracleModel(...)
+    let g:model_input = a:000
+    let g:model_output = call(function("JiebaModelNmap"), a:000)
+    return g:model_output
+endfunction
+
+" state_before setup
+let &selection = "exclusive"
+
+" buffer_before setup
+call setpos(".", [0, 1, 3, 0])
+execute "normal! v\\<Esc>"
+call setpos("'>", [0, 1, 3, 0])
+call setpos(".", [0, 1, 1, 0, 1])
+
+" autocmd setup
+function! IncrementAutocmdEventCount(event_name)
+    let l:count = get(g:jieba_test_case_events_count, a:event_name, 0)
+    let g:jieba_test_case_events_count[a:event_name] = l:count + 1
+endfunction
+
+augroup jieba_test_case_autocmd_events_monitoring
+    autocmd!
+    au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
+    au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
+augroup END
+
+" state_before checking
+if visualmode() !=# "v"
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_before in function visualmode()" .. " actual:: " .. vim.fn.json_encode(vim.fn.visualmode()) .. " expected:: " .. vim.fn.json_encode("v") .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_before in function visualmode()" . " actual:: " . escape(json_encode(visualmode()), "\\\\") . " expected:: " . escape(json_encode("v"), "\\\\"), 1) . " >&2"
+    endif
+endif
+if &selection !=# "exclusive"
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_before in option 'selection'" .. " actual:: " .. vim.fn.json_encode(vim.o.selection) .. " expected:: " .. vim.fn.json_encode("exclusive") .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_before in option 'selection'" . " actual:: " . escape(json_encode(&selection), "\\\\") . " expected:: " . escape(json_encode("exclusive"), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+
+let g:jieba_test_case_events_count = {}
+" cursor movement
+call JiebaNmap("w", 0, "JiebaOracleModel")
+execute "normal! \\<Esc>"
+
+let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
+
+" autocmd event counts checking
+if g:jieba_test_case_events_count_frozen !=# json_decode(g:JiebaTestGroundtruthAutocmdEventsCount)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected autocmd events count" .. " actual:: " .. vim.fn.json_encode(vim.g.jieba_test_case_events_count_frozen) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthAutocmdEventsCount)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected autocmd events count" . " actual:: " . escape(json_encode(g:jieba_test_case_events_count_frozen), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthAutocmdEventsCount)), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+" state_after checking
+if visualmode() !=# g:JiebaTestGroundtruthFunc_visualmode
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_after in function visualmode()" .. " actual:: " .. vim.fn.json_encode(vim.fn.visualmode()) .. " expected:: " .. vim.fn.json_encode(vim.g.JiebaTestGroundtruthFunc_visualmode) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_after in function visualmode()" . " actual:: " . escape(json_encode(visualmode()), "\\\\") . " expected:: " . escape(json_encode(g:JiebaTestGroundtruthFunc_visualmode), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+" buffer_after checking
+if getcurpos() !=# json_decode(g:JiebaTestGroundtruthCursor)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected cursor position in buffer_after" .. " actual:: " .. vim.fn.json_encode(vim.fn.getcurpos()) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthCursor)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected cursor position in buffer_after" . " actual:: " . escape(json_encode(getcurpos()), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthCursor)), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+" model_output echoing
+if has("nvim")
+    lua <<EOF
+io.write(vim.fn.json_encode(vim.g.model_output) .. "\\n")
+EOF
+else
+    execute "!echo " . shellescape(escape(json_encode(g:model_output), "\\\\"), 1)
+endif
+
+silent xit
+"""
+    )
+
+    sbuf = StringIO()
+    basic_integrated_blocks[1].write_std_run(sbuf)
+    assert (
+        sbuf.getvalue()
+        == """\
+" define oracle model
+function! JiebaOracleModel(...)
+    let g:model_input = a:000
+    let g:model_output = call(function("JiebaModelXmap"), a:000)
+    return g:model_output
+endfunction
+
+" state_before setup
+let &virtualedit = "onemore"
+call setreg("a", "foo")
+
+" buffer_before setup
+call setpos(".", [0, 1, 1, 0])
+execute "normal! \\<C-v>\\<Esc>"
+call setpos("'>", [0, 1, 1, 0])
+
+" autocmd setup
+function! IncrementAutocmdEventCount(event_name)
+    let l:count = get(g:jieba_test_case_events_count, a:event_name, 0)
+    let g:jieba_test_case_events_count[a:event_name] = l:count + 1
+endfunction
+
+augroup jieba_test_case_autocmd_events_monitoring
+    autocmd!
+    au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
+    au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
+augroup END
+
+" state_before checking
+if &virtualedit !=# "onemore"
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_before in option 'virtualedit'" .. " actual:: " .. vim.fn.json_encode(vim.o.virtualedit) .. " expected:: " .. vim.fn.json_encode("onemore") .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_before in option 'virtualedit'" . " actual:: " . escape(json_encode(&virtualedit), "\\\\") . " expected:: " . escape(json_encode("onemore"), "\\\\"), 1) . " >&2"
+    endif
+endif
+if getreg("a") !=# "foo"
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_before in register \\"a" .. " actual:: " .. vim.fn.json_encode(vim.fn.getreg("a")) .. " expected:: " .. vim.fn.json_encode("foo") .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_before in register \\"a" . " actual:: " . escape(json_encode(getreg("a")), "\\\\") . " expected:: " . escape(json_encode("foo"), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+
+let g:jieba_test_case_events_count = {}
+" cursor movement
+normal! gv1e
+execute "normal! \\<Esc>"
+
+let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
+
+" autocmd event counts querying
+let g:JiebaTestGroundtruthAutocmdEventsCount = json_encode(s:jieba_test_case_events_count_frozen)
+
+" state_after querying
+let g:JiebaTestGroundtruthFunc_visualmode = visualmode()
+let g:JiebaTestGroundtruthMark_lsquare = json_encode(getpos("'["))
+let g:JiebaTestGroundtruthMark_rsquare = json_encode(getpos("']"))
+
+" buffer_after querying
+let g:JiebaTestGroundtruthCursor = json_encode(getcurpos())
+normal! gvomaomb
+let g:JiebaTestGroundtruthVisualBegin = json_encode(getpos("'a"))
+let g:JiebaTestGroundtruthVisualEnd = json_encode(getpos("'b"))
+if has("nvim")
+    lua <<EOF
+io.write(vim.fn.json_encode({cursor = vim.fn.getcurpos(), visual_begin = vim.fn.getpos("'a"), visual_end = vim.fn.getpos("'b")}) .. "\\n")
+EOF
+else
+    execute "!echo " . shellescape(escape(json_encode({"cursor": getcurpos(), "visual_begin": getpos("'a"), "visual_end": getpos("'b")}), "\\\\"), 1)
+endif
+
+execute "mksession! " . expand("%:p:h") . "/Session.vim"
+silent xit
+"""
+    )
+    sbuf = StringIO()
+    basic_integrated_blocks[1].write_custom_run(sbuf)
+    assert (
+        sbuf.getvalue()
+        == """\
+silent execute "source " . expand("%:p:h") . "/Session.vim"
+
+" define oracle model
+function! JiebaOracleModel(...)
+    let g:model_input = a:000
+    let g:model_output = call(function("JiebaModelXmap"), a:000)
+    return g:model_output
+endfunction
+
+" state_before setup
+let &virtualedit = "onemore"
+call setreg("a", "foo")
+
+" buffer_before setup
+call setpos(".", [0, 1, 1, 0])
+execute "normal! \\<C-v>\\<Esc>"
+call setpos("'>", [0, 1, 1, 0])
+
+" autocmd setup
+function! IncrementAutocmdEventCount(event_name)
+    let l:count = get(g:jieba_test_case_events_count, a:event_name, 0)
+    let g:jieba_test_case_events_count[a:event_name] = l:count + 1
+endfunction
+
+augroup jieba_test_case_autocmd_events_monitoring
+    autocmd!
+    au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
+    au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
+augroup END
+
+" state_before checking
+if &virtualedit !=# "onemore"
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_before in option 'virtualedit'" .. " actual:: " .. vim.fn.json_encode(vim.o.virtualedit) .. " expected:: " .. vim.fn.json_encode("onemore") .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_before in option 'virtualedit'" . " actual:: " . escape(json_encode(&virtualedit), "\\\\") . " expected:: " . escape(json_encode("onemore"), "\\\\"), 1) . " >&2"
+    endif
+endif
+if getreg("a") !=# "foo"
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_before in register \\"a" .. " actual:: " .. vim.fn.json_encode(vim.fn.getreg("a")) .. " expected:: " .. vim.fn.json_encode("foo") .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_before in register \\"a" . " actual:: " . escape(json_encode(getreg("a")), "\\\\") . " expected:: " . escape(json_encode("foo"), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+
+let g:jieba_test_case_events_count = {}
+" cursor movement
+call JiebaXmap("e", 1, "JiebaOracleModel")
+execute "normal! \\<Esc>"
+
+let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
+
+" autocmd event counts checking
+if g:jieba_test_case_events_count_frozen !=# json_decode(g:JiebaTestGroundtruthAutocmdEventsCount)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected autocmd events count" .. " actual:: " .. vim.fn.json_encode(vim.g.jieba_test_case_events_count_frozen) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthAutocmdEventsCount)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected autocmd events count" . " actual:: " . escape(json_encode(g:jieba_test_case_events_count_frozen), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthAutocmdEventsCount)), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+" state_after checking
+if visualmode() !=# g:JiebaTestGroundtruthFunc_visualmode
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_after in function visualmode()" .. " actual:: " .. vim.fn.json_encode(vim.fn.visualmode()) .. " expected:: " .. vim.fn.json_encode(vim.g.JiebaTestGroundtruthFunc_visualmode) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_after in function visualmode()" . " actual:: " . escape(json_encode(visualmode()), "\\\\") . " expected:: " . escape(json_encode(g:JiebaTestGroundtruthFunc_visualmode), "\\\\"), 1) . " >&2"
+    endif
+endif
+if getpos("'[") !=# json_decode(g:JiebaTestGroundtruthMark_lsquare)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_after in mark '[" .. " actual:: " .. vim.fn.json_encode(vim.fn.getpos("'[")) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthMark_lsquare)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_after in mark '[" . " actual:: " . escape(json_encode(getpos("'[")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_lsquare)), "\\\\"), 1) . " >&2"
+    endif
+endif
+if getpos("']") !=# json_decode(g:JiebaTestGroundtruthMark_rsquare)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_after in mark ']" .. " actual:: " .. vim.fn.json_encode(vim.fn.getpos("']")) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthMark_rsquare)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_after in mark ']" . " actual:: " . escape(json_encode(getpos("']")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_rsquare)), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+" buffer_after checking
+if getcurpos() !=# json_decode(g:JiebaTestGroundtruthCursor)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected cursor position in buffer_after" .. " actual:: " .. vim.fn.json_encode(vim.fn.getcurpos()) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthCursor)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected cursor position in buffer_after" . " actual:: " . escape(json_encode(getcurpos()), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthCursor)), "\\\\"), 1) . " >&2"
+    endif
+endif
+normal! gvomaomb
+if getpos("'a") !=# json_decode(g:JiebaTestGroundtruthVisualBegin)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected visual_begin position in buffer_after" .. " actual:: " .. vim.fn.json_encode(vim.fn.getpos("'a")) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthVisualBegin)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected visual_begin position in buffer_after" . " actual:: " . escape(json_encode(getpos("'a")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthVisualBegin)), "\\\\"), 1) . " >&2"
+    endif
+endif
+if getpos("'b") !=# json_decode(g:JiebaTestGroundtruthVisualEnd)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected visual_end position in buffer_after" .. " actual:: " .. vim.fn.json_encode(vim.fn.getpos("'b")) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthVisualEnd)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected visual_end position in buffer_after" . " actual:: " . escape(json_encode(getpos("'b")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthVisualEnd)), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+" model_output echoing
+if has("nvim")
+    lua <<EOF
+io.write(vim.fn.json_encode(vim.g.model_output) .. "\\n")
+EOF
+else
+    execute "!echo " . shellescape(escape(json_encode(g:model_output), "\\\\"), 1)
+endif
+
+silent xit
+"""
+    )
+
+    sbuf = StringIO()
+    basic_integrated_blocks[2].write_std_run(sbuf)
+    assert (
+        sbuf.getvalue()
+        == """\
+" define oracle model
+function! JiebaOracleModel(...)
+    let g:model_input = a:000
+    let g:model_output = call(function("JiebaModelOmap"), a:000)
+    return g:model_output
+endfunction
+
+" state_before setup
+
+" buffer_before setup
+call setpos(".", [0, 1, 2, 0, 2])
+
+" autocmd setup
+function! IncrementAutocmdEventCount(event_name)
+    let l:count = get(g:jieba_test_case_events_count, a:event_name, 0)
+    let g:jieba_test_case_events_count[a:event_name] = l:count + 1
+endfunction
+
+augroup jieba_test_case_autocmd_events_monitoring
+    autocmd!
+augroup END
+
+" state_before checking
+
+
+let g:jieba_test_case_events_count = {}
+" cursor movement
+normal! "ad2W
+execute "normal! \\<Esc>"
+
+let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
+
+" autocmd event counts querying
+let g:JiebaTestGroundtruthAutocmdEventsCount = json_encode(s:jieba_test_case_events_count_frozen)
+
+" state_after querying
+let g:JiebaTestGroundtruthReg_a = getreg('a')
+let g:JiebaTestGroundtruthMark_lsquare = json_encode(getpos("'["))
+let g:JiebaTestGroundtruthMark_rsquare = json_encode(getpos("']"))
+let g:JiebaTestGroundtruthMark_langle = json_encode(getpos("'<"))
+let g:JiebaTestGroundtruthMark_rangle = json_encode(getpos("'>"))
+
+" buffer_after querying
+let g:JiebaTestGroundtruthCursor = json_encode(getcurpos())
+if has("nvim")
+    lua <<EOF
+io.write(vim.fn.json_encode({cursor = vim.fn.getcurpos()}) .. "\\n")
+EOF
+else
+    execute "!echo " . shellescape(escape(json_encode({"cursor": getcurpos()}), "\\\\"), 1)
+endif
+
+execute "mksession! " . expand("%:p:h") . "/Session.vim"
+silent xit
+"""
+    )
+    sbuf = StringIO()
+    basic_integrated_blocks[2].write_custom_run(sbuf)
+    assert (
+        sbuf.getvalue()
+        == """\
+silent execute "source " . expand("%:p:h") . "/Session.vim"
+
+" define oracle model
+function! JiebaOracleModel(...)
+    let g:model_input = a:000
+    let g:model_output = call(function("JiebaModelOmap"), a:000)
+    return g:model_output
+endfunction
+
+" state_before setup
+
+" buffer_before setup
+call setpos(".", [0, 1, 2, 0, 2])
+
+" autocmd setup
+function! IncrementAutocmdEventCount(event_name)
+    let l:count = get(g:jieba_test_case_events_count, a:event_name, 0)
+    let g:jieba_test_case_events_count[a:event_name] = l:count + 1
+endfunction
+
+augroup jieba_test_case_autocmd_events_monitoring
+    autocmd!
+augroup END
+
+" state_before checking
+
+
+let g:jieba_test_case_events_count = {}
+" cursor movement
+call JiebaOmap("W", 0, 2, "d", "a", "JiebaOracleModel")
+execute "normal! \\<Esc>"
+
+let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
+
+" autocmd event counts checking
+if g:jieba_test_case_events_count_frozen !=# json_decode(g:JiebaTestGroundtruthAutocmdEventsCount)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected autocmd events count" .. " actual:: " .. vim.fn.json_encode(vim.g.jieba_test_case_events_count_frozen) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthAutocmdEventsCount)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected autocmd events count" . " actual:: " . escape(json_encode(g:jieba_test_case_events_count_frozen), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthAutocmdEventsCount)), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+" state_after checking
+if getreg("a") !=# g:JiebaTestGroundtruthReg_a
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_after in register \\"a" .. " actual:: " .. vim.fn.json_encode(vim.fn.getreg("a")) .. " expected:: " .. vim.fn.json_encode(vim.g.JiebaTestGroundtruthReg_a) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_after in register \\"a" . " actual:: " . escape(json_encode(getreg("a")), "\\\\") . " expected:: " . escape(json_encode(g:JiebaTestGroundtruthReg_a), "\\\\"), 1) . " >&2"
+    endif
+endif
+if getpos("'[") !=# json_decode(g:JiebaTestGroundtruthMark_lsquare)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_after in mark '[" .. " actual:: " .. vim.fn.json_encode(vim.fn.getpos("'[")) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthMark_lsquare)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_after in mark '[" . " actual:: " . escape(json_encode(getpos("'[")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_lsquare)), "\\\\"), 1) . " >&2"
+    endif
+endif
+if getpos("']") !=# json_decode(g:JiebaTestGroundtruthMark_rsquare)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_after in mark ']" .. " actual:: " .. vim.fn.json_encode(vim.fn.getpos("']")) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthMark_rsquare)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_after in mark ']" . " actual:: " . escape(json_encode(getpos("']")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_rsquare)), "\\\\"), 1) . " >&2"
+    endif
+endif
+if getpos("'<") !=# json_decode(g:JiebaTestGroundtruthMark_langle)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_after in mark '<" .. " actual:: " .. vim.fn.json_encode(vim.fn.getpos("'<")) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthMark_langle)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_after in mark '<" . " actual:: " . escape(json_encode(getpos("'<")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_langle)), "\\\\"), 1) . " >&2"
+    endif
+endif
+if getpos("'>") !=# json_decode(g:JiebaTestGroundtruthMark_rangle)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected state_after in mark '>" .. " actual:: " .. vim.fn.json_encode(vim.fn.getpos("'>")) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthMark_rangle)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected state_after in mark '>" . " actual:: " . escape(json_encode(getpos("'>")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_rangle)), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+" buffer_after checking
+if getcurpos() !=# json_decode(g:JiebaTestGroundtruthCursor)
+    if has("nvim")
+        lua <<EOF
+io.stderr:write("unexpected cursor position in buffer_after" .. " actual:: " .. vim.fn.json_encode(vim.fn.getcurpos()) .. " expected:: " .. vim.fn.json_encode(vim.fn.json_decode(vim.g.JiebaTestGroundtruthCursor)) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape("unexpected cursor position in buffer_after" . " actual:: " . escape(json_encode(getcurpos()), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthCursor)), "\\\\"), 1) . " >&2"
+    endif
+endif
+
+" model_output echoing
+if has("nvim")
+    lua <<EOF
+io.write(vim.fn.json_encode(vim.g.model_output) .. "\\n")
+EOF
+else
+    execute "!echo " . shellescape(escape(json_encode(g:model_output), "\\\\"), 1)
+endif
+
+silent xit
+"""
+    )

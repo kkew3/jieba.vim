@@ -25,6 +25,7 @@ from .parser import (
     BufferExpr,
     AutocmdEventCountExpr,
 )
+from . import vimscript_transpiler as vim
 
 
 def get1(raw_block: RawBlock, dr_type: str) -> RawDirective:
@@ -87,6 +88,7 @@ class BasicIntegratedBlock:
     initial_cursor: list[int] | None
 
     # States before to setup and check.
+    # When generating setup code, func named "visualmode" should be ignored.
     initial_states: list[StateExpr]
     # States to verify after the motion.
     states_to_verify: list[StateExpr]
@@ -242,3 +244,420 @@ class BasicIntegratedBlock:
             states_to_verify=states_to_verify,
             autocmd_events_to_verify=autocmd_events_to_verify,
         )
+
+    def write_vimscript_setup(self, outfile):
+        func = {
+            "n": "JiebaModelNmap",
+            "x": "JiebaModelXmap",
+            "o": "JiebaModelOmap",
+        }[self.mode]
+        outfile.write(f"""\
+" define oracle model
+function! JiebaOracleModel(...)
+    let g:model_input = a:000
+    let g:model_output = call(function("{func}"), a:000)
+    return g:model_output
+endfunction
+
+""")
+        # Write state_before setup.
+        outfile.write('" state_before setup\n')
+        for state_expr in self.initial_states:
+            if state_expr.ty == "mark":
+                outfile.write(
+                    "call setpos({key}, {value})\n".format(
+                        key=vim.lit(f"'{state_expr.name}"),
+                        value=vim.VimExpr.list_(state_expr.value),
+                    )
+                )
+            elif state_expr.ty == "opt":
+                outfile.write(
+                    "let {lhs} = {rhs}\n".format(
+                        lhs=vim.var(f"&{state_expr.name}"),
+                        rhs=vim.lit(f"{state_expr.value}"),
+                    )
+                )
+            elif state_expr.ty == "reg":
+                outfile.write(
+                    "call setreg({key}, {value})\n".format(
+                        key=vim.lit(f"{state_expr.name}"),
+                        value=vim.lit(f"{state_expr.value}"),
+                    )
+                )
+        outfile.write("\n")
+
+        # Write buffer_before setup.
+        outfile.write('" buffer_before setup\n')
+        if self.initial_visualmode is not None:
+            outfile.write(
+                "call setpos({key}, {value})\n".format(
+                    key=vim.lit("."),
+                    value=vim.VimExpr.list_(self.initial_visual_begin),
+                )
+            )
+            outfile.write(
+                "execute {cmd_str}\n".format(
+                    cmd_str=vim.lit(f"normal! {self.initial_visualmode}\\<Esc>")
+                )
+            )
+            outfile.write(
+                "call setpos({key}, {value})\n".format(
+                    key=vim.lit("'>"),
+                    value=vim.VimExpr.list_(self.initial_visual_end),
+                )
+            )
+        if self.initial_cursor is not None:
+            outfile.write(
+                "call setpos({key}, {value})\n".format(
+                    key=vim.lit("."),
+                    value=vim.VimExpr.list_(self.initial_cursor),
+                )
+            )
+        outfile.write("\n")
+
+        # Write autocmd setup.
+        outfile.write('" autocmd setup\n')
+        outfile.write("""\
+function! IncrementAutocmdEventCount(event_name)
+    let l:count = get(g:jieba_test_case_events_count, a:event_name, 0)
+    let g:jieba_test_case_events_count[a:event_name] = l:count + 1
+endfunction
+
+""")
+        outfile.write("augroup jieba_test_case_autocmd_events_monitoring\n")
+        outfile.write("    autocmd!\n")
+        for event_name in self.autocmd_events_to_verify:
+            outfile.write(
+                "    au {event} * call IncrementAutocmdEventCount({key})\n".format(
+                    event=event_name, key=vim.lit(event_name)
+                )
+            )
+        outfile.write("augroup END\n\n")
+
+        # Write state_before checking.
+        outfile.write('" state_before checking\n')
+        for state_expr in self.initial_states:
+            if state_expr.ty == "func":
+                outfile.write(
+                    vim.not_eq_test_as_str(
+                        f"unexpected state_before in function {state_expr.name}()",
+                        vim.var(state_expr.name)(),
+                        state_expr.value,
+                    )
+                )
+            elif state_expr.ty == "mark":
+                outfile.write(
+                    vim.not_eq_test_as_str(
+                        f"unexpected state_before in mark '{state_expr.name}",
+                        vim.var("getpos")(f"'{state_expr.name}"),
+                        vim.VimExpr.list_(state_expr.value),
+                    )
+                )
+            elif state_expr.ty == "opt":
+                outfile.write(
+                    vim.not_eq_test_as_str(
+                        f"unexpected state_before in option '{state_expr.name}'",
+                        vim.var(f"&{state_expr.name}"),
+                        state_expr.value,
+                    )
+                )
+            else:  # state_expr.ty == "reg"
+                outfile.write(
+                    vim.not_eq_test_as_str(
+                        f'unexpected state_before in register "{state_expr.name}',
+                        vim.var("getreg")(state_expr.name),
+                        state_expr.value,
+                    )
+                )
+
+    def write_std_run(self, outfile):
+        # Setup.
+        self.write_vimscript_setup(outfile)
+        outfile.write("\n\n")
+
+        outfile.write("let g:jieba_test_case_events_count = {}\n")
+
+        # Cursor movement.
+        outfile.write('" cursor movement\n')
+        if self.mode == "n":
+            outfile.write(f"normal! {self.count}{self.motion_key}\n")
+        elif self.mode == "x":
+            outfile.write(f"normal! gv{self.count}{self.motion_key}\n")
+        else:
+            reg = f'"{self.register}' if self.register else ""
+            outfile.write(
+                f"normal! {reg}{self.operator}{self.count}{self.motion_key}\n"
+            )
+        outfile.write('execute "normal! \\<Esc>"\n\n')
+        outfile.write(
+            "let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n\n"
+        )
+
+        # Autocmd event counts querying.
+        outfile.write("""\
+" autocmd event counts querying
+let g:JiebaTestGroundtruthAutocmdEventsCount = json_encode(s:jieba_test_case_events_count_frozen)
+
+""")
+
+        # State after querying.
+        outfile.write('" state_after querying\n')
+        for state_expr in self.states_to_verify:
+            if state_expr.ty == "func":
+                outfile.write(
+                    f"let g:JiebaTestGroundtruthFunc_{state_expr.name} = {state_expr.name}()\n"
+                )
+            elif state_expr.ty == "mark":
+                if state_expr.name == "<":
+                    _v = "JiebaTestGroundtruthMark_langle"
+                elif state_expr.name == ">":
+                    _v = "JiebaTestGroundtruthMark_rangle"
+                elif state_expr.name == "[":
+                    _v = "JiebaTestGroundtruthMark_lsquare"
+                elif state_expr.name == "]":
+                    _v = "JiebaTestGroundtruthMark_rsquare"
+                else:
+                    _v = f"JiebaTestGroundtruthMark_{state_expr.name}"
+                outfile.write(
+                    f'let g:{_v} = json_encode(getpos("\'{state_expr.name}"))\n'
+                )
+            elif state_expr.ty == "opt":
+                outfile.write(
+                    f"let g:JiebaTestGroundtruthOption_{state_expr.name} = &{state_expr.name}\n"
+                )
+            else:  # ty == "reg"
+                if state_expr.name == '"':
+                    _v = "JiebaTestGroundtruthReg_default"
+                else:
+                    _v = f"JiebaTestGroundtruthReg_{state_expr.name}"
+                outfile.write(f"let g:{_v} = getreg('{state_expr.name}')\n")
+        outfile.write("\n")
+
+        # Buffer after querying and echoing.
+        outfile.write('" buffer_after querying\n')
+        getcurpos = vim.var("getcurpos")
+        json_encode = vim.var("json_encode")
+        getpos = vim.var("getpos")
+        if self.mode in ("n", "o"):
+            outfile.write(
+                f"let g:JiebaTestGroundtruthCursor = {json_encode(getcurpos())}\n"
+            )
+            cursor_dict = vim.VimExpr.dict_({"cursor": getcurpos()})
+            _value_lua = vim.echo(
+                False, vim.json_encoded(vim.LuaExpr.wrap_vim(cursor_dict))
+            )
+            _value_vim = vim.echo(False, vim.json_encoded(cursor_dict))
+            outfile.write(f"""\
+if has("nvim")
+    lua <<EOF
+{_value_lua}
+EOF
+else
+    {_value_vim}
+endif
+
+""")
+        else:
+            outfile.write(
+                f"let g:JiebaTestGroundtruthCursor = {json_encode(getcurpos())}\n"
+            )
+            outfile.write("""\
+normal! gvomaomb
+let g:JiebaTestGroundtruthVisualBegin = json_encode(getpos("'a"))
+let g:JiebaTestGroundtruthVisualEnd = json_encode(getpos("'b"))
+""")
+            v_dict = vim.VimExpr.dict_(
+                {
+                    "cursor": getcurpos(),
+                    "visual_begin": getpos("'a"),
+                    "visual_end": getpos("'b"),
+                }
+            )
+            _value_lua = vim.echo(
+                False, vim.json_encoded(vim.LuaExpr.wrap_vim(v_dict))
+            )
+            _value_vim = vim.echo(False, vim.json_encoded(v_dict))
+            outfile.write(f"""\
+if has("nvim")
+    lua <<EOF
+{_value_lua}
+EOF
+else
+    {_value_vim}
+endif
+
+""")
+
+        # Make session and exit.
+        outfile.write("""\
+execute "mksession! " . expand("%:p:h") . "/Session.vim"
+silent xit
+""")
+
+    def write_custom_run(self, outfile):
+        # Load session.
+        outfile.write("""\
+silent execute "source " . expand("%:p:h") . "/Session.vim"
+
+""")
+
+        # Setup.
+        self.write_vimscript_setup(outfile)
+        outfile.write("\n\n")
+
+        outfile.write("let g:jieba_test_case_events_count = {}\n")
+
+        # Cursor movement.
+        outfile.write('" cursor movement\n')
+        if self.mode == "n":
+            outfile.write(
+                'call JiebaNmap({motion_key}, {count}, "JiebaOracleModel")\n'.format(
+                    motion_key=vim.lit(self.motion_key), count=self.count or "0"
+                )
+            )
+        elif self.mode == "x":
+            outfile.write(
+                'call JiebaXmap({motion_key}, {count}, "JiebaOracleModel")\n'.format(
+                    motion_key=vim.lit(self.motion_key), count=self.count or "0"
+                )
+            )
+        else:
+            outfile.write(
+                'call JiebaOmap({motion_key}, 0, {count}, {operator}, {register}, "JiebaOracleModel")\n'.format(
+                    motion_key=vim.lit(self.motion_key),
+                    count=self.count or "0",
+                    operator=vim.lit(self.operator),
+                    register=(
+                        vim.lit(self.register)
+                        if self.register
+                        else vim.lit('"')
+                    ),
+                )
+            )
+        outfile.write('execute "normal! \\<Esc>"\n\n')
+        outfile.write(
+            "let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n\n"
+        )
+
+        # Autocmd event counts checking.
+        outfile.write('" autocmd event counts checking\n')
+        json_decode = vim.var("json_decode")
+        outfile.write(
+            vim.not_eq_test_as_str(
+                "unexpected autocmd events count",
+                vim.var("g:jieba_test_case_events_count_frozen"),
+                json_decode(
+                    vim.var("g:JiebaTestGroundtruthAutocmdEventsCount")
+                ),
+            )
+        )
+        outfile.write("\n")
+
+        # State after checking.
+        outfile.write('" state_after checking\n')
+        for state_expr in self.states_to_verify:
+            if state_expr.ty == "func":
+                outfile.write(
+                    vim.not_eq_test_as_str(
+                        f"unexpected state_after in function {state_expr.name}()",
+                        vim.var(state_expr.name)(),
+                        vim.var(
+                            f"g:JiebaTestGroundtruthFunc_{state_expr.name}"
+                        ),
+                    )
+                )
+            elif state_expr.ty == "mark":
+                if state_expr.name in string.ascii_lowercase:
+                    _v = f"JiebaTestGroundtruthMark_{state_expr.name}"
+                else:
+                    _v = {
+                        "<": "JiebaTestGroundtruthMark_langle",
+                        ">": "JiebaTestGroundtruthMark_rangle",
+                        "[": "JiebaTestGroundtruthMark_lsquare",
+                        "]": "JiebaTestGroundtruthMark_rsquare",
+                    }[state_expr.name]
+                outfile.write(
+                    vim.not_eq_test_as_str(
+                        f"unexpected state_after in mark '{state_expr.name}",
+                        vim.var("getpos")(f"'{state_expr.name}"),
+                        vim.var("json_decode")(vim.var(f"g:{_v}")),
+                    )
+                )
+            elif state_expr.ty == "opt":
+                outfile.write(
+                    vim.not_eq_test_as_str(
+                        f"unexpected state_after in option '{state_expr.name}'",
+                        vim.var(f"&{state_expr.name}"),
+                        vim.var(
+                            f"g:JiebaTestGroundtruthOption_{state_expr.name}"
+                        ),
+                    )
+                )
+            else:  # ty == "reg"
+                if state_expr.name in string.ascii_lowercase:
+                    _v = f"JiebaTestGroundtruthReg_{state_expr.name}"
+                else:
+                    _v = {'"': "JiebaTestGroundtruthReg_default"}[
+                        state_expr.name
+                    ]
+                outfile.write(
+                    vim.not_eq_test_as_str(
+                        f'unexpected state_after in register "{state_expr.name}',
+                        vim.var("getreg")(state_expr.name),
+                        vim.var(f"g:{_v}"),
+                    )
+                )
+        outfile.write("\n")
+
+        # Buffer after checking.
+        outfile.write('" buffer_after checking\n')
+        getcurpos = vim.var("getcurpos")
+        json_decode = vim.var("json_decode")
+        getpos = vim.var("getpos")
+        outfile.write(
+            vim.not_eq_test_as_str(
+                "unexpected cursor position in buffer_after",
+                getcurpos(),
+                json_decode(vim.var("g:JiebaTestGroundtruthCursor")),
+            )
+        )
+        if self.mode == "x":
+            outfile.write("normal! gvomaomb\n")
+            outfile.write(
+                vim.not_eq_test_as_str(
+                    "unexpected visual_begin position in buffer_after",
+                    getpos(vim.lit("'a")),
+                    json_decode(vim.var("g:JiebaTestGroundtruthVisualBegin")),
+                )
+            )
+            outfile.write(
+                vim.not_eq_test_as_str(
+                    "unexpected visual_end position in buffer_after",
+                    getpos(vim.lit("'b")),
+                    json_decode(vim.var("g:JiebaTestGroundtruthVisualEnd")),
+                )
+            )
+        outfile.write("\n")
+
+        # Model output echoing.
+        outfile.write('" model_output echoing\n')
+        _value_lua = vim.echo(
+            False,
+            vim.json_encoded(vim.LuaExpr.wrap_vim(vim.var("g:model_output"))),
+        )
+        _value_vim = vim.echo(
+            False, vim.json_encoded(vim.var("g:model_output"))
+        )
+        outfile.write(f"""\
+if has("nvim")
+    lua <<EOF
+{_value_lua}
+EOF
+else
+    {_value_vim}
+endif
+
+""")
+
+        # Exit.
+        outfile.write("silent xit\n")
