@@ -362,6 +362,8 @@ class LuaExpr:
             )
             return f'"{escaped}"'
         if self.ty == "vim_var":
+            if self.arg1[:1] == "&":
+                return f"vim.o.{self.arg1[1:]}"
             if self.arg1[:2] not in ("g:", "w:", "b:", "t:", "v:"):
                 raise ValueError(
                     f"cannot convert VimExpr::var({self.arg1}) to lua"
