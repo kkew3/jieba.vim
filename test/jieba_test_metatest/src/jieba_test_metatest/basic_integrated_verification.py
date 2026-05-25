@@ -12,8 +12,13 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+import argparse
 from dataclasses import dataclass
+import json
+import os
+import shlex
 import string
+import subprocess
 from typing import Literal
 
 from .parser import (
@@ -83,6 +88,8 @@ class BasicIntegratedBlock:
     # If mode is not "o", this will be None. When this is not None, an empty
     # string value denotes the default implicit register.
     register: str | None
+
+    clean_buffer_before: list[str]
 
     initial_visualmode: Literal["v", "V", "\\<C-v>"] | None
     initial_visual_begin: list[int] | None
@@ -185,6 +192,7 @@ class BasicIntegratedBlock:
         buffer_before = BufferExpr.parse(
             buffer_before_dr.arg, buffer_before_dr.span
         )
+        clean_buffer_before = buffer_before.clean_buffer
         if buffer_before.langle is not None or buffer_before.rangle is not None:
             raise buffer_before_dr.span.to_parse_error(
                 "invalid position marks <, > in directive `B0`"
@@ -246,6 +254,7 @@ class BasicIntegratedBlock:
             count=count,
             operator=operator,
             register=register,
+            clean_buffer_before=clean_buffer_before,
             initial_visualmode=initial_visualmode,
             initial_visual_begin=initial_visual_begin,
             initial_visual_end=initial_visual_end,
@@ -668,3 +677,261 @@ endif
 
         # Exit.
         outfile.write("silent xit\n")
+
+    def run_verification(
+        self,
+        vimrc: str | None,
+        work_dir: str,
+        vim_bin: str | None,
+        vim_type: Literal["vim", "nvim"],
+    ) -> 'BasicIntegratedVerificationFailure | VerificationOutput | Literal["continue", "dry_run"]':
+        if (
+            any((dr.ty, dr.value) == ("non_feature", "nvim") for dr in self.hc)
+            and vim_type == "nvim"
+        ) or (
+            any((dr.ty, dr.value) == ("feature", "nvim") for dr in self.hc)
+            and vim_type == "vim"
+        ):
+            # Shortcut path for mismatched runtime.
+            return "continue"
+
+        os.mkdir(work_dir)  # may raise FileExistsError, which is intentional
+
+        # Std-run.
+        buffer_file = os.path.join(work_dir, "buffer")
+        with open(buffer_file, "w", encoding="utf-8") as outfile:
+            for line in self.clean_buffer_before:
+                outfile.write(f"{line}\n")
+        std_run_file = os.path.join(work_dir, "std_run.vim")
+        with open(std_run_file, "w", encoding="utf-8") as outfile:
+            self.write_std_run(outfile)
+        resp = verify_in_vim(
+            vim_bin,
+            vimrc,
+            std_run_file,
+            buffer_file,
+            expected_buffer_after=None,
+            run_type="std-run",
+            vim_type=vim_type,
+            block_span=self.span,
+        )
+        if resp == "continue":
+            return "continue"
+        if isinstance(resp, BasicIntegratedVerificationFailure):
+            return resp
+        with open(buffer_file, encoding="utf-8") as infile:
+            expected_buffer_after = [line.rstrip("\n") for line in infile]
+
+        # Custom-run.
+        with open(buffer_file, "w", encoding="utf-8") as outfile:
+            for line in self.clean_buffer_before:
+                outfile.write(f"{line}\n")
+        custom_run_file = os.path.join(work_dir, "custom_run.vim")
+        with open(custom_run_file, "w", encoding="utf-8") as outfile:
+            self.write_custom_run(outfile)
+        resp = verify_in_vim(
+            vim_bin,
+            vimrc,
+            custom_run_file,
+            buffer_file,
+            expected_buffer_after,
+            run_type="custom-run",
+            vim_type=vim_type,
+            block_span=self.span,
+        )
+        assert resp is not None, "unreachable"
+        if resp in ("continue", "dry_run"):
+            return resp
+        if isinstance(resp, BasicIntegratedVerificationFailure):
+            return resp
+
+        # Collect into outputs.
+        return VerificationOutput(
+            fun_name=f"{self.mode}map",
+            buffer=self.clean_buffer_before,
+            model_input=resp.input,
+            model_output=resp.output,
+            span=self.span,
+        )
+
+
+@dataclass
+class VimRunResponse:
+    # Alias: "i".
+    input: list
+    # Alias: "o".
+    output: dict
+
+
+def pretty_print_clean_buffer(clean_buffer: list[str]) -> str:
+    if clean_buffer:
+        return "".join(
+            line.replace(" ", "·").replace("\t", "┤") + "␊\n"
+            for line in clean_buffer
+        )
+    return "␀\n"
+
+
+@dataclass
+class BasicIntegratedVerificationFailure:
+    run_type: Literal["std-run", "custom-run"]
+    block_span: SourceSpan
+    message: str
+
+    def __str__(self):
+        return (
+            f"bi case failed ({self.run_type}): {self.block_span} -->\n"
+            f"{self.message}"
+        )
+
+
+def verify_in_vim(
+    vim_bin: str | None,
+    vimrc: str | None,
+    run_file: str,
+    buffer_file: str,
+    expected_buffer_after: list[str] | None,
+    run_type: Literal["std-run", "custom-run"],
+    vim_type: Literal["vim", "nvim"],
+    block_span: SourceSpan,
+) -> (
+    VimRunResponse
+    | BasicIntegratedVerificationFailure
+    | Literal["continue", "dry_run"]
+    | None
+):
+    """
+    If `vim_bin` is None, will run in dry-run mode and return
+    "dry_run"; else, if head conditionals failed (`control_flow` ==
+    "continue"), return "continue"; else, if verification failed, return
+    BasicIntegratedVerificationFailure; else, if `run_type` equals "std-run",
+    will also return None; else, return VimRunResponse.
+
+    If `vimrc` is not None, will run with that vimrc.
+    """
+    cmd = [vim_bin or vim_type]  # If vim_bin is None, will use vim_type.
+    if vim_type == "vim":
+        cmd.append("-es")
+    else:
+        cmd.append("--headless")
+    if vimrc is not None:
+        cmd.extend(["-u", vimrc])
+    cmd.extend(["-S", run_file])
+    cmd.append(buffer_file)
+
+    if vim_bin is None:
+        # Dry-run path.
+        cmd = [shlex(x) for x in cmd]
+        print(">", *cmd)
+        return "dry_run"
+
+    proc = subprocess.run(
+        cmd,
+        check=True,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env={"JIEBA_TEST_CASE": "1"},
+        timeout=5,
+    )
+    if proc.returncode != 0:
+        return BasicIntegratedVerificationFailure(
+            run_type, block_span, proc.stderr
+        )
+
+    msg = json.loads(proc.stdout)  # `msg` should be a dict
+    if msg.get("cf", None) == "continue":
+        return "continue"
+
+    if expected_buffer_after is not None:
+        with open(buffer_file, encoding="utf-8") as infile:
+            actual_buffer_after = [line.rstrip("\n") for line in infile]
+        if actual_buffer_after != expected_buffer_after:
+            pretty_expected = pretty_print_clean_buffer(expected_buffer_after)
+            pretty_actual = pretty_print_clean_buffer(actual_buffer_after)
+            return BasicIntegratedVerificationFailure(
+                run_type,
+                block_span,
+                (
+                    f"expected buffer_after:\n\n{pretty_expected}\n"
+                    f"actual buffer_after:\n\n{pretty_actual}"
+                ),
+            )
+
+    if run_type == "std-run":
+        return None
+
+    if "i" not in msg or "o" not in msg:
+        raise ValueError(f"model i/o is None: {block_span}")
+
+    return VimRunResponse(input=msg["i"], output=msg["o"])
+
+
+@dataclass
+class VerificationOutput:
+    # Alias: "f".
+    fun_name: Literal["nmap", "xmap", "omap"]
+    # Alias: "b". Clean buffer_before.
+    buffer: list[str]
+    # Alias: "i". Model inputs.
+    model_input: list
+    # Alias: "o". Model outputs.
+    model_output: dict
+    # Block span as str.
+    span: str
+
+
+def make_parser():
+    parser = argparse.ArgumentParser(
+        description="Basic integrated verification cli."
+    )
+    parser.add_argument(
+        "--rc",
+        dest="vimrc",
+        help=(
+            "The vimrc path for basic integrated verification. "
+            "If using vim instance from docker container where "
+            "vimrc has been baked in, this option may not be necessary"
+        ),
+    )
+    parser.add_argument(
+        "-v",
+        dest="vim_bin",
+        help=(
+            "The full path or PATH-searchable name of vim/nvim binary. "
+            "Leave this unspecified to enable dry-run mode, in which "
+            "the run script etc. can be inspected."
+        ),
+    )
+    parser.add_argument(
+        "-n",
+        dest="vim_dist_name",
+        help=(
+            "The vim/nvim distribution name. Default to the last component "
+            "of `-v`, or 'vim' if `-v` is not provided. The caller needs to "
+            "ensure that the name contains only characters that are safe to "
+            "be used in a file base name."
+        ),
+    )
+    parser.add_argument(
+        "--neovim",
+        action="store_true",
+        dest="is_neovim",
+        help="Specify this if `-v` points to neovim.",
+    )
+    parser.add_argument(
+        "-d",
+        dest="work_dir",
+        help=(
+            "The working directory under which to run unit test verifications."
+        ),
+    )
+    parser.add_argument(
+        "test_case_file", nargs="*", help="The *.jieba_test_case files."
+    )
+    return parser
+
+
+def main():
+    pass
