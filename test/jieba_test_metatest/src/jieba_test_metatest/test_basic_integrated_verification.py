@@ -74,6 +74,7 @@ S1 visualmode()= '[= ']=
                 parser.RawDirective("X", "bi", span.copy_as(3)),
             ],
             span=span.copy_as(8, 12),
+            hc=[],
             mode="n",
             motion_key="w",
             count="2",
@@ -110,6 +111,7 @@ S1 visualmode()= '[= ']=
                 parser.RawDirective("X", "bi", span.copy_as(3)),
             ],
             span=span.copy_as(14, 20),
+            hc=[],
             mode="o",
             motion_key="e",
             count="",
@@ -148,6 +150,7 @@ S1 visualmode()= '[= ']=
                 parser.RawDirective("X", "bi", span.copy_as(3)),
             ],
             span=span.copy_as(22, 26),
+            hc=[],
             mode="x",
             motion_key="iw",
             count="0",
@@ -175,6 +178,8 @@ S1 visualmode()= '[= ']=
 def test_write_std_run_custom_run():
     lines = """\
 #V 4
+? !has:nvim
+
 #X bi
 
 M n
@@ -224,17 +229,21 @@ S1 '>=
     assert basic_integrated_blocks == [
         m.BasicIntegratedBlock(
             raw_directives=collect_raw_directives(
-                ("B0", "|ab[]c·def␊", 8),
-                ("E", "CursorMoved=", 10),
-                ("E", "CmdlineChanged=", 11),
-                ("K", "w", 7),
-                ("M", "n", 4),
-                ("S0", "visualmode()=v", 5),
-                ("S0", "selection=exclusive", 6),
-                ("S1", "visualmode()=", 9),
-                ("X", "bi", 2),
+                ("?", "!has:nvim", 2),
+                ("B0", "|ab[]c·def␊", 10),
+                ("E", "CursorMoved=", 12),
+                ("E", "CmdlineChanged=", 13),
+                ("K", "w", 9),
+                ("M", "n", 6),
+                ("S0", "visualmode()=v", 7),
+                ("S0", "selection=exclusive", 8),
+                ("S1", "visualmode()=", 11),
+                ("X", "bi", 4),
             ),
-            span=span.copy_as(4, 11),
+            span=span.copy_as(6, 13),
+            hc=[
+                parser.HeadConditionalExpr("non_feature", "nvim"),
+            ],
             mode="n",
             motion_key="w",
             count="",
@@ -258,20 +267,24 @@ S1 '>=
         ),
         m.BasicIntegratedBlock(
             raw_directives=collect_raw_directives(
-                ("B0", "[]abc·def␊", 16),
-                ("C", "1", 17),
-                ("E", "CursorMoved=", 18),
-                ("E", "CmdlineChanged=", 19),
-                ("K", "e", 15),
-                ("M", "\\<C-v>", 13),
-                ("S0", "virtualedit=onemore", 14),
-                ("S0", '"a=foo', 14),
-                ("S1", "visualmode()=", 20),
-                ("S1", "'[=", 20),
-                ("S1", "']=", 20),
-                ("X", "bi", 2),
+                ("?", "!has:nvim", 2),
+                ("B0", "[]abc·def␊", 18),
+                ("C", "1", 19),
+                ("E", "CursorMoved=", 20),
+                ("E", "CmdlineChanged=", 21),
+                ("K", "e", 17),
+                ("M", "\\<C-v>", 15),
+                ("S0", "virtualedit=onemore", 16),
+                ("S0", '"a=foo', 16),
+                ("S1", "visualmode()=", 22),
+                ("S1", "'[=", 22),
+                ("S1", "']=", 22),
+                ("X", "bi", 4),
             ),
-            span=span.copy_as(13, 20),
+            span=span.copy_as(15, 22),
+            hc=[
+                parser.HeadConditionalExpr("non_feature", "nvim"),
+            ],
             mode="x",
             motion_key="e",
             count="1",
@@ -297,20 +310,24 @@ S1 '>=
         ),
         m.BasicIntegratedBlock(
             raw_directives=collect_raw_directives(
-                ("B0", "a|bc·def␊", 26),
-                ("C", "2", 27),
-                ("K", "W", 23),
-                ("M", "o", 22),
-                ("O", "d", 24),
-                ("R", "a", 25),
-                ("S1", '"a=', 28),
-                ("S1", "'[=", 29),
-                ("S1", "']=", 30),
-                ("S1", "'<=", 31),
-                ("S1", "'>=", 32),
-                ("X", "bi", 2),
+                ("?", "!has:nvim", 2),
+                ("B0", "a|bc·def␊", 28),
+                ("C", "2", 29),
+                ("K", "W", 25),
+                ("M", "o", 24),
+                ("O", "d", 26),
+                ("R", "a", 27),
+                ("S1", '"a=', 30),
+                ("S1", "'[=", 31),
+                ("S1", "']=", 32),
+                ("S1", "'<=", 33),
+                ("S1", "'>=", 34),
+                ("X", "bi", 4),
             ),
-            span=span.copy_as(22, 32),
+            span=span.copy_as(24, 34),
+            hc=[
+                parser.HeadConditionalExpr("non_feature", "nvim"),
+            ],
             mode="o",
             motion_key="W",
             count="2",
@@ -337,6 +354,16 @@ S1 '>=
     assert (
         sbuf.getvalue()
         == """\
+if has("nvim")
+    if has("nvim")
+        lua <<EOF
+io.write(vim.fn.json_encode({cf = "continue"}) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape(escape(json_encode({"cf": "continue"}), "\\\\"), 1)
+    endif
+endif
+
 " define oracle model
 function! JiebaOracleModel(...)
     let g:model_input = a:000
@@ -418,6 +445,16 @@ silent xit
     assert (
         sbuf.getvalue()
         == """\
+if has("nvim")
+    if has("nvim")
+        lua <<EOF
+io.write(vim.fn.json_encode({cf = "continue"}) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape(escape(json_encode({"cf": "continue"}), "\\\\"), 1)
+    endif
+endif
+
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
@@ -527,6 +564,16 @@ silent xit
     assert (
         sbuf.getvalue()
         == """\
+if has("nvim")
+    if has("nvim")
+        lua <<EOF
+io.write(vim.fn.json_encode({cf = "continue"}) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape(escape(json_encode({"cf": "continue"}), "\\\\"), 1)
+    endif
+endif
+
 " define oracle model
 function! JiebaOracleModel(...)
     let g:model_input = a:000
@@ -613,6 +660,16 @@ silent xit
     assert (
         sbuf.getvalue()
         == """\
+if has("nvim")
+    if has("nvim")
+        lua <<EOF
+io.write(vim.fn.json_encode({cf = "continue"}) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape(escape(json_encode({"cf": "continue"}), "\\\\"), 1)
+    endif
+endif
+
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
@@ -759,6 +816,16 @@ silent xit
     assert (
         sbuf.getvalue()
         == """\
+if has("nvim")
+    if has("nvim")
+        lua <<EOF
+io.write(vim.fn.json_encode({cf = "continue"}) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape(escape(json_encode({"cf": "continue"}), "\\\\"), 1)
+    endif
+endif
+
 " define oracle model
 function! JiebaOracleModel(...)
     let g:model_input = a:000
@@ -820,6 +887,16 @@ silent xit
     assert (
         sbuf.getvalue()
         == """\
+if has("nvim")
+    if has("nvim")
+        lua <<EOF
+io.write(vim.fn.json_encode({cf = "continue"}) .. "\\n")
+EOF
+    else
+        execute "!echo " . shellescape(escape(json_encode({"cf": "continue"}), "\\\\"), 1)
+    endif
+endif
+
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model

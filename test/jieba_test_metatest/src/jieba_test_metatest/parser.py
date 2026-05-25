@@ -573,3 +573,19 @@ class AutocmdEventCountExpr:
                     f"invalid directive `E` value: {arg}"
                 ) from err
         return cls(name, count)
+
+
+@dataclass
+class HeadConditionalExpr:
+    ty: Literal["feature", "non_feature", "vim_version_lower_bound"]
+    value: str
+
+    @classmethod
+    def parse(cls, arg: str, span: SourceSpan):
+        if arg.startswith("has:"):
+            return cls("feature", arg[4:])
+        if arg.startswith("!has:"):
+            return cls("non_feature", arg[5:])
+        if arg.startswith("version:"):
+            return cls("vim_version_lower_bound", arg[8:])
+        raise span.to_parse_error(f"unsupported head conditional: {arg}")

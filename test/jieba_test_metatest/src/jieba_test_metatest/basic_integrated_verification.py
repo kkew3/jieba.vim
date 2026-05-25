@@ -24,6 +24,7 @@ from .parser import (
     ParseError,
     BufferExpr,
     AutocmdEventCountExpr,
+    HeadConditionalExpr,
 )
 from . import vimscript_transpiler as vim
 
@@ -70,6 +71,9 @@ class BasicIntegratedBlock:
     # Block-level span.
     span: SourceSpan
 
+    # Head conditionals.
+    hc: list[HeadConditionalExpr]
+
     mode: Literal["n", "x", "o"]
     motion_key: str
     # Either a positive integer as string or empty.
@@ -104,6 +108,11 @@ class BasicIntegratedBlock:
         """
         if all(dr.arg != "bi" for dr in raw_block.iter_directives_like("X")):
             return None
+
+        hc = [
+            HeadConditionalExpr.parse(dr.arg, dr.span)
+            for dr in raw_block.iter_directives_like("?")
+        ]
 
         mode_dr = get1(raw_block, "M")
         if mode_dr.arg not in {"n", "o", "v", "V", "\\<C-v>"}:
@@ -231,6 +240,7 @@ class BasicIntegratedBlock:
         return cls(
             raw_directives=raw_block.directives,
             span=raw_block.span,
+            hc=hc,
             mode=mode,
             motion_key=motion_key,
             count=count,
@@ -245,7 +255,39 @@ class BasicIntegratedBlock:
             autocmd_events_to_verify=autocmd_events_to_verify,
         )
 
+    def write_head_conditionals(self, outfile):
+        for hc_expr in self.hc:
+            if hc_expr.ty == "feature":
+                outfile.write(
+                    "if !has({feature})\n".format(
+                        feature=vim.lit(hc_expr.value)
+                    )
+                )
+            elif hc_expr.ty == "non_feature":
+                outfile.write(
+                    "if has({feature})\n".format(feature=vim.lit(hc_expr.value))
+                )
+            else:
+                outfile.write(f"if v:version < {hc_expr.value}\n")
+            cf_dict = vim.VimExpr.dict_({"cf": "continue"})
+            _value_lua = vim.echo(
+                False, vim.json_encoded(vim.LuaExpr.wrap_vim(cf_dict))
+            )
+            _value_vim = vim.echo(False, vim.json_encoded(cf_dict))
+            outfile.write(f"""\
+    if has("nvim")
+        lua <<EOF
+{_value_lua}
+EOF
+    else
+        {_value_vim}
+    endif
+""")
+            outfile.write("endif\n")
+        outfile.write("\n")
+
     def write_vimscript_setup(self, outfile):
+        # Define oracle model.
         func = {
             "n": "JiebaModelNmap",
             "x": "JiebaModelXmap",
@@ -371,6 +413,8 @@ endfunction
                 )
 
     def write_std_run(self, outfile):
+        self.write_head_conditionals(outfile)
+
         # Setup.
         self.write_vimscript_setup(outfile)
         outfile.write("\n\n")
@@ -495,6 +539,8 @@ silent xit
 """)
 
     def write_custom_run(self, outfile):
+        self.write_head_conditionals(outfile)
+
         # Load session.
         outfile.write("""\
 silent execute "source " . expand("%:p:h") . "/Session.vim"
