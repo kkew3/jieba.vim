@@ -428,13 +428,6 @@ let g:JiebaTestGroundtruthFunc_visualmode = visualmode()
 
 " buffer_after querying
 let g:JiebaTestGroundtruthCursor = json_encode(getcurpos())
-if has("nvim")
-    lua <<EOF
-io.write(vim.fn.json_encode({cursor = vim.fn.getcurpos()}) .. "\\n")
-EOF
-else
-    execute "!echo " . shellescape(escape(json_encode({"cursor": getcurpos()}), "\\\\"), 1)
-endif
 
 execute "mksession! " . expand("%:p:h") . "/Session.vim"
 silent xit
@@ -549,10 +542,10 @@ endif
 " model_output echoing
 if has("nvim")
     lua <<EOF
-io.write(vim.fn.json_encode(vim.g.model_output) .. "\\n")
+io.write(vim.fn.json_encode({i = vim.g.model_input, o = vim.g.model_output}) .. "\\n")
 EOF
 else
-    execute "!echo " . shellescape(escape(json_encode(g:model_output), "\\\\"), 1)
+    execute "!echo " . shellescape(escape(json_encode({"i": g:model_input, "o": g:model_output}), "\\\\"), 1)
 endif
 
 silent xit
@@ -643,13 +636,6 @@ let g:JiebaTestGroundtruthCursor = json_encode(getcurpos())
 normal! gvomaomb
 let g:JiebaTestGroundtruthVisualBegin = json_encode(getpos("'a"))
 let g:JiebaTestGroundtruthVisualEnd = json_encode(getpos("'b"))
-if has("nvim")
-    lua <<EOF
-io.write(vim.fn.json_encode({cursor = vim.fn.getcurpos(), visual_begin = vim.fn.getpos("'a"), visual_end = vim.fn.getpos("'b")}) .. "\\n")
-EOF
-else
-    execute "!echo " . shellescape(escape(json_encode({"cursor": getcurpos(), "visual_begin": getpos("'a"), "visual_end": getpos("'b")}), "\\\\"), 1)
-endif
 
 execute "mksession! " . expand("%:p:h") . "/Session.vim"
 silent xit
@@ -801,10 +787,10 @@ endif
 " model_output echoing
 if has("nvim")
     lua <<EOF
-io.write(vim.fn.json_encode(vim.g.model_output) .. "\\n")
+io.write(vim.fn.json_encode({i = vim.g.model_input, o = vim.g.model_output}) .. "\\n")
 EOF
 else
-    execute "!echo " . shellescape(escape(json_encode(g:model_output), "\\\\"), 1)
+    execute "!echo " . shellescape(escape(json_encode({"i": g:model_input, "o": g:model_output}), "\\\\"), 1)
 endif
 
 silent xit
@@ -870,13 +856,6 @@ let g:JiebaTestGroundtruthMark_rangle = json_encode(getpos("'>"))
 
 " buffer_after querying
 let g:JiebaTestGroundtruthCursor = json_encode(getcurpos())
-if has("nvim")
-    lua <<EOF
-io.write(vim.fn.json_encode({cursor = vim.fn.getcurpos()}) .. "\\n")
-EOF
-else
-    execute "!echo " . shellescape(escape(json_encode({"cursor": getcurpos()}), "\\\\"), 1)
-endif
 
 execute "mksession! " . expand("%:p:h") . "/Session.vim"
 silent xit
@@ -1003,10 +982,10 @@ endif
 " model_output echoing
 if has("nvim")
     lua <<EOF
-io.write(vim.fn.json_encode(vim.g.model_output) .. "\\n")
+io.write(vim.fn.json_encode({i = vim.g.model_input, o = vim.g.model_output}) .. "\\n")
 EOF
 else
-    execute "!echo " . shellescape(escape(json_encode(g:model_output), "\\\\"), 1)
+    execute "!echo " . shellescape(escape(json_encode({"i": g:model_input, "o": g:model_output}), "\\\\"), 1)
 endif
 
 silent xit

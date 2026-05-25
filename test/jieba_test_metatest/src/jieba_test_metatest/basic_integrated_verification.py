@@ -481,56 +481,16 @@ let g:JiebaTestGroundtruthAutocmdEventsCount = json_encode(s:jieba_test_case_eve
         outfile.write('" buffer_after querying\n')
         getcurpos = vim.var("getcurpos")
         json_encode = vim.var("json_encode")
-        getpos = vim.var("getpos")
-        if self.mode in ("n", "o"):
-            outfile.write(
-                f"let g:JiebaTestGroundtruthCursor = {json_encode(getcurpos())}\n"
-            )
-            cursor_dict = vim.VimExpr.dict_({"cursor": getcurpos()})
-            _value_lua = vim.echo(
-                False, vim.json_encoded(vim.LuaExpr.wrap_vim(cursor_dict))
-            )
-            _value_vim = vim.echo(False, vim.json_encoded(cursor_dict))
-            outfile.write(f"""\
-if has("nvim")
-    lua <<EOF
-{_value_lua}
-EOF
-else
-    {_value_vim}
-endif
-
-""")
-        else:
-            outfile.write(
-                f"let g:JiebaTestGroundtruthCursor = {json_encode(getcurpos())}\n"
-            )
+        outfile.write(
+            f"let g:JiebaTestGroundtruthCursor = {json_encode(getcurpos())}\n"
+        )
+        if self.mode == "x":
             outfile.write("""\
 normal! gvomaomb
 let g:JiebaTestGroundtruthVisualBegin = json_encode(getpos("'a"))
 let g:JiebaTestGroundtruthVisualEnd = json_encode(getpos("'b"))
 """)
-            v_dict = vim.VimExpr.dict_(
-                {
-                    "cursor": getcurpos(),
-                    "visual_begin": getpos("'a"),
-                    "visual_end": getpos("'b"),
-                }
-            )
-            _value_lua = vim.echo(
-                False, vim.json_encoded(vim.LuaExpr.wrap_vim(v_dict))
-            )
-            _value_vim = vim.echo(False, vim.json_encoded(v_dict))
-            outfile.write(f"""\
-if has("nvim")
-    lua <<EOF
-{_value_lua}
-EOF
-else
-    {_value_vim}
-endif
-
-""")
+        outfile.write("\n")
 
         # Make session and exit.
         outfile.write("""\
@@ -687,13 +647,14 @@ silent execute "source " . expand("%:p:h") . "/Session.vim"
 
         # Model output echoing.
         outfile.write('" model_output echoing\n')
+        io_dict = vim.VimExpr.dict_(
+            {"i": vim.var("g:model_input"), "o": vim.var("g:model_output")}
+        )
         _value_lua = vim.echo(
             False,
-            vim.json_encoded(vim.LuaExpr.wrap_vim(vim.var("g:model_output"))),
+            vim.json_encoded(vim.LuaExpr.wrap_vim(io_dict)),
         )
-        _value_vim = vim.echo(
-            False, vim.json_encoded(vim.var("g:model_output"))
-        )
+        _value_vim = vim.echo(False, vim.json_encoded(io_dict))
         outfile.write(f"""\
 if has("nvim")
     lua <<EOF
