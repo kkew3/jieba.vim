@@ -826,7 +826,7 @@ def verify_in_vim(
 
     if vim_bin is None:
         # Dry-run path.
-        cmd = [shlex(x) for x in cmd]
+        cmd = [shlex.quote(x) for x in cmd]
         print(">", *cmd)
         return "dry_run"
 
