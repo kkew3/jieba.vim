@@ -14,29 +14,29 @@
 
 import argparse
 import concurrent.futures
-from dataclasses import dataclass
 import json
 import os
 import shlex
 import string
 import subprocess
 import sys
-from typing import Literal
 import uuid
+from dataclasses import dataclass
+from typing import Literal
 
+from . import vimscript_transpiler as vim
 from .dots_progress import DotsProgress
 from .parser import (
+    AutocmdEventCountExpr,
+    BufferExpr,
+    HeadConditionalExpr,
+    ParseError,
     RawBlock,
     RawDirective,
     RawTestCases,
     SourceSpan,
     StateExpr,
-    ParseError,
-    BufferExpr,
-    AutocmdEventCountExpr,
-    HeadConditionalExpr,
 )
-from . import vimscript_transpiler as vim
 
 
 def get1(raw_block: RawBlock, dr_type: str) -> RawDirective:
