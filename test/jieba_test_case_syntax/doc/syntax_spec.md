@@ -171,10 +171,10 @@ K {motion_keys}
 or
 
 ```
-K (:{any command to execute} | {any normal! key sequence})+
+K (:{any command to execute} | {any normal key sequence})+
 ```
 
-The `normal!` key sequence or command to test for.
+The `normal` key sequence or command to test for.
 
 When the editor mode hint is not `m`, the first form must be used; otherwise, the second form can be used.
 When the editor mode hint is `n`, text object motions cannot be used.
