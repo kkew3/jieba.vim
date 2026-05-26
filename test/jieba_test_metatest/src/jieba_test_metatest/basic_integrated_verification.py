@@ -842,6 +842,8 @@ def verify_in_vim(
         print(">", *cmd)
         return "dry_run"
 
+    env = os.environ.copy()
+    env["JIEBA_TEST_CASE"] = "1"
     proc = subprocess.run(
         cmd,
         check=True,
@@ -849,7 +851,7 @@ def verify_in_vim(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        env={"JIEBA_TEST_CASE": "1"},
+        env=env,
         timeout=5,
     )
     if proc.returncode != 0:
