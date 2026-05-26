@@ -13,17 +13,22 @@
 # the License.
 
 import argparse
+import concurrent.futures
 from dataclasses import dataclass
 import json
 import os
 import shlex
 import string
 import subprocess
+import sys
 from typing import Literal
+import uuid
 
+from .dots_progress import DotsProgress
 from .parser import (
     RawBlock,
     RawDirective,
+    RawTestCases,
     SourceSpan,
     StateExpr,
     ParseError,
@@ -70,7 +75,7 @@ def is_valid_motion_key(motion_key_value: str) -> bool:
     }
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class BasicIntegratedBlock:
     raw_directives: list[RawDirective]
     # Block-level span.
@@ -751,7 +756,7 @@ endif
             buffer=self.clean_buffer_before,
             model_input=resp.input,
             model_output=resp.output,
-            span=self.span,
+            span=f"{self.span}",
         )
 
 
@@ -928,10 +933,122 @@ def make_parser():
         ),
     )
     parser.add_argument(
+        "-j",
+        dest="n_jobs",
+        default=1,
+        help="Number of jobs to run (>=1). default to 1.",
+    )
+    parser.add_argument(
         "test_case_file", nargs="*", help="The *.jieba_test_case files."
     )
     return parser
 
 
+def run_job(
+    block: BasicIntegratedBlock,
+    vimrc: str | None,
+    case_work_dir: str,
+    vim_bin: str | None,
+    vim_type: Literal["vim", "nvim"],
+):
+    return block.run_verification(vimrc, case_work_dir, vim_bin, vim_type)
+
+
 def main():
-    pass
+    args = make_parser().parse_args()
+    os.makedirs(args.work_dir, exist_ok=True)
+    vim_dist_name = args.vim_dist_name or os.path.basename(
+        args.vim_bin or "vim"
+    )
+    vim_type = "nvim" if args.is_neovim else "vim"
+    unit_info_file = os.path.join(args.work_dir, f"unit-{vim_dist_name}.jsonl")
+    written_to_unit_info = False
+    visited_case = set()
+    with (
+        open(unit_info_file, "w", encoding="utf-8") as outfile,
+        concurrent.futures.ThreadPoolExecutor(
+            max_workers=max(args.n_jobs, 1)
+        ) as executer,
+    ):
+        for path in args.test_case_file:
+            raw_cases = RawTestCases()
+            raw_cases.extend_from_file(path)
+            print(f"I: {path}: found {len(raw_cases)} raw test cases")
+            bi_blocks = list(
+                filter(
+                    None,
+                    map(BasicIntegratedBlock.from_raw_block_opt, raw_cases),
+                )
+            )
+            print(f"I: {path}: found {len(bi_blocks)} bi blocks")
+            if args.vim_bin is None:
+                print("I: dry-run mode")
+                with DotsProgress() as progress:
+                    for c in bi_blocks:
+                        if c in visited_case:
+                            print(
+                                f"W: dup detected: ignored test case {c.span}"
+                            )
+                            continue
+                        visited_case.add(c)
+                        case_work_dir = os.path.join(
+                            args.work_dir, uuid.uuid4().hex
+                        )
+                        assert (
+                            run_job(
+                                c,
+                                args.vimrc,
+                                case_work_dir,
+                                args.vim_bin,
+                                vim_type,
+                            )
+                            == "dry_run"
+                        )
+                        progress.step()
+            else:
+                futures = []
+                with DotsProgress() as progress:
+                    for c in bi_blocks:
+                        if c in visited_case:
+                            print(
+                                f"W: dup detected: ignored test case {c.span}"
+                            )
+                            continue
+                        visited_case.add(c)
+                        case_id = uuid.uuid4().hex
+                        case_work_dir = os.path.join(args.work_dir, case_id)
+                        fut = executer.submit(
+                            run_job,
+                            c,
+                            args.vimrc,
+                            case_work_dir,
+                            args.vim_bin,
+                            vim_type,
+                        )
+                        futures.append(fut)
+                    for fut in concurrent.futures.as_completed(futures):
+                        excp = fut.exception()
+                        if excp is not None:
+                            print(f"E: {excp}", file=sys.stderr)
+                            sys.exit(127)
+                        res = fut.result()
+                        if isinstance(res, BasicIntegratedVerificationFailure):
+                            print(f"F: {res}", file=sys.stderr)
+                            sys.exit(1)
+                        if isinstance(res, VerificationOutput):
+                            json.dump(
+                                {
+                                    "id": case_id,
+                                    "span": res.span,
+                                    "f": res.fun_name,
+                                    "b": res.buffer,
+                                    "i": res.model_input,
+                                    "o": res.model_output,
+                                },
+                                outfile,
+                            )
+                            outfile.write("\n")
+                            written_to_unit_info = True
+                        progress.step()
+    if not written_to_unit_info:
+        os.remove(unit_info_file)

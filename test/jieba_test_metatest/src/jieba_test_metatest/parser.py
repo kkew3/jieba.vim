@@ -18,7 +18,7 @@ from typing import Iterable, Iterator, Literal
 from .version import VERSION
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class SourceSpan:
     file: str | None = None
     lineno: int = 0
@@ -53,7 +53,7 @@ class ParseError(Exception):
         super().__init__(f"parsing error: {span}: {reason}")
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class RawDirective:
     ty: str
     arg: str
@@ -134,6 +134,9 @@ class RawTestCases:
 
     def __init__(self):
         self.blocks = []
+
+    def __len__(self):
+        return len(self.blocks)
 
     def extend_from_lines(self, lines: Iterable[str], span: SourceSpan):
         # Head conditionals.
@@ -276,7 +279,7 @@ class RawTestCases:
             self.extend_from_lines(infile, span)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class StateExpr:
     ty: Literal["opt", "func", "reg", "mark"]
     name: str
@@ -575,7 +578,7 @@ class AutocmdEventCountExpr:
         return cls(name, count)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class HeadConditionalExpr:
     ty: Literal["feature", "non_feature", "vim_version_lower_bound"]
     value: str
