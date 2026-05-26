@@ -954,9 +954,9 @@ def make_parser():
         "-j",
         dest="n_jobs",
         type=int,
-        default=1,
+        default=0,
         help=(
-            "Number of jobs to run (>=1). Default to 1. "
+            "Number of jobs to run (>=1). Default to 0. "
             "Pass 0 to run sequentially."
         ),
     )
