@@ -148,10 +148,8 @@ class TestLuaExpr:
     def test_literal(self):
         assert str(m.LuaExpr.literal("foo")) == '"foo"'
         assert str(m.LuaExpr.literal('"a=foo')) == '"\\"a=foo"'
-        with pytest.raises(ValueError):
-            _ = str(m.LuaExpr.literal("\\<Space>"))
-        with pytest.raises(ValueError):
-            _ = str(m.LuaExpr.literal('"\\<Newline>'))
+        assert str(m.LuaExpr.literal("\\<Space>")) == '" "'
+        assert str(m.LuaExpr.literal('"\\<Newline>')) == '"\\"\\n"'
 
     def test_var(self):
         assert str(m.LuaExpr.vim_var("g:foo")) == "vim.g.foo"

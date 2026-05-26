@@ -354,10 +354,10 @@ class LuaExpr:
             return f"{self.arg1}"
         if self.ty == "literal":
             escape_rules = [
-                ("re", "\\<space>", " "),
-                ("re", "\\<newline>", "\n"),
-                ("re", "\\<tab>", "\t"),
-                ("re", "\\<cr>", "\r"),
+                ("re", r"\\<space>", " "),
+                ("re", r"\\<newline>", "\n"),
+                ("re", r"\\<tab>", "\t"),
+                ("re", r"\\<cr>", "\r"),
                 ("fixed", "\\", "\\\\"),
                 ("fixed", '"', '\\"'),
                 ("fixed", "\n", "\\n"),
