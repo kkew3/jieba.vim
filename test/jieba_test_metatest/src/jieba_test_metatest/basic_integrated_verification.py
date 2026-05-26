@@ -39,25 +39,6 @@ from .parser import (
 )
 
 
-def get1(raw_block: RawBlock, dr_type: str) -> RawDirective:
-    """Get the first one from `directives` and raise error if there're more."""
-    first = None
-    for dr in raw_block.iter_directives_like(dr_type):
-        if first is None:
-            first = dr
-            continue
-        raise dr.span.to_parse_error(
-            f"expecting exactly one arg for directive `{first.ty}` "
-            f"but found more"
-        )
-    if first is None:
-        raise raw_block.span.to_parse_error(
-            f"expecting exactly one arg for directive `{dr_type}` "
-            f"but found none"
-        )
-    return first
-
-
 def to_tuple_opt(obj, /, len_=None) -> tuple | None:
     if obj is None:
         return None
@@ -134,7 +115,7 @@ class BasicIntegratedBlock:
             for dr in raw_block.iter_directives_like("?")
         ]
 
-        mode_dr = get1(raw_block, "M")
+        mode_dr = raw_block.get1("M")
         if mode_dr.arg not in {"n", "o", "v", "V", "\\<C-v>"}:
             raise mode_dr.span.to_parse_error(
                 f"invalid directive `M` value: {mode_dr.arg}"
@@ -142,7 +123,7 @@ class BasicIntegratedBlock:
         tr = {"n": "n", "o": "o", "v": "x", "V": "x", "\\<C-v>": "x"}
         mode = tr[mode_dr.arg]
 
-        motion_key_dr = get1(raw_block, "K")
+        motion_key_dr = raw_block.get1("K")
         if not is_valid_motion_key(motion_key_dr.arg):
             raise motion_key_dr.span.to_parse_error(
                 f"invalid directive `K` value: {motion_key_dr.arg}"
@@ -154,7 +135,7 @@ class BasicIntegratedBlock:
         motion_key = motion_key_dr.arg
 
         try:
-            count_dr = get1(raw_block, "C")
+            count_dr = raw_block.get1("C")
             count = str(int(count_dr.arg))
             if count == "0":
                 count = ""
@@ -162,13 +143,13 @@ class BasicIntegratedBlock:
             count = ""
 
         if mode == "o":
-            operator = get1(raw_block, "O").arg
+            operator = raw_block.get1("O").arg
         else:
             operator = None
 
         if mode == "o":
             try:
-                register_dr = get1(raw_block, "R")
+                register_dr = raw_block.get1("R")
             except ParseError:
                 register = ""
             else:
@@ -203,7 +184,7 @@ class BasicIntegratedBlock:
         if mode == "x" and initial_visualmode is None:
             initial_visualmode = mode_dr.arg
 
-        buffer_before_dr = get1(raw_block, "B0")
+        buffer_before_dr = raw_block.get1("B0")
         buffer_before = BufferExpr.parse(
             buffer_before_dr.arg, buffer_before_dr.span
         )

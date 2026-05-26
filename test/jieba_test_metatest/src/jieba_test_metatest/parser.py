@@ -127,6 +127,27 @@ class RawBlock:
         dr_type = dr if isinstance(dr, str) else dr.ty
         return iter(dr for dr in self.directives if dr.ty == dr_type)
 
+    def get1(self, dr_type: str) -> RawDirective:
+        """
+        Get the first directive from `self` and raise ParseError if there're
+        more.
+        """
+        first = None
+        for dr in self.iter_directives_like(dr_type):
+            if first is None:
+                first = dr
+                continue
+            raise dr.span.to_parse_error(
+                f"expecting exactly one arg for directive `{first.ty}` "
+                f"but found more"
+            )
+        if first is None:
+            raise self.span.to_parse_error(
+                f"expecting exactly one arg for directive `{dr_type}` "
+                f"but found none"
+            )
+        return first
+
 
 @dataclass
 class RawTestCases:
