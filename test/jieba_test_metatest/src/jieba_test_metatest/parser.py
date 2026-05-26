@@ -138,6 +138,9 @@ class RawTestCases:
     def __len__(self):
         return len(self.blocks)
 
+    def __iter__(self):
+        return iter(self.blocks)
+
     def extend_from_lines(self, lines: Iterable[str], span: SourceSpan):
         # Head conditionals.
         hc: list[RawDirective] = []
