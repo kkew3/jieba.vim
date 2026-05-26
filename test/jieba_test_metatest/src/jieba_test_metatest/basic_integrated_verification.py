@@ -26,6 +26,7 @@ from typing import Literal
 
 from . import vimscript_transpiler as vim
 from .dots_progress import DotsProgress
+from .motion_keys import WORD_MOTION_KEYS, WORD_TEXT_OBJECTS
 from .parser import (
     AutocmdEventCountExpr,
     BufferExpr,
@@ -48,20 +49,8 @@ def to_tuple_opt(obj, /, len_=None) -> tuple | None:
 
 
 def is_valid_motion_key(motion_key_value: str) -> bool:
-    return motion_key_value in {
-        "w",
-        "W",
-        "e",
-        "E",
-        "b",
-        "B",
-        "ge",
-        "gE",
-        "iw",
-        "iW",
-        "aw",
-        "aW",
-    }
+    valid_keys = set(WORD_MOTION_KEYS + WORD_TEXT_OBJECTS)
+    return motion_key_value in valid_keys
 
 
 @dataclass(unsafe_hash=True)
