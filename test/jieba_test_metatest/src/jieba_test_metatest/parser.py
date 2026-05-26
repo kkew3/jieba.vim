@@ -570,6 +570,15 @@ class BufferExpr:
             cursor,
         )
 
+    @staticmethod
+    def pprint_clean_buffer(clean_buffer: list[str]) -> str:
+        if clean_buffer:
+            return "".join(
+                line.replace(" ", "·").replace("\t", "┤") + "␊\n"
+                for line in clean_buffer
+            )
+        return "␀\n"
+
 
 @dataclass
 class AutocmdEventCountExpr:

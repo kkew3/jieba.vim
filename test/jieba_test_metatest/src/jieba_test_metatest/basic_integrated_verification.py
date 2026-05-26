@@ -750,15 +750,6 @@ class VimRunResponse:
     output: dict
 
 
-def pretty_print_clean_buffer(clean_buffer: list[str]) -> str:
-    if clean_buffer:
-        return "".join(
-            line.replace(" ", "·").replace("\t", "┤") + "␊\n"
-            for line in clean_buffer
-        )
-    return "␀\n"
-
-
 @dataclass
 class BasicIntegratedVerificationFailure:
     run_type: Literal["std-run", "custom-run"]
@@ -841,8 +832,10 @@ def verify_in_vim(
         with open(buffer_file, encoding="utf-8") as infile:
             actual_buffer_after = [line.rstrip("\n") for line in infile]
         if actual_buffer_after != expected_buffer_after:
-            pretty_expected = pretty_print_clean_buffer(expected_buffer_after)
-            pretty_actual = pretty_print_clean_buffer(actual_buffer_after)
+            pretty_expected = BufferExpr.pprint_clean_buffer(
+                expected_buffer_after
+            )
+            pretty_actual = BufferExpr.pprint_clean_buffer(actual_buffer_after)
             return BasicIntegratedVerificationFailure(
                 run_type,
                 block_span,
