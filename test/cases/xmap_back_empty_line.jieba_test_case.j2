@@ -1,0 +1,78 @@
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy
+// of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+// This tests for a bug where in all visual modes, backward motions cannot go
+// up beyond an empty line.
+//
+// Best viewed in Vim.
+
+#V 4
+
+## Case 1
+#X i
+#B0 ␊␊ab|c␊
+
+{%- for v in ['v', 'V', '\\<C-v>'] %}
+
+K {{ v }}b\<Esc>
+B1 ␊␊<abc␊
+
+K {{ v }}bb\<Esc>
+B1 ␊<␊abc␊
+
+K {{ v }}2b\<Esc>
+B1 ␊<␊abc␊
+
+K {{ v }}bbb\<Esc>
+B1 <␊␊abc␊
+
+K {{ v }}3b\<Esc>
+B1 <␊␊abc␊
+
+K {{ v }}ge\<Esc>
+B1 ␊<␊abc␊
+
+K {{ v }}gege\<Esc>
+B1 <␊␊abc␊
+
+K {{ v }}2ge\<Esc>
+B1 <␊␊abc␊
+{%- endfor %}
+
+## Case 2
+#X i
+#B0 ␊␊|a␊
+
+{%- for v in ['v', 'V', '\\<C-v>'] %}
+
+K {{ v }}b\<Esc>
+B1 ␊<␊a␊
+
+K {{ v }}bb\<Esc>
+B1 <␊␊a␊
+
+K {{ v }}2b\<Esc>
+B1 <␊␊a␊
+
+K {{ v }}ge\<Esc>
+B1 ␊<␊a␊
+
+K {{ v }}gege\<Esc>
+B1 <␊␊a␊
+
+K {{ v }}2ge\<Esc>
+B1 <␊␊a␊
+{%- endfor %}
+
+// vim: ft=jieba_test_case
