@@ -12,11 +12,11 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-#V 3
+// Best viewed in Vim.
+
+#V 4
 #X i
 
-H 85b6b4f565efef84e7d6291583c72f67953a22e5ee1ad5f7303ddf09
-M mn
 K w0
 B0 abcdef|g␊
 B1 abcdef|g␊
