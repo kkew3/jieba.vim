@@ -551,7 +551,7 @@ endfunction
         if self.clean_buffer_after is not None:
             with open(buffer_file, encoding="utf-8") as infile:
                 actual_buffer_after = [line.rstrip("\n") for line in infile]
-            if actual_buffer_after != self.clean_buffer_after:
+            if actual_buffer_after != list(self.clean_buffer_after):
                 pretty_expected = BufferExpr.pprint_clean_buffer(
                     self.clean_buffer_after
                 )
