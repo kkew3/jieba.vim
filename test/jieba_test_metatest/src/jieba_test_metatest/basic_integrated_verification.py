@@ -846,7 +846,6 @@ def verify_in_vim(
     env["JIEBA_TEST_CASE"] = "1"
     proc = subprocess.run(
         cmd,
-        check=True,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
