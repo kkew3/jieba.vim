@@ -156,6 +156,8 @@ class BasicIntegratedBlock:
         try:
             count_dr = get1(raw_block, "C")
             count = str(int(count_dr.arg))
+            if count == "0":
+                count = ""
         except (ParseError, ValueError):
             count = ""
 
