@@ -332,14 +332,14 @@ class StateExpr:
                 raise span.to_parse_error(f"invalid register char: {name[1:]}")
             return cls("reg", name[1:], value)
         if name.startswith("'"):
+            if len(name[1:]) != 1:
+                raise span.to_parse_error(f"invalid mark char: {name[1:]}")
             if value is not None:
                 if not value.startswith("[") or not value.endswith("]"):
                     raise span.to_parse_error(
                         f"mark's value should be list[int] but got: {value}"
                     )
                 value_arr = [int(x) for x in value[1:-1].split(",")]
-                if len(name[1:]) != 1:
-                    raise span.to_parse_error(f"invalid mark char: {name[1:]}")
                 return cls("mark", name[1:], value_arr)
             return cls("mark", name[1:], None)
         return cls("opt", name, value)
