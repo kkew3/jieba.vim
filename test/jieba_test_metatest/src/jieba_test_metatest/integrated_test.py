@@ -351,7 +351,11 @@ endfunction
         outfile.write('" execute commands\n')
         for any_key_expr in self.any_key:
             if any_key_expr.ty == "normal":
-                outfile.write(f"normal {any_key_expr.value}\n")
+                outfile.write(
+                    "execute {}\n".format(
+                        vim.lit(f"normal {any_key_expr.value}")
+                    )
+                )
             else:
                 outfile.write(
                     "execute {}\n".format(vim.lit(any_key_expr.value))
