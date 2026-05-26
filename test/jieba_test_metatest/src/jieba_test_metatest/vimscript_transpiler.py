@@ -32,11 +32,6 @@ class VimExpr:
     def literal(cls, v: str) -> "VimExpr":
         if not isinstance(v, str):
             raise TypeError(f"invalid type: {type(v)}")
-        v = (
-            v.replace("\n", "\\<Newline>")
-            .replace("\r", "\\<CR>")
-            .replace("\t", "\\<Tab>")
-        )
         return cls("literal", v)
 
     @classmethod
@@ -80,7 +75,12 @@ class VimExpr:
         if self.ty == "int":
             return f"{self.arg1}"
         if self.ty == "literal":
-            escaped = f"{self.arg1}".replace('"', '\\"')
+            escaped = (
+                f"{self.arg1}".replace("\n", "\\<Newline>")
+                .replace("\r", "\\<CR>")
+                .replace("\t", "\\<Tab>")
+                .replace('"', '\\"')
+            )
             return f'"{escaped}"'
         if self.ty == "var":
             return f"{self.arg1}"
