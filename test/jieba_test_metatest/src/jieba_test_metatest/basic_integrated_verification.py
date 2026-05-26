@@ -1000,7 +1000,8 @@ def pmap(setup_fn, runner, data, n_jobs, **kwargs):
             except Exception as excp:
                 yield (setup_data, FutureWrapper(res=None, excp=excp))
     else:
-        with concurrent.futures.ThreadPoolExecutor(n_jobs) as executor:
+        executor = concurrent.futures.ThreadPoolExecutor(n_jobs)
+        try:
             fs = {}
             for item in data:
                 if setup_fn is not None:
@@ -1013,6 +1014,8 @@ def pmap(setup_fn, runner, data, n_jobs, **kwargs):
                 fs[_fut] = setup_data
             for fut in concurrent.futures.as_completed(fs):
                 yield (fs[fut], fut)
+        finally:
+            executor.shutdown(cancel_futures=True)  # requires python>=3.9
 
 
 def main():
