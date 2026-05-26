@@ -159,22 +159,6 @@ class IntegratedBlock:
         states_to_verify = []
         for dr in raw_block.iter_directives_like("S1"):
             state_expr = StateExpr.parse(dr.arg, dr.span)
-            if (
-                state_expr.ty == "mark"
-                and state_expr.name not in string.ascii_lowercase
-                and state_expr.name not in {"<", ">", "[", "]"}
-            ):
-                raise dr.span.to_parse_error(
-                    f"unsupported mark `{state_expr.name}`"
-                )
-            elif (
-                state_expr.ty == "reg"
-                and state_expr.name not in string.ascii_lowercase
-                and state_expr.name != '"'
-            ):
-                raise dr.span.to_parse_error(
-                    f"unsupported register `{state_expr.name}`"
-                )
             states_to_verify.append(state_expr)
 
         autocmd_event_counts_to_verify = [
