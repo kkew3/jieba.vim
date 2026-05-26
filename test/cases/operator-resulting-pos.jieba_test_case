@@ -15,45 +15,26 @@
 // This file contains test cases that check for re-positioning the cursor after
 // d-special when 'startofline' option is unset.
 
-#V 3
+#V 4
 
-#M o
-#O d
-#X u
-#Q | < > prevent_change=0 visualmode=V selection=inclusive
+#X i
 
-H 9fdf6b71221d31ead4da67e80f220b0c4f078e03aa242ec65e0896a2
-K w
-C 2
+K d2w
 S0 startofline=0
 B0 |a␊␊··def␊
-Bp <a␊>␊··def␊
-Bo |··def␊
 B1 ··|def␊
 
-H abf501926ae95844aa7e3a04bcef8b528681147a3703a6f3f596ecc0
-K w
-C 2
+K d2w
 S0 startofline=0
 B0 |a␊b␊··def␊
-Bp <a␊>b␊··def␊
-Bo |··def␊
 B1 |··def␊
 
-H c0564292d25869dbfccac5d5a00285f12e3dfe8397e3f60dfa7a5d13
-K w
-C 2
+K d2w
 S0 startofline=0
 B0 |␊␊··def␊
-Bp <␊>␊··def␊
-Bo |··def␊
 B1 ··|def␊
 
-H 2e4e5b5ad2f90758f06b5c582d66d90e997afc746c689bcbf253b9fe
-K w
-C 2
+K d2w
 S0 startofline=0
 B0 |␊b␊··def␊
-Bp <␊>b␊··def␊
-Bo |··def␊
 B1 |··def␊
