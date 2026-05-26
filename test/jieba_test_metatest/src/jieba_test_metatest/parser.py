@@ -580,7 +580,7 @@ class BufferExpr:
         return "␀\n"
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class AutocmdEventCountExpr:
     name: str
     count: int | None
@@ -627,7 +627,7 @@ class HeadConditionalExpr:
         raise span.to_parse_error(f"unsupported head conditional: {arg}")
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class AnyKeySequenceExpr:
     ty: Literal["normal", "execute"]
     value: str
