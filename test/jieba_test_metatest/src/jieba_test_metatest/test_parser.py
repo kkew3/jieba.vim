@@ -171,7 +171,7 @@ def test_parse_state_expr():
     assert p('"a=', span, parse_as_incomplete=True) == m.StateExpr(
         "reg", "a", None
     )
-    assert p("'a=[0,1,2,0]", span) == m.StateExpr("mark", "a", [0, 1, 2, 0])
+    assert p("'a=[0,1,2,0]", span) == m.StateExpr("mark", "a", (0, 1, 2, 0))
     assert p("'a=", span, parse_as_incomplete=True) == m.StateExpr(
         "mark", "a", None
     )

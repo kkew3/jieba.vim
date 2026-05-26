@@ -309,7 +309,7 @@ class StateExpr:
     name: str
     # Will be of type list[int] | None when ty == "mark"; otherwise, will be of
     # type str | None.
-    value: str | list[int] | None
+    value: str | tuple[int, int, int, int] | None
 
     @classmethod
     def parse(
@@ -340,7 +340,11 @@ class StateExpr:
                         f"mark's value should be list[int] but got: {value}"
                     )
                 value_arr = [int(x) for x in value[1:-1].split(",")]
-                return cls("mark", name[1:], value_arr)
+                if len(value_arr) != 4:
+                    raise span.to_parse_error(
+                        f"mark's value should be list[int; 4] but got: {value}"
+                    )
+                return cls("mark", name[1:], tuple(value_arr))
             return cls("mark", name[1:], None)
         return cls("opt", name, value)
 
