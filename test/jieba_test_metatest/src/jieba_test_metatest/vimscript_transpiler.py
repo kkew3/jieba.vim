@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+import re
 from typing import Any, Iterable
 
 
@@ -264,8 +265,6 @@ class LuaExpr:
     def literal(cls, v: str):
         if not isinstance(v, str):
             raise TypeError(f"invalid type: {type(v)}")
-        if "\\" in v:
-            raise ValueError(f"unsupported char '\\' in LuaExpr::literal: {v}")
         return cls("literal", v)
 
     @classmethod
@@ -354,12 +353,23 @@ class LuaExpr:
         if self.ty == "int":
             return f"{self.arg1}"
         if self.ty == "literal":
-            escaped = (
-                f"{self.arg1}".replace('"', '\\"')
-                .replace("\n", "\\n")
-                .replace("\t", "\\t")
-                .replace("\r", "\\r")
-            )
+            escape_rules = [
+                ("re", "\\<space>", " "),
+                ("re", "\\<newline>", "\n"),
+                ("re", "\\<tab>", "\t"),
+                ("re", "\\<cr>", "\r"),
+                ("fixed", "\\", "\\\\"),
+                ("fixed", '"', '\\"'),
+                ("fixed", "\n", "\\n"),
+                ("fixed", "\t", "\\t"),
+                ("fixed", "\r", "\\r"),
+            ]
+            escaped = f"{self.arg1}"
+            for method, pat, repl in escape_rules:
+                if method == "re":
+                    escaped = re.sub(pat, repl, escaped, flags=re.IGNORECASE)
+                elif method == "fixed":
+                    escaped = escaped.replace(pat, repl)
             return f'"{escaped}"'
         if self.ty == "vim_var":
             if self.arg1[:1] == "&":
