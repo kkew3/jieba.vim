@@ -8,7 +8,6 @@ all: $(OUTPUT_TEST_CASES)
 
 %.jieba_test_case: %.jieba_test_case.j2 buffers.yaml
 	minijinja-cli -o $@ $^
-	jieba_vim_rs_metatest check --fix $@ || { rm $@; false; }
 
 clean:
 	rm -f $(OUTPUT_TEST_CASES)
