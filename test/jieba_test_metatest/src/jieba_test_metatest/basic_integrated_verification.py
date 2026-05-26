@@ -58,6 +58,14 @@ def get1(raw_block: RawBlock, dr_type: str) -> RawDirective:
     return first
 
 
+def to_tuple_opt(obj, /, len_=None) -> tuple | None:
+    if obj is None:
+        return None
+    if len_ is not None:
+        assert len(obj) == len_
+    return tuple(obj)
+
+
 def is_valid_motion_key(motion_key_value: str) -> bool:
     return motion_key_value in {
         "w",
@@ -77,12 +85,12 @@ def is_valid_motion_key(motion_key_value: str) -> bool:
 
 @dataclass(unsafe_hash=True)
 class BasicIntegratedBlock:
-    raw_directives: list[RawDirective]
+    raw_directives: tuple[RawDirective, ...]
     # Block-level span.
     span: SourceSpan
 
     # Head conditionals.
-    hc: list[HeadConditionalExpr]
+    hc: tuple[HeadConditionalExpr, ...]
 
     mode: Literal["n", "x", "o"]
     motion_key: str
@@ -94,22 +102,22 @@ class BasicIntegratedBlock:
     # string value denotes the default implicit register.
     register: str | None
 
-    clean_buffer_before: list[str]
+    clean_buffer_before: tuple[str, ...]
 
     initial_visualmode: Literal["v", "V", "\\<C-v>"] | None
-    initial_visual_begin: list[int] | None
-    initial_visual_end: list[int] | None
+    initial_visual_begin: tuple[int, int, int, int] | None
+    initial_visual_end: tuple[int, int, int, int] | None
 
     # If mode is "x", this may be None.
-    initial_cursor: list[int] | None
+    initial_cursor: tuple[int, int, int, int, int] | None
 
     # States before to setup and check.
     # When generating setup code, func named "visualmode" should be ignored.
-    initial_states: list[StateExpr]
+    initial_states: tuple[StateExpr, ...]
     # States to verify after the motion.
-    states_to_verify: list[StateExpr]
+    states_to_verify: tuple[StateExpr, ...]
     # Autocmd event counts to verify after the motion.
-    autocmd_events_to_verify: list[str]
+    autocmd_events_to_verify: tuple[str, ...]
 
     @classmethod
     def from_raw_block_opt(cls, raw_block: RawBlock):
@@ -251,22 +259,22 @@ class BasicIntegratedBlock:
         ]
 
         return cls(
-            raw_directives=raw_block.directives,
+            raw_directives=to_tuple_opt(raw_block.directives),
             span=raw_block.span,
-            hc=hc,
+            hc=to_tuple_opt(hc),
             mode=mode,
             motion_key=motion_key,
             count=count,
             operator=operator,
             register=register,
-            clean_buffer_before=clean_buffer_before,
+            clean_buffer_before=to_tuple_opt(clean_buffer_before),
             initial_visualmode=initial_visualmode,
-            initial_visual_begin=initial_visual_begin,
-            initial_visual_end=initial_visual_end,
-            initial_cursor=initial_cursor,
-            initial_states=initial_states,
-            states_to_verify=states_to_verify,
-            autocmd_events_to_verify=autocmd_events_to_verify,
+            initial_visual_begin=to_tuple_opt(initial_visual_begin, 4),
+            initial_visual_end=to_tuple_opt(initial_visual_end, 4),
+            initial_cursor=to_tuple_opt(initial_cursor, 5),
+            initial_states=to_tuple_opt(initial_states),
+            states_to_verify=to_tuple_opt(states_to_verify),
+            autocmd_events_to_verify=to_tuple_opt(autocmd_events_to_verify),
         )
 
     def write_head_conditionals(self, outfile):
@@ -745,15 +753,17 @@ endif
             block_span=self.span,
         )
         assert resp is not None, "unreachable"
-        if resp in ("continue", "dry_run"):
-            return resp
+        if resp == "continue":
+            return "continue"
+        if resp == "dry_run":
+            return "dry_run"
         if isinstance(resp, BasicIntegratedVerificationFailure):
             return resp
 
         # Collect into outputs.
         return VerificationOutput(
             fun_name=f"{self.mode}map",
-            buffer=self.clean_buffer_before,
+            buffer=list(self.clean_buffer_before),
             model_input=resp.input,
             model_output=resp.output,
             span=f"{self.span}",

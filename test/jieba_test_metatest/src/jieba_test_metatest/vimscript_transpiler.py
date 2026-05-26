@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-from typing import Any
+from typing import Any, Iterable
 
 
 class VimExpr:
@@ -45,7 +45,7 @@ class VimExpr:
         return cls("var", v)
 
     @classmethod
-    def list_(cls, lst: list) -> "VimExpr":
+    def list_(cls, lst: Iterable[Any]) -> "VimExpr":
         return cls("list", [cls.into_vimexpr(a) for a in lst])
 
     @classmethod
@@ -283,7 +283,7 @@ class LuaExpr:
         return cls("lua_var", v)
 
     @classmethod
-    def list_(cls, lst: list):
+    def list_(cls, lst: Iterable[Any]):
         return cls("list", [cls.into_luaexpr(a) for a in lst])
 
     @classmethod
