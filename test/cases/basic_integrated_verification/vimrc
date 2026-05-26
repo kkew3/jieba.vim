@@ -12,7 +12,7 @@
 " License for the specific language governing permissions and limitations
 " under the License.
 
-execute "source " . expand("%:p:h:h") . "/vimrc"
+execute "source " . expand("<sfile>:p:h:h") . "/vimrc"
 if !has("mksession")
     echoerr "+mksession is required to run the tests"
     cquit 12
