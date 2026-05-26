@@ -945,6 +945,7 @@ def make_parser():
     parser.add_argument(
         "-j",
         dest="n_jobs",
+        type=int,
         default=1,
         help=(
             "Number of jobs to run (>=1). Default to 1. "
