@@ -480,6 +480,10 @@ endfunction
                         vim.VimExpr.list_(self.result_visual_end),
                     )
                 )
+        outfile.write("\n")
+
+        # Exit.
+        outfile.write("silent xit\n")
 
     def run_test(
         self,
