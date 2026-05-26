@@ -7,6 +7,7 @@ dependencies = []
 
 [project.scripts]
 jieba-test-metatest = "jieba_test_metatest:main"
+jieba-metatest-bi-verification = "jieba_test_metatest.basic_integrated_verification:main"
 
 [project.optional-dependencies]
 dev = [
