@@ -936,7 +936,7 @@ def make_parser():
         "-j",
         dest="n_jobs",
         default=1,
-        help="Number of jobs to run (>=1). default to 1.",
+        help="Number of jobs to run (>=1). Default to 1.",
     )
     parser.add_argument(
         "test_case_file", nargs="*", help="The *.jieba_test_case files."
@@ -987,7 +987,8 @@ def main():
                     for c in bi_blocks:
                         if c in visited_case:
                             print(
-                                f"W: dup detected: ignored test case {c.span}"
+                                f"W: dup detected: ignored test case {c.span}",
+                                file=sys.stderr,
                             )
                             continue
                         visited_case.add(c)
@@ -1011,7 +1012,8 @@ def main():
                     for c in bi_blocks:
                         if c in visited_case:
                             print(
-                                f"W: dup detected: ignored test case {c.span}"
+                                f"W: dup detected: ignored test case {c.span}",
+                                file=sys.stderr,
                             )
                             continue
                         visited_case.add(c)
