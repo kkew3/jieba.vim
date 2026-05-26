@@ -514,7 +514,6 @@ endfunction
             return "dry_run"
 
         env = os.environ.copy()
-        env["JIEBA_TEST_CASE"] = "1"
         proc = subprocess.run(
             cmd,
             stdin=subprocess.DEVNULL,
