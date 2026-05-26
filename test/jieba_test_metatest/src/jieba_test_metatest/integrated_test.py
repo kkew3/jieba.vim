@@ -451,7 +451,7 @@ endfunction
             self.result_visual_begin is not None
             or self.result_visual_end is not None
         ):
-            outfile.write("normal! gvomaomb")
+            outfile.write("normal! gvomaomb\n")
             if self.result_visual_begin is not None:
                 outfile.write(
                     vim.not_eq_test_as_str(
