@@ -946,7 +946,10 @@ def make_parser():
         "-j",
         dest="n_jobs",
         default=1,
-        help="Number of jobs to run (>=1). Default to 1.",
+        help=(
+            "Number of jobs to run (>=1). Default to 1. "
+            "Pass 0 to run sequentially."
+        ),
     )
     parser.add_argument(
         "test_case_file", nargs="*", help="The *.jieba_test_case files."
@@ -954,14 +957,53 @@ def make_parser():
     return parser
 
 
-def run_job(
-    block: BasicIntegratedBlock,
-    vimrc: str | None,
-    case_work_dir: str,
-    vim_bin: str | None,
-    vim_type: Literal["vim", "nvim"],
-):
-    return block.run_verification(vimrc, case_work_dir, vim_bin, vim_type)
+class FutureWrapper:
+    def __init__(self, res, excp):
+        self.res = res
+        self.excp = excp
+
+    def exception(self):
+        return self.excp
+
+    def result(self):
+        return self.res
+
+
+def pmap(setup_fn, runner, data, n_jobs, **kwargs):
+    """
+    `setup_fn`, if not None, should be a callable that takes each item in
+    data as argument and returns either False if the item should be skipped
+    from enqueueing, or a tuple to be bound with the result of the item. Then,
+    `runner` will be called like `runner(item, *setup_data, **kwargs)`.
+    """
+    assert n_jobs >= 0
+    if n_jobs == 0:
+        for item in data:
+            if setup_fn is not None:
+                setup_data = setup_fn(item)
+                if not setup_data:
+                    continue
+            else:
+                setup_data = ()
+            try:
+                res = runner(item, *setup_data, **kwargs)
+                yield (setup_data, FutureWrapper(res, excp=None))
+            except Exception as excp:
+                yield (setup_data, FutureWrapper(res=None, excp=excp))
+    else:
+        with concurrent.futures.ThreadPoolExecutor(n_jobs) as executor:
+            fs = {}
+            for item in data:
+                if setup_fn is not None:
+                    setup_data = setup_fn(item)
+                    if not setup_data:
+                        continue
+                else:
+                    setup_data = ()
+                _fut = executor.submit(runner, item, *setup_data, **kwargs)
+                fs[_fut] = setup_data
+            for fut in concurrent.futures.as_completed(fs):
+                yield (fs[fut], fut)
 
 
 def main():
@@ -974,12 +1016,23 @@ def main():
     unit_info_file = os.path.join(args.work_dir, f"unit-{vim_dist_name}.jsonl")
     written_to_unit_info = False
     visited_case = set()
-    with (
-        open(unit_info_file, "w", encoding="utf-8") as outfile,
-        concurrent.futures.ThreadPoolExecutor(
-            max_workers=max(args.n_jobs, 1)
-        ) as executer,
-    ):
+
+    def setup_fn(_c: BasicIntegratedBlock):
+        if _c in visited_case:
+            print(
+                f"W: dup detected: ignored test case {_c.span}",
+                file=sys.stderr,
+            )
+            return False
+        visited_case.add(_c)
+        case_id = uuid.uuid4().hex
+        return (case_id,)
+
+    def runner(_c: BasicIntegratedBlock, case_id, vimrc, vim_bin, vim_type):
+        case_work_dir = os.path.join(args.work_dir, case_id)
+        return _c.run_verification(vimrc, case_work_dir, vim_bin, vim_type)
+
+    with open(unit_info_file, "w", encoding="utf-8") as outfile:
         for path in args.test_case_file:
             raw_cases = RawTestCases()
             raw_cases.extend_from_file(path)
@@ -993,74 +1046,44 @@ def main():
             print(f"I: {path}: found {len(bi_blocks)} bi blocks")
             if args.vim_bin is None:
                 print("I: dry-run mode")
-                with DotsProgress() as progress:
-                    for c in bi_blocks:
-                        if c in visited_case:
-                            print(
-                                f"W: dup detected: ignored test case {c.span}",
-                                file=sys.stderr,
-                            )
-                            continue
-                        visited_case.add(c)
-                        case_work_dir = os.path.join(
-                            args.work_dir, uuid.uuid4().hex
-                        )
-                        assert (
-                            run_job(
-                                c,
-                                args.vimrc,
-                                case_work_dir,
-                                args.vim_bin,
-                                vim_type,
-                            )
-                            == "dry_run"
-                        )
+
+            with DotsProgress() as progress:
+                for (case_id,), fut in pmap(
+                    setup_fn,
+                    runner,
+                    bi_blocks,
+                    args.n_jobs,
+                    vimrc=args.vimrc,
+                    vim_bin=args.vim_bin,
+                    vim_type=vim_type,
+                ):
+                    excp = fut.exception()
+                    if excp is not None:
+                        print(f"E: {excp}", file=sys.stderr)
+                        sys.exit(127)
+                    res = fut.result()
+                    if args.vim_bin is None:
+                        assert res == "dry_run"
                         progress.step()
-            else:
-                futures = []
-                with DotsProgress() as progress:
-                    for c in bi_blocks:
-                        if c in visited_case:
-                            print(
-                                f"W: dup detected: ignored test case {c.span}",
-                                file=sys.stderr,
-                            )
-                            continue
-                        visited_case.add(c)
-                        case_id = uuid.uuid4().hex
-                        case_work_dir = os.path.join(args.work_dir, case_id)
-                        fut = executer.submit(
-                            run_job,
-                            c,
-                            args.vimrc,
-                            case_work_dir,
-                            args.vim_bin,
-                            vim_type,
+                        continue
+                    if isinstance(res, BasicIntegratedVerificationFailure):
+                        print(f"F: {res}", file=sys.stderr)
+                        sys.exit(1)
+                    if isinstance(res, VerificationOutput):
+                        json.dump(
+                            {
+                                "id": case_id,
+                                "span": res.span,
+                                "f": res.fun_name,
+                                "b": res.buffer,
+                                "i": res.model_input,
+                                "o": res.model_output,
+                            },
+                            outfile,
                         )
-                        futures.append(fut)
-                    for fut in concurrent.futures.as_completed(futures):
-                        excp = fut.exception()
-                        if excp is not None:
-                            print(f"E: {excp}", file=sys.stderr)
-                            sys.exit(127)
-                        res = fut.result()
-                        if isinstance(res, BasicIntegratedVerificationFailure):
-                            print(f"F: {res}", file=sys.stderr)
-                            sys.exit(1)
-                        if isinstance(res, VerificationOutput):
-                            json.dump(
-                                {
-                                    "id": case_id,
-                                    "span": res.span,
-                                    "f": res.fun_name,
-                                    "b": res.buffer,
-                                    "i": res.model_input,
-                                    "o": res.model_output,
-                                },
-                                outfile,
-                            )
-                            outfile.write("\n")
-                            written_to_unit_info = True
-                        progress.step()
+                        outfile.write("\n")
+                        written_to_unit_info = True
+                    progress.step()
+
     if not written_to_unit_info:
         os.remove(unit_info_file)
