@@ -13,7 +13,6 @@
 # the License.
 
 import argparse
-import concurrent.futures
 import json
 import os
 import shlex
@@ -26,6 +25,7 @@ from typing import Literal
 
 from . import vimscript_transpiler as vim
 from .dots_progress import DotsProgress
+from .executor import pmap
 from .motion_keys import WORD_MOTION_KEYS, WORD_TEXT_OBJECTS
 from .parser import (
     AutocmdEventCountExpr,
@@ -927,58 +927,6 @@ def make_parser():
         "test_case_file", nargs="*", help="The *.jieba_test_case files."
     )
     return parser
-
-
-class FutureWrapper:
-    def __init__(self, res, excp):
-        self.res = res
-        self.excp = excp
-
-    def exception(self):
-        return self.excp
-
-    def result(self):
-        return self.res
-
-
-def pmap(setup_fn, runner, data, n_jobs, **kwargs):
-    """
-    `setup_fn`, if not None, should be a callable that takes each item in
-    data as argument and returns either False if the item should be skipped
-    from enqueueing, or a tuple to be bound with the result of the item. Then,
-    `runner` will be called like `runner(item, *setup_data, **kwargs)`.
-    """
-    assert n_jobs >= 0
-    if n_jobs == 0:
-        for item in data:
-            if setup_fn is not None:
-                setup_data = setup_fn(item)
-                if not setup_data:
-                    continue
-            else:
-                setup_data = ()
-            try:
-                res = runner(item, *setup_data, **kwargs)
-                yield (setup_data, FutureWrapper(res, excp=None))
-            except Exception as excp:
-                yield (setup_data, FutureWrapper(res=None, excp=excp))
-    else:
-        executor = concurrent.futures.ThreadPoolExecutor(n_jobs)
-        try:
-            fs = {}
-            for item in data:
-                if setup_fn is not None:
-                    setup_data = setup_fn(item)
-                    if not setup_data:
-                        continue
-                else:
-                    setup_data = ()
-                _fut = executor.submit(runner, item, *setup_data, **kwargs)
-                fs[_fut] = setup_data
-            for fut in concurrent.futures.as_completed(fs):
-                yield (fs[fut], fut)
-        finally:
-            executor.shutdown(cancel_futures=True)  # requires python>=3.9
 
 
 def main():
