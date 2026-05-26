@@ -26,6 +26,10 @@ endif
 if has("nvim") && $GLUE_LANG ==# "py311"
     let g:python3_host_prog = trim(system("which python3.11"))
 endif
+if !has("nvim") && has("mac") && !has("python3")
+    " macOS default Python, installed by 'xcode-select --install'
+    set pythonthreedll=/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/Current/Python3
+endif
 if $GLUE_LANG ==# "py311" && !has("python3")
     echoerr "+python3 is required to run the tests"
     cquit 10
