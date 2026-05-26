@@ -24,7 +24,8 @@ use std::path::PathBuf;
 use bstr::io::BufReadExt;
 use clap::Parser;
 use flate2::bufread::GzDecoder;
-use jieba_vim_rs_core::{motion::WordMotion, token::Tokenizer};
+use jieba_vim_rs_core::motion::WordMotion;
+use jieba_vim_rs_core::token::Tokenizer;
 use libtest_mimic::{Arguments, Failed, Trial};
 use serde::Deserialize;
 use serde_json::{Map, Value};
@@ -120,6 +121,7 @@ fn push_trials_from_jsonlines<R: BufRead>(
 #[derive(Debug, Deserialize)]
 struct RecordDict {
     id: String,
+    span: String,
     #[serde(rename = "f")]
     func_name: String,
     #[serde(rename = "b")]
@@ -142,13 +144,22 @@ fn run_test(dict: RecordDict) -> Result<(), Failed> {
             let cursor = get_input(&dict.inputs, 1);
             let count = get_input(&dict.inputs, 2);
             match wm.nmap(&dict.buffer, motion, cursor, count) {
-                Err(_) => Err("failed to access buffer".into()),
+                Err(_) => {
+                    Err(format!("{}: failed to access buffer", dict.span)
+                        .into())
+                }
                 Ok(outputs) => {
-                    assert_on_field(&dict.outputs, "cursor", &outputs.cursor)?;
+                    assert_on_field(
+                        &dict.outputs,
+                        "cursor",
+                        &outputs.cursor,
+                        &dict.span,
+                    )?;
                     assert_on_field(
                         &dict.outputs,
                         "prevent_change",
                         &outputs.prevent_change,
+                        &dict.span,
                     )
                 }
             }
@@ -167,19 +178,34 @@ fn run_test(dict: RecordDict) -> Result<(), Failed> {
                 visual_end,
                 count,
             ) {
-                Err(_) => Err("failed to access buffer".into()),
+                Err(_) => {
+                    Err(format!("{}: failed to access buffer", dict.span)
+                        .into())
+                }
                 Ok(outputs) => {
-                    assert_on_field(&dict.outputs, "langle", &outputs.langle)?;
-                    assert_on_field(&dict.outputs, "rangle", &outputs.rangle)?;
+                    assert_on_field(
+                        &dict.outputs,
+                        "langle",
+                        &outputs.langle,
+                        &dict.span,
+                    )?;
+                    assert_on_field(
+                        &dict.outputs,
+                        "rangle",
+                        &outputs.rangle,
+                        &dict.span,
+                    )?;
                     assert_on_field(
                         &dict.outputs,
                         "visualmode",
                         &outputs.visualmode,
+                        &dict.span,
                     )?;
                     assert_on_field(
                         &dict.outputs,
                         "prevent_change",
                         &outputs.prevent_change,
+                        &dict.span,
                     )
                 }
             }
@@ -190,25 +216,46 @@ fn run_test(dict: RecordDict) -> Result<(), Failed> {
             let count = get_input(&dict.inputs, 2);
             let operator = get_input(&dict.inputs, 3);
             match wm.omap(&dict.buffer, motion, cursor, count, operator) {
-                Err(_) => Err("failed to access buffer".into()),
+                Err(_) => {
+                    Err(format!("{}: failed to access buffer", dict.span)
+                        .into())
+                }
                 Ok(outputs) => {
-                    assert_on_field(&dict.outputs, "cursor", &outputs.cursor)?;
-                    assert_on_field(&dict.outputs, "langle", &outputs.langle)?;
-                    assert_on_field(&dict.outputs, "rangle", &outputs.rangle)?;
+                    assert_on_field(
+                        &dict.outputs,
+                        "cursor",
+                        &outputs.cursor,
+                        &dict.span,
+                    )?;
+                    assert_on_field(
+                        &dict.outputs,
+                        "langle",
+                        &outputs.langle,
+                        &dict.span,
+                    )?;
+                    assert_on_field(
+                        &dict.outputs,
+                        "rangle",
+                        &outputs.rangle,
+                        &dict.span,
+                    )?;
                     assert_on_field(
                         &dict.outputs,
                         "visualmode",
                         &outputs.visualmode,
+                        &dict.span,
                     )?;
                     assert_on_field(
                         &dict.outputs,
                         "selection",
                         &outputs.selection,
+                        &dict.span,
                     )?;
                     assert_on_field(
                         &dict.outputs,
                         "prevent_change",
                         &outputs.prevent_change,
+                        &dict.span,
                     )
                 }
             }
@@ -435,6 +482,7 @@ fn assert_on_field<'a, T: PartialEq + GetFromOutputs<'a> + GetDebugInfo>(
     outputs: &'a Map<String, Value>,
     key: &str,
     actual: &T,
+    span: &str,
 ) -> Result<(), Failed> {
     match T::get_from_outputs(outputs, key) {
         None => Ok(()),
@@ -443,7 +491,8 @@ fn assert_on_field<'a, T: PartialEq + GetFromOutputs<'a> + GetDebugInfo>(
                 Ok(())
             } else {
                 Err(format!(
-                    "actual ({}) != expected ({}) on `{}`",
+                    "{}: actual ({}) != expected ({}) on `{}`",
+                    span,
                     actual.get_debug_info(),
                     expected.get_debug_info(),
                     key
