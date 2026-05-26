@@ -605,5 +605,7 @@ EOF
     else
         {echo_vim}
     endif
+    cquit
+    finish
 endif
 """

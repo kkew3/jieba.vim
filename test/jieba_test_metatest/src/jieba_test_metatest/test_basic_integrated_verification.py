@@ -62,115 +62,144 @@ S1 visualmode()= '[= ']=
     span = parser.SourceSpan.for_file("foo")
     assert basic_integrated_blocks == [
         m.BasicIntegratedBlock(
-            raw_directives=[
-                parser.RawDirective("B0", "|abc·def␊", span.copy_as(10)),
-                parser.RawDirective("C", "2", span.copy_as(11)),
-                parser.RawDirective("E", "CursorMoved=", span.copy_as(4)),
-                parser.RawDirective("E", "CursorMovedI=", span.copy_as(5)),
-                parser.RawDirective("E", "CmdlineChanged=", span.copy_as(6)),
-                parser.RawDirective("K", "w", span.copy_as(9)),
-                parser.RawDirective("M", "n", span.copy_as(8)),
-                parser.RawDirective("S0", '"a=foo', span.copy_as(12)),
-                parser.RawDirective("X", "bi", span.copy_as(3)),
-            ],
+            raw_directives=tuple(
+                [
+                    parser.RawDirective("B0", "|abc·def␊", span.copy_as(10)),
+                    parser.RawDirective("C", "2", span.copy_as(11)),
+                    parser.RawDirective("E", "CursorMoved=", span.copy_as(4)),
+                    parser.RawDirective("E", "CursorMovedI=", span.copy_as(5)),
+                    parser.RawDirective(
+                        "E", "CmdlineChanged=", span.copy_as(6)
+                    ),
+                    parser.RawDirective("K", "w", span.copy_as(9)),
+                    parser.RawDirective("M", "n", span.copy_as(8)),
+                    parser.RawDirective("S0", '"a=foo', span.copy_as(12)),
+                    parser.RawDirective("X", "bi", span.copy_as(3)),
+                ]
+            ),
             span=span.copy_as(8, 12),
-            hc=[],
+            hc=(),
             mode="n",
             motion_key="w",
             count="2",
             operator=None,
             register=None,
+            clean_buffer_before=tuple(["abc def"]),
             initial_visualmode=None,
             initial_visual_begin=None,
             initial_visual_end=None,
-            initial_cursor=[0, 1, 1, 0, 1],
-            initial_states=[parser.StateExpr("reg", "a", "foo")],
-            states_to_verify=[],
-            autocmd_events_to_verify=[
-                "CursorMoved",
-                "CursorMovedI",
-                "CmdlineChanged",
-            ],
+            initial_cursor=tuple([0, 1, 1, 0, 1]),
+            initial_states=tuple([parser.StateExpr("reg", "a", "foo")]),
+            states_to_verify=(),
+            autocmd_events_to_verify=tuple(
+                [
+                    "CursorMoved",
+                    "CursorMovedI",
+                    "CmdlineChanged",
+                ]
+            ),
         ),
         m.BasicIntegratedBlock(
-            raw_directives=[
-                parser.RawDirective("B0", "[a|b]c·def␊", span.copy_as(18)),
-                parser.RawDirective("E", "CursorMoved=", span.copy_as(4)),
-                parser.RawDirective("E", "CursorMovedI=", span.copy_as(5)),
-                parser.RawDirective("E", "CmdlineChanged=", span.copy_as(6)),
-                parser.RawDirective("K", "e", span.copy_as(15)),
-                parser.RawDirective("M", "o", span.copy_as(14)),
-                parser.RawDirective("O", "y", span.copy_as(16)),
-                parser.RawDirective("R", "a", span.copy_as(17)),
-                parser.RawDirective("S0", "visualmode()=V", span.copy_as(20)),
-                parser.RawDirective("S1", '"a=', span.copy_as(19)),
-                parser.RawDirective("S1", "'[=", span.copy_as(19)),
-                parser.RawDirective("S1", "']=", span.copy_as(19)),
-                parser.RawDirective("S1", "'<=", span.copy_as(19)),
-                parser.RawDirective("S1", "'>=", span.copy_as(19)),
-                parser.RawDirective("X", "bi", span.copy_as(3)),
-            ],
+            raw_directives=tuple(
+                [
+                    parser.RawDirective("B0", "[a|b]c·def␊", span.copy_as(18)),
+                    parser.RawDirective("E", "CursorMoved=", span.copy_as(4)),
+                    parser.RawDirective("E", "CursorMovedI=", span.copy_as(5)),
+                    parser.RawDirective(
+                        "E", "CmdlineChanged=", span.copy_as(6)
+                    ),
+                    parser.RawDirective("K", "e", span.copy_as(15)),
+                    parser.RawDirective("M", "o", span.copy_as(14)),
+                    parser.RawDirective("O", "y", span.copy_as(16)),
+                    parser.RawDirective("R", "a", span.copy_as(17)),
+                    parser.RawDirective(
+                        "S0", "visualmode()=V", span.copy_as(20)
+                    ),
+                    parser.RawDirective("S1", '"a=', span.copy_as(19)),
+                    parser.RawDirective("S1", "'[=", span.copy_as(19)),
+                    parser.RawDirective("S1", "']=", span.copy_as(19)),
+                    parser.RawDirective("S1", "'<=", span.copy_as(19)),
+                    parser.RawDirective("S1", "'>=", span.copy_as(19)),
+                    parser.RawDirective("X", "bi", span.copy_as(3)),
+                ]
+            ),
             span=span.copy_as(14, 20),
-            hc=[],
+            hc=(),
             mode="o",
             motion_key="e",
             count="",
             operator="y",
             register="a",
+            clean_buffer_before=tuple(["abc def"]),
             initial_visualmode="V",
-            initial_visual_begin=[0, 1, 1, 0],
-            initial_visual_end=[0, 1, 3, 0],
-            initial_cursor=[0, 1, 2, 0, 2],
-            initial_states=[parser.StateExpr("func", "visualmode", "V")],
-            states_to_verify=[
-                parser.StateExpr("reg", "a", None),
-                parser.StateExpr("mark", "[", None),
-                parser.StateExpr("mark", "]", None),
-                parser.StateExpr("mark", "<", None),
-                parser.StateExpr("mark", ">", None),
-            ],
-            autocmd_events_to_verify=[
-                "CursorMoved",
-                "CursorMovedI",
-                "CmdlineChanged",
-            ],
+            initial_visual_begin=tuple([0, 1, 1, 0]),
+            initial_visual_end=tuple([0, 1, 3, 0]),
+            initial_cursor=tuple([0, 1, 2, 0, 2]),
+            initial_states=tuple([parser.StateExpr("func", "visualmode", "V")]),
+            states_to_verify=tuple(
+                [
+                    parser.StateExpr("reg", "a", None),
+                    parser.StateExpr("mark", "[", None),
+                    parser.StateExpr("mark", "]", None),
+                    parser.StateExpr("mark", "<", None),
+                    parser.StateExpr("mark", ">", None),
+                ]
+            ),
+            autocmd_events_to_verify=tuple(
+                [
+                    "CursorMoved",
+                    "CursorMovedI",
+                    "CmdlineChanged",
+                ]
+            ),
         ),
         m.BasicIntegratedBlock(
-            raw_directives=[
-                parser.RawDirective("B0", "[]abcde␊", span.copy_as(24)),
-                parser.RawDirective("C", "0", span.copy_as(25)),
-                parser.RawDirective("E", "CursorMoved=", span.copy_as(4)),
-                parser.RawDirective("E", "CursorMovedI=", span.copy_as(5)),
-                parser.RawDirective("E", "CmdlineChanged=", span.copy_as(6)),
-                parser.RawDirective("K", "iw", span.copy_as(23)),
-                parser.RawDirective("M", "v", span.copy_as(22)),
-                parser.RawDirective("S1", "visualmode()=", span.copy_as(26)),
-                parser.RawDirective("S1", "'[=", span.copy_as(26)),
-                parser.RawDirective("S1", "']=", span.copy_as(26)),
-                parser.RawDirective("X", "bi", span.copy_as(3)),
-            ],
+            raw_directives=tuple(
+                [
+                    parser.RawDirective("B0", "[]abcde␊", span.copy_as(24)),
+                    parser.RawDirective("C", "0", span.copy_as(25)),
+                    parser.RawDirective("E", "CursorMoved=", span.copy_as(4)),
+                    parser.RawDirective("E", "CursorMovedI=", span.copy_as(5)),
+                    parser.RawDirective(
+                        "E", "CmdlineChanged=", span.copy_as(6)
+                    ),
+                    parser.RawDirective("K", "iw", span.copy_as(23)),
+                    parser.RawDirective("M", "v", span.copy_as(22)),
+                    parser.RawDirective(
+                        "S1", "visualmode()=", span.copy_as(26)
+                    ),
+                    parser.RawDirective("S1", "'[=", span.copy_as(26)),
+                    parser.RawDirective("S1", "']=", span.copy_as(26)),
+                    parser.RawDirective("X", "bi", span.copy_as(3)),
+                ]
+            ),
             span=span.copy_as(22, 26),
-            hc=[],
+            hc=(),
             mode="x",
             motion_key="iw",
-            count="0",
+            count="",
             operator=None,
             register=None,
+            clean_buffer_before=tuple(["abcde"]),
             initial_visualmode="v",
-            initial_visual_begin=[0, 1, 1, 0],
-            initial_visual_end=[0, 1, 1, 0],
+            initial_visual_begin=tuple([0, 1, 1, 0]),
+            initial_visual_end=tuple([0, 1, 1, 0]),
             initial_cursor=None,
-            initial_states=[],
-            states_to_verify=[
-                parser.StateExpr("func", "visualmode", None),
-                parser.StateExpr("mark", "[", None),
-                parser.StateExpr("mark", "]", None),
-            ],
-            autocmd_events_to_verify=[
-                "CursorMoved",
-                "CursorMovedI",
-                "CmdlineChanged",
-            ],
+            initial_states=(),
+            states_to_verify=tuple(
+                [
+                    parser.StateExpr("func", "visualmode", None),
+                    parser.StateExpr("mark", "[", None),
+                    parser.StateExpr("mark", "]", None),
+                ]
+            ),
+            autocmd_events_to_verify=tuple(
+                [
+                    "CursorMoved",
+                    "CursorMovedI",
+                    "CmdlineChanged",
+                ]
+            ),
         ),
     ]
 
@@ -221,10 +250,12 @@ S1 '>=
     ]
 
     def collect_raw_directives(*tuples):
-        return [
-            parser.RawDirective(ty, arg, span.copy_as(lineno))
-            for ty, arg, lineno in tuples
-        ]
+        return tuple(
+            [
+                parser.RawDirective(ty, arg, span.copy_as(lineno))
+                for ty, arg, lineno in tuples
+            ]
+        )
 
     assert basic_integrated_blocks == [
         m.BasicIntegratedBlock(
@@ -241,29 +272,38 @@ S1 '>=
                 ("X", "bi", 4),
             ),
             span=span.copy_as(6, 13),
-            hc=[
-                parser.HeadConditionalExpr("non_feature", "nvim"),
-            ],
+            hc=tuple(
+                [
+                    parser.HeadConditionalExpr("non_feature", "nvim"),
+                ]
+            ),
             mode="n",
             motion_key="w",
             count="",
             operator=None,
             register=None,
+            clean_buffer_before=tuple(["abc def"]),
             initial_visualmode="v",
-            initial_visual_begin=[0, 1, 3, 0],
-            initial_visual_end=[0, 1, 3, 0],
-            initial_cursor=[0, 1, 1, 0, 1],
-            initial_states=[
-                parser.StateExpr("func", "visualmode", "v"),
-                parser.StateExpr("opt", "selection", "exclusive"),
-            ],
-            states_to_verify=[
-                parser.StateExpr("func", "visualmode", None),
-            ],
-            autocmd_events_to_verify=[
-                "CursorMoved",
-                "CmdlineChanged",
-            ],
+            initial_visual_begin=tuple([0, 1, 3, 0]),
+            initial_visual_end=tuple([0, 1, 3, 0]),
+            initial_cursor=tuple([0, 1, 1, 0, 1]),
+            initial_states=tuple(
+                [
+                    parser.StateExpr("func", "visualmode", "v"),
+                    parser.StateExpr("opt", "selection", "exclusive"),
+                ]
+            ),
+            states_to_verify=tuple(
+                [
+                    parser.StateExpr("func", "visualmode", None),
+                ]
+            ),
+            autocmd_events_to_verify=tuple(
+                [
+                    "CursorMoved",
+                    "CmdlineChanged",
+                ]
+            ),
         ),
         m.BasicIntegratedBlock(
             raw_directives=collect_raw_directives(
@@ -282,31 +322,40 @@ S1 '>=
                 ("X", "bi", 4),
             ),
             span=span.copy_as(15, 22),
-            hc=[
-                parser.HeadConditionalExpr("non_feature", "nvim"),
-            ],
+            hc=tuple(
+                [
+                    parser.HeadConditionalExpr("non_feature", "nvim"),
+                ]
+            ),
             mode="x",
             motion_key="e",
             count="1",
             operator=None,
             register=None,
+            clean_buffer_before=tuple(["abc def"]),
             initial_visualmode="\\<C-v>",
-            initial_visual_begin=[0, 1, 1, 0],
-            initial_visual_end=[0, 1, 1, 0],
+            initial_visual_begin=tuple([0, 1, 1, 0]),
+            initial_visual_end=tuple([0, 1, 1, 0]),
             initial_cursor=None,
-            initial_states=[
-                parser.StateExpr("opt", "virtualedit", "onemore"),
-                parser.StateExpr("reg", "a", "foo"),
-            ],
-            states_to_verify=[
-                parser.StateExpr("func", "visualmode", None),
-                parser.StateExpr("mark", "[", None),
-                parser.StateExpr("mark", "]", None),
-            ],
-            autocmd_events_to_verify=[
-                "CursorMoved",
-                "CmdlineChanged",
-            ],
+            initial_states=tuple(
+                [
+                    parser.StateExpr("opt", "virtualedit", "onemore"),
+                    parser.StateExpr("reg", "a", "foo"),
+                ]
+            ),
+            states_to_verify=tuple(
+                [
+                    parser.StateExpr("func", "visualmode", None),
+                    parser.StateExpr("mark", "[", None),
+                    parser.StateExpr("mark", "]", None),
+                ]
+            ),
+            autocmd_events_to_verify=tuple(
+                [
+                    "CursorMoved",
+                    "CmdlineChanged",
+                ]
+            ),
         ),
         m.BasicIntegratedBlock(
             raw_directives=collect_raw_directives(
@@ -325,27 +374,32 @@ S1 '>=
                 ("X", "bi", 4),
             ),
             span=span.copy_as(24, 34),
-            hc=[
-                parser.HeadConditionalExpr("non_feature", "nvim"),
-            ],
+            hc=tuple(
+                [
+                    parser.HeadConditionalExpr("non_feature", "nvim"),
+                ]
+            ),
             mode="o",
             motion_key="W",
             count="2",
             operator="d",
             register="a",
+            clean_buffer_before=tuple(["abc def"]),
             initial_visualmode=None,
             initial_visual_begin=None,
             initial_visual_end=None,
-            initial_cursor=[0, 1, 2, 0, 2],
-            initial_states=[],
-            states_to_verify=[
-                parser.StateExpr("reg", "a", None),
-                parser.StateExpr("mark", "[", None),
-                parser.StateExpr("mark", "]", None),
-                parser.StateExpr("mark", "<", None),
-                parser.StateExpr("mark", ">", None),
-            ],
-            autocmd_events_to_verify=[],
+            initial_cursor=tuple([0, 1, 2, 0, 2]),
+            initial_states=(),
+            states_to_verify=tuple(
+                [
+                    parser.StateExpr("reg", "a", None),
+                    parser.StateExpr("mark", "[", None),
+                    parser.StateExpr("mark", "]", None),
+                    parser.StateExpr("mark", "<", None),
+                    parser.StateExpr("mark", ">", None),
+                ]
+            ),
+            autocmd_events_to_verify=(),
         ),
     ]
 
@@ -401,6 +455,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_before in function visualmode()" . " actual:: " . escape(json_encode(visualmode()), "\\\\") . " expected:: " . escape(json_encode("v"), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if &selection !=# "exclusive"
     if has("nvim")
@@ -410,6 +466,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_before in option 'selection'" . " actual:: " . escape(json_encode(&selection), "\\\\") . " expected:: " . escape(json_encode("exclusive"), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 
@@ -487,6 +545,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_before in function visualmode()" . " actual:: " . escape(json_encode(visualmode()), "\\\\") . " expected:: " . escape(json_encode("v"), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if &selection !=# "exclusive"
     if has("nvim")
@@ -496,6 +556,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_before in option 'selection'" . " actual:: " . escape(json_encode(&selection), "\\\\") . " expected:: " . escape(json_encode("exclusive"), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 
@@ -515,6 +577,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected autocmd events count" . " actual:: " . escape(json_encode(g:jieba_test_case_events_count_frozen), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthAutocmdEventsCount)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 " state_after checking
@@ -526,6 +590,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_after in function visualmode()" . " actual:: " . escape(json_encode(visualmode()), "\\\\") . " expected:: " . escape(json_encode(g:JiebaTestGroundtruthFunc_visualmode), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 " buffer_after checking
@@ -537,6 +603,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected cursor position in buffer_after" . " actual:: " . escape(json_encode(getcurpos()), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthCursor)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 " model_output echoing
@@ -604,6 +672,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_before in option 'virtualedit'" . " actual:: " . escape(json_encode(&virtualedit), "\\\\") . " expected:: " . escape(json_encode("onemore"), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if getreg("a") !=# "foo"
     if has("nvim")
@@ -613,6 +683,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_before in register \\"a" . " actual:: " . escape(json_encode(getreg("a")), "\\\\") . " expected:: " . escape(json_encode("foo"), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 
@@ -695,6 +767,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_before in option 'virtualedit'" . " actual:: " . escape(json_encode(&virtualedit), "\\\\") . " expected:: " . escape(json_encode("onemore"), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if getreg("a") !=# "foo"
     if has("nvim")
@@ -704,6 +778,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_before in register \\"a" . " actual:: " . escape(json_encode(getreg("a")), "\\\\") . " expected:: " . escape(json_encode("foo"), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 
@@ -723,6 +799,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected autocmd events count" . " actual:: " . escape(json_encode(g:jieba_test_case_events_count_frozen), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthAutocmdEventsCount)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 " state_after checking
@@ -734,6 +812,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_after in function visualmode()" . " actual:: " . escape(json_encode(visualmode()), "\\\\") . " expected:: " . escape(json_encode(g:JiebaTestGroundtruthFunc_visualmode), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if getpos("'[") !=# json_decode(g:JiebaTestGroundtruthMark_lsquare)
     if has("nvim")
@@ -743,6 +823,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_after in mark '[" . " actual:: " . escape(json_encode(getpos("'[")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_lsquare)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if getpos("']") !=# json_decode(g:JiebaTestGroundtruthMark_rsquare)
     if has("nvim")
@@ -752,6 +834,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_after in mark ']" . " actual:: " . escape(json_encode(getpos("']")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_rsquare)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 " buffer_after checking
@@ -763,6 +847,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected cursor position in buffer_after" . " actual:: " . escape(json_encode(getcurpos()), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthCursor)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 normal! gvomaomb
 if getpos("'a") !=# json_decode(g:JiebaTestGroundtruthVisualBegin)
@@ -773,6 +859,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected visual_begin position in buffer_after" . " actual:: " . escape(json_encode(getpos("'a")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthVisualBegin)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if getpos("'b") !=# json_decode(g:JiebaTestGroundtruthVisualEnd)
     if has("nvim")
@@ -782,6 +870,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected visual_end position in buffer_after" . " actual:: " . escape(json_encode(getpos("'b")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthVisualEnd)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 " model_output echoing
@@ -919,6 +1009,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected autocmd events count" . " actual:: " . escape(json_encode(g:jieba_test_case_events_count_frozen), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthAutocmdEventsCount)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 " state_after checking
@@ -930,6 +1022,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_after in register \\"a" . " actual:: " . escape(json_encode(getreg("a")), "\\\\") . " expected:: " . escape(json_encode(g:JiebaTestGroundtruthReg_a), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if getpos("'[") !=# json_decode(g:JiebaTestGroundtruthMark_lsquare)
     if has("nvim")
@@ -939,6 +1033,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_after in mark '[" . " actual:: " . escape(json_encode(getpos("'[")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_lsquare)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if getpos("']") !=# json_decode(g:JiebaTestGroundtruthMark_rsquare)
     if has("nvim")
@@ -948,6 +1044,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_after in mark ']" . " actual:: " . escape(json_encode(getpos("']")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_rsquare)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if getpos("'<") !=# json_decode(g:JiebaTestGroundtruthMark_langle)
     if has("nvim")
@@ -957,6 +1055,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_after in mark '<" . " actual:: " . escape(json_encode(getpos("'<")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_langle)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 if getpos("'>") !=# json_decode(g:JiebaTestGroundtruthMark_rangle)
     if has("nvim")
@@ -966,6 +1066,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected state_after in mark '>" . " actual:: " . escape(json_encode(getpos("'>")), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthMark_rangle)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 " buffer_after checking
@@ -977,6 +1079,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected cursor position in buffer_after" . " actual:: " . escape(json_encode(getcurpos()), "\\\\") . " expected:: " . escape(json_encode(json_decode(g:JiebaTestGroundtruthCursor)), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 
 " model_output echoing

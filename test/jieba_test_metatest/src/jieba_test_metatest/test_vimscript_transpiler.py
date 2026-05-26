@@ -446,6 +446,8 @@ EOF
     else
         execute "!echo " . shellescape("unexpected register \\"a" . " actual:: " . escape(json_encode(getreg("a")), "\\\\") . " expected:: " . escape(json_encode("foo"), "\\\\"), 1) . " >&2"
     endif
+    cquit
+    finish
 endif
 """
     )
