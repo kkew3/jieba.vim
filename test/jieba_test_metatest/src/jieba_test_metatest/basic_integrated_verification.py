@@ -855,7 +855,12 @@ def verify_in_vim(
             run_type, block_span, proc.stderr
         )
 
-    msg = json.loads(proc.stdout)  # `msg` should be a dict
+    if run_type == "std-run" and not proc.stdout:
+        # In std-run and there is no head conditionals, the stdout will be
+        # empty. In this case it's safe to skip json decoding of the stdout.
+        msg = {}
+    else:
+        msg = json.loads(proc.stdout)  # `msg` should be a dict
     if msg.get("cf", None) == "continue":
         return "continue"
 
