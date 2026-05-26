@@ -158,9 +158,7 @@ class IntegratedBlock:
 
         states_to_verify = []
         for dr in raw_block.iter_directives_like("S1"):
-            state_expr = StateExpr.parse(
-                dr.arg, dr.span, parse_as_incomplete=True
-            )
+            state_expr = StateExpr.parse(dr.arg, dr.span)
             if (
                 state_expr.ty == "mark"
                 and state_expr.name not in string.ascii_lowercase
@@ -318,7 +316,7 @@ endfunction
 """)
         outfile.write("augroup jieba_test_case_autocmd_events_monitoring\n")
         outfile.write("    autocmd!\n")
-        for event_name in self.autocmd_events_to_verify:
+        for event_name in self.autocmd_event_counts_to_verify:
             outfile.write(
                 "    au {event} * call IncrementAutocmdEventCount({key})\n".format(
                     event=event_name, key=vim.lit(event_name)
@@ -661,7 +659,7 @@ def main():
         i_blocks = list(
             filter(None, map(IntegratedBlock.from_raw_block_opt, raw_cases))
         )
-        print(f"I: {path}: found {len(i_blocks)} bi blocks")
+        print(f"I: {path}: found {len(i_blocks)} i blocks")
         if args.vim_bin is None:
             print("I: dry-run mode")
 
