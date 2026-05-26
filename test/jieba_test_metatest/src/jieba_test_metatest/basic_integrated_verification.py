@@ -1029,6 +1029,13 @@ def main():
     written_to_unit_info = False
     visited_case = set()
 
+    # Write a .gitignore under args.work_dir to ensure it won't be indexed by
+    # any git client (e.g. VSCode, Fork), as there will be a HUGE number of
+    # folders created under it and those client will definitely get stuck.
+    ignore_file = os.path.join(args.work_dir, ".gitignore")
+    with open(ignore_file, "w", encoding="utf-8") as outfile:
+        outfile.write("/*\n")
+
     def setup_fn(_c: BasicIntegratedBlock):
         if _c in visited_case:
             print(
