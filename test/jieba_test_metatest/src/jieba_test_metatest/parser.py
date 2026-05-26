@@ -625,3 +625,15 @@ class HeadConditionalExpr:
         if arg.startswith("version:"):
             return cls("vim_version_lower_bound", arg[8:])
         raise span.to_parse_error(f"unsupported head conditional: {arg}")
+
+
+@dataclass
+class AnyKeySequenceExpr:
+    ty: Literal["normal", "execute"]
+    value: str
+
+    @classmethod
+    def parse(cls, arg: str):
+        if arg.startswith(":"):
+            return cls("execute", arg[1:])
+        return cls("normal", arg)
