@@ -1,0 +1,178 @@
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy
+// of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+// This file contains tests for https://github.com/kkew3/jieba.vim/issues/6.
+//
+// Best viewed in Vim.
+
+## Case 1 from https://github.com/kkew3/jieba.vim/issues/6.
+#X i
+#B0 a␊···␊b␊|···␊cd␊
+
+K dge
+B1 a␊···␊|cd␊
+
+K dge .
+B1 |d␊
+
+## Case 2 from https://github.com/kkew3/jieba.vim/issues/6.
+#X i
+#B0 a␊···␊b␊···␊|cd␊
+
+K dge
+B1 a␊···␊|d␊
+
+K dge .
+B1 |␀
+
+## Case 3 from https://github.com/kkew3/jieba.vim/issues/6.
+#X i
+#B0 abc·def·gh|i␊
+
+K db
+B1 abc·def·|i␊
+
+K db .
+B1 abc·|i␊
+
+K db 2.
+B1 |i␊
+
+## More tests: simple one line case (forward)
+#X i
+#B0 abc·|defg·gh·ijkl·mn·opq␊
+
+K dw
+B1 abc·|gh·ijkl·mn·opq␊
+
+K dw .
+B1 abc·|ijkl·mn·opq␊
+
+K dw 2.
+B1 abc·|mn·opq␊
+
+K dw 4.
+B1 abc|·␊
+
+K d2w
+B1 abc·|ijkl·mn·opq␊
+
+K d2w .
+B1 abc·|opq␊
+
+K de
+B1 abc·|·gh·ijkl·mn·opq␊
+
+K de .
+B1 abc·|·ijkl·mn·opq␊
+
+K de ..
+B1 abc·|·mn·opq␊
+
+K de ....
+B1 abc|·␊
+
+K de 4.
+B1 abc|·␊
+
+K de 5.
+B1 abc|·␊
+
+K de 5. .
+B1 ab|c␊
+
+K d2e
+B1 abc·|·ijkl·mn·opq␊
+
+K d2e .
+B1 abc·|·opq␊
+
+K diw
+B1 abc·|·gh·ijkl·mn·opq␊
+
+K diw .
+B1 abc|gh·ijkl·mn·opq␊
+
+K diw ..
+B1 |·ijkl·mn·opq␊
+
+K diw 2.
+B1 abc|·ijkl·mn·opq␊
+
+K diw ...
+B1 |ijkl·mn·opq␊
+
+K diw 3.
+B1 abc|ijkl·mn·opq␊
+
+K d2iw
+B1 abc·|gh·ijkl·mn·opq␊
+
+K d2iw .
+B1 abc·|ijkl·mn·opq␊
+
+K d2iw ..
+B1 abc·|mn·opq␊
+
+K d2iw 2.
+B1 abc·|ijkl·mn·opq␊
+
+K daw
+B1 abc·|gh·ijkl·mn·opq␊
+
+K daw .
+B1 abc·|ijkl·mn·opq␊
+
+K daw ..
+B1 abc·|mn·opq␊
+
+## More tests: simple one line case (backward)
+#X i
+#B0 abc·defg·gh·ijkl·|mn·opq␊
+
+K db
+B1 abc·defg·gh·|mn·opq␊
+
+K db .
+B1 abc·defg·|mn·opq␊
+
+K db ..
+B1 abc·|mn·opq␊
+
+K d2b
+B1 abc·defg·|mn·opq␊
+
+K d2b .
+B1 |mn·opq␊
+
+K dge
+B1 abc·defg·gh·ijk|n·opq␊
+
+K dge .
+B1 abc·defg·g|·opq␊
+
+K dge ..
+B1 abc·defg·|opq␊
+
+K dge ...
+B1 abc·def|pq␊
+
+K dge . 2.
+B1 abc·def|opq␊
+
+K d2ge
+B1 abc·defg·g|n·opq␊
+
+K d2ge .
+B1 ab|·opq␊
