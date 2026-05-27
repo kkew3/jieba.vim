@@ -15,13 +15,16 @@ syntax match jiebaTestCaseHeadConditional /^\%(?\s!\?has:\|?\sversion:\)/
 
 syntax match jiebaTestCaseResetDefaults /^##.*$/
 
-syntax match jiebaTestCaseGlobalDirective /^#\(V\|M\|X\|O\|K\|C\|R\|Q\|E\)\s*.*$/ contains=jiebaTestCaseDirectiveKeywords
-syntax match jiebaTestCaseLocalDirective /^\(X\s\|M\s\|K\s\|O\s\|R\s\|C\s\|S0\s\|S1\s\|Q\s\|E\s\).*$/ contains=jiebaTestCaseDirectiveKeywords
-syntax match jiebaTestCaseDirectiveKeywords /^\(#V\|#M\|#X\|#O\|#K\|#C\|#R\|#Q\|#E\|X\|M\|K\|O\|R\|C\|S0\|S1\|Q\|E\)/ contained
+syntax match jiebaTestCaseGlobalDirective /^#\(V\|M\|X\|O\|K\|C\|R\|Q\|E\|!\)\s*.*$/ contains=jiebaTestCaseDirectiveKeywords
+syntax match jiebaTestCaseLocalDirective /^\(X\s\|M\s\|K\s\|O\s\|R\s\|C\s\|S0\s\|S1\s\|Q\s\|E\|!\s\).*$/ contains=jiebaTestCaseDirectiveKeywords
+syntax match jiebaTestCaseDirectiveKeywords /^\(#V\|#M\|#X\|#O\|#K\|#C\|#R\|#Q\|#E\|#!\|X\|M\|K\|O\|R\|C\|S0\|S1\|Q\|E\|!\)/ contained
 
 syntax match jiebaTestCaseHash /^H\s.*$/ contains=jiebaTestCaseHashKeyword
 syntax match jiebaTestCaseHashKeyword /^H/ contained nextgroup=jiebaTestCaseHashId
 syntax match jiebaTestCaseHashId /\v\s([a-f0-9]+|\?)(\s|$)/
+
+syntax region jiebaTestCaseError start=/^#\?!\s\+/ end=/$/ contains=jiebaTestCaseErrorKeyword
+syntax match jiebaTestCaseErrorKeyword /^#\?!/ contained
 
 syntax region jiebaTestCaseGlobalDirectiveBuffer start=/^#B/ end=/$/ contains=jiebaTestCaseBufferExpr
 syntax region jiebaTestCaseLocalDirectiveBuffer start=/^B/ end=/$/ contains=jiebaTestCaseBufferExpr
@@ -52,5 +55,7 @@ hi def link jiebaTestCaseBufferTab Comment
 hi def link jiebaTestCaseBufferSpace Comment
 hi def link jiebaTestCaseBufferVisualFill Comment
 hi def link jiebaTestCaseBufferBytesFill Comment
+hi def link jiebaTestCaseErrorKeyword Keyword
+hi def link jiebaTestCaseError Todo
 
 let b:current_syntax = "jiebaTestCase_test_case"

@@ -58,6 +58,7 @@ class BasicIntegratedBlock:
     raw_directives: tuple[RawDirective, ...]
     # Block-level span.
     span: SourceSpan
+    error_suppressed: bool
 
     # Head conditionals.
     hc: tuple[HeadConditionalExpr, ...]
@@ -98,6 +99,10 @@ class BasicIntegratedBlock:
         """
         if all(dr.arg != "bi" for dr in raw_block.iter_directives_like("X")):
             return None
+
+        error_suppressed = any(
+            True for _ in raw_block.iter_directives_like("!")
+        )
 
         hc = [
             HeadConditionalExpr.parse(dr.arg, dr.span)
@@ -233,6 +238,7 @@ class BasicIntegratedBlock:
         return cls(
             raw_directives=to_tuple_opt(raw_block.directives),
             span=raw_block.span,
+            error_suppressed=error_suppressed,
             hc=to_tuple_opt(hc),
             mode=mode,
             motion_key=motion_key,
@@ -699,6 +705,7 @@ endif
             run_type="std-run",
             vim_type=vim_type,
             block_span=self.span,
+            error_suppressed=self.error_suppressed,
         )
         if resp == "continue":
             return "continue"
@@ -723,6 +730,7 @@ endif
             run_type="custom-run",
             vim_type=vim_type,
             block_span=self.span,
+            error_suppressed=self.error_suppressed,
         )
         assert resp is not None, "unreachable"
         if resp == "continue":
@@ -755,6 +763,7 @@ class BasicIntegratedVerificationFailure:
     run_type: Literal["std-run", "custom-run"]
     block_span: SourceSpan
     message: str
+    error_suppressed: bool
 
     def __str__(self):
         return (
@@ -772,6 +781,7 @@ def verify_in_vim(
     run_type: Literal["std-run", "custom-run"],
     vim_type: Literal["vim", "nvim"],
     block_span: SourceSpan,
+    error_suppressed: bool,
 ) -> (
     VimRunResponse
     | BasicIntegratedVerificationFailure
@@ -816,7 +826,7 @@ def verify_in_vim(
     )
     if proc.returncode != 0:
         return BasicIntegratedVerificationFailure(
-            run_type, block_span, proc.stderr
+            run_type, block_span, proc.stderr, error_suppressed
         )
 
     if run_type == "std-run" and not proc.stdout:
@@ -843,6 +853,7 @@ def verify_in_vim(
                     f"expected buffer_after:\n\n{pretty_expected}\n"
                     f"actual buffer_after:\n\n{pretty_actual}"
                 ),
+                error_suppressed,
             )
 
     if run_type == "std-run":
@@ -939,6 +950,7 @@ def main():
     unit_info_file = os.path.join(args.work_dir, f"unit-{vim_dist_name}.jsonl")
     written_to_unit_info = False
     visited_case = set()
+    suppressed_errors = []
 
     # Write a .gitignore under args.work_dir to ensure it won't be indexed by
     # any git client (e.g. VSCode, Fork), as there will be a HUGE number of
@@ -997,6 +1009,10 @@ def main():
                         progress.step()
                         continue
                     if isinstance(res, BasicIntegratedVerificationFailure):
+                        if res.error_suppressed:
+                            suppressed_errors.append(res)
+                            progress.step(err=True)
+                            continue
                         print(f"F: {res}", file=sys.stderr)
                         sys.exit(1)
                     if isinstance(res, VerificationOutput):
@@ -1017,3 +1033,9 @@ def main():
 
     if not written_to_unit_info:
         os.remove(unit_info_file)
+    if suppressed_errors:
+        print("Suppressed failures:")
+        for res in suppressed_errors:
+            print("---")
+            print(f"F: {res}")
+        sys.exit(125)

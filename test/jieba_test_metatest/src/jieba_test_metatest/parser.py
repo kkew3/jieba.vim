@@ -184,6 +184,7 @@ class RawTestCases:
             "B0",
             "Q",
             "E",
+            "!",
         }
 
         for lineno, line in enumerate(lines, 1):

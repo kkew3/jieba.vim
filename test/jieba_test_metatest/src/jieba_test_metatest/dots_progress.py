@@ -20,8 +20,9 @@ class DotsProgress:
         self.dots = 0
         self.n_dots_in_a_row = 80
 
-    def step(self):
-        print(".", end="", flush=True)
+    def step(self, *, err=False):
+        dot = "F" if err else "."
+        print(dot, end="", flush=True)
         self.dots += 1
         if self.dots % self.n_dots_in_a_row == 0:
             print(f" {self.dots}")

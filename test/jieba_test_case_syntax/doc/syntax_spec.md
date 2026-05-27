@@ -47,6 +47,7 @@ Supported local directives are:
 - Buffer before `B0`
 - Model output `Q`
 - Autocmd event count `E`
+- Suppress error `!`
 
 Use the following to reset all defaults:
 
@@ -328,6 +329,17 @@ E ModeChanged=2 InsertLeave=1
 ```
 
 indicate that `ModeChanged` event should be triggered twice, and `InsertLeave` event be triggered once.
+
+## Suppress error
+
+```
+! ({reason})?
+```
+
+Indicate that current test case may fail and that it's okay/tolerable.
+Then, test/verification failure will not interrupt the testing loop.
+In the end, all suppressed failures will be printed at once.
+If there is no failure but the suppressed ones, the return code should be 125.
 
 # Example test case file
 

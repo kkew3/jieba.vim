@@ -78,6 +78,7 @@ S1 visualmode()= '[= ']=
                 ]
             ),
             span=span.copy_as(8, 12),
+            error_suppressed=False,
             hc=(),
             mode="n",
             motion_key="w",
@@ -124,6 +125,7 @@ S1 visualmode()= '[= ']=
                 ]
             ),
             span=span.copy_as(14, 20),
+            error_suppressed=False,
             hc=(),
             mode="o",
             motion_key="e",
@@ -174,6 +176,7 @@ S1 visualmode()= '[= ']=
                 ]
             ),
             span=span.copy_as(22, 26),
+            error_suppressed=False,
             hc=(),
             mode="x",
             motion_key="iw",
@@ -272,6 +275,7 @@ S1 '>=
                 ("X", "bi", 4),
             ),
             span=span.copy_as(6, 13),
+            error_suppressed=False,
             hc=tuple(
                 [
                     parser.HeadConditionalExpr("non_feature", "nvim"),
@@ -322,6 +326,7 @@ S1 '>=
                 ("X", "bi", 4),
             ),
             span=span.copy_as(15, 22),
+            error_suppressed=False,
             hc=tuple(
                 [
                     parser.HeadConditionalExpr("non_feature", "nvim"),
@@ -374,6 +379,7 @@ S1 '>=
                 ("X", "bi", 4),
             ),
             span=span.copy_as(24, 34),
+            error_suppressed=False,
             hc=tuple(
                 [
                     parser.HeadConditionalExpr("non_feature", "nvim"),

@@ -54,6 +54,7 @@ class IntegratedBlock:
     raw_directives: tuple[RawDirective, ...]
     # Block-level span.
     span: SourceSpan
+    error_suppressed: bool
 
     # Head conditionals.
     hc: tuple[HeadConditionalExpr, ...]
@@ -88,6 +89,10 @@ class IntegratedBlock:
         """
         if all(dr.arg != "i" for dr in raw_block.iter_directives_like("X")):
             return None
+
+        error_suppressed = any(
+            True for _ in raw_block.iter_directives_like("!")
+        )
 
         hc = [
             HeadConditionalExpr.parse(dr.arg, dr.span)
@@ -169,6 +174,7 @@ class IntegratedBlock:
         return cls(
             raw_directives=to_tuple_opt(raw_block.directives),
             span=raw_block.span,
+            error_suppressed=error_suppressed,
             hc=to_tuple_opt(hc),
             any_key=to_tuple_opt(any_key),
             clean_buffer_before=to_tuple_opt(clean_buffer_before),
@@ -528,7 +534,9 @@ endfunction
             timeout=5,
         )
         if proc.returncode != 0:
-            return IntegratedTestFailure(self.span, proc.stderr)
+            return IntegratedTestFailure(
+                self.span, proc.stderr, self.error_suppressed
+            )
 
         if proc.stdout:
             msg = json.loads(proc.stdout)
@@ -551,6 +559,7 @@ endfunction
                         f"expected buffer_after:\n\n{pretty_expected}\n"
                         f"actual buffer_after:\n\n{pretty_actual}"
                     ),
+                    self.error_suppressed,
                 )
 
         # Test passed.
@@ -561,6 +570,7 @@ endfunction
 class IntegratedTestFailure:
     block_span: SourceSpan
     message: str
+    error_suppressed: bool
 
     def __str__(self):
         return f"i case failed: {self.block_span} -->\n{self.message}"
@@ -620,6 +630,7 @@ def main():
     os.makedirs(args.work_dir, exist_ok=True)
     vim_type = "nvim" if args.is_neovim else "vim"
     visited_case = set()
+    suppressed_errors = []
 
     # Write a .gitignore under args.work_dir to ensure it won't be indexed by
     # any git client (e.g. VSCode, Fork), as there will could be a HUGE number
@@ -674,6 +685,16 @@ def main():
                     progress.step()
                     continue
                 if isinstance(res, IntegratedTestFailure):
+                    if res.error_suppressed:
+                        suppressed_errors.append(res)
+                        progress.step(err=True)
+                        continue
                     print(f"F: {res}", file=sys.stderr)
                     sys.exit(1)
                 progress.step()
+    if suppressed_errors:
+        print("Suppressed failures:")
+        for res in suppressed_errors:
+            print("---")
+            print(f"F: {res}")
+        sys.exit(125)
