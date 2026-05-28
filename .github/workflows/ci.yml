@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       # uv variables
-      UV_PROJECT: ./test/jieba_test_metatest
+      UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest
       UV_PYTHON_DOWNLOADS: automatic
       UV_MANAGED_PYTHON: '1'
       # pytest variables
@@ -98,7 +98,7 @@ jobs:
             version: v9.1.0000
     env:
       # uv variables
-      UV_PROJECT: ./test/jieba_test_metatest
+      UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest
       UV_PYTHON_DOWNLOADS: automatic
       UV_MANAGED_PYTHON: '1'
       # vimrc variables
@@ -318,7 +318,7 @@ jobs:
             glue-lang: lua51
     env:
       # uv variables
-      UV_PROJECT: ./test/jieba_test_metatest
+      UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest
       UV_PYTHON_DOWNLOADS: automatic
       UV_MANAGED_PYTHON: '1'
       # vimrc variables
