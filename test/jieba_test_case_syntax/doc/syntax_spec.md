@@ -143,10 +143,10 @@ X u
 X u i
 ```
 
-## Editor mode
+## Editor mode (N/A if `X` is "i")
 
 ```
-M (n|v|V|\<C-v>|o|m)
+M (n|v|V|\<C-v>|o)
 ```
 
 Provides a hint on the editor mode to be tested.
@@ -157,9 +157,6 @@ Explanation:
 - `V`: linewise visual mode motions or text objects.
 - `\<C-v>`: blockwise visual mode motions or text objects.
 - `o`: operator-pending mode motions or text objects.
-- `m`: initially normal mode but may mix different modes in the middle.
-
-When `m` is selected, the test case can only be exported as integrated case verification.
 
 ## Key sequence
 
@@ -200,7 +197,7 @@ R {register}
 The register to use with `O`.
 Default to `"`.
 
-## Count (N/A if `M` is "m"; optional otherwise)
+## Count (N/A if `X` is "i"; optional otherwise)
 
 ```
 C {count}
@@ -282,7 +279,7 @@ Buffer pending `Bp`, if exists, must contain and only contain `<` and `>`.
 Buffer before `B0` must not contain `<` or `>`.
 The clean content of `Bo` must equal that of `B1`.
 
-## Model output (N/A if `M` is "m")
+## Model output (N/A if `X` is "i")
 
 ```
 Q ({position_mark} | {key}={value})+
