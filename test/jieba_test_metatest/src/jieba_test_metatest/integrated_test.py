@@ -470,8 +470,8 @@ endfunction
 
         # Exit.
         outfile.write("endfunction\n")
-        outfile.write('call feedkeys(":call Checks()\\<CR>", "t")\n')
-        outfile.write('call feedkeys(":silent xit\\<CR>", "t")\n')
+        outfile.write('call feedkeys(":\\<C-u>call Checks()\\<CR>", "t")\n')
+        outfile.write('call feedkeys(":\\<C-u>silent xit\\<CR>", "t")\n')
 
     def run_test(
         self,
