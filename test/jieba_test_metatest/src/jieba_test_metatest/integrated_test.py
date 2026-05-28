@@ -206,6 +206,7 @@ class IntegratedBlock:
                 outfile.write(f"if v:version < {hc_expr.value}\n")
             _value = vim.writefile("continue", vim.sibling_file("cf"))
             outfile.write(f"{_value}\nxit\nfinish\n")
+            outfile.write("endif\n")
         outfile.write("\n")
 
         # Define jieba mappings.
