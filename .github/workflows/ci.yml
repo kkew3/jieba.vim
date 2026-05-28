@@ -306,12 +306,6 @@ jobs:
             glue-lang: py311
           - distr: nvim
             version: v0.10.2
-            glue-lang: py311
-          - distr: nvim
-            version: v0.11.5
-            glue-lang: py311
-          - distr: nvim
-            version: v0.10.2
             glue-lang: lua51
           - distr: nvim
             version: v0.11.5
