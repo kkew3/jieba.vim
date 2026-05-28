@@ -10,69 +10,8 @@ on:
   push:
     branches:
       - rust
-      - dev/rust
 
 jobs:
-  build-metatest-binary:
-    name: Build jieba_vim_rs_metatest binary for use in later jobs
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build meta-test binary
-        shell: bash
-        run: cargo install --locked --path rust_backend/jieba_vim_rs_metatest
-      - uses: actions/upload-artifact@v6
-        with:
-          name: jieba-metatest-binary
-          path: ~/.cargo/bin/jieba_vim_rs_metatest
-          if-no-files-found: error
-          retention-days: 1
-          compression-level: 0
-          overwrite: true
-
-  bootstrap-case-template-expansion:
-    name: Expand bootstrap test case jinja2 templates
-    runs-on: ubuntu-24.04
-    needs: build-metatest-binary
-    steps:
-      # Prepare necessary binaries.
-      - name: Cache minijinja-cli
-        id: cache-minijinja-cli
-        uses: actions/cache@v5
-        with:
-          path: ~/.cargo/bin/minijinja-cli
-          key: minijinja-cli
-      - uses: dtolnay/rust-toolchain@stable
-        if: steps.cache-minijinja-cli.outputs.cache-hit != 'true'
-      - name: Install minijinja-cli
-        if: steps.cache-minijinja-cli.outputs.cache-hit != 'true'
-        shell: bash
-        run: cargo install minijinja-cli
-      - name: Add ~/.cargo/bin to PATH
-        if: steps.cache-minijinja-cli.outputs.cache-hit == 'true'
-        shell: bash
-        run: echo ~/.cargo/bin >> $GITHUB_PATH
-      - name: Get prebuilt jieba_vim_rs_metatest binary
-        uses: actions/download-artifact@v7
-        with:
-          name: jieba-metatest-binary
-          path: ~/.cargo/bin
-      - name: Recover file modes due to download-artifact's limitation
-        shell: bash
-        run: chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
-
-      # Do the job.
-      - uses: actions/checkout@v6
-      - name: Expand bootstrap case template
-        shell: bash
-        run: make -C test/cases/bootstrap clean all
-      - uses: actions/upload-artifact@v6
-        with:
-          name: bootstrap-test-cases
-          path: test/cases/bootstrap/*.jieba_test_case
-          retention-days: 5
-
   build-jieba-vim-cdylib:
     name: Build jieba.vim cdylib required in verifications
     runs-on: ubuntu-24.04
@@ -114,16 +53,39 @@ jobs:
           retention-days: 1
           compression-level: 0
 
-  bootstrap-case-verification:
+  pytest-metatest:
+    name: Pytest metatest
+    runs-on: ubuntu-24.04
+    env:
+      # uv variables
+      UV_PROJECT: ./test/jieba_test_metatest
+      UV_PYTHON_DOWNLOADS: automatic
+      UV_MANAGED_PYTHON: '1'
+      # pytest variables
+      CI: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: '0.11.16'
+          enable-cache: true
+      - name: Run uv-sync
+        shell: bash
+        run: uv sync --extra dev
+      - name: Run test on metatest
+        shell: bash
+        run: uv run pytest $UV_PROJECT
+
+  basic-integrated-verification:
     name: >
-      Bootstrap case verification for
+      Basic integrated case verification for
       ${{ matrix.vim.distr }}@${{ matrix.vim.version }}
       +${{ matrix.glue-lang }}
     runs-on: ubuntu-24.04
     needs:
-      - build-metatest-binary
-      - bootstrap-case-template-expansion
       - build-jieba-vim-cdylib
+      - pytest-metatest
     strategy:
       fail-fast: false
       matrix:
@@ -131,7 +93,17 @@ jobs:
           - py311
         vim:
           - distr: vim
+            version: v8.2.2876
+          - distr: vim
             version: v9.1.0000
+    env:
+      # uv variables
+      UV_PROJECT: ./test/jieba_test_metatest
+      UV_PYTHON_DOWNLOADS: automatic
+      UV_MANAGED_PYTHON: '1'
+      # vimrc variables
+      GLUE_LANG: ${{ matrix.glue-lang }}
+      JIEBA_VIM_DIR: ${{ github.workspace }}
     steps:
       # Prepare env.
       - uses: actions/checkout@v6
@@ -140,19 +112,17 @@ jobs:
           vim-distr: ${{ matrix.vim.distr }}
           vim-version: ${{ matrix.vim.version }}
           glue-lang: ${{ matrix.glue-lang }}
-      - name: Add ~/.cargo/bin to PATH
+      - name: Setup uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: '0.11.16'
+          enable-cache: true
+      - name: Run uv-sync
         shell: bash
-        run: echo ~/.cargo/bin >> $GITHUB_PATH
-      - name: Get prebuilt jieba_vim_rs_metatest binary
-        uses: actions/download-artifact@v7
-        with:
-          name: jieba-metatest-binary
-          path: ~/.cargo/bin
-      - name: Get bootstrap test cases
-        uses: actions/download-artifact@v7
-        with:
-          name: bootstrap-test-cases
-          path: test/cases/bootstrap
+        run: uv sync
+      - name: Expand basic integrated cases template
+        shell: bash
+        run: make -C test/cases/basic_integrated_verification clean all
       - name: Get jieba.vim cdylib for +python3
         if: matrix.glue-lang == 'py311'
         uses: actions/download-artifact@v7
@@ -168,48 +138,16 @@ jobs:
       - name: Recover file modes due to download-artifact's limitation
         shell: bash
         run: |
-          chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
           if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
             chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
           fi
           if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
             chmod 755 lua/jieba_vim/jieba_vim_rs.so
           fi
-      - name: Write vimrc
-        shell: bash
-        run: |
-          cat <<EOF > vimrc
-          if has("nvim") && "${{ matrix.glue-lang }}" ==# "py311"
-            let g:python3_host_prog = trim(system("which python3.11"))
-          endif
-          if !has("mksession")
-            echoerr "+mksession is required to run the tests"
-            cquit 10
-            finish
-          endif
-          if "${{ matrix.glue-lang }}" ==# "py311" && !has("python3")
-            echoerr "+python3 is required to run the tests"
-            cquit 11
-            finish
-          endif
-          if "${{ matrix.glue-lang }}" ==# "lua51" && !has("nvim") && !has("lua")
-            echoerr "+lua is required to run the tests"
-            cquit 12
-            finish
-          endif
-          set nocompatible
-          if has("nvim")
-            set shada="NONE"
-          else
-            set viminfo=""
-          endif
-          set sessionoptions=globals
-          set rtp+=${{ github.workspace }}
-          filetype plugin indent on
-          EOF
       - name: Vim sanity check
         shell: bash
         run: |
+          cd test/cases/basic_integrated_verification
           case ${{ matrix.vim.distr }} in
             vim)
               vim -es -u vimrc -cq < /dev/null
@@ -218,31 +156,43 @@ jobs:
               nvim --headless -u vimrc -cq < /dev/null
               ;;
           esac
+      - name: Get a filename-safe version of vim.version
+        id: safe-version
+        shell: bash
+        run: |
+          SAFE_VERSION="$(echo "${{ matrix.vim.version }}" | tr . _)"
+          echo "safe_version=${SAFE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "vim_dist_name=${{ matrix.vim.distr }}_${SAFE_VERSION}_${{ matrix.vim.glue-lang }}" >> "$GITHUB_OUTPUT"
 
       # Do the job.
-      - name: Run bootstrap case verification
-        id: run-bootstrap-case-verification
+      - name: Run basic integrated case verification
+        id: run-bi-case-verification
         continue-on-error: true
         shell: bash
         run: |
-          mkdir -p test/cases/bootstrapped
-          OUTPUT_TEST_CASE=${{ matrix.vim.distr }}_${{ matrix.vim.version }}_${{ matrix.glue-lang }}.jieba_test_case
-          echo "output_test_case=test/cases/bootstrapped/$OUTPUT_TEST_CASE" >> "$GITHUB_OUTPUT"
           set +e
           case ${{ matrix.vim.distr }} in
             vim)
-              jieba_vim_rs_metatest bootstrap \
-                --rc vimrc -v vim \
-                -d bootstrap_verification \
-                -o test/cases/bootstrapped/$OUTPUT_TEST_CASE \
-                test/cases/bootstrap/*.jieba_test_case
+              uv run jieba-metatest-bi-verification \
+                -j4 \
+                --rc test/cases/basic_integrated_verification/vimrc \
+                -v vim \
+                -d bi_verification \
+                -n ${{ steps.safe-version.outputs.vim_dist_name }} \
+                -w bi_verification/warns_${{ steps.safe-version.outputs.vim_dist_name }} \
+                -f bi_verification/errs_${{ steps.safe-version.outputs.vim_dist_name }} \
+                test/cases/basic_integrated_verification/*.jieba_test_case
               ;;
             nvim)
-              jieba_vim_rs_metatest bootstrap \
-                --rc vimrc -v nvim --neovim \
-                -d bootstrap_verification \
-                -o test/cases/bootstrapped/$OUTPUT_TEST_CASE \
-                test/cases/bootstrap/*.jieba_test_case
+              uv run jieba-metatest-bi-verification \
+                -j4 \
+                --rc test/cases/basic_integrated_verification/vimrc \
+                -v nvim --neovim \
+                -d bi_verification \
+                -n ${{ steps.safe-version.outputs.vim_dist_name }} \
+                -w bi_verification/warns_${{ steps.safe-version.outputs.vim_dist_name }} \
+                -f bi_verification/errs_${{ steps.safe-version.outputs.vim_dist_name }} \
+                test/cases/basic_integrated_verification/*.jieba_test_case
               ;;
           esac
           exit_code=$?
@@ -251,63 +201,99 @@ jobs:
           if [ $exit_code != 0 ]; then
             false
           fi
-      - name: Check bootstrap case verification exit code
+      - name: Check basic integrated case verification exit code
         shell: bash
         run: |
-          code="${{ steps.run-bootstrap-case-verification.outputs.exit_code }}"
-          if [ "$code" != 0 ] && [ "$code" != 1 ]; then
-            echo "Bootstrap case verification may have panicked" >&2
+          code="${{ steps.run-bi-case-verification.outputs.exit_code }}"
+          if [ "$code" != 0 ] && [ "$code" != 1 ] && [ "$code" != 125 ]; then
+            echo "bi case verification may have panicked" >&2
             false
           fi
-      - name: Check and fix bootstrapped cases
-        shell: bash
-        run: jieba_vim_rs_metatest check --fix ${{ steps.run-bootstrap-case-verification.outputs.output_test_case }}
-      - uses: actions/upload-artifact@v6
-        with:
-          name: bootstrapped-test-case-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
-          path: ${{ steps.run-bootstrap-case-verification.outputs.output_test_case }}
-          retention-days: 5
-      - name: Indicate whether bootstrap case verification has failed
+      - name: Indicate whether basic integrated case verification has failed
         id: indicate-state
         shell: bash
         run: |
-          TOFILE=bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}.txt
+          TOFILE=bi-success-${{ steps.safe-version.outputs.vim_dist_name }}.txt
           echo "tofile=$TOFILE" >> "$GITHUB_OUTPUT"
           cat <<EOF > "$TOFILE"
-          ${{ steps.run-bootstrap-case-verification.outcome == 'failure' && 'failure' || 'success' }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.glue-lang }}
+          ${{ steps.run-bi-case-verification.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.glue-lang }}
           EOF
       - uses: actions/upload-artifact@v6
         with:
-          name: bootstrap-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          name: bi-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
           path: ${{ steps.indicate-state.outputs.tofile }}
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
+      - uses: actions/upload-artifact@v6
+        with:
+          name: bi-report-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          path: |
+            bi_verification/warns_${{ steps.safe-version.outputs.vim_dist_name }}
+            bi_verification/errs_${{ steps.safe-version.outputs.vim_dist_name }}
+          retention-days: 5
+      - name: Collect rust test info jsonl files
+        uses: actions/upload-artifact@v6
+        with:
+          name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          path: bi_verification/unit-${{ steps.safe-version.outputs.vim_dist_name }}.jsonl
+          if-no-files-found: error
+          retention-days: 5
 
-  report-bootstrap-case-verification-states:
-    name: Report bootstrap case verification states
+  report-basic-integrated-case-verification-errors:
+    name: Report basic integrated case verification errors
     runs-on: ubuntu-24.04
-    needs: bootstrap-case-verification
+    needs: basic-integrated-verification
     steps:
       - uses: actions/download-artifact@v7
         with:
-          pattern: bootstrap-success-*
+          pattern: bi-success-*
           merge-multiple: true
-      - name: Report failures
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: bi-report-*
+          merge-multiple: true
+      - name: Report errors
         shell: bash
         run: |
-          ! cat bootstrap-success-*.txt | grep '^failure '
+          for file in $(find . -type f -name 'errs_*'); do
+            echo "$file -->"
+            cat "$file"
+          done
+          echo "==="
+          ! cat bi-success-*.txt | grep '^1 '
 
-  unit-case-verification:
+  report-basic-integrated-case-verification-warnings:
+    name: Report basic integrated case verification warnings
+    runs-on: ubuntu-24.04
+    needs: basic-integrated-verification
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: bi-success-*
+          merge-multiple: true
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: bi-report-*
+          merge-multiple: true
+      - name: Report warnings
+        shell: bash
+        run: |
+          for file in $(find . -type f -name 'warns_*'); do
+            echo "$file -->"
+            cat "$file"
+          done
+          echo "==="
+          ! cat bi-success-*.txt | grep '^125 '
+
+  integrated-test:
     name: >
-      Unit case verification for
+      Integrated test for
       ${{ matrix.vim.distr }}@${{ matrix.vim.version }}
       +${{ matrix.vim.glue-lang }}
     runs-on: ubuntu-24.04
     needs:
-      - build-metatest-binary
       - build-jieba-vim-cdylib
-      - bootstrap-case-verification
     strategy:
       fail-fast: false
       matrix:
@@ -330,6 +316,15 @@ jobs:
           - distr: nvim
             version: v0.11.5
             glue-lang: lua51
+    env:
+      # uv variables
+      UV_PROJECT: ./test/jieba_test_metatest
+      UV_PYTHON_DOWNLOADS: automatic
+      UV_MANAGED_PYTHON: '1'
+      # vimrc variables
+      GLUE_LANG: ${{ matrix.vim.glue-lang }}
+      JIEBA_VIM_DIR: ${{ github.workspace }}
+      VIM_REPEAT_DIR: ${{ github.workspace }}/.vim_bundle/vim-repeat
     steps:
       # Prepare env.
       - uses: actions/checkout@v6
@@ -338,20 +333,14 @@ jobs:
           vim-distr: ${{ matrix.vim.distr }}
           vim-version: ${{ matrix.vim.version }}
           glue-lang: ${{ matrix.vim.glue-lang }}
-      - name: Add ~/.cargo/bin to PATH
+      - name: Setup uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: '0.11.16'
+          enable-cache: true
+      - name: Run uv-sync
         shell: bash
-        run: echo ~/.cargo/bin >> $GITHUB_PATH
-      - name: Get prebuilt jieba_vim_rs_metatest binary
-        uses: actions/download-artifact@v7
-        with:
-          name: jieba-metatest-binary
-          path: ~/.cargo/bin
-      - name: Get bootstrapped jieba test cases
-        uses: actions/download-artifact@v7
-        with:
-          path: test/cases/bootstrapped
-          pattern: bootstrapped-test-case-*
-          merge-multiple: true
+        run: uv sync
       - name: Get jieba.vim cdylib for +python3
         if: matrix.vim.glue-lang == 'py311'
         uses: actions/download-artifact@v7
@@ -367,105 +356,151 @@ jobs:
       - name: Recover file modes due to download-artifact's limitation
         shell: bash
         run: |
-          chmod 755 ~/.cargo/bin/jieba_vim_rs_metatest
           if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
             chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
           fi
           if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
             chmod 755 lua/jieba_vim/jieba_vim_rs.so
           fi
-      - name: Write vimrc
-        shell: bash
-        run: |
-          cat <<EOF > vimrc
-          if has("nvim") && "${{ matrix.vim.glue-lang }}" ==# "py311"
-            let g:python3_host_prog = trim(system("which python3.11"))
-          endif
-          if "${{ matrix.vim.glue-lang }}" ==# "py311" && !has("python3")
-            echoerr "+python3 is required to run the tests"
-            cquit 11
-            finish
-          endif
-          if "${{ matrix.vim.glue-lang }}" ==# "lua51" && !has("nvim") && !has("lua")
-            echoerr "+lua is required to run the tests"
-            cquit 12
-            finish
-          endif
-          set nocompatible
-          if has("nvim")
-            set shada="NONE"
-          else
-            set viminfo=""
-          endif
-          set rtp+=${{ github.workspace }}
-          filetype plugin indent on
-          EOF
-      - name: Vim sanity check
-        shell: bash
-        run: |
-          case ${{ matrix.vim.distr }} in
-            vim)
-              vim -es -u vimrc -cq < /dev/null
-              ;;
-            nvim)
-              nvim --headless -u vimrc -cq < /dev/null
-              ;;
-          esac
-
       - name: Get a filename-safe version of vim.version
         id: safe-version
         shell: bash
         run: |
           SAFE_VERSION="$(echo "${{ matrix.vim.version }}" | tr . _)"
           echo "safe_version=${SAFE_VERSION}" >> "$GITHUB_OUTPUT"
-      - name: Cache verified cases
-        uses: actions/cache@v5
-        with:
-          path: unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl
-          key: verified-unit-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
-
-      # Do the job.
-      - name: Run unit case verification
-        id: run-unit-case-verification
+          echo "vim_dist_name=${{ matrix.vim.distr }}_${SAFE_VERSION}_${{ matrix.vim.glue-lang }}" >> "$GITHUB_OUTPUT"
+      - name: Expand templates
+        shell: bash
+        run: make -C test/cases clean all
+      - name: Setup vim plugins
         shell: bash
         run: |
-          mkdir -p unit_verification/cache
-          case ${{ matrix.vim.distr }} in
-            vim)
-              jieba_vim_rs_metatest verify-unit \
-                --rc vimrc -v vim \
-                -n vim_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }} \
-                -d unit_verification \
-                -C unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl \
-                test/cases/*.jieba_test_case \
-                test/cases/bootstrapped/*.jieba_test_case
-              ;;
-            nvim)
-              jieba_vim_rs_metatest verify-unit \
-                --rc vimrc -v nvim --neovim \
-                -n nvim_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }} \
-                -d unit_verification \
-                -C unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl \
-                test/cases/*.jieba_test_case \
-                test/cases/bootstrapped/*.jieba_test_case
+          mkdir -p .vim_bundle
+          git clone https://github.com/tpope/vim-repeat.git .vim_bundle/vim-repeat
+
+      # Do the job.
+      - name: Run integrated test
+        id: run-i-test
+        continue-on-error: true
+        shell: bash
+        run: |
+          cum_exit_code=
+          for dir in $(find test/cases -maxdepth 1 -type d); do
+            set +e
+            case ${{ matrix.vim.distr }} in
+              vim)
+                uv run jieba-metatest-i-test \
+                  --rc $dir/vimrc \
+                  -v vim \
+                  -d i_test \
+                  -w i_test/warns_${{ steps.safe-version.outputs.vim_dist_name }} \
+                  -f i_test/errs_${{ steps.safe-version.outputs.vim_dist_name }} \
+                  $dir/*.jieba_test_case
                 ;;
-          esac
-          # Update the cache.
-          cp \
-            unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl \
-            unit_verification/cache/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl
-      - name: Collect rust test info jsonl files
-        uses: actions/upload-artifact@v6
+              nvim)
+                uv run jieba-metatest-i-test \
+                  --rc $dir/vimrc \
+                  -v nvim --neovim \
+                  -d i_test \
+                  -w i_test/warns_${{ steps.safe-version.outputs.vim_dist_name }} \
+                  -f i_test/errs_${{ steps.safe-version.outputs.vim_dist_name }} \
+                  $dir/*.jieba_test_case
+                ;;
+            esac
+            exit_code=$?
+            set -e
+            if [ $exit_code != 0 ] && [ $exit_code != 125 ]; then
+              echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+              false
+            fi
+            if [ -z "$cum_exit_code" ]; then
+              cum_exit_code=$exit_code
+            elif [ $exit_code = 125 ]; then
+              cum_exit_code=125
+            fi
+          echo "exit_code=$cum_exit_code" >> "$GITHUB_OUTPUT"
+      - name: Check integrated test exit code
+        shell: bash
+        run: |
+          code="${{ steps.run-i-test.outputs.exit_code }}"
+          if [ "$code" != 0 ] && [ "$code" != 1 ] && [ "$code" != 125 ]; then
+            echo "bi case verification may have panicked" >&2
+            false
+          fi
+      - name: Indicate whether integrated test has failed
+        id: indicate-state
+        shell: bash
+        run: |
+          TOFILE=i-success-${{ steps.safe-version.outputs.vim_dist_name }}.txt
+          echo "tofile=$TOFILE" >> "$GITHUB_OUTPUT"
+          cat <<EOF > "$TOFILE"
+          ${{ steps.run-i-test.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.vim.glue-lang }}
+          EOF
+      - uses: actions/upload-artifact@v6
         with:
-          name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
-          path: unit_verification/unit-${{ matrix.vim.distr }}_${{ steps.safe-version.outputs.safe_version }}_${{ matrix.vim.glue-lang }}.jsonl
+          name: i-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
+          path: ${{ steps.indicate-state.outputs.tofile }}
           if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v6
+        with:
+          name: i-report-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
+          path: |
+            i_test/warns_${{ steps.safe-version.outputs.vim_dist_name }}
+            i_test/errs_${{ steps.safe-version.outputs.vim_dist_name }}
           retention-days: 5
+
+  report-integrated-test-errors:
+    name: Report integrated test errors
+    runs-on: ubuntu-24.04
+    needs: integrated-test
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: i-success-*
+          merge-multiple: true
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: i-report-*
+          merge-multiple: true
+      - name: Report errors
+        shell: bash
+        run: |
+          for file in $(find . -type f -name 'errs_*'); do
+            echo "$file -->"
+            cat "$file"
+          done
+          echo "==="
+          ! cat i-success-*.txt | grep '^1 '
+
+  report-integrated-test-warnings:
+    name: Report integrated test warnings
+    runs-on: ubuntu-24.04
+    needs: integrated-test
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: i-success-*
+          merge-multiple: true
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: i-report-*
+          merge-multiple: true
+      - name: Report errors
+        shell: bash
+        run: |
+          for file in $(find . -type f -name 'warns_*'); do
+            echo "$file -->"
+            cat "$file"
+          done
+          echo "==="
+          ! cat i-success-*.txt | grep '^125 '
 
   rust-core-test:
     name: Run rust core tests
     runs-on: ubuntu-24.04
-    needs: unit-case-verification
+    needs: basic-integrated-verification
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
@@ -522,7 +557,6 @@ jobs:
             --engine Llvm \
             --no-dead-code \
             --exclude-files 'jieba_vim_rs_test/*' \
-            --exclude-files 'jieba_vim_rs_metatest/*' \
             --exclude-files 'jieba_vim_rs_core/tests/*' \
             --exclude-files 'jieba_vim_rs_binding_lua51/*' \
             --exclude-files 'jieba_vim_rs_binding_py3/*' \
