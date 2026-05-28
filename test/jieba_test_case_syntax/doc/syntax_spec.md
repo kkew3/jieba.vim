@@ -169,13 +169,16 @@ Either
 K {motion_keys}
 ```
 
-or
+applicable when `X` is not "i", or
 
 ```
-K (:{any command to execute} | {any normal key sequence})+
+K ({any_keystrokes})+
 ```
 
-The `normal` key sequence or command to test for.
+applicable when `X` is "i".
+
+The keystrokes to test for.
+They will be sent to vim as if they were typed.
 
 When the editor mode hint is not `m`, the first form must be used; otherwise, the second form can be used.
 When the editor mode hint is `n`, text object motions cannot be used.

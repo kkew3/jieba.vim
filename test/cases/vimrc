@@ -49,4 +49,5 @@ endif
 
 let &rtp .= "," . $JIEBA_VIM_DIR
 
+set noswapfile
 filetype plugin indent on

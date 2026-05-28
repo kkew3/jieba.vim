@@ -581,6 +581,14 @@ def echo(err: bool, obj):
     raise TypeError(f"invalid type: {type(obj)}")
 
 
+def sibling_file(name: str):
+    return var("expand")("%:p:h") + lit(f"/{name}")
+
+
+def writefile(obj, filename):
+    return VimExpr.cmd("call", var("writefile")(VimExpr.list_([obj]), filename))
+
+
 def not_eq_test_as_str(msg: str, actual, expected):
     actual_vim = to_vim_expr(actual)
     expected_vim = to_vim_expr(expected)
@@ -615,6 +623,31 @@ EOF
     else
         {echo_vim}
     endif
+    cquit
+    finish
+endif
+"""
+
+
+def not_eq_test_tofile_as_str(msg: str, actual, expected, filename):
+    actual_vim = to_vim_expr(actual)
+    expected_vim = to_vim_expr(expected)
+    msg_vim = lit(msg)
+    content_vim = var("writefile")(
+        VimExpr.list_(
+            [
+                msg_vim
+                + " actual:: "
+                + json_encoded(actual_vim)
+                + " expected:: "
+                + json_encoded(expected_vim)
+            ]
+        ),
+        sibling_file(filename),
+    )
+    return f"""\
+if {actual_vim} !=# {expected_vim}
+    call {content_vim}
     cquit
     finish
 endif

@@ -13,10 +13,8 @@
 # the License.
 
 import argparse
-import json
 import os
 import shlex
-import string
 import subprocess
 import sys
 import uuid
@@ -28,7 +26,6 @@ from .dots_progress import DotsProgress
 from .executor import pmap
 from .motion_keys import WORD_MOTION_KEYS, WORD_TEXT_OBJECTS
 from .parser import (
-    AnyKeySequenceExpr,
     AutocmdEventCountExpr,
     BufferExpr,
     HeadConditionalExpr,
@@ -59,7 +56,7 @@ class IntegratedBlock:
     # Head conditionals.
     hc: tuple[HeadConditionalExpr, ...]
 
-    any_key: tuple[AnyKeySequenceExpr, ...]
+    any_key: tuple[str, ...]
 
     clean_buffer_before: tuple[str, ...]
     initial_cursor: tuple[int, int, int, int, int] | None
@@ -99,10 +96,7 @@ class IntegratedBlock:
             for dr in raw_block.iter_directives_like("?")
         ]
 
-        any_key = [
-            AnyKeySequenceExpr.parse(dr.arg)
-            for dr in raw_block.iter_directives_like("K")
-        ]
+        any_key = [dr.arg for dr in raw_block.iter_directives_like("K")]
 
         initial_states = []
         initial_visualmode = None
@@ -210,21 +204,8 @@ class IntegratedBlock:
                 )
             else:
                 outfile.write(f"if v:version < {hc_expr.value}\n")
-            cf_dict = vim.VimExpr.dict_({"cf": "continue"})
-            _value_lua = vim.echo(
-                False, vim.json_encoded(vim.LuaExpr.wrap_vim(cf_dict))
-            )
-            _value_vim = vim.echo(False, vim.json_encoded(cf_dict))
-            outfile.write(f"""\
-    if has("nvim")
-        lua <<EOF
-{_value_lua}
-EOF
-    else
-        {_value_vim}
-    endif
-""")
-            outfile.write("endif\n")
+            _value = vim.writefile("continue", vim.sibling_file("cf"))
+            outfile.write(f"{_value}\nxit\nfinish\n")
         outfile.write("\n")
 
         # Define jieba mappings.
@@ -319,34 +300,38 @@ endfunction
         for state_expr in self.initial_states:
             if state_expr.ty == "func":
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         f"unexpected state_before in function {state_expr.name}()",
                         vim.var(state_expr.name)(),
                         state_expr.value,
+                        "err",
                     )
                 )
             elif state_expr.ty == "mark":
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         f"unexpected state_before in mark '{state_expr.name}",
                         vim.var("getpos")(f"'{state_expr.name}"),
                         vim.VimExpr.list_(state_expr.value),
+                        "err",
                     )
                 )
             elif state_expr.ty == "opt":
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         f"unexpected state_before in option '{state_expr.name}'",
                         vim.var(f"&{state_expr.name}"),
                         state_expr.value,
+                        "err",
                     )
                 )
             else:  # state_expr.ty == "reg"
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         f'unexpected state_before in register "{state_expr.name}',
                         vim.var("getreg")(state_expr.name),
                         state_expr.value,
+                        "err",
                     )
                 )
         outfile.write("\n")
@@ -356,17 +341,13 @@ endfunction
         # Execute commands.
         outfile.write('" execute commands\n')
         for any_key_expr in self.any_key:
-            if any_key_expr.ty == "normal":
-                outfile.write(
-                    "execute {}\n".format(
-                        vim.lit(f"normal {any_key_expr.value}")
-                    )
+            outfile.write(
+                "call feedkeys({}, 't')\n".format(
+                    vim.lit(f"{any_key_expr}\\<Esc>")
                 )
-            else:
-                outfile.write(
-                    "execute {}\n".format(vim.lit(any_key_expr.value))
-                )
+            )
 
+        outfile.write("function! Checks()\n")
         outfile.write(
             "let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n\n"
         )
@@ -376,12 +357,13 @@ endfunction
         if self.autocmd_event_counts_to_verify is not None:
             for autocmd_expr in self.autocmd_event_counts_to_verify:
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         f"unexpected autocmd_event_count for ##{autocmd_expr.name}",
                         vim.var("g:jieba_test_case_events_count_frozen")[
                             vim.lit(autocmd_expr.name)
                         ],
                         vim.int_(autocmd_expr.count),
+                        "err",
                     )
                 )
         outfile.write("\n")
@@ -391,36 +373,40 @@ endfunction
         for state_expr in self.states_to_verify:
             if state_expr.ty == "func":
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         f"unexpected state_after in function {state_expr.name}()",
                         vim.var(state_expr.name)(),
                         vim.lit(state_expr.value),
+                        "err",
                     )
                 )
             elif state_expr.ty == "mark":
                 getpos = vim.var("getpos")
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         f"unexpected state_after in mark '{state_expr.name}",
                         getpos(f"'{state_expr.name}"),
                         vim.VimExpr.list_(state_expr.value),
+                        "err",
                     )
                 )
             elif state_expr.ty == "opt":
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         f"unexpected state_after in option '{state_expr.name}'",
                         vim.var(f"&{state_expr.name}"),
                         vim.lit(state_expr.value),
+                        "err",
                     )
                 )
             else:  # ty == "reg":
                 getreg = vim.var("getreg")
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         f'unexpected state_after in register "{state_expr.name}',
                         getreg(vim.lit(state_expr.name)),
                         vim.lit(state_expr.value),
+                        "err",
                     )
                 )
         outfile.write("\n")
@@ -431,26 +417,29 @@ endfunction
         getpos = vim.var("getpos")
         if self.result_cursor is not None:
             outfile.write(
-                vim.not_eq_test_as_str(
+                vim.not_eq_test_tofile_as_str(
                     "unexpected cursor position in buffer_after",
                     getcurpos(),
                     vim.VimExpr.list_(self.result_cursor),
+                    "err",
                 )
             )
         if self.result_langle is not None:
             outfile.write(
-                vim.not_eq_test_as_str(
+                vim.not_eq_test_tofile_as_str(
                     "unexpected '< position in buffer_after",
                     getpos(vim.lit("'<")),
                     vim.VimExpr.list_(self.result_langle),
+                    "err",
                 )
             )
         if self.result_rangle is not None:
             outfile.write(
-                vim.not_eq_test_as_str(
+                vim.not_eq_test_tofile_as_str(
                     "unexpected '> position in buffer_after",
                     getpos(vim.lit("'>")),
                     vim.VimExpr.list_(self.result_rangle),
+                    "err",
                 )
             )
         if (
@@ -460,24 +449,28 @@ endfunction
             outfile.write("normal! gvomaomb\n")
             if self.result_visual_begin is not None:
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         "unexpected visual_begin position in buffer_after",
                         getpos(vim.lit("'a")),
                         vim.VimExpr.list_(self.result_visual_begin),
+                        "err",
                     )
                 )
             if self.result_visual_end is not None:
                 outfile.write(
-                    vim.not_eq_test_as_str(
+                    vim.not_eq_test_tofile_as_str(
                         "unexpected visual_end position in buffer_after",
                         getpos(vim.lit("'b")),
                         vim.VimExpr.list_(self.result_visual_end),
+                        "err",
                     )
                 )
         outfile.write("\n")
 
         # Exit.
-        outfile.write("silent xit\n")
+        outfile.write("endfunction\n")
+        outfile.write('call feedkeys(":call Checks()\\<CR>", "t")\n')
+        outfile.write('call feedkeys(":silent xit\\<CR>", "t")\n')
 
     def run_test(
         self,
@@ -509,9 +502,7 @@ endfunction
         # Run test.
         cmd = [vim_bin or vim_type]  # If vim_bin is None, will use vim_type.
         if vim_type == "vim":
-            cmd.append("-es")
-        else:
-            cmd.append("--headless")
+            cmd.append("--not-a-term")
         if vimrc is not None:
             cmd.extend(["-u", vimrc])
         cmd.extend(["-S", run_file])
@@ -523,25 +514,30 @@ endfunction
             print(">", *cmd)
             return "dry_run"
 
-        env = os.environ.copy()
         proc = subprocess.run(
             cmd,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             timeout=5,
         )
         if proc.returncode != 0:
+            try:
+                err_file = os.path.join(work_dir, "err")
+                with open(err_file, encoding="utf-8") as infile:
+                    stderr = infile.read()
+            except FileNotFoundError:
+                stderr = ""
             return IntegratedTestFailure(
-                self.span, proc.stderr, self.error_suppressed
+                self.span, stderr, self.error_suppressed
             )
 
-        if proc.stdout:
-            msg = json.loads(proc.stdout)
-            if msg.get("cf", None) == "continue":
-                return "continue"
+        try:
+            cf_file = os.path.join(work_dir, "cf")
+            with open(cf_file, encoding="utf-8") as infile:
+                if infile.read().strip() == "continue":
+                    return "continue"
+        except FileNotFoundError:
+            pass
 
         if self.clean_buffer_after is not None:
             with open(buffer_file, encoding="utf-8") as infile:
