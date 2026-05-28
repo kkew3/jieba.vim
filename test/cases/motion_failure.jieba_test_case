@@ -17,6 +17,7 @@
 #V 4
 #X i
 
+! See https://github.com/kkew3/jieba.vim/issues/64.
 K w0
 B0 abcdef|g␊
 B1 abcdef|g␊
