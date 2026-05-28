@@ -137,6 +137,84 @@ B1 abc·|ijkl·mn·opq␊
 K daw ..
 B1 abc·|mn·opq␊
 
+K cwx
+B1 abc·|x·gh·ijkl·mn·opq␊
+
+K cwx .
+B1 abc·|x·gh·ijkl·mn·opq␊
+
+K cwx ...
+B1 abc·|x·gh·ijkl·mn·opq␊
+
+K cwx 3.
+B1 abc·|x·mn·opq␊
+
+K cwx w.
+B1 abc·x·|x·ijkl·mn·opq␊
+
+K cwx w2.
+B1 abc·x·|x·mn·opq␊
+
+K c2wx
+B1 abc·|x·ijkl·mn·opq␊
+
+K c2wx .
+B1 abc·|x·mn·opq␊
+
+K cex
+B1 abc·|x·gh·ijkl·mn·opq␊
+
+K cex .
+B1 abc·|x·ijkl·mn·opq␊
+
+K cex ..
+B1 abc·|x·mn·opq␊
+
+K cex e.
+B1 abc·x·g|x·mn·opq␊
+
+K c2ex
+B1 abc·|x·ijkl·mn·opq␊
+
+K c2ex .
+B1 abc·|x·opq␊
+
+K ciwx
+B1 abc·|x·gh·ijkl·mn·opq␊
+
+K ciwx .
+B1 abc·|x·gh·ijkl·mn·opq␊
+
+K ciwx ...
+B1 abc·|x·gh·ijkl·mn·opq␊
+
+K ciwx 2.
+B1 abc·|xgh·ijkl·mn·opq␊
+
+K ciwx 2. .
+B1 abc·|xijkl·mn·opq␊
+
+K c2iwx
+B1 abc·|xgh·ijkl·mn·opq␊
+
+K c2iwx .
+B1 abc·|xijkl·mn·opq␊
+
+K cawx
+B1 abc·|xgh·ijkl·mn·opq␊
+
+K cawx .
+B1 abc·|xijkl·mn·opq␊
+
+K cawx ..
+B1 abc·|xmn·opq␊
+
+K cawx 2.
+B1 abc·|xmn·opq␊
+
+K cawx 2. .
+B1 abc|x␊
+
 ## More tests: simple one line case (backward)
 #X i
 #B0 abc·defg·gh·ijkl·|mn·opq␊
@@ -176,3 +254,42 @@ B1 abc·defg·g|n·opq␊
 
 K d2ge .
 B1 ab|·opq␊
+
+K cbx
+B1 abc·defg·gh·|xmn·opq␊
+
+K cbx .
+B1 abc·defg·|xxmn·opq␊
+
+K cbx ..
+B1 abc·|xxxmn·opq␊
+
+K cbx 2.
+B1 abc·|xxmn·opq␊
+
+K c2bx
+B1 abc·defg·|xmn·opq␊
+
+K c2bx .
+B1 |xxmn·opq␊
+
+K c2bx ..
+B1 |xxmn·opq␊
+
+K cgex
+B1 abc·defg·gh·ijk|xn·opq␊
+
+K cgex .
+B1 abc·defg·g|xn·opq␊
+
+K cgex ..
+B1 abc·def|xn·opq␊
+
+K cgex 2.
+B1 abc·def|xn·opq␊
+
+K c2gex
+B1 abc·defg·g|xn·opq␊
+
+K c2gex .
+B1 ab|xn·opq␊
