@@ -418,6 +418,7 @@ jobs:
             elif [ $exit_code = 125 ]; then
               cum_exit_code=125
             fi
+          done
           echo "exit_code=$cum_exit_code" >> "$GITHUB_OUTPUT"
       - name: Check integrated test exit code
         shell: bash
