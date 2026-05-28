@@ -30,7 +30,7 @@ if !has("nvim") && has("mac") && !has("python3")
     " macOS default Python, installed by 'xcode-select --install'
     set pythonthreedll=/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/Current/Python3
 endif
-if $GLUE_LANG ==# "py311" && !has("python3")
+if ($GLUE_LANG ==# "py311" || $GLUE_LANG ==# "py39") && !has("python3")
     echoerr "+python3 is required to run the tests"
     cquit 10
     finish
