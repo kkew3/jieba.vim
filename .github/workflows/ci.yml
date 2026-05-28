@@ -81,7 +81,7 @@ jobs:
     name: >
       Basic integrated case verification for
       ${{ matrix.vim.distr }}@${{ matrix.vim.version }}
-      +${{ matrix.glue-lang }}
+      +${{ matrix.vim.glue-lang }}
     runs-on: ubuntu-24.04
     needs:
       - build-jieba-vim-cdylib
@@ -89,20 +89,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        glue-lang:
-          - py311
         vim:
           - distr: vim
             version: v8.2.2876
+            glue-lang: py39
           - distr: vim
             version: v9.1.0000
+            glue-lang: py311
     env:
       # uv variables
       UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest
       UV_PYTHON_DOWNLOADS: automatic
       UV_MANAGED_PYTHON: '1'
       # vimrc variables
-      GLUE_LANG: ${{ matrix.glue-lang }}
+      GLUE_LANG: ${{ matrix.vim.glue-lang }}
       JIEBA_VIM_DIR: ${{ github.workspace }}
     steps:
       # Prepare env.
@@ -111,7 +111,7 @@ jobs:
         with:
           vim-distr: ${{ matrix.vim.distr }}
           vim-version: ${{ matrix.vim.version }}
-          glue-lang: ${{ matrix.glue-lang }}
+          glue-lang: ${{ matrix.vim.glue-lang }}
       - name: Setup uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
@@ -124,13 +124,13 @@ jobs:
         shell: bash
         run: make -C test/cases/basic_integrated_verification clean all
       - name: Get jieba.vim cdylib for +python3
-        if: matrix.glue-lang == 'py311'
+        if: matrix.vim.glue-lang == 'py311' || matrix.vim.glue-lang == 'py39'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
       - name: Get jieba.vim cdylib for nvim/+lua
-        if: matrix.glue-lang == 'lua51'
+        if: matrix.vim.glue-lang == 'lua51'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-lua
@@ -216,18 +216,18 @@ jobs:
           TOFILE=bi-success-${{ steps.safe-version.outputs.vim_dist_name }}.txt
           echo "tofile=$TOFILE" >> "$GITHUB_OUTPUT"
           cat <<EOF > "$TOFILE"
-          ${{ steps.run-bi-case-verification.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.glue-lang }}
+          ${{ steps.run-bi-case-verification.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.vim.glue-lang }}
           EOF
       - uses: actions/upload-artifact@v6
         with:
-          name: bi-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          name: bi-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
           path: ${{ steps.indicate-state.outputs.tofile }}
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
       - uses: actions/upload-artifact@v6
         with:
-          name: bi-report-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          name: bi-report-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
           path: |
             bi_verification/warns_${{ steps.safe-version.outputs.vim_dist_name }}
             bi_verification/errs_${{ steps.safe-version.outputs.vim_dist_name }}
@@ -235,7 +235,7 @@ jobs:
       - name: Collect rust test info jsonl files
         uses: actions/upload-artifact@v6
         with:
-          name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.glue-lang }}
+          name: rust-core-test-info-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
           path: bi_verification/unit-${{ steps.safe-version.outputs.vim_dist_name }}.jsonl
           if-no-files-found: error
           retention-days: 5
@@ -300,7 +300,7 @@ jobs:
         vim:
           - distr: vim
             version: v8.2.2876
-            glue-lang: py311
+            glue-lang: py39
           - distr: vim
             version: v9.1.0000
             glue-lang: py311

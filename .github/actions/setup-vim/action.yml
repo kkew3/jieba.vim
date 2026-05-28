@@ -8,16 +8,21 @@ inputs:
     description: 'The vim/nvim version'
     required: true
   glue-lang:
-    description: 'The glue language (either "py311" or "lua51")'
+    description: 'The glue language (either "py311", "py39" or "lua51")'
     required: true
 runs:
   using: composite
   steps:
-    - name: Setup python
+    - name: Setup python 3.11
       uses: actions/setup-python@v6
       with:
         python-version: '3.11'
       if: ${{ inputs.glue-lang == 'py311' }}
+    - name: Setup python 3.9
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.9'
+      if: ${{ inputs.glue-lang == 'py39' }}
     - name: Install pynvim
       shell: bash
       run: pip install pynvim
@@ -61,9 +66,13 @@ runs:
               --prefix="$HOME/vim/prefix"
             ;;
           py311-v8.*)
+            echo "unimplemented"
+            false
+            ;;
+          py39-v8.*)
             env \
-              vi_cv_path_python3_plibs="-L$(python3.11-config --configdir) -lpython3.11 -ldl -lm" \
-              vi_cv_var_python3_version=3.11 \
+              vi_cv_path_python3_plibs="-L$(python3.9-config --configdir) -lpython3.9 -ldl -lm" \
+              vi_cv_var_python3_version=3.9 \
               LDFLAGS=-rdynamic \
               ./configure \
               --with-features=huge \
@@ -71,9 +80,13 @@ runs:
               --enable-largefile \
               --enable-multibyte \
               --enable-python3interp \
-              --with-python3-command=python3.11 \
-              --with-python3-stable-abi=3.11 \
+              --with-python3-command=python3.9 \
+              --with-python3-stable-abi=3.9 \
               --prefix="$HOME/vim/prefix"
+            ;;
+          py39-v9.*)
+            echo "unimplemented"
+            false
             ;;
           lua51-*)
             LDFLAGS=-rdynamic ./configure \
