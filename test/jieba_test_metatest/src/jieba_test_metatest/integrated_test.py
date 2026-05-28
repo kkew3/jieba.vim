@@ -666,7 +666,11 @@ def main():
 
     for path in args.test_case_file:
         raw_cases = RawTestCases()
-        raw_cases.extend_from_file(path)
+        try:
+            raw_cases.extend_from_file(path)
+        except (FileNotFoundError, OSError):
+            print(f"io warning: file unreadable: {path}", file=sys.stderr)
+            continue
         print(f"I: {path}: found {len(raw_cases)} raw test cases")
         i_blocks = list(
             filter(None, map(IntegratedBlock.from_raw_block_opt, raw_cases))
