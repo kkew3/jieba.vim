@@ -13,6 +13,7 @@
 # the License.
 
 import argparse
+import contextlib
 import os
 import shlex
 import subprocess
@@ -617,6 +618,14 @@ def make_parser():
         ),
     )
     parser.add_argument(
+        "-f", dest="err_file", help="Tee failure report to this file."
+    )
+    parser.add_argument(
+        "-w",
+        dest="warn_file",
+        help="Tee failure report for suppressed errors to this file.",
+    )
+    parser.add_argument(
         "test_case_file", nargs="*", help="The *.jieba_test_case files."
     )
     return parser
@@ -628,6 +637,10 @@ def main():
     vim_type = "nvim" if args.is_neovim else "vim"
     visited_case = set()
     suppressed_errors = []
+    if args.err_file is None:
+        err_fileobj = contextlib.nullcontext()
+    else:
+        err_fileobj = open(args.err_file, "w", encoding="utf-8")
 
     # Write a .gitignore under args.work_dir to ensure it won't be indexed by
     # any git client (e.g. VSCode, Fork), as there will could be a HUGE number
@@ -687,11 +700,24 @@ def main():
                         progress.step(err=True)
                         continue
                     print(f"F: {res}", file=sys.stderr)
+                    if args.err_file is not None:
+                        with open(
+                            args.err_file, "a", encoding="utf-8"
+                        ) as err_fileobj:
+                            err_fileobj.write(f"{res}\n")
                     sys.exit(1)
                 progress.step()
+
+    if args.warn_file is None:
+        warn_fileobj = contextlib.nullcontext()
+    else:
+        warn_fileobj = open(args.warn_file, "a", encoding="utf-8")
     if suppressed_errors:
         print("Suppressed failures:")
-        for res in suppressed_errors:
-            print("---")
-            print(f"F: {res}")
+        with warn_fileobj:
+            for res in suppressed_errors:
+                print("---")
+                print(f"F: {res}")
+                if args.warn_file is not None:
+                    warn_fileobj.write(f"{res}\n\n")
         sys.exit(125)

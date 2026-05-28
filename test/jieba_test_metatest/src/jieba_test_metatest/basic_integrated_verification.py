@@ -13,6 +13,7 @@
 # the License.
 
 import argparse
+import contextlib
 import json
 import os
 import shlex
@@ -935,6 +936,14 @@ def make_parser():
         ),
     )
     parser.add_argument(
+        "-f", dest="err_file", help="Tee failure report to this file."
+    )
+    parser.add_argument(
+        "-w",
+        dest="warn_file",
+        help="Tee failure report for suppressed errors to this file.",
+    )
+    parser.add_argument(
         "test_case_file", nargs="*", help="The *.jieba_test_case files."
     )
     return parser
@@ -1014,6 +1023,11 @@ def main():
                             progress.step(err=True)
                             continue
                         print(f"F: {res}", file=sys.stderr)
+                        if args.err_file is not None:
+                            with open(
+                                args.err_file, "a", encoding="utf-8"
+                            ) as err_fileobj:
+                                err_fileobj.write(f"{res}\n")
                         sys.exit(1)
                     if isinstance(res, VerificationOutput):
                         json.dump(
@@ -1033,9 +1047,16 @@ def main():
 
     if not written_to_unit_info:
         os.remove(unit_info_file)
+    if args.warn_file is None:
+        warn_fileobj = contextlib.nullcontext()
+    else:
+        warn_fileobj = open(args.warn_file, "a", encoding="utf-8")
     if suppressed_errors:
         print("Suppressed failures:")
-        for res in suppressed_errors:
-            print("---")
-            print(f"F: {res}")
+        with warn_fileobj:
+            for res in suppressed_errors:
+                print("---")
+                print(f"F: {res}")
+                if args.warn_file is not None:
+                    warn_fileobj.write(f"{res}\n\n")
         sys.exit(125)
