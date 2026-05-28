@@ -336,7 +336,7 @@ jobs:
         shell: bash
         run: uv sync
       - name: Get jieba.vim cdylib for +python3
-        if: matrix.vim.glue-lang == 'py311'
+        if: matrix.vim.glue-lang == 'py311' || matrix.vim.glue-lang == 'py39'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
