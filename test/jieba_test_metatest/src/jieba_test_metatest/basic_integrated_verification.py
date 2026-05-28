@@ -998,7 +998,7 @@ def main():
             if args.vim_bin is None:
                 print("I: dry-run mode")
 
-            with DotsProgress() as progress:
+            with DotsProgress(flush=False) as progress:
                 for (case_id,), fut in pmap(
                     setup_fn,
                     runner,
