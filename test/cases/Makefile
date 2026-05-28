@@ -7,7 +7,7 @@ OUTPUT_TEST_CASES := $(TEMPLATE_FILES:.jieba_test_case.j2=.jieba_test_case)
 all: $(OUTPUT_TEST_CASES)
 
 %.jieba_test_case: %.jieba_test_case.j2
-	minijinja-cli -o $@ $^
+	uv run jinja2 -o $@ $^
 
 clean:
 	rm -f $(OUTPUT_TEST_CASES)
