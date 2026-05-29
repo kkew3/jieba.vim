@@ -468,11 +468,22 @@ endfunction
                     )
                 )
         outfile.write("\n")
+        # FIXME Dummy line that adds one more Ex loop in Vim. Without this the
+        #       test vimscript will return 1 silently after passing all checks.
+        #       Perhaps there's a cleverer way to solve this problem.
+        outfile.write('call feedkeys(":\\<C-u>\\<CR>", "n")\n')
+
+        outfile.write("endfunction\n")
+
+        # Run checks.
+        outfile.write('call feedkeys(":\\<C-u>call Checks()\\<CR>", "nt")\n')
+        # FIXME Dummy line that adds one more Ex loop in Vim. Without this the
+        #       test vimscript will return 1 silently after passing all checks.
+        #       Perhaps there's a cleverer way to solve this problem.
+        outfile.write('call feedkeys(":\\<C-u>\\<CR>", "n")\n')
 
         # Exit.
-        outfile.write("endfunction\n")
-        outfile.write('call feedkeys(":\\<C-u>call Checks()\\<CR>", "t")\n')
-        outfile.write('call feedkeys(":\\<C-u>silent xit\\<CR>", "t")\n')
+        outfile.write('call feedkeys(":\\<C-u>silent xit\\<CR>", "nt")\n')
 
     def run_test(
         self,
