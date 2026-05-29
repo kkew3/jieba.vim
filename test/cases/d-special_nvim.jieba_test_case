@@ -17,26 +17,14 @@
 //
 // Best viewed in Vim.
 
-#V 3
-?has:nvim
+#V 4
+? has:nvim
 
-#M o
-#X u
-#K w
-#O d
-#R a
-#Q | < > prevent_change=0 visualmode=V selection=inclusive
+#X i
 
-// Buffer: |␊···abcd␊······␊ <<<
-#B0 |␊···abcd␊······␊
-
-H 15b177e61e3ae18a3378fa61f38c699cf088244c3b41b67c8248669b
-C 2
-Bp <␊···abc>d␊······␊
-Bo |······␊
+B0 |␊···abcd␊······␊
+K "ad2w
 B1 |······␊
 S1 "a=\<Newline>\<Space>\<Space>\<Space>abcd\<Newline>
-
-// >>>
 
 // vim: foldmethod=marker foldmarker=<<<,>>> foldlevel=0

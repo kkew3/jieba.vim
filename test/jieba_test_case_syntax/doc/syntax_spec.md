@@ -5,8 +5,8 @@ This document defines `jieba_test_case` format, a domain-specific language for s
 # Test case head conditionals
 
 ```
-?!has:nvim
-?version:820
+? !has:nvim
+? version:820
 ```
 
 means:
@@ -45,9 +45,16 @@ Supported local directives are:
 - Count `C`
 - State before `S0`
 - Buffer before `B0`
-- Model input `P`
 - Model output `Q`
+- Autocmd event count `E`
+- Suppress error `!`
 
+Use the following to reset all defaults:
+
+```
+## {optional_text}
+
+```
 For example:
 
 ```
@@ -62,19 +69,33 @@ For example:
 
 // Override previous default so that we test for |d3w| from
 // now on.
+##
+#M o
+#O d
+#K w
 #C 3
 ```
 
-Use the following to reset all defaults:
+Default directives with multiple arguments can be split into multiple lines.
+For example:
 
 ```
-## {optional_text}
+#S0 "a=foo "b=bar
+```
+
+can be written as:
+
+```
+#S0 "a=foo
+#S0 "b=bar
 ```
 
 # Test case block
 
 One or more local directives in consecutive lines define a test case block.
 Blank lines separate test case blocks.
+Directives with multiple arguments can be split into multiple lines, as above.
+The order of different directives inside a block does not matter.
 
 # Comments
 
@@ -98,56 +119,34 @@ Note that escape sequences should not be treated specially in the parser and sho
 
 # Local directives
 
-## Test hash
-
-```
-H (<id>|"?") ({name})?
-```
-
-This defines a globally unique test id (a sha2 hash of current test case block ignoring any comments and whitespace diff) that leads a test case block.
-It may also contain an optional human-readable name.
-There is no constraint on `{name}` except that it must not contain `\n`.
-A trick is to append `{{{` to the end of `{name}`, add `// }}}` comment at the end of current block, and add `// vim: foldmethod=marker` at the end of current file, in order to enable marker folding when viewing this test case file in vim.
-
-For example:
-
-```
-H a7342bef foo {{{
-```
-
-If `<id>` is `?`, then the parser should be able to fix it with the correct hash in case current block is valid at parsing stage.
-Otherwise, the parser need to double-check if `<id>` matches the content of the test case block.
-
 ## Export
 
 ```
-X (u|i|b)+
+X (u|i|b|bi)*
 ```
 
 This defines how the test case should be exported.
-If `u` is present, the test case will be exportable as a unit test verification or a unit test.
-If `i` is present, the test case will be exportable as an integration test verification or an integration test.
-If `b` is present, the test case will be exported as a bootstrap verification.
-`b` cannot cooccur with other export types.
-It's a parsing error if `X` having `u` present and in the same time `M` starts with `m`, as `M = m*` tests are not unit-verifiable.
+If `u` is present, the test case will be exportable as unit case verification.
+If `i` is present, the test case will be exportable as integrated case verification.
+If `bi` is present, the test case will be exportable as basic integrated case verification.
+If `b` is present, the test case will be exported as bootstrap case verification.
+It's a parsing error if `X` having `u` present and in the same time `M` is `m`.
+If nothing is present, the test case will simply be ignored.
 
 Examples:
 
 ```
-// Will export this test as unit test after verification.
+// Will export this test as unit case verification.
 X u
 
-// Will export this test as both unit test and integration test.
-X ui
-
-// Same as above.
-X iu
+// Will export this test as both unit and integrated case verifications.
+X u i
 ```
 
-## Editor mode
+## Editor mode (N/A if `X` is "i")
 
 ```
-M (n|v|V|\<C-v>|o|mn|mv|mV|m\<C-v>)
+M (n|v|V|\<C-v>|o)
 ```
 
 Provides a hint on the editor mode to be tested.
@@ -158,10 +157,6 @@ Explanation:
 - `V`: linewise visual mode motions or text objects.
 - `\<C-v>`: blockwise visual mode motions or text objects.
 - `o`: operator-pending mode motions or text objects.
-- `mn`: initially normal mode but may mix different modes in the middle.
-- `mv`/`mV`/`m\<C-v>`: initially visual mode by character/line/block but may mix different modes in the middle.
-
-When `m*` is selected, the test case cannot be exported as a unit test.
 
 ## Key sequence
 
@@ -171,13 +166,16 @@ Either
 K {motion_keys}
 ```
 
-or
+applicable when `X` is not "i", or
 
 ```
-K {any normal! key sequence}
+K ({any_keystrokes})+
 ```
 
-The `normal!` key sequence to test for.
+applicable when `X` is "i".
+
+The keystrokes to test for.
+They will be sent to vim as if they were typed.
 
 When the editor mode hint is not `m`, the first form must be used; otherwise, the second form can be used.
 When the editor mode hint is `n`, text object motions cannot be used.
@@ -199,7 +197,7 @@ R {register}
 The register to use with `O`.
 Default to `"`.
 
-## Count (N/A if `M` is "m*"; optional otherwise)
+## Count (N/A if `X` is "i"; optional otherwise)
 
 ```
 C {count}
@@ -220,26 +218,26 @@ The states will be set in the same order as specified in `S0`.
 
 When `{option_name}={value}` is found, the option will be set as specified before the key sequence.
 
-When `{function_name}()={value}` is found, certain setup key sequence will be executed before the key sequence. Supported functions and corresponding setup key sequence:
+When `{function_name}()={value}` is found, certain setup key sequence will be executed before the key sequence such that the function will return `{value}` after setup. Supported functions and corresponding setup key sequence:
 
 - `visualmode()={value}`: `normal! {value}\<Esc>`.
 
 When `'{mark_name}={position}` is found, vimscript `call setpos("'{mark_name}", {position})` will be called.
-`{position}` should be something like `[0,1,2,0]`, i.e. four/five integers separated by `,` and quoted by square brackets.
+`{position}` should be something like `[0,1,2,0]`, i.e. four integers separated by `,` and quoted by square brackets.
 
 When `"{register_name}={value}` is found, vimscript `let @{register_name} = "{value}"`. If `value` contains `"`, it should be concatenated properly when transpiling to tests, e.g. `let @{register_name} = "{value1}" . '"' . "{value2}"`.
 
 ## State after
 
 ```
-S1 ({option_name}={value} | {function_name}()={value} | '{mark_name}={position} | "{register_name}={value})*
+S1 ({option_name}=({value})? | {function_name}()=({value})? | '{mark_name}=({position})? | "{register_name}=({value})?)*
 ```
 
 The syntax is the same as `S0`.
 
 These will be checked against after the key sequence.
 
-In bootstrap verification mode, `{value}` will be ignored, so can be left empty.
+In bootstrap case verification and basic integrated case verification modes, `{value}` will be ignored, so can be left empty.
 
 ## Buffer before/after/output/pending
 
@@ -281,7 +279,7 @@ Buffer pending `Bp`, if exists, must contain and only contain `<` and `>`.
 Buffer before `B0` must not contain `<` or `>`.
 The clean content of `Bo` must equal that of `B1`.
 
-## Model output (N/A if `M` is "m*")
+## Model output (N/A if `X` is "i")
 
 ```
 Q ({position_mark} | {key}={value})+
@@ -332,6 +330,17 @@ E ModeChanged=2 InsertLeave=1
 
 indicate that `ModeChanged` event should be triggered twice, and `InsertLeave` event be triggered once.
 
+## Suppress error
+
+```
+! ({reason})?
+```
+
+Indicate that current test case may fail and that it's okay/tolerable.
+Then, test/verification failure will not interrupt the testing loop.
+In the end, all suppressed failures will be printed at once.
+If there is no failure but the suppressed ones, the return code should be 125.
+
 # Example test case file
 
 `this.jieba_test_case`:
@@ -339,20 +348,20 @@ indicate that `ModeChanged` event should be triggered twice, and `InsertLeave` e
 ```
 #V 1
 
-?!has:nvim
-?version:900
+? !has:nvim
+? version:900
 
-H 6be7b7cd41a6d854a442dff4c3ea3eac9e3cd5f8 two words {{{
+H 6be7b7cd41a6d854a442dff4c3ea3eac9e3cd5f8 two words <<<
 X u
 M n
 Q |
 B0 |abc·def␊
 K w
 B1 abc·|def␊
-// }}}
+// >>>
 
-H a7b2f6e681098930f3f837cfa98d0ef99eee3f21 {{{
-X ui
+H a7b2f6e681098930f3f837cfa98d0ef99eee3f21 <<<
+X u i
 M V
 Q < > visualmode=v
 B0 a[]bc·def␊
@@ -360,16 +369,16 @@ C 1
 K iw
 B1 <[ab|]>c·def␊
 S1 visualmode()=v
-// }}}
+// >>>
 
 // vim: foldmethod=marker
 ```
 
 # Transpiling to tests
 
-## To unit test verification
+## To unit case verification
 
-Unit test verification is a vimscript.
+Unit case verification is a vimscript.
 
 Illustrative example:
 
@@ -406,31 +415,14 @@ call JiebaNmap("w", 0, "JiebaOracleModel")
 " [..]
 ```
 
-## To Rust core tests
-
-```jinja2
-// Imports ...
-
-#[test]
-fn test_{{ metatest_id }}() {
-    let wm = WordMotion::new(Tokenizer::try_new(KeywordCutter::new([]), "@,48-57,_,192-255").unwrap());
-    let output = wm.{{ fun_name }}({{ input_args }});
-    {%- for item in outputs %}
-    assert_eq!(output.{{ item.field }}, {{ item.expected_output }});
-    {%- endfor %}
-}
-
-// Other tests ...
-```
-
-## To bootstrap verification
+## To bootstrap case verification
 
 Knowning how to implement the Rust model correctly is a non-trivial task due to hidden states (e.g. the transient operation range of operator-pending mode), combinatorially large design space and peculiar corner cases (e.g. d-special).
 However, verifying whether it aligns with the oracle (i.e. a running Vim instance) in a dichotomy sense is easy.
 Given a Rust model, we may run it on random-generated or manually-written test cases and see if it aligns with the oracle; if true, we materialize the oracle's behavior in `jieba_test_case` (unparsing); else, return an error for further investigation.
 If the Rust model behaves well enough, we are able to generate massive test cases automatically.
 
-Bootstrap verification is a vimscript.
+Bootstrap case verification is a vimscript.
 
 Illustrative example:
 

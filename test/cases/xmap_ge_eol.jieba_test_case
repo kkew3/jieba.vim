@@ -12,29 +12,25 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-// This file contains test cases that check for re-positioning the cursor after
-// d-special when 'startofline' option is unset.
+// This tests for a bug where in all visual modes, when the cursor is at the
+// position one character after the last character, motion |ge| does not go
+// back to the last character in the buffer.
+//
+// Best viewed in Vim.
 
 #V 4
-
 #X i
 
-K d2w
-S0 startofline=0
-B0 |a␊␊··def␊
-B1 ··|def␊
+#B0 ab|c␊
 
-K d2w
-S0 startofline=0
-B0 |a␊b␊··def␊
-B1 |··def␊
+K v$\<Esc>
+B1 ab[c]␊
 
-K d2w
-S0 startofline=0
-B0 |␊␊··def␊
-B1 ··|def␊
+K v$ge\<Esc>
+B1 ab[]|c␊
 
-K d2w
-S0 startofline=0
-B0 |␊b␊··def␊
-B1 |··def␊
+K V$ge\<Esc>
+B1 ab[]|c␊
+
+K \<C-v>$ge\<Esc>
+B1 ab[]|c␊

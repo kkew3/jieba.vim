@@ -1,0 +1,24 @@
+[project]
+name = "jieba-test-metatest"
+version = "0.1.0"
+description = "An implementation of jieba_test_case spec"
+requires-python = ">=3.11"
+dependencies = [
+    "jinja2-cli[yaml]>=1.0.1",
+]
+
+[project.scripts]
+jieba-metatest-bi-verification = "jieba_test_metatest.basic_integrated_verification:main"
+jieba-metatest-i-test = "jieba_test_metatest.integrated_test:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 80

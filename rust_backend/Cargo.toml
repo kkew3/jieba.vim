@@ -2,7 +2,6 @@
 members = [
     "jieba_vim_rs_core",
     "jieba_vim_rs_test",
-    "jieba_vim_rs_metatest",
     "jieba_vim_rs_binding_py3",
     "jieba_vim_rs_binding_lua51"
 ]
