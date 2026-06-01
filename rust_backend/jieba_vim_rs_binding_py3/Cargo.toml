@@ -10,8 +10,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Put vim-compatible python abi in pyo3 features.
-pyo3 = { version = "0.28.2", features = ["extension-module", "abi3-py37"] }
-jieba-rs = { version = "0.8" }
+pyo3 = { version = "0.28.3", features = ["extension-module", "abi3-py37"] }
+jieba-rs = { version = "0.9" }
 jieba_vim_rs_core = { path = "../jieba_vim_rs_core" }
 
 [build-dependencies]
