@@ -22,7 +22,7 @@ def test_from_raw_block_opt():
     raw_test_cases = parser.RawTestCases()
     span = parser.SourceSpan.for_file("foo")
     lines = """\
-#V 4
+#V 5
 
 #X bi
 #E CursorMoved=
@@ -209,7 +209,7 @@ S1 visualmode()= '[= ']=
 
 def test_write_std_run_custom_run():
     lines = """\
-#V 4
+#V 5
 ? !has:nvim
 
 #X bi
