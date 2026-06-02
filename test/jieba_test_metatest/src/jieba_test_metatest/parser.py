@@ -324,6 +324,11 @@ class StateExpr:
         be set to None.
         """
         name, _, value = arg.partition("=")
+        value = (
+            value.replace("␊", "\\<Newline>")
+            .replace("·", "\\<Space>")
+            .replace("┤", "\\<Tab>")
+        )
         if parse_as_incomplete:
             value = None
         if name.endswith("()"):
