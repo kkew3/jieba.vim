@@ -75,7 +75,7 @@ def test_raw_test_cases_extend_from_lines():
     raw_test_cases = m.RawTestCases()
     span = m.SourceSpan.for_file("foo")
     lines = """
-#V 4
+#V 5
 ##
 
 ? !has:nvim

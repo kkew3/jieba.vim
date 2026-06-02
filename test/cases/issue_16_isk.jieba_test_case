@@ -17,7 +17,7 @@
 //
 // Best viewed in Vim.
 
-#V 4
+#V 5
 
 #X i
 #B0 |aa.bb·ccc␊
@@ -30,6 +30,6 @@ K e
 B1 aa|.bb·ccc␊
 
 K e
-K :set\<Space>isk=a-z,.\<CR>
+K :set·isk=a-z,.␊
 K e
 B1 aa.b|b·ccc␊

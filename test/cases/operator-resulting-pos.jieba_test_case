@@ -15,7 +15,7 @@
 // This file contains test cases that check for re-positioning the cursor after
 // d-special when 'startofline' option is unset.
 
-#V 4
+#V 5
 
 #X i
 

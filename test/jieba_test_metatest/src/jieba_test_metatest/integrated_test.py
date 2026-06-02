@@ -343,6 +343,9 @@ endfunction
         # Execute commands.
         outfile.write('" execute commands\n')
         for any_key_expr in self.any_key:
+            any_key_expr = any_key_expr.replace("·", "\\<Space>").replace(
+                "␊", "\\<CR>"
+            )
             outfile.write(
                 "call feedkeys({}, 't')\n".format(
                     vim.lit(f"{any_key_expr}\\<Esc>")
