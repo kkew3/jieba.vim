@@ -16,6 +16,8 @@
 //
 // Best viewed in Vim.
 
+#V 5
+
 ## Case 1 from https://github.com/kkew3/jieba.vim/issues/6.
 #X i
 #B0 a␊···␊b␊|···␊cd␊

@@ -14,7 +14,7 @@
 
 // Best viewed in Vim.
 
-#V 4
+#V 5
 #X i
 
 ! See https://github.com/kkew3/jieba.vim/issues/64.
