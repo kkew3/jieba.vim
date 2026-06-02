@@ -12,12 +12,34 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+// This file contains test cases for issue #64. See
+// https://github.com/kkew3/jieba.vim/issues/64 for detail.
+//
 // Best viewed in Vim.
 
 #V 5
 #X i
 
-! See https://github.com/kkew3/jieba.vim/issues/64.
 K w0
 B0 abcdef|g␊
 B1 abcdef|g␊
+
+K 100w0
+B0 abc|def␊
+B1 |abcdef␊
+
+K 100geG
+B0 ␊abcde|f␊
+B1 |␊abcdef␊
+
+K v100w0
+B0 abc|def␊
+B1 |]abc[def␊
+
+K v100e0
+B0 abc|def␊
+B1 abc[de|f]␊
+
+K 1000dgeG
+B0 ␊abcd|ef␊
+B1 |␊abcdef␊
