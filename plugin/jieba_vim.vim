@@ -235,6 +235,17 @@ function! JiebaModelOmap(...)
     endif
 endfunction
 
+function! s:ConsumeChars()
+    while 1
+        let l:ch = getchar(1)
+        " Testing against 27 (\<Esc>) is necessary; otherwise Vim will crash.
+        if l:ch ==# 0 || l:ch ==# 27
+            break
+        endif
+        call getchar(0)
+    endwhile
+endfunction
+
 function! JiebaNmap(motion, count, model_funcname)
     if a:model_funcname !=# ""
         let l:result_dict = function(a:model_funcname)(a:motion, getcurpos(), a:count)
@@ -242,6 +253,9 @@ function! JiebaNmap(motion, count, model_funcname)
         let l:result_dict = JiebaModelNmap(a:motion, getcurpos(), a:count)
     endif
     call cursor(l:result_dict["cursor"][1:2])
+    if l:result_dict["prevent_change"] && !exists("$JIEBA_TEST_CASE")
+        call s:ConsumeChars()
+    endif
 endfunction
 
 function! JiebaXmap(motion, count, model_funcname)
@@ -267,6 +281,9 @@ function! JiebaXmap(motion, count, model_funcname)
         normal! gv
     else
         noautocmd normal! gv
+    endif
+    if l:result_dict["prevent_change"] && !exists("$JIEBA_TEST_CASE")
+        call s:ConsumeChars()
     endif
 endfunction
 
@@ -303,6 +320,9 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     if l:result_dict["prevent_change"]
         " Land the cursor to potentially a new position.
         call cursor(l:result_dict["cursor"][1:2])
+        if !exists("$JIEBA_TEST_CASE")
+            call s:ConsumeChars()
+        endif
     else
         if a:operator !=# "y"
             " This no-op line effectively sets an undoable checkpoint such that
