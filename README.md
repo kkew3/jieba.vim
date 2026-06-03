@@ -104,7 +104,7 @@ cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 
 ## 相关项目
 
-见 [RELATED.md](./RELATED.md)。
+见 [docs/related-projects.md](./docs/related-projects.md)。
 
 ## 许可
 
@@ -213,7 +213,7 @@ See [TODO.md](./TODO.md).
 
 ## Related Projects
 
-See [RELATED.md](./RELATED.md).
+See [docs/related-projects.md](./docs/related-projects.md)
 
 ## License
 
