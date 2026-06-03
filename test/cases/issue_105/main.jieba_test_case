@@ -97,18 +97,22 @@ S1 "a=ijk
 #X i
 #B0 ␊abc␊def␊ghi␊jkl␊m|no␊
 
+S0 startofline=1
 K "add
 B1 ␊abc␊def␊ghi␊|jkl␊
 S1 "a=mno␊
 
+S0 startofline=1
 K "add "b1000dge
 B1 |␊abc␊def␊ghi␊jkl␊
 S1 "a=mno␊ "b=
 
+S0 startofline=1
 K "add "b1000dge 3gg
 B1 ␊abc␊|def␊ghi␊jkl␊
 S1 "a=mno␊ "b=
 
+S0 startofline=1
 K "add "b1000dge 3gg .
 B1 ␊abc␊|ghi␊jkl␊
 S1 "a=def␊ "b=
