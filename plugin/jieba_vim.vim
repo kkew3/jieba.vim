@@ -274,19 +274,12 @@ function! s:IsForwardMotion(motion)
     return a:motion ==? "w" || a:motion ==? "e" || a:motion ==? "iw" || a:motion ==? "aw"
 endfunction
 
-function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
-    noautocmd execute "normal! \<Esc>"
-    let l:orig_curpos = getcurpos()
+function s:JiebaModelOmapProcessed(model_funcname, motion, curpos, count, operator)
     if a:model_funcname !=# ""
-        let l:result_dict = function(a:model_funcname)(a:motion, l:orig_curpos, a:count, a:operator)
+        let l:result_dict = function(a:model_funcname)(a:motion, a:curpos, a:count, a:operator)
     else
-        let l:result_dict = JiebaModelOmap(a:motion, l:orig_curpos, a:count, a:operator)
+        let l:result_dict = JiebaModelOmap(a:motion, a:curpos, a:count, a:operator)
     endif
-    call cursor(l:result_dict["langle"][1:2])
-    " This no-op line effectively sets an undoable checkpoint such that |u|
-    " undos all operations up to this line.
-    call setline(".", getline("."))
-
     " Check if we are selecting an empty region.
     if l:result_dict["langle"] ==# l:result_dict["rangle"]
         \ && l:result_dict["selection"] ==# "exclusive"
@@ -295,11 +288,28 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
         \ && stridx(&cpoptions, "E") >= 0
         let l:result_dict["prevent_change"] = 1
     endif
+    return l:result_dict
+endfunction
+
+function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
+    let l:orig_curpos = getcurpos()
+    if type(a:model_funcname) == v:t_string
+        let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, a:motion, l:orig_curpos, a:count, a:operator)
+    else
+        let l:result_dict = a:model_funcname
+    endif
+    call cursor(l:result_dict["langle"][1:2])
 
     if l:result_dict["prevent_change"]
         " Land the cursor to potentially a new position.
         call cursor(l:result_dict["cursor"][1:2])
     else
+        if a:operator !=# "y"
+            " This no-op line effectively sets an undoable checkpoint such that
+            " |u| undos all operations up to this line.
+            call setline(".", getline("."))
+        endif
+
         " Save original states.
         let l:orig_mark_a = getpos("'a")
         let l:orig_startofline = &startofline
@@ -405,19 +415,29 @@ for ky in s:motions + s:objects
 endfor
 
 function! s:JiebaOmap_internal_ky(ky, count, operator, register)
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_" . a:ky . ")", a:register)
-    call JiebaOmap(a:ky, 1, a:count, a:operator, a:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_" . a:ky . ")", a:count)
+    let l:result_dict = s:JiebaModelOmapProcessed("", a:ky, getcurpos(), a:count, a:operator)
+    if !l:result_dict["prevent_change"] && a:operator !=# "y"
+        silent! call repeat#setreg(a:operator . "\<Plug>(Jieba_internal_o_" . a:ky . ")", a:register)
+    endif
+    call JiebaOmap(a:ky, 1, a:count, a:operator, a:register, l:result_dict)
+    if !l:result_dict["prevent_change"] && a:operator !=# "y"
+        silent! call repeat#set(a:operator . "\<Plug>(Jieba_internal_o_" . a:ky . ")", a:count)
+    endif
 endfunction
 
 function! s:JiebaOmap_ky(ky, count, operator, register)
-    silent! call repeat#setreg("\<Plug>(Jieba_internal_o_" . a:ky . ")", a:register)
-    call JiebaOmap(a:ky, 0, a:count, a:operator, a:register, "")
-    silent! call repeat#set("\<Plug>(Jieba_internal_o_" . a:ky . ")", a:count)
+    let l:result_dict = s:JiebaModelOmapProcessed("", a:ky, getcurpos(), a:count, a:operator)
+    if !l:result_dict["prevent_change"] && a:operator !=# "y"
+        silent! call repeat#setreg(a:operator . "\<Plug>(Jieba_internal_o_" . a:ky . ")", a:register)
+    endif
+    call JiebaOmap(a:ky, 0, a:count, a:operator, a:register, l:result_dict)
+    if !l:result_dict["prevent_change"] && a:operator !=# "y"
+        silent! call repeat#set(a:operator . "\<Plug>(Jieba_internal_o_" . a:ky . ")", a:count)
+    endif
 endfunction
 
 for ky in s:motions + s:objects
-    execute "nnoremap <expr> <silent> <Plug>(Jieba_internal_o_" . ky . ") " . '":<C-u>call <SID>JiebaOmap_internal_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
+    execute "onoremap <expr> <silent> <Plug>(Jieba_internal_o_" . ky . ") " . '"<Esc>:<C-u>call <SID>JiebaOmap_internal_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
     execute "onoremap <expr> <silent> <Plug>(Jieba_" . ky . ") " . '"<Esc>:<C-u>call <SID>JiebaOmap_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
 endfor
 
