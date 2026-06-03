@@ -1,0 +1,260 @@
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy
+// of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+// This file contains test cases that check for vim-repeat |.| behavior after
+// an operation that does not change the buffer.
+//
+// Best viewed in Vim.
+
+#V 5
+
+// This section checks for |.| after yank, an omap that notably does not change
+// the buffer.
+### Repeat after Yank ###
+
+// Case 1: repeat after |yy|.
+## dw -> yy -> .
+#X i
+#B0 abc·defg·h|ijk␊
+
+K "adw
+B1 abc·defg·|h␊
+S1 "a=ijk
+
+K "adw "byy
+B1 abc·defg·|h␊
+S1 "a=ijk "b=abc·defg·h␊
+
+K "adw "byy 0
+B1 |abc·defg·h␊
+S1 "a=ijk "b=abc·defg·h␊
+
+K "adw "byy 0 .
+B1 |defg·h␊
+S1 "a=abc· "b=abc·defg·h␊
+
+// Case 2: repeat after |yw|, a jieba omap.
+## dw -> yw -> .
+#X i
+#B0 abc·defg·h|ijk␊
+
+K "adw
+B1 abc·defg·|h␊
+S1 "a=ijk
+
+K "adw Fd
+B1 abc·|defg·h␊
+S1 "a=ijk
+
+K "adw Fd "byw
+B1 abc·|defg·h␊
+S1 "a=ijk "b=defg·
+
+K "adw Fd "byw 0
+B1 |abc·defg·h␊
+S1 "a=ijk "b=defg·
+
+K "adw Fd "byw 0 .
+B1 |defg·h␊
+S1 "a=abc· "b=defg·
+
+// Case 3: repeat after |yw|, but without a preceding buffer-changing
+// operation. Should do nothing.
+## yw -> .
+#X i
+#B0 abc·defg·h|ijk␊
+
+K "ayw
+B1 abc·defg·h|ijk␊
+S1 "a=ijk
+
+K "ayw 0
+B1 |abc·defg·hijk␊
+S1 "a=ijk
+
+K "ayw 0 .
+B1 |abc·defg·hijk␊
+S1 "a=ijk
+
+
+// This section checks for |.| after motion failure, which does not change
+// the buffer.
+### Repeat after Motion Failure ###
+
+// Case 1: repeat when the last valid operation is not a jieba omap.
+## dd -> failure -> .
+#X i
+#B0 ␊abc␊def␊ghi␊jkl␊m|no␊
+
+S0 startofline=1
+K "add
+B1 ␊abc␊def␊ghi␊|jkl␊
+S1 "a=mno␊
+
+S0 startofline=1
+K "add "b1000dge
+B1 |␊abc␊def␊ghi␊jkl␊
+S1 "a=mno␊ "b=
+
+S0 startofline=1
+K "add "b1000dge 3gg
+B1 ␊abc␊|def␊ghi␊jkl␊
+S1 "a=mno␊ "b=
+
+S0 startofline=1
+K "add "b1000dge 3gg .
+B1 ␊abc␊|ghi␊jkl␊
+S1 "a=def␊ "b=
+
+// Case 2: repeat when the last valid operation is a jieba omap.
+## dw -> failure -> .
+#X i
+#B0 ␊abcd|ef␊
+
+K "adw
+B1 ␊abc|d␊
+S1 "a=ef
+
+K "adw "b1000dge
+B1 |␊abcd␊
+S1 "a=ef "b=
+
+K "adw "b1000dge G100l
+B1 ␊abc|d␊
+S1 "a=ef "b=
+
+K "adw "b1000dge G100l .
+B1 ␊ab|c␊
+S1 "a=d "b=
+
+K "adw "b1000dge G100l .G0
+B1 ␊|abc␊
+S1 "a=d "b=
+
+// Case 3: repeat when there is no last valid operation.
+## failure -> .
+#X i
+#B0 ␊abc␊def␊ghi␊jkl␊m|no␊
+
+K "a1000dge
+B1 |␊abc␊def␊ghi␊jkl␊mno␊
+S1 "a=
+
+K "a1000dge 3gg
+B1 ␊abc␊|def␊ghi␊jkl␊mno␊
+S1 "a=
+
+K "a1000dge 3gg .
+B1 ␊abc␊|def␊ghi␊jkl␊mno␊
+S1 "a=
+
+
+// This section checks for |.| after a combo of yank and motion failure.
+### Combination of above ###
+
+// Case 1:
+## dw -> yw -> failure -> .
+#X i
+#B0 ␊abcd|ef␊
+
+K "adw
+B1 ␊abc|d␊
+S1 "a=ef
+
+K "adw "byw
+B1 ␊abc|d␊
+S1 "a=ef "b=d
+
+K "adw "byw "c1000dge
+B1 |␊abcd␊
+S1 "a=ef "b=d "c=
+
+K "adw "byw "c1000dge G0l
+B1 ␊a|bcd␊
+S1 "a=ef "b=d "c=
+
+K "adw "byw "c1000dge G0l .
+B1 ␊|a␊
+S1 "a=bcd "b=d "c=
+
+// Case 2:
+## dw -> failure -> yw -> .
+#X i
+#B0 ␊abcd|ef␊
+
+K "adw
+B1 ␊abc|d␊
+S1 "a=ef
+
+K "adw "b1000dge
+B1 |␊abcd␊
+S1 "a=ef "b=
+
+K "adw "b1000dge 2gg0l
+B1 ␊a|bcd␊
+S1 "a=ef "b=
+
+K "adw "b1000dge 2gg0l "cyw
+B1 ␊a|bcd␊
+S1 "a=ef "b= "c=bcd
+
+K "adw "b1000dge 2gg0l "cyw .
+B1 ␊|a␊
+S1 "a=bcd "b= "c=bcd
+
+// Case 3:
+## yy -> failure -> .
+#X i
+#B0 ␊abcdef␊·|ghi␊
+
+K "ayy
+B1 ␊abcdef␊·|ghi␊
+S1 "a=·ghi␊
+
+K "ayy "b1000dge
+B1 |␊abcdef␊·ghi␊
+S1 "a=·ghi␊ "b=
+
+K "ayy "b1000dge 2gg0l
+B1 ␊a|bcdef␊·ghi␊
+S1 "a=·ghi␊ "b=
+
+K "ayy "b1000dge 2gg0l .
+B1 ␊a|bcdef␊·ghi␊
+S1 "a=·ghi␊ "b=
+
+// Case 4:
+## failure -> yy -> .
+#X i
+#B0 ␊abcdef␊·|ghi␊
+
+K "a1000dge
+B1 |␊abcdef␊·ghi␊
+S1 "a=
+
+K "a1000dge 3gg0
+B1 ␊abcdef␊|·ghi␊
+S1 "a=
+
+K "a1000dge 3gg0 "byy
+B1 ␊abcdef␊|·ghi␊
+S1 "a= "b=·ghi␊
+
+K "a1000dge 3gg0 "byy 2gg0fb
+B1 ␊a|bcdef␊·ghi␊
+S1 "a= "b=·ghi␊
+
+K "a1000dge 3gg0 "byy 2gg0fb .
+B1 ␊a|bcdef␊·ghi␊
+S1 "a= "b=·ghi␊
