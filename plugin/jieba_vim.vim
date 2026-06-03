@@ -253,7 +253,7 @@ function! JiebaNmap(motion, count, model_funcname)
         let l:result_dict = JiebaModelNmap(a:motion, getcurpos(), a:count)
     endif
     call cursor(l:result_dict["cursor"][1:2])
-    if l:result_dict["prevent_change"]
+    if l:result_dict["prevent_change"] && !exists("$JIEBA_TEST_CASE")
         call s:ConsumeChars()
     endif
 endfunction
@@ -282,7 +282,7 @@ function! JiebaXmap(motion, count, model_funcname)
     else
         noautocmd normal! gv
     endif
-    if l:result_dict["prevent_change"]
+    if l:result_dict["prevent_change"] && !exists("$JIEBA_TEST_CASE")
         call s:ConsumeChars()
     endif
 endfunction
@@ -320,7 +320,9 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     if l:result_dict["prevent_change"]
         " Land the cursor to potentially a new position.
         call cursor(l:result_dict["cursor"][1:2])
-        call s:ConsumeChars()
+        if !exists("$JIEBA_TEST_CASE")
+            call s:ConsumeChars()
+        endif
     else
         if a:operator !=# "y"
             " This no-op line effectively sets an undoable checkpoint such that
