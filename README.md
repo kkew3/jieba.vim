@@ -102,6 +102,10 @@ cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 
 见 [TODO.md](./TODO.md)。
 
+## FAQ
+
+见 [docs/faq.md](./docs/faq.md)。
+
 ## 相关项目
 
 见 [docs/related-projects.md](./docs/related-projects.md)。
@@ -210,6 +214,10 @@ For the remaining, please refer to [CI](./.github/workflows/ci.yml).
 ## Roadmap
 
 See [TODO.md](./TODO.md).
+
+## FAQ
+
+See [docs/faq.md](./docs/faq.md).
 
 ## Related Projects
 
