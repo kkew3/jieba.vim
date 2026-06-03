@@ -26,7 +26,6 @@
 // Case 1: repeat after |yy|.
 ## dw -> yy -> .
 #X i
-#! dev
 #B0 abc·defg·h|ijk␊
 
 K "adw
@@ -48,7 +47,6 @@ S1 "a=abc· "b=abc·defg·h␊
 // Case 2: repeat after |yw|, a jieba omap.
 ## dw -> yw -> .
 #X i
-#! dev
 #B0 abc·defg·h|ijk␊
 
 K "adw
@@ -75,7 +73,6 @@ S1 "a=abc· "b=defg·
 // operation. Should do nothing.
 ## yw -> .
 #X i
-#! dev
 #B0 abc·defg·h|ijk␊
 
 K "ayw
@@ -98,7 +95,6 @@ S1 "a=ijk
 // Case 1: repeat when the last valid operation is not a jieba omap.
 ## dd -> failure -> .
 #X i
-#! dev
 #B0 ␊abc␊def␊ghi␊jkl␊m|no␊
 
 K "add
@@ -120,7 +116,6 @@ S1 "a=def␊ "b=
 // Case 2: repeat when the last valid operation is a jieba omap.
 ## dw -> failure -> .
 #X i
-#! dev
 #B0 ␊abcd|ef␊
 
 K "adw
@@ -146,7 +141,6 @@ S1 "a=d "b=
 // Case 3: repeat when there is no last valid operation.
 ## failure -> .
 #X i
-#! dev
 #B0 ␊abc␊def␊ghi␊jkl␊m|no␊
 
 K "a1000dge
@@ -168,7 +162,6 @@ S1 "a=
 // Case 1:
 ## dw -> yw -> failure -> .
 #X i
-#! dev
 #B0 ␊abcd|ef␊
 
 K "adw
@@ -194,7 +187,6 @@ S1 "a=bcd "b=d "c=
 // Case 2:
 ## dw -> failure -> yw -> .
 #X i
-#! dev
 #B0 ␊abcd|ef␊
 
 K "adw
@@ -220,7 +212,6 @@ S1 "a=bcd "b= "c=bcd
 // Case 3:
 ## yy -> failure -> .
 #X i
-#! dev
 #B0 ␊abcdef␊·|ghi␊
 
 K "ayy
@@ -242,7 +233,6 @@ S1 "a=·ghi␊ "b=
 // Case 4:
 ## failure -> yy -> .
 #X i
-#! dev
 #B0 ␊abcdef␊·|ghi␊
 
 K "a1000dge
