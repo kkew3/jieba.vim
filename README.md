@@ -25,7 +25,7 @@
 [vim-plug][vim-plug] (Vim / Neovim):
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.0', 'do': { -> jieba_vim#install() } }
+Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.1', 'do': { -> jieba_vim#install() } }
 ```
 
 [lazy.nvim][lazy-nvim] (Neovim):
@@ -33,7 +33,7 @@ Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.0', 'do': { -> jieba_vim#install() } }
 ```lua
 {
     "kkew3/jieba.vim",
-    tag = "v2.1.0",
+    tag = "v2.1.1",
     build = ":call jieba_vim#install()",
     init = function()
       vim.g.jieba_vim_lazy = 1
@@ -102,9 +102,13 @@ cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 
 见 [TODO.md](./TODO.md)。
 
+## FAQ
+
+见 [docs/faq.md](./docs/faq.md)。
+
 ## 相关项目
 
-见 [RELATED.md](./RELATED.md)。
+见 [docs/related-projects.md](./docs/related-projects.md)。
 
 ## 许可
 
@@ -134,7 +138,7 @@ Apache license v2；部分文件参照 [vim-LICENSE.txt](./vim-LICENSE.txt).
 [vim-plug][vim-plug] (Vim / Neovim):
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.0', 'do': { -> jieba_vim#install() } }
+Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.1', 'do': { -> jieba_vim#install() } }
 ```
 
 [lazy.nvim][lazy-nvim] (Neovim):
@@ -142,7 +146,7 @@ Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.0', 'do': { -> jieba_vim#install() } }
 ```lua
 {
     "kkew3/jieba.vim",
-    tag = "v2.1.0",
+    tag = "v2.1.1",
     build = ":call jieba_vim#install()",
     init = function()
       vim.g.jieba_vim_lazy = 1
@@ -211,9 +215,13 @@ For the remaining, please refer to [CI](./.github/workflows/ci.yml).
 
 See [TODO.md](./TODO.md).
 
+## FAQ
+
+See [docs/faq.md](./docs/faq.md).
+
 ## Related Projects
 
-See [RELATED.md](./RELATED.md).
+See [docs/related-projects.md](./docs/related-projects.md)
 
 ## License
 
