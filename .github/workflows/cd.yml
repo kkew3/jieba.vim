@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           unset TAG_NAME
-          cat <<EOF > PR_TITLE
+          cat <<'EOF' > PR_TITLE
           ${{ github.event.pull_request.title }}
           EOF
           cat PR_TITLE

@@ -211,7 +211,7 @@ jobs:
         run: |
           TOFILE=bi-success-${{ steps.safe-version.outputs.vim_dist_name }}.txt
           echo "tofile=$TOFILE" >> "$GITHUB_OUTPUT"
-          cat <<EOF > "$TOFILE"
+          cat <<'EOF' > "$TOFILE"
           ${{ steps.run-bi-case-verification.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.vim.glue-lang }}
           EOF
       - uses: actions/upload-artifact@v6
@@ -424,7 +424,7 @@ jobs:
         run: |
           TOFILE=i-success-${{ steps.safe-version.outputs.vim_dist_name }}.txt
           echo "tofile=$TOFILE" >> "$GITHUB_OUTPUT"
-          cat <<EOF > "$TOFILE"
+          cat <<'EOF' > "$TOFILE"
           ${{ steps.run-i-test.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.vim.glue-lang }}
           EOF
       - uses: actions/upload-artifact@v6
