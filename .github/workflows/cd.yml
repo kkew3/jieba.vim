@@ -11,6 +11,18 @@ on:
       - closed
 
 jobs:
+  check-source-branch:
+    name: Check pull request source branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify that the PR source branch is main
+        if: github.head_ref != 'main'
+        shell: bash
+        run: |
+          echo "E: Pull requests targeting 'release' branch must originate from 'main'." >&2
+          echo "E: Current source branch: ${{ github.head_ref }}" >&2
+          exit 1
+
   check-for-release:
     name: Check for release
     runs-on: ubuntu-latest
