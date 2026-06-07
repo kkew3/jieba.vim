@@ -25,7 +25,7 @@
 [vim-plug][vim-plug] (Vim / Neovim):
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.1', 'do': { -> jieba_vim#install() } }
+Plug 'kkew3/jieba.vim', { 'branch': 'release', 'do': { -> jieba_vim#install() } }
 ```
 
 [lazy.nvim][lazy-nvim] (Neovim):
@@ -33,7 +33,7 @@ Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.1', 'do': { -> jieba_vim#install() } }
 ```lua
 {
     "kkew3/jieba.vim",
-    tag = "v2.1.1",
+    branch = "release",
     build = ":call jieba_vim#install()",
     init = function()
       vim.g.jieba_vim_lazy = 1
@@ -138,7 +138,7 @@ Apache license v2；部分文件参照 [vim-LICENSE.txt](./vim-LICENSE.txt).
 [vim-plug][vim-plug] (Vim / Neovim):
 
 ```vim
-Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.1', 'do': { -> jieba_vim#install() } }
+Plug 'kkew3/jieba.vim', { 'branch': 'release', 'do': { -> jieba_vim#install() } }
 ```
 
 [lazy.nvim][lazy-nvim] (Neovim):
@@ -146,7 +146,7 @@ Plug 'kkew3/jieba.vim', { 'tag': 'v2.1.1', 'do': { -> jieba_vim#install() } }
 ```lua
 {
     "kkew3/jieba.vim",
-    tag = "v2.1.1",
+    branch = "release",
     build = ":call jieba_vim#install()",
     init = function()
       vim.g.jieba_vim_lazy = 1
