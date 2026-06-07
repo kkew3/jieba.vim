@@ -1,4 +1,3 @@
-/dev_scripts -linguist-detectable
-/test/jieba_test_metatest -linguist-detectable
-/test/jieba_test_case_syntax -linguist-detectable
-*.jieba_test_case linguist-language=jieba-test-case
+/dev_scripts/** -linguist-detectable
+/test/jieba_test_metatest/** -linguist-detectable
+/test/jieba_test_case_syntax/** -linguist-detectable
