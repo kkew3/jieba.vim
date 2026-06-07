@@ -7,9 +7,6 @@ on:
       - opened
       - synchronize
       - reopened
-  push:
-    branches:
-      - rust
 
 jobs:
   build-jieba-vim-cdylib:
