@@ -151,7 +151,7 @@ jobs:
           pattern: cdylib-pkg-*
           merge-multiple: true
       - name: Publish cdylib
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             jieba_vim_rs-*
