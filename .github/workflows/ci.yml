@@ -555,7 +555,7 @@ jobs:
             --exclude-files 'jieba_vim_rs_binding_lua51/*' \
             --exclude-files 'jieba_vim_rs_binding_py3/*' \
             --packages jieba_vim_rs_core
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         with:
           files: rust_backend/cobertura.xml
           disable_search: true
