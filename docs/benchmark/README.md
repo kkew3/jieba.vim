@@ -9,7 +9,9 @@
 We move the cursor 50000 times in long-form Chinese text and plot the histogram.
 For Vim, the mean Wall time is **0.1** milliseconds.
 For Neovim, the mean Wall time is **0.15** milliseconds.
-This is already *absolutely* super fast, and there is no need to compare with other baseline implementations.
+This is already *absolutely* super fast, and there is no empirical necessity to compare with other baseline implementations.
+
+To load the dictionary, both Vim and Neovim need 0.08 seconds.
 
 ## Dataset
 
