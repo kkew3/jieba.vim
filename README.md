@@ -112,6 +112,10 @@ cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 
 见 [docs/demo](./docs/demo/README.md).
 
+## Benchmark
+
+见 [docs/benchmark](./docs/benchmark/README.md)。
+
 ## 相关项目
 
 见 [docs/related-projects.md](./docs/related-projects.md)。
@@ -228,6 +232,10 @@ See [docs/faq.md](./docs/faq.md).
 ## Reproducing the demo gif locally
 
 See [docs/demo](./docs/demo/README.md).
+
+## Benchmark
+
+See [docs/benchmark](./docs/benchmark/README.md)。
 
 ## Related Projects
 
