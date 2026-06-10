@@ -356,6 +356,13 @@ endfunction
         outfile.write(
             "let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n\n"
         )
+        # Need this line because `call feedkeys(":\\<C-u>call Checks()\\<CR>", "nt")`
+        # below contributes one extra count of CmdlineLeave event.
+        outfile.write("""\
+if exists("g:jieba_test_case_events_count_frozen.CmdlineLeave")
+    let g:jieba_test_case_events_count_frozen["CmdlineLeave"] -= 1
+endif
+""")
 
         # Autocmd event counts checking.
         outfile.write('" autocmd event counts checking\n')
