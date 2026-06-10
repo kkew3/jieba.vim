@@ -292,7 +292,7 @@ endfunction
         for event_name in self.autocmd_event_counts_to_verify:
             outfile.write(
                 "    au {event} * call IncrementAutocmdEventCount({key})\n".format(
-                    event=event_name, key=vim.lit(event_name)
+                    event=event_name.name, key=vim.lit(event_name.name)
                 )
             )
         outfile.write("augroup END\n\n")
