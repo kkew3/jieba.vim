@@ -19,7 +19,6 @@ runs:
         case ${{ inputs.glue-lang }}-${{ inputs.vim-distr }}-${{ inputs.vim-version }} in
           py311-vim-v9.*)     ;;
           py39-vim-v8.*)      ;;
-          lua51-vim-*)        ;;
           lua51-nvim-v0.10.2) ;;
           lua51-nvim-v0.11.5) ;;
           *)
@@ -41,17 +40,6 @@ runs:
       shell: bash
       run: pip install pynvim
       if: ${{ inputs.glue-lang == 'py311' && inputs.vim-distr == 'nvim' }}
-    - name: Setup lua
-      uses: leafo/gh-actions-lua@master
-      with:
-        luaVersion: '5.1'
-      if: ${{ inputs.glue-lang == 'lua51' && inputs.vim-distr == 'vim' }}
-    - name: Copy lua libs and includes to /usr
-      shell: bash
-      run: |
-        sudo cp -r .lua/include/* /usr/include
-        sudo cp -r .lua/lib/* /usr/lib
-      if: ${{ inputs.glue-lang == 'lua51' && inputs.vim-distr == 'vim' }}
     - name: Cache vim/nvim directory
       id: cache-vim
       uses: actions/cache@v5
@@ -92,16 +80,6 @@ runs:
               --enable-python3interp \
               --with-python3-command=python3.9 \
               --with-python3-stable-abi=3.9 \
-              --prefix="$HOME/vim/prefix"
-            ;;
-          lua51-*)
-            LDFLAGS=-rdynamic ./configure \
-              --with-features=huge \
-              --enable-fail-if-missing \
-              --enable-largefile \
-              --enable-multibyte \
-              --enable-luainterp
-              --enable-gui=no \
               --prefix="$HOME/vim/prefix"
             ;;
         esac
