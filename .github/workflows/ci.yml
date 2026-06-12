@@ -122,14 +122,14 @@ jobs:
       - name: Expand basic integrated cases template
         shell: bash
         run: make -C test/cases/basic_integrated_verification clean all
-      - name: Get jieba.vim cdylib for +python3
-        if: matrix.vim.glue-lang == 'py311' || matrix.vim.glue-lang == 'py39'
+      - name: Get jieba.vim cdylib for vim(+python3)
+        if: matrix.vim.distr == 'vim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
-      - name: Get jieba.vim cdylib for nvim/+lua
-        if: matrix.vim.glue-lang == 'lua51'
+      - name: Get jieba.vim cdylib for nvim
+        if: matrix.vim.distr == 'nvim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-lua
@@ -325,14 +325,14 @@ jobs:
       - name: Run uv-sync
         shell: bash
         run: uv sync
-      - name: Get jieba.vim cdylib for +python3
-        if: matrix.vim.glue-lang == 'py311' || matrix.vim.glue-lang == 'py39'
+      - name: Get jieba.vim cdylib for vim(+python3)
+        if: matrix.vim.distr == 'vim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
-      - name: Get jieba.vim cdylib for nvim/+lua
-        if: matrix.vim.glue-lang == 'lua51'
+      - name: Get jieba.vim cdylib for nvim
+        if: matrix.vim.distr == 'nvim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-lua
