@@ -86,8 +86,6 @@ runs:
       if: ${{ inputs.vim-distr == 'nvim' && steps.cache-vim.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends curl tar
         case ${{ inputs.vim-version }} in
           v0.10.2)
             TARBALL_NAME=nvim-linux64
