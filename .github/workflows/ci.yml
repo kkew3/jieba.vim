@@ -122,27 +122,18 @@ jobs:
       - name: Expand basic integrated cases template
         shell: bash
         run: make -C test/cases/basic_integrated_verification clean all
-      - name: Get jieba.vim cdylib for +python3
-        if: matrix.vim.glue-lang == 'py311' || matrix.vim.glue-lang == 'py39'
+      - name: Get jieba.vim cdylib for vim(+python3)
+        if: matrix.vim.distr == 'vim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
-      - name: Get jieba.vim cdylib for nvim/+lua
-        if: matrix.vim.glue-lang == 'lua51'
+      - name: Get jieba.vim cdylib for nvim
+        if: matrix.vim.distr == 'nvim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-lua
           path: lua/jieba_vim
-      - name: Recover file modes due to download-artifact's limitation
-        shell: bash
-        run: |
-          if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
-          fi
-          if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 lua/jieba_vim/jieba_vim_rs.so
-          fi
       - name: Vim sanity check
         shell: bash
         run: |
@@ -198,7 +189,7 @@ jobs:
           set -e
           echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
           if [ $exit_code != 0 ]; then
-            false
+            exit $exit_code
           fi
       - name: Check basic integrated case verification exit code
         shell: bash
@@ -206,7 +197,7 @@ jobs:
           code="${{ steps.run-bi-case-verification.outputs.exit_code }}"
           if [ "$code" != 0 ] && [ "$code" != 1 ] && [ "$code" != 125 ]; then
             echo "bi case verification may have panicked" >&2
-            false
+            exit $code
           fi
       - name: Indicate whether basic integrated case verification has failed
         id: indicate-state
@@ -334,27 +325,18 @@ jobs:
       - name: Run uv-sync
         shell: bash
         run: uv sync
-      - name: Get jieba.vim cdylib for +python3
-        if: matrix.vim.glue-lang == 'py311' || matrix.vim.glue-lang == 'py39'
+      - name: Get jieba.vim cdylib for vim(+python3)
+        if: matrix.vim.distr == 'vim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
-      - name: Get jieba.vim cdylib for nvim/+lua
-        if: matrix.vim.glue-lang == 'lua51'
+      - name: Get jieba.vim cdylib for nvim
+        if: matrix.vim.distr == 'nvim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-lua
           path: lua/jieba_vim
-      - name: Recover file modes due to download-artifact's limitation
-        shell: bash
-        run: |
-          if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
-          fi
-          if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 lua/jieba_vim/jieba_vim_rs.so
-          fi
       - name: Get a filename-safe version of vim.version
         id: safe-version
         shell: bash
@@ -404,7 +386,7 @@ jobs:
             set -e
             if [ $exit_code != 0 ] && [ $exit_code != 125 ]; then
               echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
-              false
+              exit $exit_code
             fi
             if [ -z "$cum_exit_code" ]; then
               cum_exit_code=$exit_code
@@ -419,7 +401,7 @@ jobs:
           code="${{ steps.run-i-test.outputs.exit_code }}"
           if [ "$code" != 0 ] && [ "$code" != 1 ] && [ "$code" != 125 ]; then
             echo "bi case verification may have panicked" >&2
-            false
+            exit $code
           fi
       - name: Indicate whether integrated test has failed
         id: indicate-state
