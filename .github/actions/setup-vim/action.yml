@@ -14,6 +14,7 @@ runs:
   using: composite
   steps:
     - name: Check inputs to setup vim/nvim
+      id: input-check
       shell: bash
       run: |
         case ${{ inputs.glue-lang }}-${{ inputs.vim-distr }}-${{ inputs.vim-version }} in
@@ -26,16 +27,16 @@ runs:
             exit 1
             ;;
         esac
-    - name: Setup python 3.11
+        case ${{ inputs.glue-lang }} in
+          py39)  echo "python_version=3.9" >> $GITHUB_OUTPUT;  ;;
+          py311) echo "python_version=3.11" >> $GITHUB_OUTPUT; ;;
+          *)     echo "python_version=" >> $GITHUB_OUTPUT;     ;;
+        esac
+    - name: Setup python ${{ steps.input-check.outputs.python_version }}
       uses: actions/setup-python@v6
       with:
-        python-version: '3.11'
-      if: ${{ inputs.glue-lang == 'py311' }}
-    - name: Setup python 3.9
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.9'
-      if: ${{ inputs.glue-lang == 'py39' }}
+        python-version: ${{ steps.input-check.outputs.python_version }}
+      if: ${{ steps.input-check.outputs.python_version != '' }}
     - name: Cache vim/nvim directory
       id: cache-vim
       uses: actions/cache@v5
