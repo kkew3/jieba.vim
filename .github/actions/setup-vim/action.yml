@@ -1,5 +1,5 @@
 name: Setup vim/nvim
-description: Setup vim/nvim with +python3/+lua enabled
+description: Setup vim(+python3) / nvim
 inputs:
   vim-distr:
     description: 'The vim/nvim distribution name (either "vim" or "nvim")'
@@ -19,9 +19,9 @@ runs:
       run: |
         case ${{ inputs.glue-lang }}-${{ inputs.vim-distr }}-${{ inputs.vim-version }} in
           py311-vim-v9.*)     ;;
+          py39-vim-v9.*)      ;;
           py39-vim-v8.*)      ;;
-          lua51-nvim-v0.10.2) ;;
-          lua51-nvim-v0.11.5) ;;
+          lua51-nvim-v*)      ;;
           *)
             echo unimplemented >&2
             exit 1
@@ -37,79 +37,44 @@ runs:
       with:
         python-version: ${{ steps.input-check.outputs.python_version }}
       if: ${{ steps.input-check.outputs.python_version != '' }}
-    - name: Cache vim/nvim directory
-      id: cache-vim
-      uses: actions/cache@v5
+    - name: Compile and install vim
+      id: install-vim
+      if: ${{ inputs.vim-distr == 'vim' }}
+      uses: rhysd/action-setup-vim@v1.6.1
       with:
-        key: ${{ inputs.vim-distr }}-${{ inputs.vim-version }}-${{ inputs.glue-lang }}
-        path: ~/vim
-    - name: Compile and install vim to PATH
-      if: ${{ inputs.vim-distr == 'vim' && steps.cache-vim.outputs.cache-hit != 'true' }}
-      shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends git make clang libtool-bin
-        git clone https://github.com/vim/vim.git ~/vim
-        cd ~/vim && git checkout ${{ inputs.vim-version }}
-        case "${{ inputs.glue-lang }}-${{ inputs.vim-version }}" in
-          py311-v9.*)
-            LDFLAGS=-rdynamic ./configure \
-              --with-features=huge \
-              --enable-fail-if-missing \
-              --enable-largefile \
-              --enable-multibyte \
-              --enable-python3interp \
-              --with-python3-command=python3.11 \
-              --with-python3-stable-abi=3.11 \
-              --enable-gui=no \
-              --prefix="$HOME/vim/prefix"
-            ;;
-          py39-v8.*)
-            env \
-              vi_cv_path_python3_plibs="-L$(python3.9-config --configdir) -lpython3.9 -ldl -lm" \
-              vi_cv_var_python3_version=3.9 \
-              LDFLAGS=-rdynamic \
-              ./configure \
-              --with-features=huge \
-              --enable-fail-if-missing \
-              --enable-largefile \
-              --enable-multibyte \
-              --enable-python3interp \
-              --with-python3-command=python3.9 \
-              --with-python3-stable-abi=3.9 \
-              --prefix="$HOME/vim/prefix"
-            ;;
-        esac
-        make && make install
-        echo "$HOME/vim/prefix/bin" >> $GITHUB_PATH
-    - name: Download and install nvim to PATH
-      if: ${{ inputs.vim-distr == 'nvim' && steps.cache-vim.outputs.cache-hit != 'true' }}
-      shell: bash
-      run: |
-        case ${{ inputs.vim-version }} in
-          v0.10.2)
-            TARBALL_NAME=nvim-linux64
-            ;;
-          v0.11.5)
-            TARBALL_NAME=nvim-linux-x86_64
-            ;;
-        esac
-        mkdir ~/vim
-        curl -fSL https://github.com/neovim/neovim/releases/download/${{ inputs.vim-version }}/${TARBALL_NAME}.tar.gz \
-          | tar xzf - --strip-components=1 -C ~/vim
-        echo "$HOME/vim/bin" >> $GITHUB_PATH
+        version: ${{ inputs.vim-version }}
+        configure-args: >
+          --with-features=huge
+          --enable-fail-if-missing
+          --enable-largefile
+          --enable-multibyte
+          --enable-python3interp
+          --with-python3-command=python${{ steps.input-check.outputs.python_version }}
+          --with-python3-stable-abi=${{ steps.input-check.outputs.python_version }}
+      env:
+        LDFLAGS: '-rdynamic'
+    - name: Download and install nvim
+      id: install-nvim
+      if: ${{ inputs.vim-distr == 'nvim' }}
+      uses: rhysd/action-setup-vim@v1.6.1
+      with:
+        version: ${{ inputs.vim-version }}
+        neovim: true
     - name: Add vim/nvim to PATH
-      if: ${{ steps.cache-vim.outputs.cache-hit == 'true' }}
       shell: bash
       run: |
         case ${{ inputs.vim-distr }} in
           vim)
-            echo "$HOME/vim/prefix/bin" >> $GITHUB_PATH
+            echo "$(dirname -- "${{ steps.install-vim.outputs.executable }}")" >> $GITHUB_PATH
             ;;
           nvim)
-            echo "$HOME/vim/bin" >> $GITHUB_PATH
+            echo "$(dirname -- "${{ steps.install-nvim.outputs.executable }}")" >> $GITHUB_PATH
             ;;
         esac
     - name: Print vim/nvim version
       shell: bash
       run: ${{ inputs.vim-distr }} --version
+    - name: Vim +python3 sanity check
+      if: ${{ inputs.vim-distr == 'vim' }}
+      shell: bash
+      run: vim -es -c'py3 pass' -cq
