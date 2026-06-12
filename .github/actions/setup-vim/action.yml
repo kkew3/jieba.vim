@@ -36,10 +36,6 @@ runs:
       with:
         python-version: '3.9'
       if: ${{ inputs.glue-lang == 'py39' }}
-    - name: Install pynvim
-      shell: bash
-      run: pip install pynvim
-      if: ${{ inputs.glue-lang == 'py311' && inputs.vim-distr == 'nvim' }}
     - name: Cache vim/nvim directory
       id: cache-vim
       uses: actions/cache@v5
