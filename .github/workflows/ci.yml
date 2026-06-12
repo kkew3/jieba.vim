@@ -134,15 +134,6 @@ jobs:
         with:
           name: jieba-vim-cdylib-lua
           path: lua/jieba_vim
-      - name: Recover file modes due to download-artifact's limitation
-        shell: bash
-        run: |
-          if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
-          fi
-          if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 lua/jieba_vim/jieba_vim_rs.so
-          fi
       - name: Vim sanity check
         shell: bash
         run: |
@@ -346,15 +337,6 @@ jobs:
         with:
           name: jieba-vim-cdylib-lua
           path: lua/jieba_vim
-      - name: Recover file modes due to download-artifact's limitation
-        shell: bash
-        run: |
-          if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
-          fi
-          if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 lua/jieba_vim/jieba_vim_rs.so
-          fi
       - name: Get a filename-safe version of vim.version
         id: safe-version
         shell: bash
