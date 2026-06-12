@@ -292,7 +292,7 @@ endfunction
         for event_name in self.autocmd_event_counts_to_verify:
             outfile.write(
                 "    au {event} * call IncrementAutocmdEventCount({key})\n".format(
-                    event=event_name, key=vim.lit(event_name)
+                    event=event_name.name, key=vim.lit(event_name.name)
                 )
             )
         outfile.write("augroup END\n\n")
@@ -356,6 +356,13 @@ endfunction
         outfile.write(
             "let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n\n"
         )
+        # Need this line because `call feedkeys(":\\<C-u>call Checks()\\<CR>", "nt")`
+        # below contributes one extra count of CmdlineLeave event.
+        outfile.write("""\
+if exists("g:jieba_test_case_events_count_frozen.CmdlineLeave")
+    let g:jieba_test_case_events_count_frozen["CmdlineLeave"] -= 1
+endif
+""")
 
         # Autocmd event counts checking.
         outfile.write('" autocmd event counts checking\n')
