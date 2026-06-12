@@ -13,6 +13,20 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Check inputs to setup vim/nvim
+      shell: bash
+      run: |
+        case ${{ inputs.glue-lang }}-${{ inputs.vim-distr }}-${{ inputs.vim-version }} in
+          py311-vim-v9.*)     ;;
+          py39-vim-v8.*)      ;;
+          lua51-vim-*)        ;;
+          lua51-nvim-v0.10.2) ;;
+          lua51-nvim-v0.11.5) ;;
+          *)
+            echo unimplemented >&2
+            exit 1
+            ;;
+        esac
     - name: Setup python 3.11
       uses: actions/setup-python@v6
       with:
@@ -65,10 +79,6 @@ runs:
               --enable-gui=no \
               --prefix="$HOME/vim/prefix"
             ;;
-          py311-v8.*)
-            echo "unimplemented"
-            false
-            ;;
           py39-v8.*)
             env \
               vi_cv_path_python3_plibs="-L$(python3.9-config --configdir) -lpython3.9 -ldl -lm" \
@@ -83,10 +93,6 @@ runs:
               --with-python3-command=python3.9 \
               --with-python3-stable-abi=3.9 \
               --prefix="$HOME/vim/prefix"
-            ;;
-          py39-v9.*)
-            echo "unimplemented"
-            false
             ;;
           lua51-*)
             LDFLAGS=-rdynamic ./configure \
@@ -113,10 +119,6 @@ runs:
             ;;
           v0.11.5)
             TARBALL_NAME=nvim-linux-x86_64
-            ;;
-          *)
-            echo "Invalid nvim vim-version: ${{ inputs.vim-version }}" >&2
-            false
             ;;
         esac
         mkdir ~/vim
