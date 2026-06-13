@@ -424,7 +424,7 @@ endfunction
 " Keep in one line to help debug. There is no readability anyway even if this
 " is properly wrapped to 80 width. Same below.
 for ky in s:motions
-    execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') ":<C-u>call <SID>JiebaNmap_ky(' . "'" . ky . "', v:count1" . ')<CR>"'
+    execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "<Cmd>call <SID>JiebaNmap_ky(' . "'" . ky . "', v:count1" . ')<CR>"'
 endfor
 
 function! s:JiebaXmap_ky(ky, count)
@@ -432,7 +432,7 @@ function! s:JiebaXmap_ky(ky, count)
 endfunction
 
 for ky in s:motions + s:objects
-    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') ":<C-u>call <SID>JiebaXmap_ky(' . "'" . ky . "', v:count1" . ')<CR>"'
+    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "<Cmd>call <SID>JiebaXmap_ky(' . "'" . ky . "', v:count1" . ')<CR>"'
 endfor
 
 function! s:JiebaOmap_internal_ky(ky, count, operator, register)
@@ -458,8 +458,8 @@ function! s:JiebaOmap_ky(ky, count, operator, register)
 endfunction
 
 for ky in s:motions + s:objects
-    execute "onoremap <expr> <silent> <Plug>(Jieba_internal_o_" . ky . ") " . '"<Esc>:<C-u>call <SID>JiebaOmap_internal_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
-    execute "onoremap <expr> <silent> <Plug>(Jieba_" . ky . ") " . '"<Esc>:<C-u>call <SID>JiebaOmap_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
+    execute "onoremap <expr> <silent> <Plug>(Jieba_internal_o_" . ky . ") " . '"<Esc><Cmd>call <SID>JiebaOmap_internal_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
+    execute "onoremap <expr> <silent> <Plug>(Jieba_" . ky . ") " . '"<Esc><Cmd>call <SID>JiebaOmap_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
 endfor
 
 let s:modes = ["n", "x", "o"]

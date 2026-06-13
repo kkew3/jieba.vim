@@ -281,9 +281,8 @@ jobs:
       Integrated test for
       ${{ matrix.vim.distr }}@${{ matrix.vim.version }}
       +${{ matrix.vim.glue-lang }}
-    runs-on: ubuntu-24.04
-    needs:
-      - build-jieba-vim-cdylib
+      on ${{ matrix.vim.os }}
+    runs-on: ${{ matrix.vim.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -291,15 +290,51 @@ jobs:
           - distr: vim
             version: v8.2.3455
             glue-lang: py39
+            os: ubuntu-24.04
           - distr: vim
             version: v9.1.0000
             glue-lang: py311
+            os: ubuntu-24.04
+          - distr: vim
+            version: v9.2.0321
+            glue-lang: py311
+            os: ubuntu-24.04
           - distr: nvim
             version: v0.10.2
             glue-lang: lua51
+            os: ubuntu-24.04
+          - distr: nvim
+            version: v0.10.2
+            glue-lang: lua51
+            os: windows-latest
+          - distr: nvim
+            version: v0.10.2
+            glue-lang: lua51
+            os: macos-14
           - distr: nvim
             version: v0.11.5
             glue-lang: lua51
+            os: ubuntu-24.04
+          - distr: nvim
+            version: v0.11.5
+            glue-lang: lua51
+            os: windows-latest
+          - distr: nvim
+            version: v0.11.5
+            glue-lang: lua51
+            os: macos-14
+          - distr: nvim
+            version: v0.12.2
+            glue-lang: lua51
+            os: ubuntu-24.04
+          - distr: nvim
+            version: v0.12.2
+            glue-lang: lua51
+            os: windows-latest
+          - distr: nvim
+            version: v0.12.2
+            glue-lang: lua51
+            os: macos-14
     env:
       # uv variables
       UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest
@@ -309,6 +344,9 @@ jobs:
       GLUE_LANG: ${{ matrix.vim.glue-lang }}
       JIEBA_VIM_DIR: ${{ github.workspace }}
       VIM_REPEAT_DIR: ${{ github.workspace }}/.vim_bundle/vim-repeat
+      # jieba.vim build variables
+      JIEBA_VIM_BUILD_FROM_SORUCE: '1'
+      JIEBA_VIM_INSTALL_NVIM: ${{ matrix.vim.distr == 'nvim' && '1' || '' }}
     steps:
       # Prepare env.
       - uses: actions/checkout@v6
@@ -325,28 +363,41 @@ jobs:
       - name: Run uv-sync
         shell: bash
         run: uv sync
-      - name: Get jieba.vim cdylib for vim(+python3)
-        if: matrix.vim.distr == 'vim'
-        uses: actions/download-artifact@v7
-        with:
-          name: jieba-vim-cdylib-python
-          path: pythonx/jieba_vim
-      - name: Get jieba.vim cdylib for nvim
-        if: matrix.vim.distr == 'nvim'
-        uses: actions/download-artifact@v7
-        with:
-          name: jieba-vim-cdylib-lua
-          path: lua/jieba_vim
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build jieba.vim cdylib
+        shell: bash
+        run: |
+          case ${{ matrix.vim.os }} in
+            windows-*)
+              powershell -ExecutionPolicy Bypass -file ./build.ps1
+              ;;
+            *)
+              ./build.sh
+              ;;
+          esac
       - name: Get a filename-safe version of vim.version
         id: safe-version
         shell: bash
         run: |
           SAFE_VERSION="$(echo "${{ matrix.vim.version }}" | tr . _)"
           echo "safe_version=${SAFE_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "vim_dist_name=${{ matrix.vim.distr }}_${SAFE_VERSION}_${{ matrix.vim.glue-lang }}" >> "$GITHUB_OUTPUT"
+          echo "vim_dist_name=${{ matrix.vim.distr }}_${SAFE_VERSION}_${{ matrix.vim.glue-lang }}_${{ matrix.vim.os }}" >> "$GITHUB_OUTPUT"
       - name: Expand templates
         shell: bash
-        run: make -C test/cases clean all
+        run: |
+          case ${{ matrix.vim.os }} in
+            windows-*)
+              choco install make
+              ;;
+            macos-*)
+              brew install make
+              ;;
+          esac
+          make -C test/cases clean all
+        env:
+          # This should fix UnicodeEncodeError on Windows.
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: utf-8
       - name: Setup vim plugins
         shell: bash
         run: |
@@ -410,18 +461,18 @@ jobs:
           TOFILE=i-success-${{ steps.safe-version.outputs.vim_dist_name }}.txt
           echo "tofile=$TOFILE" >> "$GITHUB_OUTPUT"
           cat <<'EOF' > "$TOFILE"
-          ${{ steps.run-i-test.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.vim.glue-lang }}
+          ${{ steps.run-i-test.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.vim.glue-lang }} on ${{ matrix.vim.os }}
           EOF
       - uses: actions/upload-artifact@v6
         with:
-          name: i-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
+          name: i-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}-${{ matrix.vim.os }}
           path: ${{ steps.indicate-state.outputs.tofile }}
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
       - uses: actions/upload-artifact@v6
         with:
-          name: i-report-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
+          name: i-report-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}-${{ matrix.vim.os }}
           path: |
             i_test/warns_${{ steps.safe-version.outputs.vim_dist_name }}
             i_test/errs_${{ steps.safe-version.outputs.vim_dist_name }}
