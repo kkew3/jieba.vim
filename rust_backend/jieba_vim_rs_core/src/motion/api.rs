@@ -47,6 +47,10 @@ pub mod ffi {
         pub selection: &'static [u8],
         pub prevent_change: &'static [u8],
     }
+
+    pub struct ImapCtrlWOutput {
+        pub cursor: Position,
+    }
 }
 
 /// Output types for inner-crate use.
@@ -111,6 +115,10 @@ mod inner {
         pub prevent_change: bool,
     }
 
+    pub struct ImapCtrlWOutput {
+        pub cursor: Position,
+    }
+
     fn to_prevent_change(prevent_change: bool) -> &'static [u8] {
         if prevent_change { b"1" } else { b"0" }
     }
@@ -156,10 +164,18 @@ mod inner {
             }
         }
     }
+
+    impl From<ImapCtrlWOutput> for ffi::ImapCtrlWOutput {
+        fn from(value: ImapCtrlWOutput) -> Self {
+            Self {
+                cursor: value.cursor.into(),
+            }
+        }
+    }
 }
 
 pub(crate) use inner::{
-    MotionType, NmapOutput, OmapOutput, VisualMode, XmapOutput,
+    ImapCtrlWOutput, MotionType, NmapOutput, OmapOutput, VisualMode, XmapOutput,
 };
 
 impl<C> WordMotion<C> {
@@ -299,5 +315,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
         }?;
         Ok(output.into())
+    }
+
+    pub fn imap_ctrl_w<B: BufferLike + ?Sized>(
+        &mut self,
+        buffer: &B,
+        cursor: ffi::CursorPositionCurswant,
+    ) -> Result<ffi::ImapCtrlWOutput, B::Error> {
+        Ok(self.imap_ctrl_w_helper(buffer, cursor.into())?.into())
     }
 }

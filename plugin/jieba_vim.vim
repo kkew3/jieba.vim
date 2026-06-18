@@ -237,6 +237,28 @@ function! JiebaModelOmap(...)
     endif
 endfunction
 
+function! s:JiebaModelImapCtrlW(...)
+    if !s:loaded_jieba_vim_cdylib
+        throw "cdylib unloaded; run jieba_vim#install() first"
+    endif
+    if !s:loaded_jieba_vim_word_motion
+        throw "word_motion uninitialized; check jieba_vim config"
+    endif
+
+    if has("nvim")
+        return luaeval("jieba_vim:imap_ctrl_w(jieba_vim.buffer, unpack(_A))", a:000)
+    else
+        return py3eval(
+            \ "jieba_vim.navigation.imap_ctrl_w(vim.current.buffer, *vim.eval('a:000'))")
+    endif
+endfunction
+
+function! JiebaModelImap(motion, ...)
+    if a:motion ==# "\<C-w>"
+        return call(function("<SID>JiebaModelImapCtrlW"), a:000)
+    endif
+endfunction
+
 function! s:ConsumeChars()
     while 1
         let l:ch = getchar(1)
@@ -418,6 +440,51 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     endif
 endfunction
 
+function! JiebaDelToCursor(start_col, cur_col)
+    let l:line = getline(".")
+    if a:start_col > 1
+        let l:head = l:line[0:a:start_col - 2]
+    else
+        let l:head = ""
+    endif
+    if a:cur_col < col("$")
+        let l:tail = l:line[a:cur_col - 1:]
+    else
+        let l:tail = ""
+    endif
+    let l:line_modified = l:head . l:tail
+    call setline(".", l:line_modified)
+    call cursor(0, a:start_col)
+endfunction
+
+function! s:JiebaImapCtrlWExpr(model_funcname)
+    " l:curpos: [_, lnum, col, off, _]
+    let l:curpos = getcurpos()
+    if exists("$JIEBA_TEST_CASE")
+        if a:model_funcname !=# ""
+            let l:result_dict = function(a:model_funcname)("\<C-w>", l:curpos)
+        else
+            let l:result_dict = JiebaModelImap("\<C-w>", l:curpos)
+        endif
+    endif
+    if l:curpos[3] > 0
+        return "\<Cmd>call cursor(0," . l:curpos[2] . ",0)\<CR>"
+    elseif l:curpos[2] ==# 1
+        return "\<BS>"
+    else
+        if !exists("$JIEBA_TEST_CASE")
+            if a:model_funcname !=# ""
+                let l:result_dict = function(a:model_funcname)("\<C-w>", l:curpos)
+            else
+                let l:result_dict = JiebaModelImap("\<C-w>", l:curpos)
+            endif
+        endif
+        return "\<Cmd>call JiebaDelToCursor("
+            \ . l:result_dict["cursor"][2] . ","
+            \ . l:curpos[2] . ")\<CR>"
+    endif
+endfunction
+
 function! JiebaNmapExpr(motion, model_funcname)
     return "\<Cmd>call JiebaNmap('" . a:motion . "', v:count1, '" . a:model_funcname . "')\<CR>"
 endfunction
@@ -454,6 +521,15 @@ for ky in s:motions + s:objects
     execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaOmapRepeatExpr("' . ky . '", 0, "")'
 endfor
 
+function! JiebaImapExpr(motion, model_funcname)
+    if a:motion ==# "\<C-w>"
+        return s:JiebaImapCtrlWExpr(a:model_funcname)
+    endif
+    throw "invalid motion"
+endfunction
+
+inoremap <expr> <silent> <Plug>(Jieba_C_w) JiebaImapExpr("\<C-w>", "")
+
 let s:modes = ["n", "x", "o"]
 if g:jieba_vim_keymap
     for ky in s:motions
@@ -468,6 +544,7 @@ if g:jieba_vim_keymap
             endif
         endfor
     endfor
+    imap <C-w> <Plug>(Jieba_C_w)
 endif
 
 function s:UpdateIsk()
