@@ -14,6 +14,7 @@
 
 mod api;
 pub(crate) mod core;
+mod imap_c_w;
 mod nmap_b;
 mod nmap_e;
 mod nmap_ge;
@@ -34,4 +35,4 @@ mod xmap_iw;
 mod xmap_w;
 
 pub use api::WordMotion;
-pub use api::ffi::{NmapOutput, OmapOutput, XmapOutput};
+pub use api::ffi::{ImapCtrlWOutput, NmapOutput, OmapOutput, XmapOutput};

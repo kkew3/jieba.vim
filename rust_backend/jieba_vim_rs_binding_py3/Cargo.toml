@@ -1,6 +1,6 @@
 [package]
 name = "jieba_vim_rs_binding_py3"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -235,6 +235,22 @@ function! JiebaModelOmap(...)
     endif
 endfunction
 
+function JiebaModelImapCtrlW(...)
+    if !s:loaded_jieba_vim_cdylib
+        throw "cdylib unloaded; run jieba_vim#install() first"
+    endif
+    if !s:loaded_jieba_vim_word_motion
+        throw "word_motion uninitialized; check jieba_vim config"
+    endif
+
+    if has("nvim")
+        return luaeval("jieba_vim:imap_ctrl_w(jieba_vim.buffer, unpack(_A))", a:000)
+    else
+        return py3eval(
+            \ "jieba_vim.navigation.imap_ctrl_w(vim.current.buffer, *vim.eval('a:000'))")
+    endif
+endfunction
+
 function! s:ConsumeChars()
     while 1
         let l:ch = getchar(1)
@@ -417,6 +433,36 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     endif
 endfunction
 
+function! JiebaDelToCursor(start_pos)
+    let l:orig_mark_a = getpos("'a")
+    let l:orig_virtualedit = &virtualedit
+    set virtualedit=onemore
+    call setpos("'a", a:start_pos)
+    normal! "_d`a
+    call setpos("'a", l:orig_mark_a)
+    let &virtualedit = l:orig_virtualedit
+endfunction
+
+
+function! JiebaImapCtrlW(model_funcname)
+    " l:curpos: [_, lnum, col, off, _]
+    let l:curpos = getcurpos()
+    if l:curpos[3] > 0
+        return "\<Cmd>call cursor(0," . l:curpos[2] . ",0)\<CR>"
+    elseif l:curpos[2] ==# 1
+        return "\<BS>"
+    else
+        if a:model_funcname !=# ""
+            let l:result_dict = function(a:model_funcname)(l:curpos)
+        else
+            let l:result_dict = JiebaModelImapCtrlW(l:curpos)
+        endif
+        return "\<Cmd>call JiebaDelToCursor([0,"
+            \ . l:result_dict["cursor"][1] . ","
+            \ . l:result_dict["cursor"][2] . ",0])\<CR>"
+    endif
+endfunction
+
 function! s:JiebaNmap_ky(ky, count)
     call JiebaNmap(a:ky, a:count, "")
 endfunction
@@ -462,6 +508,8 @@ for ky in s:motions + s:objects
     execute "onoremap <expr> <silent> <Plug>(Jieba_" . ky . ") " . '"<Esc><Cmd>call <SID>JiebaOmap_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
 endfor
 
+inoremap <expr> <silent> <Plug>(Jieba_i_C_w) JiebaImapCtrlW("")
+
 let s:modes = ["n", "x", "o"]
 if g:jieba_vim_keymap
     for ky in s:motions
@@ -476,6 +524,7 @@ if g:jieba_vim_keymap
             endif
         endfor
     endfor
+    imap <C-w> <Plug>(Jieba_i_C_w)
 endif
 
 function s:UpdateIsk()

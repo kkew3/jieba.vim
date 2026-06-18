@@ -19,7 +19,7 @@ use std::sync::OnceLock;
 use jieba_rs::Jieba;
 use jieba_vim_rs_core::BufferLike;
 use jieba_vim_rs_core::motion::{
-    NmapOutput, OmapOutput, WordMotion, XmapOutput,
+    ImapCtrlWOutput, NmapOutput, OmapOutput, WordMotion, XmapOutput,
 };
 use jieba_vim_rs_core::token::{JiebaPlaceholder, Tokenizer};
 use pyo3::exceptions::{PyIOError, PyValueError};
@@ -151,6 +151,24 @@ impl<'py> IntoPyObject<'py> for OmapOutputWrapper {
     }
 }
 
+pub struct ImapCtrlWOutputWrapper(ImapCtrlWOutput);
+
+impl<'py> IntoPyObject<'py> for ImapCtrlWOutputWrapper {
+    type Target = PyDict;
+    type Output = Bound<'py, Self::Target>;
+    type Error = PyErr;
+
+    fn into_pyobject(
+        self,
+        py: Python<'py>,
+    ) -> Result<Self::Output, Self::Error> {
+        let dict = PyDict::new(py);
+        let [a, b, c, d] = self.0.cursor;
+        dict.set_item("cursor", vec![a, b, c, d])?;
+        Ok(dict)
+    }
+}
+
 #[pyclass]
 #[pyo3(name = "WordMotion")]
 pub struct WordMotionWrapper {
@@ -276,6 +294,23 @@ impl WordMotionWrapper {
             count,
             operator,
         )?))
+    }
+
+    pub fn imap_ctrl_w(
+        &mut self,
+        buffer: &Bound<'_, PyAny>,
+        cursor: Vec<usize>,
+    ) -> PyResult<ImapCtrlWOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(ImapCtrlWOutputWrapper(
+            self.wm.imap_ctrl_w(&BoundWrapper(buffer), cursor_arr)?,
+        ))
     }
 
     pub fn preview_nmap(
@@ -427,6 +462,23 @@ impl LazyWordMotionWrapper {
             count,
             operator,
         )?))
+    }
+
+    pub fn imap_ctrl_w(
+        &mut self,
+        buffer: &Bound<'_, PyAny>,
+        cursor: Vec<usize>,
+    ) -> PyResult<ImapCtrlWOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(ImapCtrlWOutputWrapper(
+            self.wm.imap_ctrl_w(&BoundWrapper(buffer), cursor_arr)?,
+        ))
     }
 
     pub fn preview_nmap(
