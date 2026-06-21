@@ -13,7 +13,7 @@ function Has-Command {
 }
 
 function Download-Release {
-	if ($env:JIEBA_VIM_BUILD_FROM_SORUCE -eq "1") {
+	if ($env:JIEBA_VIM_BUILD_FROM_SOURCE -eq "1") {
 		return $false
 	}
 

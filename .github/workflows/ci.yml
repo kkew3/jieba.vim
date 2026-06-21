@@ -345,7 +345,7 @@ jobs:
       JIEBA_VIM_DIR: ${{ github.workspace }}
       VIM_REPEAT_DIR: ${{ github.workspace }}/.vim_bundle/vim-repeat
       # jieba.vim build variables
-      JIEBA_VIM_BUILD_FROM_SORUCE: '1'
+      JIEBA_VIM_BUILD_FROM_SOURCE: '1'
       JIEBA_VIM_INSTALL_NVIM: ${{ matrix.vim.distr == 'nvim' && '1' || '' }}
     steps:
       # Prepare env.
