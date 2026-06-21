@@ -1,3 +1,15 @@
+# Environment variables:
+#
+# If JIEBA_VIM_BUILD_FROM_SOURCE=1, then skip downloading cdylib and build from
+# source directly.
+#
+# If JIEBA_VIM_DOWNLOAD_BASE_URL is non-empty, then download cdylib from that
+# base url without falling back to building from source. This is intended to be
+# used in tests.
+#
+# If JIEBA_VIM_INSTALL_NVIM=1, then install lua5.1 binding for nvim; otherwise
+# install py3 binding for vim. If this variable is not set, install py3 binding
+# for vim.
 
 param()
 
@@ -64,6 +76,24 @@ function Download-Release {
     return $false
 }
 
+function Download-Release-Url {
+    Remove-Item "$Script:DEST_DIR\$Script:DEST_NAME" -Force -ErrorAction SilentlyContinue
+    $baseUrl = "$env:JIEBA_VIM_DOWNLOAD_BASE_URL/"
+    $url = $baseUrl + $Script:ASSET_NAME
+    $dest = Join-Path $Script:DEST_DIR $Script:DEST_NAME
+    try {
+        if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+            & curl.exe -fsSL -o $dest $url
+        } else {
+            Invoke-WebRequest -Uri $url -OutFile $dest -ErrorAction Stop
+        }
+        if (Test-Path $dest) { return $true }
+    } catch {
+        if (Test-Path $dest) { Remove-Item $dest -ErrorAction SilentlyContinue }
+    }
+    return $false
+}
+
 function Build-From-Source {
     $color_when = if ($env:VIMRUNTIME) { 'never' } else { 'auto' }
 
@@ -80,6 +110,9 @@ function Build-From-Source {
 Prepare-Release
 Push-Location -Path $Script:SCRIPT_DIR
 try {
+    if ($env:JIEBA_VIM_DOWNLOAD_BASE_URL) {
+        if (Download-Release-Url) { exit 0 } else { exit 1 }
+    }
     if ($env:JIEBA_VIM_BUILD_FROM_SOURCE -ne "1" -and (Has-Command git)) {
         if (Download-Release) { exit 0 }
     }

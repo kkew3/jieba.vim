@@ -5,6 +5,10 @@
 # If JIEBA_VIM_BUILD_FROM_SOURCE=1, then skip downloading cdylib and build from
 # source directly.
 #
+# If JIEBA_VIM_DOWNLOAD_BASE_URL is non-empty, then download cdylib from that
+# base url without falling back to building from source. This is intended to be
+# used in tests.
+#
 # If JIEBA_VIM_INSTALL_NVIM=1, then install lua5.1 binding for nvim; otherwise
 # install py3 binding for vim. If this variable is not set, install py3 binding
 # for vim.
@@ -79,6 +83,12 @@ download_release() {
     curl -fsSL -o "$DEST_DIR/$DEST_NAME" "$url"
 }
 
+download_release_url() {
+    rm -f "$DEST_DIR/$DEST_NAME"
+    local url="$JIEBA_VIM_DOWNLOAD_BASE_URL/$ASSET_NAME"
+    curl -fsSL -o "$DEST_DIR/$DEST_NAME" "$url"
+}
+
 build_from_source() {
     local color_when=
     if [ -n "$VIMRUNTIME" ]; then
@@ -96,6 +106,14 @@ build_from_source() {
 }
 
 prepare_release
+if [ -n "$JIEBA_VIM_DOWNLOAD_BASE_URL" ]; then
+    if ! has curl; then
+        echo "jieba.vim build: cannot download from base url: 'curl' not found" >&2
+        exit 1
+    fi
+    download_release_url
+    exit $?
+fi
 if [ "$JIEBA_VIM_BUILD_FROM_SOURCE" != "1" ] && has git curl; then
     if download_release; then
         exit 0
