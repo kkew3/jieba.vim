@@ -70,10 +70,6 @@ prepare_release() {
 }
 
 download_release() {
-    if [ "$JIEBA_VIM_BUILD_FROM_SOURCE" = "1" ]; then
-        return 2
-    fi
-
     local curr_commit="$(git rev-parse HEAD)"
     local curr_tag="$(git tag --points-at "$curr_commit" 2> /dev/null)"
     if [ -z "$curr_tag" ]; then
@@ -100,7 +96,7 @@ build_from_source() {
 }
 
 prepare_release
-if has git curl; then
+if [ "$JIEBA_VIM_BUILD_FROM_SOURCE" != "1" ] && has git curl; then
     if download_release; then
         exit 0
     fi

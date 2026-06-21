@@ -40,10 +40,6 @@ function Prepare-Release {
 }
 
 function Download-Release {
-    if ($env:JIEBA_VIM_BUILD_FROM_SOURCE -eq "1") {
-        return $false
-    }
-
     try {
         $curr_commit = (& git rev-parse HEAD) -join ''
     } catch {
@@ -84,7 +80,7 @@ function Build-From-Source {
 Prepare-Release
 Push-Location -Path $Script:SCRIPT_DIR
 try {
-    if (Has-Command git) {
+    if ($env:JIEBA_VIM_BUILD_FROM_SOURCE -ne "1" -and (Has-Command git)) {
         if (Download-Release) { exit 0 }
     }
     if (Has-Command cargo) {
