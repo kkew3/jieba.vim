@@ -20,50 +20,67 @@ has() {
     done
 }
 
+# Define these variables:
+#   - DEST_DIR
+#   - DEST_NAME
+#   - BINDING
+#   - ASSET_NAME
+#   - LIB_NAME
+prepare_release() {
+    local lib_stem=
+    local lib_ext=
+    if [ "$JIEBA_VIM_INSTALL_NVIM" = "1" ]; then
+        BINDING=lua51
+        DEST_DIR=lua/jieba_vim
+        lib_stem=libjieba_vim_jieba_vim_rs
+    else
+        BINDING=py3
+        DEST_DIR=pythonx/jieba_vim
+        lib_stem=libjieba_vim_rs
+    fi
+    local arch="$(uname -m)"
+    local os="$(uname -s)"
+    ASSET_NAME=
+    case "$arch-$os" in
+        x86_64-Darwin)
+            ASSET_NAME=jieba_vim_rs-x86_64-apple-darwin-$BINDING.dylib
+            DEST_NAME=jieba_vim_rs.so
+            lib_ext=dylib
+            ;;
+        aarch64-Darwin | arm64-Darwin)
+            ASSET_NAME=jieba_vim_rs-aarch64-apple-darwin-$BINDING.dylib
+            DEST_NAME=jieba_vim_rs.so
+            lib_ext=dylib
+            ;;
+        x86_64-Linux | amd64-Linux)
+            ASSET_NAME=jieba_vim_rs-x86_64-unknown-linux-gnu-$BINDING.so
+            DEST_NAME=jieba_vim_rs.so
+            lib_ext=so
+            ;;
+        aarch64-Linux | arm64-Linux)
+            ASSET_NAME=jieba_vim_rs-aarch64-unknown-linux-gnu-$BINDING.so
+            DEST_NAME=jieba_vim_rs.so
+            lib_ext=so
+            ;;
+    esac
+    if [ -z "$ASSET_NAME" ]; then
+        return 1
+    fi
+    LIB_NAME=$lib_stem.$lib_ext
+}
+
 download_release() {
     if [ "$JIEBA_VIM_BUILD_FROM_SOURCE" = "1" ]; then
         return 2
     fi
 
-    curr_commit="$(git rev-parse HEAD)"
-    curr_tag="$(git tag --points-at "$curr_commit" 2> /dev/null)"
+    local curr_commit="$(git rev-parse HEAD)"
+    local curr_tag="$(git tag --points-at "$curr_commit" 2> /dev/null)"
     if [ -z "$curr_tag" ]; then
         return 1
     fi
-    local binding=
-    local dest_dir=
-    if [ "$JIEBA_VIM_INSTALL_NVIM" = "1" ]; then
-        binding=lua51
-        dest_dir=lua/jieba_vim
-    else
-        binding=py3
-        dest_dir=pythonx/jieba_vim
-    fi
-    arch="$(uname -m)"
-    os="$(uname -s)"
-    url=""
-    case "$arch-$os" in
-        x86_64-Darwin)
-            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-x86_64-apple-darwin-$binding.dylib
-            name=jieba_vim_rs.so
-            ;;
-        aarch64-Darwin | arm64-Darwin)
-            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-aarch64-apple-darwin-$binding.dylib
-            name=jieba_vim_rs.so
-            ;;
-        x86_64-Linux | amd64-Linux)
-            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-x86_64-unknown-linux-gnu-$binding.so
-            name=jieba_vim_rs.so
-            ;;
-        aarch64-Linux | arm64-Linux)
-            url=https://github.com/kkew3/jieba.vim/releases/download/${curr_tag}/jieba_vim_rs-aarch64-unknown-linux-gnu-$binding.so
-            name=jieba_vim_rs.so
-            ;;
-    esac
-    if [ -z "$url" ]; then
-        return 1
-    fi
-    curl -fsSLo "$dest_dir/$name" "$url"
+    local url="https://github.com/kkew3/jieba.vim/releases/download/$curr_tag/$ASSET_NAME"
+    curl -fsSL -o "$DEST_DIR/$DEST_NAME" "$url"
 }
 
 build_from_source() {
@@ -73,42 +90,23 @@ build_from_source() {
     else
         color_when=auto
     fi
-    local binding=
-    local lib_stem=
-    local dest_dir=
-    if [ "$JIEBA_VIM_INSTALL_NVIM" = "1" ]; then
-        binding=lua51
-        lib_stem=libjieba_vim_jieba_vim_rs
-        dest_dir=lua/jieba_vim
-    else
-        binding=py3
-        lib_stem=libjieba_vim_rs
-        dest_dir=pythonx/jieba_vim
-    fi
-    local lib_ext=
-    case "$(uname -s)" in
-        Darwin)
-            lib_ext=dylib
-            ;;
-        *)
-            # Assume that build.sh is never run on Windows.
-            lib_ext=so
-            ;;
-    esac
-    cdylib_name=$lib_stem.$lib_ext
-    dest_name=jieba_vim_rs.so
-    # rm: used to delete $dest_name in case it's a symlink
-    rm -f $dest_dir/$dest_name
+    # rm: used to delete $DEST_NAME in case it's a symlink
+    rm -f $DEST_DIR/$DEST_NAME
     cargo clean --color=$color_when --manifest-path rust_backend/Cargo.toml
     cargo build -r --color=$color_when \
         --manifest-path rust_backend/Cargo.toml \
-        --package jieba_vim_rs_binding_$binding \
-        && cp rust_backend/target/release/$cdylib_name $dest_dir/$dest_name
+        --package jieba_vim_rs_binding_$BINDING \
+        && cp rust_backend/target/release/$LIB_NAME $DEST_DIR/$DEST_NAME
 }
 
-if has git uname curl; then
+prepare_release
+if has git curl; then
     if download_release; then
         exit 0
     fi
+fi
+if ! has cargo; then
+    echo "jieba.vim build: cannot build from source: 'cargo' not found" >&2
+    exit 1
 fi
 build_from_source
