@@ -6,6 +6,7 @@ on:
     types:
       - opened
       - synchronize
+      - reopened
       - closed
 
 jobs:
@@ -230,7 +231,7 @@ jobs:
         shell: bash
         run: |
           uv python install 3.11
-          uv run -p 3.11 -m http.server -b 127.0.0.1 -d ~/dist 8000 &
+          uv run --no-sync -p 3.11 -m http.server -b 127.0.0.1 -d ~/dist 8000 &
           sleep 10
           if [ -n "$JIEBA_VIM_DOWNLOAD_BASE_URL" ]; then
             curl -I "$JIEBA_VIM_DOWNLOAD_BASE_URL"
