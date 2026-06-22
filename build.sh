@@ -28,7 +28,7 @@ has() {
 #   - DEST_DIR
 #   - DEST_NAME
 #   - BINDING
-#   - ASSET_NAME
+#   - ASSET_NAME (may be empty)
 #   - LIB_NAME
 prepare_release() {
     local lib_stem=
@@ -42,38 +42,60 @@ prepare_release() {
         DEST_DIR=pythonx/jieba_vim
         lib_stem=libjieba_vim_rs
     fi
-    local arch="$(uname -m)"
-    local os="$(uname -s)"
+    # Reference: https://github.com/junegunn/fzf/blob/master/install
+    ARCH="$(uname -m)"
+    KERNEL_OS="$(uname -s)"
+    OS="$(uname -o 2> /dev/null || true)"
+    local target=
     ASSET_NAME=
-    case "$arch-$os" in
-        x86_64-Darwin)
-            ASSET_NAME=jieba_vim_rs-x86_64-apple-darwin-$BINDING.dylib
+    case "$KERNEL_OS" in
+        Darwin)
+            case "$ARCH" in
+                x86_64)  target="x86_64-apple-darwin"  ;;
+                arm64)   target="aarch64-apple-darwin" ;;
+                aarch64) target="aarch64-apple-darwin" ;;
+            esac
+            if [ -n "$target" ]; then
+                ASSET_NAME="jieba_vim_rs-$target-$BINDING.dylib"
+            fi
             DEST_NAME=jieba_vim_rs.so
             lib_ext=dylib
             ;;
-        aarch64-Darwin | arm64-Darwin)
-            ASSET_NAME=jieba_vim_rs-aarch64-apple-darwin-$BINDING.dylib
-            DEST_NAME=jieba_vim_rs.so
-            lib_ext=dylib
-            ;;
-        x86_64-Linux | amd64-Linux)
-            ASSET_NAME=jieba_vim_rs-x86_64-unknown-linux-gnu-$BINDING.so
+        Linux)
+            local libc=
+            if has getconf && getconf GNU_LIBC_VERSION > /dev/null 2>&1; then
+                libc=gnu
+            fi
+            if [ -n "$libc" ]; then
+                case "$ARCH $OS" in
+                    aarch64\ Android) target=                              ;;
+                    aarch64*)         target="aarch64-unknown-linux-$libc" ;;
+                    x86_64*)          target="x86_64-unknown-linux-$libc"  ;;
+                    amd64*)           target="x86_64-unknown-linux-$libc"  ;;
+                esac
+            fi
+            if [ -n "$target" ]; then
+                ASSET_NAME="jieba_vim_rs-$target-$BINDING.so"
+            fi
             DEST_NAME=jieba_vim_rs.so
             lib_ext=so
             ;;
-        aarch64-Linux | arm64-Linux)
-            ASSET_NAME=jieba_vim_rs-aarch64-unknown-linux-gnu-$BINDING.so
-            DEST_NAME=jieba_vim_rs.so
-            lib_ext=so
-            ;;
+        CYGWIN | MINGW | MSYS | Windows)
+            target="x86_64-pc-windows-msvc"
+            ASSET_NAME=jieba_vim_rs-$target-$BINDING.dll
+            case "$BINDING" in
+                py3)   DEST_NAME=jieba_vim_rs.pyd ;;
+                lua51) DEST_NAME=jieba_vim_rs.dll ;;
+            esac
+            lib_ext=dll
     esac
-    if [ -z "$ASSET_NAME" ]; then
-        return 1
-    fi
     LIB_NAME=$lib_stem.$lib_ext
 }
 
 download_release() {
+    if [ -z "$ASSET_NAME" ]; then
+        return 1
+    fi
     local curr_commit="$(git rev-parse HEAD)"
     local curr_tag="$(git tag --points-at "$curr_commit" 2> /dev/null)"
     if [ -z "$curr_tag" ]; then
@@ -84,6 +106,10 @@ download_release() {
 }
 
 download_release_url() {
+    if [ -z "$ASSET_NAME" ]; then
+        echo "jieba.vim build: unsupported platform for cdylib download: $ARCH $KERNEL_OS $OS" >&2
+        return 1
+    fi
     rm -f "$DEST_DIR/$DEST_NAME"
     local url="$JIEBA_VIM_DOWNLOAD_BASE_URL/$ASSET_NAME"
     curl -fsSL -o "$DEST_DIR/$DEST_NAME" "$url"
