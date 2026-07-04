@@ -503,9 +503,11 @@ function! jieba_vim#install()
     if has("nvim")
         let $JIEBA_VIM_INSTALL_NVIM = "1"
     endif
-    call system(l:script)
+    let l:build_output = system(l:script)
     if v:shell_error
-        throw "Failed to run build script: " . l:script
+        throw "jieba_vim#install: build script " . l:script
+            \ . " returns " . v:shell_error
+            \ . " with message: " . l:build_output
     endif
     call s:CheckCdylib()
     let s:loaded_jieba_vim_word_motion = 0
