@@ -199,7 +199,6 @@ jobs:
       # build variables
       JIEBA_VIM_BUILD_FROM_SOURCE: ${{ matrix.install-mode == 'source' && '1' || '' }}
       JIEBA_VIM_DOWNLOAD_BASE_URL: ${{ matrix.install-mode == 'download' && 'http://127.0.0.1:8000' || '' }}
-      JIEBA_VIM_INSTALL_NVIM: ${{ matrix.vim.distr == 'nvim' && '1' || '' }}
       # uv variables
       UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest
       UV_PYTHON_DOWNLOADS: automatic
