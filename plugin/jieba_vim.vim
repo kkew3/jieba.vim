@@ -140,7 +140,7 @@ function s:JiebaPreviewCancel()
     execute "hi clear JiebaPreview"
 endfunction
 
-function s:JiebaModelPreview(...)
+function s:JiebaModelPreview(...) abort
     if !s:loaded_jieba_vim_cdylib 
         throw "cdylib unloaded; run jieba_vim#install() first"
     endif
@@ -187,7 +187,7 @@ for ky in s:motions
 endfor
 nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>call <SID>JiebaPreviewCancel()<CR>
 
-function! JiebaModelNmap(...)
+function! JiebaModelNmap(...) abort
     if !s:loaded_jieba_vim_cdylib
         throw "cdylib unloaded; run jieba_vim#install() first"
     endif
@@ -203,7 +203,7 @@ function! JiebaModelNmap(...)
     endif
 endfunction
 
-function! JiebaModelXmap(...)
+function! JiebaModelXmap(...) abort
     if !s:loaded_jieba_vim_cdylib
         throw "cdylib unloaded; run jieba_vim#install() first"
     endif
@@ -219,7 +219,7 @@ function! JiebaModelXmap(...)
     endif
 endfunction
 
-function! JiebaModelOmap(...)
+function! JiebaModelOmap(...) abort
     if !s:loaded_jieba_vim_cdylib
         throw "cdylib unloaded; run jieba_vim#install() first"
     endif
