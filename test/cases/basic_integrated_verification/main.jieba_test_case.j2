@@ -148,6 +148,7 @@ S1 visualmode()= '[= ']=
   {%- for buffer in backward_buffers + insert_eol_buffers %}
 
 M i
+S0 backspace=indent,eol,start
 K {{ key }}
 B0 {{ buffer }}
 S1 "a= '[= ']= '<= '>=
