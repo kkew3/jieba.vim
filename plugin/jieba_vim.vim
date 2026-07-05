@@ -264,8 +264,7 @@ function! JiebaXmap(motion, count, model_funcname)
     noautocmd execute "normal! \<Esc>"
     let l:orig_mark_a = getpos("'a")
     let l:orig_mark_b = getpos("'b")
-    normal! gvomaomb
-    noautocmd silent execute "normal! \<Esc>"
+    noautocmd silent execute "normal! gvomaomb\<Esc>"
     let l:visual_begin = getpos("'a")
     let l:visial_end = getpos("'b")
     call setpos("'a", l:orig_mark_a)
