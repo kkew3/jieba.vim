@@ -419,49 +419,40 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     endif
 endfunction
 
-function! s:JiebaNmap_ky(ky, count)
-    call JiebaNmap(a:ky, a:count, "")
+function! JiebaNmapExpr(motion, model_funcname)
+    return "\<Cmd>call JiebaNmap('" . a:motion . "', v:count1, '" . a:model_funcname . "')\<CR>"
 endfunction
 
-" Keep in one line to help debug. There is no readability anyway even if this
-" is properly wrapped to 80 width. Same below.
 for ky in s:motions
-    execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "<Cmd>call <SID>JiebaNmap_ky(' . "'" . ky . "', v:count1" . ')<CR>"'
+    execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaNmapExpr("' . ky . '", "")'
 endfor
 
-function! s:JiebaXmap_ky(ky, count)
-    call JiebaXmap(a:ky, a:count, "")
+function! JiebaXmapExpr(motion, model_funcname)
+    return "\<Cmd>call JiebaXmap('" . a:motion . "', v:count1, '" . a:model_funcname . "')\<CR>"
 endfunction
 
 for ky in s:motions + s:objects
-    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') "<Cmd>call <SID>JiebaXmap_ky(' . "'" . ky . "', v:count1" . ')<CR>"'
+    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaXmapExpr("' . ky . '", "")'
 endfor
 
-function! s:JiebaOmap_internal_ky(ky, count, operator, register)
-    let l:result_dict = s:JiebaModelOmapProcessed("", a:ky, getcurpos(), a:count, a:operator)
+function! JiebaOmapRepeat(motion, repeat, count, operator, register, model_funcname)
+    let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, a:motion, getcurpos(), a:count, a:operator)
     if !l:result_dict["prevent_change"] && a:operator !=# "y"
-        silent! call repeat#setreg(a:operator . "\<Plug>(Jieba_internal_o_" . a:ky . ")", a:register)
+        silent! call repeat#setreg(a:operator . "\<Plug>(Jieba_internal_o_" . a:motion . ")", a:register)
     endif
-    call JiebaOmap(a:ky, 1, a:count, a:operator, a:register, l:result_dict)
+    call JiebaOmap(a:motion, a:repeat, a:count, a:operator, a:register, l:result_dict)
     if !l:result_dict["prevent_change"] && a:operator !=# "y"
-        silent! call repeat#set(a:operator . "\<Plug>(Jieba_internal_o_" . a:ky . ")", a:count)
+        silent! call repeat#set(a:operator . "\<Plug>(Jieba_internal_o_" . a:motion . ")", a:count)
     endif
 endfunction
 
-function! s:JiebaOmap_ky(ky, count, operator, register)
-    let l:result_dict = s:JiebaModelOmapProcessed("", a:ky, getcurpos(), a:count, a:operator)
-    if !l:result_dict["prevent_change"] && a:operator !=# "y"
-        silent! call repeat#setreg(a:operator . "\<Plug>(Jieba_internal_o_" . a:ky . ")", a:register)
-    endif
-    call JiebaOmap(a:ky, 0, a:count, a:operator, a:register, l:result_dict)
-    if !l:result_dict["prevent_change"] && a:operator !=# "y"
-        silent! call repeat#set(a:operator . "\<Plug>(Jieba_internal_o_" . a:ky . ")", a:count)
-    endif
+function! JiebaOmapRepeatExpr(motion, repeat, model_funcname)
+    return "\<Esc>\<Cmd>call JiebaOmapRepeat('" . a:motion . "', " . a:repeat . ", " . v:count1 . ", '" . v:operator . "', '" . v:register . "', '" . a:model_funcname . "')\<CR>"
 endfunction
 
 for ky in s:motions + s:objects
-    execute "onoremap <expr> <silent> <Plug>(Jieba_internal_o_" . ky . ") " . '"<Esc><Cmd>call <SID>JiebaOmap_internal_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
-    execute "onoremap <expr> <silent> <Plug>(Jieba_" . ky . ") " . '"<Esc><Cmd>call <SID>JiebaOmap_ky(' . "'" . ky . "'" . ', " . v:count1 . ", ' . "'" . '" . v:operator . "' . "'" . ', ' . "'" . '" . v:register . "' . "'" . ')<CR>"'
+    execute 'onoremap <expr> <silent> <Plug>(Jieba_internal_o_' . ky . ') JiebaOmapRepeatExpr("' . ky . '", 1, "")'
+    execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaOmapRepeatExpr("' . ky . '", 0, "")'
 endfor
 
 let s:modes = ["n", "x", "o"]
