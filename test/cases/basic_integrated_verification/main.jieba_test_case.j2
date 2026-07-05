@@ -144,4 +144,14 @@ S1 visualmode()= '[= ']=
   {%- endfor %}
 {%- endfor %}
 
+{%- for key in ['\\<C-w>'] %}
+  {%- for buffer in backward_buffers + insert_eol_buffers %}
+
+M i
+K {{ key }}
+B0 {{ buffer }}
+S1 "a= '[= ']= '<= '>=
+  {%- endfor %}
+{%- endfor %}
+
 // vim: ft=jieba_test_case
