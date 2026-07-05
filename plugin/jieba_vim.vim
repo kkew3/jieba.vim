@@ -61,7 +61,7 @@ else
     let s:cdylib_suffix = ".so"
 endif
 
-function! s:CheckCdylib()
+function! s:CheckCdylib() abort
     if has("nvim")
         if filereadable(s:base_dir . "/lua/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
             lua jieba_vim = require("jieba_vim")
@@ -78,6 +78,8 @@ function! s:CheckCdylib()
         endif
     endif
 endfunction
+
+let s:loaded_jieba_vim_cdylib = 0
 call s:CheckCdylib()
 
 function! s:InitWordMotion() abort
@@ -507,6 +509,7 @@ function! jieba_vim#install()
     if v:shell_error
         throw "Failed to run build script: " . l:script
     endif
+    let s:loaded_jieba_vim_cdylib = 0
     call s:CheckCdylib()
     let s:loaded_jieba_vim_word_motion = 0
     call s:InitWordMotion()
