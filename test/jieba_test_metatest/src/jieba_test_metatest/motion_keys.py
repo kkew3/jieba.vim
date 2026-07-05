@@ -15,3 +15,4 @@
 
 WORD_MOTION_KEYS = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
 WORD_TEXT_OBJECTS = ["iw", "iW", "aw", "aW"]
+WORD_MOTION_INSERT_KEYS = ["\\<C-w>"]

@@ -458,6 +458,9 @@ augroup jieba_test_case_autocmd_events_monitoring
     au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
 augroup END
 
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
+
 " state_before checking
 if visualmode() !=# "v"
     if has("nvim")
@@ -553,6 +556,9 @@ augroup jieba_test_case_autocmd_events_monitoring
     au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
     au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
 augroup END
+
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
 
 " state_before checking
 if visualmode() !=# "v"
@@ -687,6 +693,9 @@ augroup jieba_test_case_autocmd_events_monitoring
     au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
 augroup END
 
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
+
 " state_before checking
 if &virtualedit !=# "onemore"
     if has("nvim")
@@ -787,6 +796,9 @@ augroup jieba_test_case_autocmd_events_monitoring
     au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
     au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
 augroup END
+
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
 
 " state_before checking
 if &virtualedit !=# "onemore"
@@ -960,6 +972,9 @@ augroup jieba_test_case_autocmd_events_monitoring
     autocmd!
 augroup END
 
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
+
 " state_before checking
 
 
@@ -1031,6 +1046,9 @@ endfunction
 augroup jieba_test_case_autocmd_events_monitoring
     autocmd!
 augroup END
+
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
 
 " state_before checking
 

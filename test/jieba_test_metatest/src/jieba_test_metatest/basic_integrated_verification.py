@@ -22,12 +22,16 @@ import subprocess
 import sys
 import uuid
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, assert_never
 
 from . import vimscript_transpiler as vim
 from .dots_progress import DotsProgress
 from .executor import pmap
-from .motion_keys import WORD_MOTION_KEYS, WORD_TEXT_OBJECTS
+from .motion_keys import (
+    WORD_MOTION_KEYS,
+    WORD_TEXT_OBJECTS,
+    WORD_MOTION_INSERT_KEYS,
+)
 from .parser import (
     AutocmdEventCountExpr,
     BufferExpr,
@@ -49,9 +53,17 @@ def to_tuple_opt(obj, /, len_=None) -> tuple | None:
     return tuple(obj)
 
 
-def is_valid_motion_key(motion_key_value: str) -> bool:
-    valid_keys = set(WORD_MOTION_KEYS + WORD_TEXT_OBJECTS)
-    return motion_key_value in valid_keys
+def is_valid_motion_key(
+    motion_key_value: str,
+    mode: Literal["n", "x", "o", "i"],
+) -> bool:
+    if mode == "n":
+        return motion_key_value in WORD_MOTION_KEYS
+    if mode == "x" or mode == "o":
+        return motion_key_value in WORD_MOTION_KEYS + WORD_TEXT_OBJECTS
+    if mode == "i":
+        return motion_key_value in WORD_MOTION_INSERT_KEYS
+    assert_never(mode)
 
 
 @dataclass(unsafe_hash=True)
@@ -59,14 +71,16 @@ class BasicIntegratedBlock:
     raw_directives: tuple[RawDirective, ...]
     # Block-level span.
     span: SourceSpan
+    # Whether error from this block should be taken as a warning.
     error_suppressed: bool
 
     # Head conditionals.
     hc: tuple[HeadConditionalExpr, ...]
 
-    mode: Literal["n", "x", "o"]
+    mode: Literal["n", "x", "o", "i"]
     motion_key: str
-    # Either a positive integer as string or empty.
+    # Either a positive integer as string or empty. If mode is "i", should be
+    # empty.
     count: str
     # If mode is not "o", this will be None.
     operator: str | None
@@ -111,21 +125,18 @@ class BasicIntegratedBlock:
         ]
 
         mode_dr = raw_block.get1("M")
-        if mode_dr.arg not in {"n", "o", "v", "V", "\\<C-v>"}:
+        if mode_dr.arg not in {"n", "o", "v", "V", "\\<C-v>", "i"}:
             raise mode_dr.span.to_parse_error(
                 f"invalid directive `M` value: {mode_dr.arg}"
             )
-        tr = {"n": "n", "o": "o", "v": "x", "V": "x", "\\<C-v>": "x"}
-        mode = tr[mode_dr.arg]
+        tr = {"v": "x", "V": "x", "\\<C-v>": "x"}
+        mode = tr.get(mode_dr.arg, mode_dr.arg)
 
         motion_key_dr = raw_block.get1("K")
-        if not is_valid_motion_key(motion_key_dr.arg):
+        if not is_valid_motion_key(motion_key_dr.arg, mode):
             raise motion_key_dr.span.to_parse_error(
-                f"invalid directive `K` value: {motion_key_dr.arg}"
-            )
-        if mode == "n" and motion_key_dr.arg in {"iw", "iW", "aw", "aW"}:
-            raise motion_key_dr.span.to_parse_error(
-                f"invalid directive `K` value when `M n`: {motion_key_dr.arg}"
+                f"invalid directive `K` value when `M {mode_dr.arg}`: "
+                f"{motion_key_dr.arg}"
             )
         motion_key = motion_key_dr.arg
 
@@ -219,7 +230,11 @@ class BasicIntegratedBlock:
                 raise dr.span.to_parse_error(
                     f"unsupported mark `{state_expr.name}`"
                 )
-            elif (
+            if state_expr.ty == "mark" and state_expr.name in "z":
+                raise dr.span.to_parse_error(
+                    f"mark `{state_expr.name}` is reserved"
+                )
+            if (
                 state_expr.ty == "reg"
                 and state_expr.name not in string.ascii_lowercase
                 and state_expr.name != '"'
@@ -293,6 +308,7 @@ EOF
             "n": "JiebaModelNmap",
             "x": "JiebaModelXmap",
             "o": "JiebaModelOmap",
+            "i": "JiebaModelImap",
         }[self.mode]
         outfile.write(f"""\
 " define oracle model
@@ -309,13 +325,19 @@ endfunction
             "n": "JiebaNmapExpr",
             "x": "JiebaXmapExpr",
             "o": "JiebaOmapExpr",
+            "i": "JiebaImapExpr",
         }[self.mode]
+        motion_key_unescaped = (
+            self.motion_key[1:]
+            if self.motion_key.startswith("\\<")
+            else self.motion_key
+        )
         outfile.write(f"""\
 " define mapping
 function! JiebaOmapExpr(motion, model_funcname)
     return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
 endfunction
-{self.mode}noremap <expr> <silent> {self.motion_key} {expr_func}("{self.motion_key}", "JiebaOracleModel")
+{self.mode}noremap <expr> <silent> {motion_key_unescaped} {expr_func}("{self.motion_key}", "JiebaOracleModel")
 
 """)
 
@@ -393,6 +415,10 @@ endfunction
             )
         outfile.write("augroup END\n\n")
 
+        # Clear reserved marks.
+        outfile.write('" clear reserved marks\n')
+        outfile.write("""call setpos("'z", [0, 0, 0, 0])\n\n""")
+
         # Write state_before checking.
         outfile.write('" state_before checking\n')
         for state_expr in self.initial_states:
@@ -444,11 +470,19 @@ endfunction
             outfile.write(f"normal! {self.count}{self.motion_key}\n")
         elif self.mode == "x":
             outfile.write(f"normal! gv{self.count}{self.motion_key}\n")
-        else:
+        elif self.mode == "o":
             reg = f'"{self.register}' if self.register else ""
             outfile.write(
                 f"normal! {reg}{self.operator}{self.count}{self.motion_key}\n"
             )
+        else:
+            outfile.write(f"""\
+let s:jieba_test_case_enter_insert = col(".") ==# {self.initial_cursor[2]} ? "i" : "a"
+execute "normal! " . s:jieba_test_case_enter_insert . "{self.motion_key}\\<C-\\>\\<C-o>mz"
+if line("'z") ==# 0
+    normal! mz
+endif
+""")
         outfile.write('execute "normal! \\<Esc>"\n\n')
         outfile.write(
             "let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n\n"
@@ -497,9 +531,11 @@ let g:JiebaTestGroundtruthAutocmdEventsCount = json_encode(s:jieba_test_case_eve
         # Buffer after querying and echoing.
         outfile.write('" buffer_after querying\n')
         getcurpos = vim.var("getcurpos")
+        getpos_z = vim.var("getpos")("'z")
+        curpos = getcurpos() if self.mode != "i" else getpos_z
         json_encode = vim.var("json_encode")
         outfile.write(
-            f"let g:JiebaTestGroundtruthCursor = {json_encode(getcurpos())}\n"
+            f"let g:JiebaTestGroundtruthCursor = {json_encode(curpos)}\n"
         )
         if self.mode == "x":
             outfile.write("""\
@@ -536,11 +572,19 @@ silent execute "source " . expand("%:p:h") . "/Session.vim"
             outfile.write(f"normal {self.count}{self.motion_key}\n")
         elif self.mode == "x":
             outfile.write(f"normal gv{self.count}{self.motion_key}\n")
-        else:
+        elif self.mode == "o":
             reg = f'"{self.register}' if self.register else ""
             outfile.write(
                 f"normal {reg}{self.operator}{self.count}{self.motion_key}\n"
             )
+        else:
+            outfile.write(f"""\
+let s:jieba_test_case_enter_insert = col(".") ==# {self.initial_cursor[2]} ? "i" : "a"
+execute "normal " . s:jieba_test_case_enter_insert . "{self.motion_key}\\<C-\\>\\<C-o>mz"
+if line("'z") ==# 0
+    normal! mz
+endif
+""")
         outfile.write('execute "normal! \\<Esc>"\n\n')
         outfile.write(
             "let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n\n"
@@ -624,7 +668,7 @@ silent execute "source " . expand("%:p:h") . "/Session.vim"
         outfile.write(
             vim.not_eq_test_as_str(
                 "unexpected cursor position in buffer_after",
-                getcurpos(),
+                getcurpos() if self.mode != "i" else getpos("'z"),
                 json_decode(vim.var("g:JiebaTestGroundtruthCursor")),
             )
         )
