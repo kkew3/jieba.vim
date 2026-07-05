@@ -303,6 +303,22 @@ function! JiebaOracleModel(...)
 endfunction
 
 """)
+
+        # Define mapping.
+        expr_func = {
+            "n": "JiebaNmapExpr",
+            "x": "JiebaXmapExpr",
+            "o": "JiebaOmapExpr",
+        }[self.mode]
+        outfile.write(f"""\
+" define mapping
+function! JiebaOmapExpr(motion, model_funcname)
+    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
+endfunction
+{self.mode}noremap <expr> <silent> {self.motion_key} {expr_func}("{self.motion_key}", "JiebaOracleModel")
+
+""")
+
         # Write state_before setup.
         outfile.write('" state_before setup\n')
         for state_expr in self.initial_states:
@@ -517,29 +533,13 @@ silent execute "source " . expand("%:p:h") . "/Session.vim"
         # Cursor movement.
         outfile.write('" cursor movement\n')
         if self.mode == "n":
-            outfile.write(
-                'call JiebaNmap({motion_key}, {count}, "JiebaOracleModel")\n'.format(
-                    motion_key=vim.lit(self.motion_key), count=self.count or "0"
-                )
-            )
+            outfile.write(f"normal {self.count}{self.motion_key}\n")
         elif self.mode == "x":
-            outfile.write(
-                'call JiebaXmap({motion_key}, {count}, "JiebaOracleModel")\n'.format(
-                    motion_key=vim.lit(self.motion_key), count=self.count or "0"
-                )
-            )
+            outfile.write(f"normal gv{self.count}{self.motion_key}\n")
         else:
+            reg = f'"{self.register}' if self.register else ""
             outfile.write(
-                'call JiebaOmap({motion_key}, 0, {count}, {operator}, {register}, "JiebaOracleModel")\n'.format(
-                    motion_key=vim.lit(self.motion_key),
-                    count=self.count or "0",
-                    operator=vim.lit(self.operator),
-                    register=(
-                        vim.lit(self.register)
-                        if self.register
-                        else vim.lit('"')
-                    ),
-                )
+                f"normal {reg}{self.operator}{self.count}{self.motion_key}\n"
             )
         outfile.write('execute "normal! \\<Esc>"\n\n')
         outfile.write(
