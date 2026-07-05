@@ -496,14 +496,15 @@ augroup END
 function! jieba_vim#install()
     if s:is_win && !has("win32unix")
         let l:script = s:base_dir . "/build.ps1"
-        let l:script = "powershell -ExecutionPolicy Bypass -file " . shellescape(l:script)
+        let l:cmd = ["powershell", "-ExecutionPolicy", "Bypass", "-file", l:script]
     else
         let l:script = s:base_dir . "/build.sh"
+        let l:cmd = [l:script]
     endif
     if has("nvim")
         let $JIEBA_VIM_INSTALL_NVIM = "1"
     endif
-    let l:build_output = system(l:script)
+    let l:build_output = system(l:cmd)
     if v:shell_error
         throw "jieba_vim#install: build script " . l:script
             \ . " returns " . v:shell_error
