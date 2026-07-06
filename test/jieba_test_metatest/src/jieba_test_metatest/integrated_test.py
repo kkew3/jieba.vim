@@ -25,7 +25,11 @@ from typing import Literal
 from . import vimscript_transpiler as vim
 from .dots_progress import DotsProgress
 from .executor import pmap
-from .motion_keys import WORD_MOTION_KEYS, WORD_TEXT_OBJECTS
+from .motion_keys import (
+    WORD_MOTION_KEYS,
+    WORD_TEXT_OBJECTS,
+    WORD_MOTION_INSERT_KEYS,
+)
 from .parser import (
     AutocmdEventCountExpr,
     BufferExpr,
@@ -222,6 +226,12 @@ omap {k} <Plug>(Jieba_{k})
 xmap {k} <Plug>(Jieba_{k})
 omap {k} <Plug>(Jieba_{k})
 """)
+        map_names = {"\\<C-w>": "C_w"}
+        for k in WORD_MOTION_INSERT_KEYS:
+            k_unescaped = k[1:] if k.startswith("\\<") else k
+            outfile.write(
+                f"imap {k_unescaped} <Plug>(Jieba_{map_names.get(k, k)})\n"
+            )
 
         # Write state_before setup.
         outfile.write('" state_before setup\n')
