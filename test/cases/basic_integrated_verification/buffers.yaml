@@ -526,3 +526,13 @@ insert_eol_buffers:
   - '␊␊······|␊'
   - '␊␊······|␊␊'
   - '␊␊······␊|␊'
+
+nvim_basics:
+  buffers:
+    - 'abcd·efghi···j|kl·m···nopqr··␊'
+    - '··rqpon···m·l|kj···ihgfe·dcba␊'
+  visual_buffers:
+    - 'abcd·efghi···j[]kl·m···nopqr··␊'
+    - '··rqpon···m·l[]kj···ihgfe·dcba␊'
+    - 'abcd·efghi···j[k]l·m···nopqr··␊'
+    - '··rqpon···m·l[k]j···ihgfe·dcba␊'

@@ -95,6 +95,12 @@ jobs:
           - distr: vim
             version: v9.1.0000
             glue-lang: py311
+          - distr: nvim
+            version: v0.11.5
+            glue-lang: lua51
+          - distr: nvim
+            version: v0.12.2
+            glue-lang: lua51
     env:
       # uv variables
       UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest
