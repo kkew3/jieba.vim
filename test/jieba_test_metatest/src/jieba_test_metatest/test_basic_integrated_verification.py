@@ -432,9 +432,6 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
 
 " state_before setup
@@ -488,7 +485,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal! w
+execute "normal! w"
 execute "normal! \\<Esc>"
 
 let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -531,9 +528,6 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
 
 " state_before setup
@@ -587,7 +581,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal w
+execute "normal w"
 execute "normal! \\<Esc>"
 
 let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -667,9 +661,6 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
 
 " state_before setup
@@ -723,7 +714,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal! gv1e
+execute "normal! gv1e"
 execute "normal! \\<Esc>"
 
 let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -771,9 +762,6 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
 
 " state_before setup
@@ -827,7 +815,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal gv1e
+execute "normal gv1e"
 execute "normal! \\<Esc>"
 
 let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -952,9 +940,6 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
 
 " state_before setup
@@ -980,7 +965,7 @@ call setpos("'z", [0, 0, 0, 0])
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal! "ad2W
+execute "normal! \\"ad2W"
 execute "normal! \\<Esc>"
 
 let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -1027,9 +1012,6 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
 
 " state_before setup
@@ -1055,7 +1037,7 @@ call setpos("'z", [0, 0, 0, 0])
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal "ad2W
+execute "normal \\"ad2W"
 execute "normal! \\<Esc>"
 
 let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
