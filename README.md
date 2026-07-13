@@ -23,6 +23,7 @@
 
 - Vim 8/9：需要 `+python3` 或 `+python3/dyn` 或 `+python3/dyn-stable`。
 - Neovim：无额外依赖。
+- 可选：安装 [`tpope/vim-repeat`][vim-repeat] 后可用 `.` 重复上一操作。
 
 [vim-plug][vim-plug] (Vim / Neovim):
 
@@ -144,6 +145,7 @@ Apache license v2；部分文件参照 [vim-LICENSE.txt](./vim-LICENSE.txt).
 
 - Vim 8/9: require `+python3` or `+python3/dyn` or `+python3/dyn-stable`.
 - Neovim: no additional dependency.
+- Optional: install [`tpope/vim-repeat`][vim-repeat] to repeat the last operation with `.`.
 
 [vim-plug][vim-plug] (Vim / Neovim):
 
