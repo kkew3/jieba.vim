@@ -91,12 +91,14 @@ function! s:InitWordMotion() abort
         let l:init_word_motion_err = luaeval("jieba_vim:init_word_motion(unpack(_A))", l:args)
         if l:init_word_motion_err !=# ""
             echoerr l:init_word_motion_err
+            return
         endif
     else
         let l:init_word_motion_err = py3eval(
             \ "jieba_vim.navigation.init_word_motion(*vim.eval('l:args'))")
         if l:init_word_motion_err !=# "" && l:init_word_motion_err !=# v:none
             echoerr l:init_word_motion_err
+            return
         endif
     endif
     let s:loaded_jieba_vim_word_motion = 1
