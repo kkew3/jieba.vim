@@ -28,12 +28,14 @@
 [vim-plug][vim-plug] (Vim / Neovim):
 
 ```vim
+Plug 'tpope/vim-repeat'
 Plug 'kkew3/jieba.vim', { 'branch': 'release', 'do': { -> jieba_vim#install() } }
 ```
 
 [lazy.nvim][lazy-nvim] (Neovim):
 
 ```lua
+{ "tpope/vim-repeat" },
 {
     "kkew3/jieba.vim",
     branch = "release",
@@ -150,12 +152,14 @@ Apache license v2；部分文件参照 [vim-LICENSE.txt](./vim-LICENSE.txt).
 [vim-plug][vim-plug] (Vim / Neovim):
 
 ```vim
+Plug 'tpope/vim-repeat'
 Plug 'kkew3/jieba.vim', { 'branch': 'release', 'do': { -> jieba_vim#install() } }
 ```
 
 [lazy.nvim][lazy-nvim] (Neovim):
 
 ```lua
+{ "tpope/vim-repeat" },
 {
     "kkew3/jieba.vim",
     branch = "release",
