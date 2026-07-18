@@ -95,6 +95,9 @@ S1 "a= '[= ']= '<= '>=
 {%- for key in ['\\<C-Left>', '\\<C-Right>', '\\<S-Left>', '\\<S-Right>'] %}
   {%- for buffer in nvim_basics.buffers %}
 
+// It's a known bug that arrow imaps will incorrectly set `[ and `] marks
+// (https://github.com/kkew3/jieba.vim/pull/134), and so tests against these
+// marks are not included here.
 M i
 K {{ key }}
 B0 {{ buffer }}
