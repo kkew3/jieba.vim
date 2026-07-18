@@ -156,7 +156,7 @@ S1 "a= '[= ']= '<= '>=
 {%- endfor %}
 
 {%- for key in ['\\<C-Left>', '\\<C-Right>', '\\<S-Left>', '\\<S-Right>'] %}
-  {%- for buffer in nvim_basics.buffers %}
+  {%- for buffer in forward_buffers + backward_buffers + insert_eol_buffers + insert_forward_eol_buffers %}
 
 // It's a known bug that arrow imaps will incorrectly set `[ and `] marks
 // (https://github.com/kkew3/jieba.vim/pull/134), and so tests against these
