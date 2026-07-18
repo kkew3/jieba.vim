@@ -1,6 +1,6 @@
 [package]
 name = "jieba_vim_rs_core"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 
 [dependencies]
@@ -19,3 +19,7 @@ bstr = "1.12.1"
 [[test]]
 name = "golden_master"
 harness = false
+
+[[test]]
+name = "imap_arrow"
+harness = true

@@ -13,24 +13,35 @@
 // under the License.
 
 use crate::BufferLike;
-use crate::motion::core::motion::Motion;
 use crate::token::JiebaPlaceholder;
 
 use super::api::{ImapOutput, WordMotion};
 use super::core::buffer::ParsedBuffer;
+use super::core::motion::Motion;
 use super::core::position::Position;
-use super::primitives::text_object::PreviousWord;
+use super::primitives::text_object::ForwardWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
-    /// Delete the word before the cursor.
-    pub(crate) fn imap_ctrl_w_helper<B: BufferLike + ?Sized>(
+    /// Vim motion `S-Right` in insert mode. Take in `cursor` (0, lnum, col,
+    /// off, _), and return the new cursor position.
+    ///
+    /// # Basics
+    ///
+    /// Equivalent to `w` in normal mode, except that the motion never fails.
+    pub fn imap_shift_right<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
         mut cursor: Position,
     ) -> Result<ImapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, true);
-        let mut motion = PreviousWord::default();
-        let _ = motion.map(&mut buffer, 1, &mut cursor)?;
+        let mut motion_eol = ForwardWord::new(true);
+        let mut motion_noeol = ForwardWord::new(false);
+        let mut cursor_copy = cursor;
+        let _ = motion_eol.map(&mut buffer, 1, &mut cursor)?;
+        let _ = motion_noeol.map(&mut buffer, 1, &mut cursor_copy)?;
+        if cursor_copy > cursor {
+            cursor = cursor_copy;
+        }
         Ok(ImapOutput { cursor })
     }
 }

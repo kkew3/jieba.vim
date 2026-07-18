@@ -239,7 +239,7 @@ function! JiebaModelOmap(...)
     endif
 endfunction
 
-function! s:JiebaModelImapCtrlW(...)
+function! JiebaModelImap(...)
     if !s:loaded_jieba_vim_cdylib
         throw "cdylib unloaded; run jieba_vim#install() first"
     endif
@@ -248,18 +248,10 @@ function! s:JiebaModelImapCtrlW(...)
     endif
 
     if has("nvim")
-        return luaeval("jieba_vim:imap_ctrl_w(jieba_vim.buffer, unpack(_A))", a:000)
+        return luaeval("jieba_vim:imap(jieba_vim.buffer, unpack(_A))", a:000)
     else
         return py3eval(
-            \ "jieba_vim.navigation.imap_ctrl_w(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
-
-function! JiebaModelImap(motion, ...)
-    if a:motion ==# "\<C-w>"
-        return call(function("<SID>JiebaModelImapCtrlW"), a:000)
-    else
-        return call(function("JiebaModelNmap"), [a:motion, a:1, 1])
+            \ "jieba_vim.navigation.imap(vim.current.buffer, *vim.eval('a:000'))")
     endif
 endfunction
 
@@ -490,22 +482,11 @@ function! s:JiebaImapCtrlWExpr(model_funcname)
 endfunction
 
 function! s:JiebaImapArrowExpr(motion, model_funcname)
-    if a:motion ==# "\<C-Left>"
-        let l:equiv_motion = "B"
-    elseif a:motion ==# "\<S-Left>"
-        let l:equiv_motion = "b"
-    elseif a:motion ==# "\<C-Right>"
-        let l:equiv_motion = "W"
-    elseif a:motion ==# "\<S-Right>"
-        let l:equiv_motion = "w"
-    else
-        let l:equiv_motion = a:motion
-    endif
     let l:curpos = getcurpos()
     if a:model_funcname !=# ""
-        let l:result_dict = function(a:model_funcname)(l:equiv_motion, l:curpos)
+        let l:result_dict = function(a:model_funcname)(a:motion, l:curpos)
     else
-        let l:result_dict = JiebaModelImap(l:equiv_motion, l:curpos)
+        let l:result_dict = JiebaModelImap(a:motion, l:curpos)
     endif
     return "\<Cmd>call cursor("
         \ . l:result_dict["cursor"][1] . ","

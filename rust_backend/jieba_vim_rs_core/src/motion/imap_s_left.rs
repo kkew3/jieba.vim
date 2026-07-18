@@ -13,23 +13,28 @@
 // under the License.
 
 use crate::BufferLike;
-use crate::motion::core::motion::Motion;
 use crate::token::JiebaPlaceholder;
 
 use super::api::{ImapOutput, WordMotion};
 use super::core::buffer::ParsedBuffer;
+use super::core::motion::Motion;
 use super::core::position::Position;
-use super::primitives::text_object::PreviousWord;
+use super::primitives::text_object::BackwardWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
-    /// Delete the word before the cursor.
-    pub(crate) fn imap_ctrl_w_helper<B: BufferLike + ?Sized>(
+    /// Vim motion `S-Left` in insert mode. Take in `cursor` (0, lnum, col,
+    /// off, _), and return the new cursor position.
+    ///
+    /// # Basics
+    ///
+    /// Equivalent to `b` in normal mode, except that the motion never fails.
+    pub fn imap_shift_left<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
         mut cursor: Position,
     ) -> Result<ImapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, true);
-        let mut motion = PreviousWord::default();
+        let mut motion = BackwardWord::new(false);
         let _ = motion.map(&mut buffer, 1, &mut cursor)?;
         Ok(ImapOutput { cursor })
     }

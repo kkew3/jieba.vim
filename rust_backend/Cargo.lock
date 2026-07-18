@@ -418,7 +418,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_binding_lua51"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "jieba-rs",
  "jieba_vim_rs_core",
@@ -427,7 +427,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_binding_py3"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jieba-rs",
  "jieba_vim_rs_core",
@@ -437,7 +437,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_core"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "bstr",
  "clap",

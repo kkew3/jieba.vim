@@ -263,23 +263,17 @@ fn run_test(dict: RecordDict) -> Result<(), Failed> {
         "imap" => {
             let motion: &[u8] = get_input(&dict.inputs, 0);
             let cursor = get_input(&dict.inputs, 1);
-            match motion {
-                // \<C-w>
-                b"\x17" | b"\\u0017" => match wm
-                    .imap_ctrl_w(&dict.buffer, cursor)
-                {
-                    Err(_) => {
-                        Err(format!("{}: failed to access buffer", dict.span)
-                            .into())
-                    }
-                    Ok(outputs) => assert_on_field(
-                        &dict.outputs,
-                        "cursor",
-                        &outputs.cursor,
-                        &dict.span,
-                    ),
-                },
-                _ => panic!("invalid motion: {:?}", motion),
+            match wm.imap(&dict.buffer, motion, cursor) {
+                Err(_) => {
+                    Err(format!("{}: failed to access buffer", dict.span)
+                        .into())
+                }
+                Ok(outputs) => assert_on_field(
+                    &dict.outputs,
+                    "cursor",
+                    &outputs.cursor,
+                    &dict.span,
+                ),
             }
         }
         f => panic!("unexpected func_name: {}", f),

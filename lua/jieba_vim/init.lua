@@ -66,8 +66,8 @@ function M.omap(self, buffer, motion, cursor, count, operator)
     return self.word_motion:omap(buffer, motion, cursor, count, operator)
 end
 
-function M.imap_ctrl_w(self, buffer, cursor)
-    return self.word_motion:imap_ctrl_w(buffer, cursor)
+function M.imap(self, buffer, motion, cursor)
+    return self.word_motion:imap(buffer, motion, cursor)
 end
 
 function M.preview_nmap(self, buffer, motion, cursor, preview_limit)

@@ -75,9 +75,10 @@ def omap(buffer, motion, cursor, count, operator):
     return word_motion.omap(buffer, motion, cursor, count, operator)
 
 
-def imap_ctrl_w(buffer, cursor):
+def imap(buffer, motion, cursor):
+    motion = as_bytes(motion)
     cursor = ints(cursor)
-    return word_motion.imap_ctrl_w(buffer, cursor)
+    return word_motion.imap(buffer, motion, cursor)
 
 
 def preview_nmap(buffer, motion, cursor, preview_limit):
