@@ -425,8 +425,10 @@ EOF
 endif
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelNmap"), a:000)
     return g:model_output
 endfunction
@@ -521,8 +523,10 @@ endif
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelNmap"), a:000)
     return g:model_output
 endfunction
@@ -654,8 +658,10 @@ EOF
 endif
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelXmap"), a:000)
     return g:model_output
 endfunction
@@ -755,8 +761,10 @@ endif
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelXmap"), a:000)
     return g:model_output
 endfunction
@@ -933,8 +941,10 @@ EOF
 endif
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelOmap"), a:000)
     return g:model_output
 endfunction
@@ -1005,8 +1015,10 @@ endif
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelOmap"), a:000)
     return g:model_output
 endfunction

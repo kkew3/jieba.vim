@@ -19,7 +19,7 @@ word_motion = None
 
 def as_bytes(s):
     if isinstance(s, str):
-        return s.encode("utf-8")
+        return s.encode("utf-8", errors="surrogateescape")
     return s
 
 

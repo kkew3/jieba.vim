@@ -328,20 +328,21 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             b"\x17" | b"\\u0017" => {
                 self.imap_ctrl_w_helper(buffer, cursor.into())
             }
-            // \<C-Left>
-            b"\x80\xfdU" | b"\\u0080\\u00fdU" => {
+            // \<C-Left>. Also accepting double-backslash version due to json-
+            // decoding issue in Vim. Same below.
+            b"\x80\xfdU" | b"\\u0080\\u00fdU" | b"\\\\u0080\\\\u00fdU" => {
                 self.imap_ctrl_left(buffer, cursor.into())
             }
             // \<C-Right>
-            b"\x80\xfdV" | b"\\u0080\\u00fdV" => {
+            b"\x80\xfdV" | b"\\u0080\\u00fdV" | b"\\\\u0080\\\\u00fdV" => {
                 self.imap_ctrl_right(buffer, cursor.into())
             }
             // \<S-Left>
-            b"\x80#4" | b"\\u0080#4" => {
+            b"\x80#4" | b"\\u0080#4" | b"\\\\u0080#4" => {
                 self.imap_shift_left(buffer, cursor.into())
             }
             // \<S-Right>
-            b"\x80%i" | b"\\u0080%i" => {
+            b"\x80%i" | b"\\u0080%i" | b"\\\\u0080%i" => {
                 self.imap_shift_right(buffer, cursor.into())
             }
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
