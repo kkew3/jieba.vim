@@ -1,0 +1,181 @@
+*jieba_vim.txt*           基于 jieba 的 Vim 按词跳转插件
+
+                Author:  Kaiwen Wu
+               License:  Apache license v2 + Vim license
+            Repository:  https://github.com/kkew3/jieba.vim
+
+                                                          *jieba.vim*  *jieba*
+
+
+==============================================================================
+CONTENTS                                                      *jieba-contents*
+  1. Introduction .............................................. |jieba-intro|
+  2. Configuraiton ............................................ |jieba-config|
+  3. Mappings ............................................... |jieba-mappings|
+     3.1 Word motions ................................... |jieba-word-motions|
+     3.2 Word text objects .............................. |jieba-text-objects|
+     3.3 Insert special keys ............................. |jieba-ins-special|
+     3.4 Word motion preview ................................. |jieba-preview|
+  4. Commands ............................................... |jieba-commands|
+  5. Functions ............................................. |jieba-functions|
+  6. Optional dependency .............................. |jieba-opt-dependency|
+
+
+==============================================================================
+INTRODUCTION                                                     *jieba-intro*
+
+jieba.vim 是一个基于 jieba 的中文分词插件，用于中文段落中光标按单词移动、
+VISUAL 模式按单词扩张选区、按单词复制、删词、改词等操作。完整支持各模式下
+|word-motions| 和基于单词的 |text-objects| 键位。同时尊重 'iskeyword' 设置，
+并允许自定义用户词典，从而自定义分词边界。
+
+
+==============================================================================
+CONFIGURATION                                                   *jieba-config*
+
+                                                          *g:jieba_vim_keymap*
+是/否 (1/0) 自动启用默认键位映射。
+
+注意，本插件默认不映射任何按键，需要用户通过 |jieba-mappings| 自行绑定键位。
+若希望快速启用默认键位（不包括跳转预览与实验性功能），可启用此设置。
+
+默认: 0
+
+                                                            *g:jieba_vim_lazy*
+是/否 (1/0) 延迟加载 jieba 词典直到光标所在行有中文出现。
+
+默认: 1
+
+                                                       *g:jieba_vim_user_dict*
+若为非空字符串，加载此文件路径所指向的用户自定义词典。
+用户词典范例见 https://github.com/fxsjy/jieba/blob/master/test/userdict.txt。
+
+默认: ""（空字符串，使用默认词典）
+
+
+==============================================================================
+MAPPINGS                                                      *jieba-mappings*
+
+                                                          *jieba-word-motions*
+WORD MOTIONS
+
+以下所有 |word-motions| 键位映射为对应 Vim 原生键位的中文增强版本，支持
+[count]，且 |word| 和 |exclusive| 语义与所对应的 Vim 原生键位相同。例如
+|WORD| 版本的映射会跳过中文标点，而 |word| 版本则不会。
+
+<Plug> 映射              对应的 Vim 原生键位  ~
+------------------------------------------------------------------------------
+<Plug>(Jieba_w)         |w|                           *<Plug>(Jieba_w)*
+<Plug>(Jieba_S_Right)   |<S-Right>|                   *<Plug>(Jieba_S_Right)*
+<Plug>(Jieba_W)         |W|                           *<Plug>(Jieba_W)*
+<Plug>(Jieba_C_Right)   |<C-Right>|                   *<Plug>(Jieba_C_Right)*
+<Plug>(Jieba_e)         |e|                           *<Plug>(Jieba_e)*
+<Plug>(Jieba_E)         |E|                           *<Plug>(Jieba_E)*
+<Plug>(Jieba_b)         |b|                           *<Plug>(Jieba_b)*
+<Plug>(Jieba_S_Left)    |<S-Left>|                    *<Plug>(Jieba_S_Left)*
+<Plug>(Jieba_B)         |B|                           *<Plug>(Jieba_B)*
+<Plug>(Jieba_C_Left)    |<C-Left>|                    *<Plug>(Jieba_C_Left)*
+<Plug>(Jieba_ge)        |ge|                          *<Plug>(Jieba_ge)*
+<Plug>(Jieba_gE)        |gE|                          *<Plug>(Jieba_gE)*
+
+键位映射示例： >vim
+
+        nmap w <Plug>(Jieba_w)
+        xmap w <Plug>(Jieba_w)
+        omap w <Plug>(Jieba_w)
+        " [remaining mappings ..]
+<
+
+                                                          *jieba-text-objects*
+WORD TEXT OBJECTS
+
+以下所有 |text-objects| 键位映射为对应 Vim 原生键位的中文增强版本，支持
+[count]，且 |word| 和 |exclusive| 语义与所对应的 Vim 原生键位相同。例如
+|WORD| 版本的映射会包含中文标点，而 |word| 版本则不会。
+
+<Plug> 映射              对应的 Vim 原生键位  ~
+------------------------------------------------------------------------------
+<Plug>(Jieba_iw)        |iw|                          *<Plug>(Jieba_iw)*
+<Plug>(Jieba_iW)        |iW|                          *<Plug>(Jieba_iW)*
+<Plug>(Jieba_aw)        |aw|                          *<Plug>(Jieba_aw)*
+<Plug>(Jieba_aW)        |aW|                          *<Plug>(Jieba_aW)*
+
+键位映射示例： >vim
+
+        xmap iw <Plug>(Jieba_iw)
+        omap iw <Plug>(Jieba_iw)
+        " [remaining mappings ..]
+<
+
+                                                           *jieba-ins-special*
+INSERT SPECIAL KEYS
+
+以下所有 INSERT 模式特殊键位映射为对应 Vim 原生键位的中文增强版本。
+
+<Plug> 映射              对应的 Vim 原生键位  ~
+------------------------------------------------------------------------------
+<Plug>(Jieba_C_w)       |i_CTRL-W|                    *<Plug>(Jieba_C_w)*
+
+
+实验性键位单独在下面列出，不保证与 Vim 原生行为的兼容性。
+
+<Plug> 映射              对应的 Vim 原生键位  ~
+------------------------------------------------------------------------------
+<Plug>(Jieba_S_Left)    |i_<S-Left>|                  |<Plug>(Jieba_S_Left)|
+<Plug>(Jieba_C_Left)    |i_<C-Left>|                  |<Plug>(Jieba_C_Left)|
+<Plug>(Jieba_S_Right)   |i_<S-Right>|                 |<Plug>(Jieba_S_Right)|
+<Plug>(Jieba_C_Right)   |i_<C-Right>|                 |<Plug>(Jieba_C_Right)|
+
+键位映射示例： >vim
+
+        imap <C-w> <Plug>(Jieba_C_w)
+        " [remaining mappings ..]
+<
+
+                                                               *jieba-preview*
+WORD MOTION PREVIEW
+
+可使用如下键位映射在 |Normal| 模式下提前高亮 |jieba-word-motions| 的跳转位置。
+
+<Plug> 映射                  预览的 jieba_vim 键位  ~
+------------------------------------------------------------------------------
+<Plug>(Jieba_preview_cancel) 取消预览         *<Plug>(Jieba_preview_cancel)*
+<Plug>(Jieba_preview_w)     |<Plug>(Jieba_w)| *<Plug>(Jieba_preview_w)*
+<Plug>(Jieba_preview_W)     |<Plug>(Jieba_W)| *<Plug>(Jieba_preview_W)*
+<Plug>(Jieba_preview_e)     |<Plug>(Jieba_e)| *<Plug>(Jieba_preview_e)*
+<Plug>(Jieba_preview_E)     |<Plug>(Jieba_E)| *<Plug>(Jieba_preview_E)*
+<Plug>(Jieba_preview_b)     |<Plug>(Jieba_b)| *<Plug>(Jieba_preview_b)*
+<Plug>(Jieba_preview_B)     |<Plug>(Jieba_B)| *<Plug>(Jieba_preview_B)*
+<Plug>(Jieba_preview_ge)    |<Plug>(Jieba_ge)|*<Plug>(Jieba_preview_ge)*
+<Plug>(Jieba_preview_gE)    |<Plug>(Jieba_gE)|*<Plug>(Jieba_preview_gE)*
+
+键位映射示例： >vim
+
+        nmap <Leader>jw <Plug>(Jieba_preview_w)
+        " [remaining mappings ..]
+<
+
+
+==============================================================================
+COMMANDS                                                      *jieba-commands*
+
+                                                         *:JiebaPreviewCancel*
+:JiebaPreviewCancel        功能同 |<Plug>(Jieba_preview_cancel)|。
+
+
+==============================================================================
+FUNCTIONS                                                    *jieba-functions*
+
+jieba_vim#install()                                      *jieba_vim#install()*
+                           用于安装 jieba.vim。常作为 post-update hook 使用；
+                           如果 post-update hook 自动运行失败，也可手动调用。
+
+
+==============================================================================
+OPTIONAL DEPENDENCY                                     *jieba-opt-dependency*
+
+如果用户安装了 `tpope/vim-repeat` (https://github.com/tpope/vim-repeat)，可
+使用 |.| 重复上一次修改。例如 `dw.` 相当于 `dwdw`。
+
+
+vim:tw=78:ts=8:ft=help:et:norl:
