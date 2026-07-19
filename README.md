@@ -15,7 +15,7 @@
 - 兼容性保障：84,000+ 自动化 Vim 用例验证，确保在纯 ASCII 文本中与原生 word motions / text objects 行为完全一致。
 - 完整支持：全部 17 个 word motions / text objects（`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `CTRL-Left` / `SHIFT-Left` / `CTRL-Right` / `Shift-Right` / `iw` / `iW` / `aw` / `aW` / `i_CTRL-W`），覆盖 normal / visual / operator-pending 模式，支持计数前缀与所有字符操作，支持 register，以及通过 [`tpope/vim-repeat`][vim-repeat] 支持 [`.`][dot-repeat] 重复上一操作。
 - 灵活配置：尊重 [`'iskeyword'`][isk] 设置，允许自定义分词边界；支持惰性加载词典，按需启用。
-- 帮助文档：可使用 `:h jieba` 在 Vim/Nvim 内查看帮助。
+- 帮助文档：可使用 `:h jieba_vim.txt` 在 Vim/Nvim 内查看[文档](./doc/jieba.txt)。
 
 ## 安装
 
@@ -141,7 +141,7 @@ Apache license v2；部分文件参照 [vim-LICENSE.txt](./vim-LICENSE.txt).
 - Compatibility Assurance: 84,000+ automated Vim test cases ensure behavior fully consistent with native word motions / text objects when handling pure ASCII text.
 - Complete Support: All 17 word motions / text objects (`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `CTRL-Left` / `SHIFT-Left` / `CTRL-Right` / `Shift-Right` / `iw` / `iW` / `aw` / `aW` / `i_CTRL-W`), covering normal / visual / operator-pending modes, supporting count prefixes and all character operators, supporting registers, and supporting [`.`][dot-repeat] to repeat the last operation via [tpope/vim-repeat][vim-repeat].
 - Flexible Configuration: Respects [`'iskeyword'`][isk] settings, allowing custom word boundary definitions; supports lazy-loading dictionaries, enabling on-demand activation.
-- Help documentation: Check the help documentation with `:h jieba` within Vim/Nvim.
+- Help documentation: Check the help [documentation](./doc/jieba.txt) with `:h jieba_vim.txt` within Vim/Nvim.
 
 ## Installation
 
