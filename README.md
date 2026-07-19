@@ -12,8 +12,8 @@
 ## 核心特性
 
 - 混合架构：Vimscript 负责集成，Rust 核心通过 cdylib 提供高性能分词；预编译二进制托管于 [GitHub Releases][releases]，覆盖主流平台。两者通过 python3 (Vim) 或 lua5.1 (Neovim) 桥接。
-- 兼容性保障：48,000+ 自动化 Vim 用例验证，确保在纯 ASCII 文本中与原生 word motions / text objects 行为完全一致。
-- 完整支持：全部 12 个 word motions / text objects（`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `iw` / `iW` / `aw` / `aW`），覆盖 normal / visual / operator-pending 模式，支持计数前缀与所有字符操作，支持 register，以及通过 [`tpope/vim-repeat`][vim-repeat] 支持 [`.`][dot-repeat] 重复上一操作。
+- 兼容性保障：84,000+ 自动化 Vim 用例验证，确保在纯 ASCII 文本中与原生 word motions / text objects 行为完全一致。
+- 完整支持：全部 17 个 word motions / text objects（`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `CTRL-Left` / `SHIFT-Left` / `CTRL-Right` / `Shift-Right` / `iw` / `iW` / `aw` / `aW` / `i_CTRL-W`），覆盖 normal / visual / operator-pending 模式，支持计数前缀与所有字符操作，支持 register，以及通过 [`tpope/vim-repeat`][vim-repeat] 支持 [`.`][dot-repeat] 重复上一操作。
 - 灵活配置：尊重 [`'iskeyword'`][isk] 设置，允许自定义分词边界；支持惰性加载词典，按需启用。
 - 帮助文档：可使用 `:h jieba` 在 Vim/Nvim 内查看帮助。
 
@@ -55,7 +55,9 @@ Plug 'kkew3/jieba.vim', { 'branch': 'release', 'do': { -> jieba_vim#install() } 
 
 - 在保留原生语义（如 `w` 不跳过标点、`W` 跳过标点）的基础上，使以下命令识别中文词语：
   * Word motions: `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`
+  * Word motions 箭头键位: `CTRL-Left`、`SHIFT-Left`、`CTRL-Right`、`SHIFT-Right`
   * Text objects: `iw`、`iW`、`aw`、`aW`
+  * INSERT 模式 op: `i_CTRL-W`
 - 支持所有模式：`nmap` / `xmap` / `omap`（text object 没有 `nmap`）；
 - 支持计数：`4w`、`c2e`、`3daw` 等；
 - 支持所有字符操作：`d`、`c`、`y`、`g~` 等；
@@ -75,11 +77,11 @@ nmap <LocalLeader>jc <Plug>(Jieba_preview_cancel)
 
 另提供 `:JiebaPreviewCancel` 命令用于取消按词跳转位置预览。
 
-> 当前暂不支持预览 text objects。
+> 当前暂不支持预览 text objects 和箭头键位。
 
 ### 非侵入式设计
 
-默认**不映射任何按键**，通过 `<Plug>(Jieba_*)` 映射与命令供用户自由配置。若希望快速启用默认行为（不包括跳转预览），可在 `~/.vimrc` 中：
+默认**不映射任何按键**，通过 `<Plug>(Jieba_*)` 映射与命令供用户自由配置。若希望快速启用默认行为（不包括跳转预览和实验性功能），可在 `~/.vimrc` 中：
 
 ```vim
 let g:jieba_vim_keymap = 1
@@ -136,8 +138,8 @@ Apache license v2；部分文件参照 [vim-LICENSE.txt](./vim-LICENSE.txt).
 ## Core Features
 
 - Hybrid Architecture: Vimscript handles integration while the Rust core delivers high-performance word segmentation via cdylib; precompiled binaries are hosted on [GitHub Releases][releases], covering major platforms. Rust and Vimscript are bridged by python3 (Vim) or lua5.1 (Neovim).
-- Compatibility Assurance: 48,000+ automated Vim test cases ensure behavior fully consistent with native word motions / text objects when handling pure ASCII text.
-- Complete Support: All 12 word motions / text objects (`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `iw` / `iW` / `aw` / `aW`), covering normal / visual / operator-pending modes, supporting count prefixes and all character operators, supporting registers, and supporting [`.`][dot-repeat] to repeat the last operation via [tpope/vim-repeat][vim-repeat].
+- Compatibility Assurance: 84,000+ automated Vim test cases ensure behavior fully consistent with native word motions / text objects when handling pure ASCII text.
+- Complete Support: All 17 word motions / text objects (`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `CTRL-Left` / `SHIFT-Left` / `CTRL-Right` / `Shift-Right` / `iw` / `iW` / `aw` / `aW` / `i_CTRL-W`), covering normal / visual / operator-pending modes, supporting count prefixes and all character operators, supporting registers, and supporting [`.`][dot-repeat] to repeat the last operation via [tpope/vim-repeat][vim-repeat].
 - Flexible Configuration: Respects [`'iskeyword'`][isk] settings, allowing custom word boundary definitions; supports lazy-loading dictionaries, enabling on-demand activation.
 - Help documentation: Check the help documentation with `:h jieba` within Vim/Nvim.
 
@@ -179,7 +181,9 @@ Here, `jieba_vim#install()` prioritizes downloading the precompiled cdylib, fall
 
 - While preserving native semantics (e.g., `w` does not skip punctuation, whereas `W` does), the following commands are enhanced to recognize Chinese words:
   * Word motions: `b`、`B`、`ge`、`gE`、`w`、`W`、`e`、`E`
+  * Word motion arrow mappings: `CTRL-Left`、`SHIFT-Left`、`CTRL-Right`、`SHIFT-Right`
   * Text objects: `iw`、`iW`、`aw`、`aW`
+  * INSERT mode op: `i_CTRL-W`
 - Supports all modes: `nmap` / `xmap` / `omap` (text objects have no `nmap`);
 - Supports counts: `4w`, `c2e`, `3daw`, etc.;
 - Supports all character operators: `d`, `c`, `y`, `g~`, etc.;
@@ -199,11 +203,11 @@ nmap <LocalLeader>jc <Plug>(Jieba_preview_cancel)
 
 Additionally, the `:JiebaPreviewCancel` command is provided to cancel word motion previews.
 
-> Preview for text objects is currently not supported.
+> Preview for text objects and arrow mappings is currently not supported.
 
 ### Non-intrusive Design
 
-By default, no keys are mapped; users can freely configure via `<Plug>(Jieba_*)` mappings and commands. If you wish to quickly enable default behavior (excluding cursor movement preview), add the following to `~/.vimrc`:
+By default, no keys are mapped; users can freely configure via `<Plug>(Jieba_*)` mappings and commands. If you wish to quickly enable default behavior (excluding cursor movement preview and experimental features), add the following to `~/.vimrc`:
 
 ```vim
 let g:jieba_vim_keymap = 1
