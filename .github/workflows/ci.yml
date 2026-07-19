@@ -552,7 +552,7 @@ jobs:
         shell: bash
         run: |
           cd rust_backend/jieba_vim_rs_core
-          cargo test -r --test golden_master -- unit-*.jsonl
+          cargo test -r --test golden_master -- -q unit-*.jsonl
 
   coverage:
     name: Test coverage

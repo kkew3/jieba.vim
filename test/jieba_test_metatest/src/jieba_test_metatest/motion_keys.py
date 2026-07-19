@@ -13,6 +13,25 @@
 # the License.
 
 
-WORD_MOTION_KEYS = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
+WORD_MOTION_KEYS = [
+    "w",
+    "W",
+    "e",
+    "E",
+    "b",
+    "B",
+    "ge",
+    "gE",
+    "\\<C-Left>",
+    "\\<C-Right>",
+    "\\<S-Left>",
+    "\\<S-Right>",
+]
 WORD_TEXT_OBJECTS = ["iw", "iW", "aw", "aW"]
-WORD_MOTION_INSERT_KEYS = ["\\<C-w>"]
+WORD_MOTION_INSERT_KEYS = [
+    "\\<C-w>",
+    "\\<C-Left>",
+    "\\<C-Right>",
+    "\\<S-Left>",
+    "\\<S-Right>",
+]

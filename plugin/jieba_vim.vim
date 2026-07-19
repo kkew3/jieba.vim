@@ -239,7 +239,7 @@ function! JiebaModelOmap(...)
     endif
 endfunction
 
-function! s:JiebaModelImapCtrlW(...)
+function! JiebaModelImap(...)
     if !s:loaded_jieba_vim_cdylib
         throw "cdylib unloaded; run jieba_vim#install() first"
     endif
@@ -248,16 +248,10 @@ function! s:JiebaModelImapCtrlW(...)
     endif
 
     if has("nvim")
-        return luaeval("jieba_vim:imap_ctrl_w(jieba_vim.buffer, unpack(_A))", a:000)
+        return luaeval("jieba_vim:imap(jieba_vim.buffer, unpack(_A))", a:000)
     else
         return py3eval(
-            \ "jieba_vim.navigation.imap_ctrl_w(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
-
-function! JiebaModelImap(motion, ...)
-    if a:motion ==# "\<C-w>"
-        return call(function("<SID>JiebaModelImapCtrlW"), a:000)
+            \ "jieba_vim.navigation.imap(vim.current.buffer, *vim.eval('a:000'))")
     endif
 endfunction
 
@@ -487,21 +481,63 @@ function! s:JiebaImapCtrlWExpr(model_funcname)
     endif
 endfunction
 
+function! s:JiebaImapArrowExpr(motion, model_funcname)
+    let l:curpos = getcurpos()
+    if a:model_funcname !=# ""
+        let l:result_dict = function(a:model_funcname)(a:motion, l:curpos)
+    else
+        let l:result_dict = JiebaModelImap(a:motion, l:curpos)
+    endif
+    return "\<Cmd>call cursor("
+        \ . l:result_dict["cursor"][1] . ","
+        \ . l:result_dict["cursor"][2] . ")\<CR>"
+endfunction
+
 function! JiebaNmapExpr(motion, model_funcname)
-    return "\<Cmd>call JiebaNmap('" . a:motion . "', v:count1, '" . a:model_funcname . "')\<CR>"
+    if a:motion ==# "\<C-Left>"
+        let l:equiv_motion = "B"
+    elseif a:motion ==# "\<S-Left>"
+        let l:equiv_motion = "b"
+    elseif a:motion ==# "\<C-Right>"
+        let l:equiv_motion = "W"
+    elseif a:motion ==# "\<S-Right>"
+        let l:equiv_motion = "w"
+    else
+        let l:equiv_motion = a:motion
+    endif
+    return "\<Cmd>call JiebaNmap('" . l:equiv_motion . "', v:count1, '" . a:model_funcname . "')\<CR>"
 endfunction
 
 for ky in s:motions
     execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaNmapExpr("' . ky . '", "")'
 endfor
+nnoremap <expr> <silent> <Plug>(Jieba_C_Left) JiebaNmapExpr("\<C-Left>", "")
+nnoremap <expr> <silent> <Plug>(Jieba_S_Left) JiebaNmapExpr("\<S-Left>", "")
+nnoremap <expr> <silent> <Plug>(Jieba_C_Right) JiebaNmapExpr("\<C-Right>", "")
+nnoremap <expr> <silent> <Plug>(Jieba_S_Right) JiebaNmapExpr("\<S-Right>", "")
 
 function! JiebaXmapExpr(motion, model_funcname)
-    return "\<Cmd>call JiebaXmap('" . a:motion . "', v:count1, '" . a:model_funcname . "')\<CR>"
+    if a:motion ==# "\<C-Left>"
+        let l:equiv_motion = "B"
+    elseif a:motion ==# "\<S-Left>"
+        let l:equiv_motion = "b"
+    elseif a:motion ==# "\<C-Right>"
+        let l:equiv_motion = "W"
+    elseif a:motion ==# "\<S-Right>"
+        let l:equiv_motion = "w"
+    else
+        let l:equiv_motion = a:motion
+    endif
+    return "\<Cmd>call JiebaXmap('" . l:equiv_motion . "', v:count1, '" . a:model_funcname . "')\<CR>"
 endfunction
 
 for ky in s:motions + s:objects
     execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaXmapExpr("' . ky . '", "")'
 endfor
+xnoremap <expr> <silent> <Plug>(Jieba_C_Left) JiebaXmapExpr("\<C-Left>", "")
+xnoremap <expr> <silent> <Plug>(Jieba_S_Left) JiebaXmapExpr("\<S-Left>", "")
+xnoremap <expr> <silent> <Plug>(Jieba_C_Right) JiebaXmapExpr("\<C-Right>", "")
+xnoremap <expr> <silent> <Plug>(Jieba_S_Right) JiebaXmapExpr("\<S-Right>", "")
 
 function! JiebaOmapRepeat(motion, repeat, count, operator, register, model_funcname)
     let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, a:motion, getcurpos(), a:count, a:operator)
@@ -515,22 +551,50 @@ function! JiebaOmapRepeat(motion, repeat, count, operator, register, model_funcn
 endfunction
 
 function! JiebaOmapRepeatExpr(motion, repeat, model_funcname)
-    return "\<Esc>\<Cmd>call JiebaOmapRepeat('" . a:motion . "', " . a:repeat . ", " . v:count1 . ", '" . v:operator . "', '" . v:register . "', '" . a:model_funcname . "')\<CR>"
+    if a:motion ==# "\<C-Left>"
+        let l:equiv_motion = "B"
+    elseif a:motion ==# "\<S-Left>"
+        let l:equiv_motion = "b"
+    elseif a:motion ==# "\<C-Right>"
+        let l:equiv_motion = "W"
+    elseif a:motion ==# "\<S-Right>"
+        let l:equiv_motion = "w"
+    else
+        let l:equiv_motion = a:motion
+    endif
+    return "\<Esc>\<Cmd>call JiebaOmapRepeat('" . l:equiv_motion . "', " . a:repeat . ", " . v:count1 . ", '" . v:operator . "', '" . v:register . "', '" . a:model_funcname . "')\<CR>"
+endfunction
+
+function! JiebaOmapExpr(motion, model_funcname)
+    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
 endfunction
 
 for ky in s:motions + s:objects
     execute 'onoremap <expr> <silent> <Plug>(Jieba_internal_o_' . ky . ') JiebaOmapRepeatExpr("' . ky . '", 1, "")'
-    execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaOmapRepeatExpr("' . ky . '", 0, "")'
+    execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaOmapExpr("' . ky . '", "")'
 endfor
+onoremap <expr> <silent> <Plug>(Jieba_internal_o_C_Left) JiebaOmapRepeatExpr("\<C-Left>", 1, "")
+onoremap <expr> <silent> <Plug>(Jieba_internal_o_S_Left) JiebaOmapRepeatExpr("\<S-Left>", 1, "")
+onoremap <expr> <silent> <Plug>(Jieba_internal_o_C_Right) JiebaOmapRepeatExpr("\<C-Right>", 1, "")
+onoremap <expr> <silent> <Plug>(Jieba_internal_o_S_Right) JiebaOmapRepeatExpr("\<S-Right>", 1, "")
+onoremap <expr> <silent> <Plug>(Jieba_C_Left) JiebaOmapExpr("\<C-Left>", "")
+onoremap <expr> <silent> <Plug>(Jieba_S_Left) JiebaOmapExpr("\<S-Left>", "")
+onoremap <expr> <silent> <Plug>(Jieba_C_Right) JiebaOmapExpr("\<C-Right>", "")
+onoremap <expr> <silent> <Plug>(Jieba_S_Right) JiebaOmapExpr("\<S-Right>", "")
 
 function! JiebaImapExpr(motion, model_funcname)
     if a:motion ==# "\<C-w>"
         return s:JiebaImapCtrlWExpr(a:model_funcname)
+    else
+        return s:JiebaImapArrowExpr(a:motion, a:model_funcname)
     endif
-    throw "invalid motion"
 endfunction
 
 inoremap <expr> <silent> <Plug>(Jieba_C_w) JiebaImapExpr("\<C-w>", "")
+inoremap <expr> <silent> <Plug>(Jieba_C_Left) JiebaImapExpr("\<C-Left>", "")
+inoremap <expr> <silent> <Plug>(Jieba_S_Left) JiebaImapExpr("\<S-Left>", "")
+inoremap <expr> <silent> <Plug>(Jieba_C_Right) JiebaImapExpr("\<C-Right>", "")
+inoremap <expr> <silent> <Plug>(Jieba_S_Right) JiebaImapExpr("\<S-Right>", "")
 
 let s:modes = ["n", "x", "o"]
 if g:jieba_vim_keymap
@@ -538,6 +602,12 @@ if g:jieba_vim_keymap
         for md in s:modes
             execute md . "map " . ky . " <Plug>(Jieba_" . ky . ")"
         endfor
+    endfor
+    for md in s:modes
+        execute md . "map <C-Left> <Plug>(Jieba_C_Left)"
+        execute md . "map <S-Left> <Plug>(Jieba_S_Left)"
+        execute md . "map <C-Right> <Plug>(Jieba_C_Right)"
+        execute md . "map <S-Right> <Plug>(Jieba_S_Right)"
     endfor
     for ky in s:objects
         for md in s:modes

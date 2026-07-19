@@ -425,16 +425,15 @@ EOF
 endif
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelNmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
 
 " state_before setup
@@ -488,7 +487,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal! w
+execute "normal! w"
 execute "normal! \\<Esc>"
 
 let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -524,16 +523,15 @@ endif
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelNmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
 
 " state_before setup
@@ -587,7 +585,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal w
+execute "normal w"
 execute "normal! \\<Esc>"
 
 let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -660,16 +658,15 @@ EOF
 endif
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelXmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
 
 " state_before setup
@@ -723,7 +720,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal! gv1e
+execute "normal! gv1e"
 execute "normal! \\<Esc>"
 
 let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -764,16 +761,15 @@ endif
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelXmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
 
 " state_before setup
@@ -827,7 +823,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal gv1e
+execute "normal gv1e"
 execute "normal! \\<Esc>"
 
 let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -945,16 +941,15 @@ EOF
 endif
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelOmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
 
 " state_before setup
@@ -980,7 +975,7 @@ call setpos("'z", [0, 0, 0, 0])
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal! "ad2W
+execute "normal! \\"ad2W"
 execute "normal! \\<Esc>"
 
 let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -1020,16 +1015,15 @@ endif
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelOmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
 
 " state_before setup
@@ -1055,7 +1049,7 @@ call setpos("'z", [0, 0, 0, 0])
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal "ad2W
+execute "normal \\"ad2W"
 execute "normal! \\<Esc>"
 
 let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)

@@ -32,7 +32,7 @@
 #E TextChangedI=
 #E TextYankPost=
 
-{%- for key in ['w', 'e'] %}
+{%- for key in ['w', 'e', '\\<C-Right>', '\\<S-Right>'] %}
   {%- for count in [0, 1, 2, 3, 4, 10293949403] %}
     {%- for buffer in forward_buffers %}
 
@@ -71,7 +71,7 @@ S1 visualmode()= '[= ']=
   {%- endfor %}
 {%- endfor %}
 
-{%- for key in ['b', 'ge'] %}
+{%- for key in ['b', 'ge', '\\<C-Left>', '\\<S-Left>'] %}
   {%- for count in [0, 1, 2, 3, 4, 10293949403] %}
     {%- for buffer in backward_buffers %}
 
@@ -152,6 +152,18 @@ S0 backspace=indent,eol,start
 K {{ key }}
 B0 {{ buffer }}
 S1 "a= '[= ']= '<= '>=
+  {%- endfor %}
+{%- endfor %}
+
+{%- for key in ['\\<C-Left>', '\\<C-Right>', '\\<S-Left>', '\\<S-Right>'] %}
+  {%- for buffer in forward_buffers + backward_buffers + insert_eol_buffers + insert_forward_eol_buffers %}
+
+// It's a known bug that arrow imaps will incorrectly set `[ and `] marks
+// (https://github.com/kkew3/jieba.vim/pull/134), and so tests against these
+// marks are not included here.
+M i
+K {{ key }}
+B0 {{ buffer }}
   {%- endfor %}
 {%- endfor %}
 

@@ -22,7 +22,7 @@
 #E InsertLeave=
 #E TextYankPost=
 
-{%- for key in ['w', 'e', 'b', 'ge'] %}
+{%- for key in ['w', 'e', 'b', 'ge', '\\<C-Left>', '\\<C-Right>', '\\<S-Left>', '\\<S-Right>'] %}
   {%- for count in [0, 1, 2, 3, 4, 10293949403] %}
     {%- for buffer in nvim_basics.buffers %}
 
@@ -91,3 +91,17 @@ B0 {{ buffer }}
 S1 "a= '[= ']= '<= '>=
   {%- endfor %}
 {%- endfor %}
+
+{%- for key in ['\\<C-Left>', '\\<C-Right>', '\\<S-Left>', '\\<S-Right>'] %}
+  {%- for buffer in nvim_basics.buffers %}
+
+// It's a known bug that arrow imaps will incorrectly set `[ and `] marks
+// (https://github.com/kkew3/jieba.vim/pull/134), and so tests against these
+// marks are not included here.
+M i
+K {{ key }}
+B0 {{ buffer }}
+  {%- endfor %}
+{%- endfor %}
+
+// vim: ft=jieba_test_case

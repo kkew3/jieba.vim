@@ -19,7 +19,7 @@ word_motion = None
 
 def as_bytes(s):
     if isinstance(s, str):
-        return s.encode("utf-8")
+        return s.encode("utf-8", errors="surrogateescape")
     return s
 
 
@@ -75,9 +75,10 @@ def omap(buffer, motion, cursor, count, operator):
     return word_motion.omap(buffer, motion, cursor, count, operator)
 
 
-def imap_ctrl_w(buffer, cursor):
+def imap(buffer, motion, cursor):
+    motion = as_bytes(motion)
     cursor = ints(cursor)
-    return word_motion.imap_ctrl_w(buffer, cursor)
+    return word_motion.imap(buffer, motion, cursor)
 
 
 def preview_nmap(buffer, motion, cursor, preview_limit):

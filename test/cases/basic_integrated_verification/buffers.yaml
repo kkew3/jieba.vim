@@ -527,6 +527,14 @@ insert_eol_buffers:
   - '␊␊······|␊␊'
   - '␊␊······␊|␊'
 
+insert_forward_eol_buffers:
+  - '|a␊'
+  - 'ab|cd␊'
+  - '|····␊'
+  - 'abcde···|fgh␊'
+  - '···abcde·|··␊'
+  - '␊␊····|··␊'
+
 nvim_basics:
   buffers:
     - 'abcd·efghi···j|kl·m···nopqr··␊'

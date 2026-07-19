@@ -215,18 +215,25 @@ class IntegratedBlock:
         outfile.write("\n")
 
         # Define jieba mappings.
+        map_names = {
+            "\\<C-w>": "C_w",
+            "\\<C-Left>": "C_Left",
+            "\\<C-Right": "C_Right",
+            "\\<S-Left>": "S_Left",
+            "\\<S-Right>": "S_Right",
+        }
         for k in WORD_MOTION_KEYS:
+            k_unescaped = k[1:] if k.startswith("\\<") else k
             outfile.write(f"""\
-nmap {k} <Plug>(Jieba_{k})
-xmap {k} <Plug>(Jieba_{k})
-omap {k} <Plug>(Jieba_{k})
+nmap {k_unescaped} <Plug>(Jieba_{map_names.get(k, k)})
+xmap {k_unescaped} <Plug>(Jieba_{map_names.get(k, k)})
+omap {k_unescaped} <Plug>(Jieba_{map_names.get(k, k)})
 """)
         for k in WORD_TEXT_OBJECTS:
             outfile.write(f"""\
 xmap {k} <Plug>(Jieba_{k})
 omap {k} <Plug>(Jieba_{k})
 """)
-        map_names = {"\\<C-w>": "C_w"}
         for k in WORD_MOTION_INSERT_KEYS:
             k_unescaped = k[1:] if k.startswith("\\<") else k
             outfile.write(

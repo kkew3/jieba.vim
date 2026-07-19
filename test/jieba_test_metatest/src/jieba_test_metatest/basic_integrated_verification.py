@@ -312,8 +312,10 @@ EOF
         }[self.mode]
         outfile.write(f"""\
 " define oracle model
+let s:map_motions = {{"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("{func}"), a:000)
     return g:model_output
 endfunction
@@ -334,9 +336,6 @@ endfunction
         )
         outfile.write(f"""\
 " define mapping
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
 {self.mode}noremap <expr> <silent> {motion_key_unescaped} {expr_func}("{self.motion_key}", "JiebaOracleModel")
 
 """)
@@ -467,13 +466,25 @@ endfunction
         # Cursor movement.
         outfile.write('" cursor movement\n')
         if self.mode == "n":
-            outfile.write(f"normal! {self.count}{self.motion_key}\n")
+            outfile.write(
+                "execute {cmd_str}\n".format(
+                    cmd_str=vim.lit(f"normal! {self.count}{self.motion_key}")
+                )
+            )
         elif self.mode == "x":
-            outfile.write(f"normal! gv{self.count}{self.motion_key}\n")
+            outfile.write(
+                "execute {cmd_str}\n".format(
+                    cmd_str=vim.lit(f"normal! gv{self.count}{self.motion_key}")
+                )
+            )
         elif self.mode == "o":
             reg = f'"{self.register}' if self.register else ""
             outfile.write(
-                f"normal! {reg}{self.operator}{self.count}{self.motion_key}\n"
+                "execute {cmd_str}\n".format(
+                    cmd_str=vim.lit(
+                        f"normal! {reg}{self.operator}{self.count}{self.motion_key}"
+                    )
+                )
             )
         else:
             outfile.write(f"""\
@@ -569,13 +580,25 @@ silent execute "source " . expand("%:p:h") . "/Session.vim"
         # Cursor movement.
         outfile.write('" cursor movement\n')
         if self.mode == "n":
-            outfile.write(f"normal {self.count}{self.motion_key}\n")
+            outfile.write(
+                "execute {cmd_str}\n".format(
+                    cmd_str=vim.lit(f"normal {self.count}{self.motion_key}")
+                )
+            )
         elif self.mode == "x":
-            outfile.write(f"normal gv{self.count}{self.motion_key}\n")
+            outfile.write(
+                "execute {cmd_str}\n".format(
+                    cmd_str=vim.lit(f"normal gv{self.count}{self.motion_key}")
+                )
+            )
         elif self.mode == "o":
             reg = f'"{self.register}' if self.register else ""
             outfile.write(
-                f"normal {reg}{self.operator}{self.count}{self.motion_key}\n"
+                "execute {cmd_str}\n".format(
+                    cmd_str=vim.lit(
+                        f"normal {reg}{self.operator}{self.count}{self.motion_key}"
+                    )
+                )
             )
         else:
             outfile.write(f"""\

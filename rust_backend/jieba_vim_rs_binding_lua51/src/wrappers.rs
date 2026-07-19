@@ -19,7 +19,7 @@ use std::sync::OnceLock;
 use jieba_rs::Jieba;
 use jieba_vim_rs_core::BufferLike;
 use jieba_vim_rs_core::motion::{
-    ImapCtrlWOutput, NmapOutput, OmapOutput, WordMotion, XmapOutput,
+    ImapOutput, NmapOutput, OmapOutput, WordMotion, XmapOutput,
 };
 use jieba_vim_rs_core::token::{JiebaPlaceholder, Tokenizer};
 use mlua::{IntoLua, Lua, ObjectLike, Table, UserData, UserDataMethods, Value};
@@ -120,9 +120,9 @@ impl IntoLua for OmapOutputWrapper {
     }
 }
 
-pub struct ImapCtrlWOutputWrapper(ImapCtrlWOutput);
+pub struct ImapOutputWrapper(ImapOutput);
 
-impl IntoLua for ImapCtrlWOutputWrapper {
+impl IntoLua for ImapOutputWrapper {
     fn into_lua(self, lua: &Lua) -> mlua::prelude::LuaResult<Value> {
         let table = lua.create_table()?;
         table.set("cursor", self.0.cursor)?;
@@ -272,11 +272,11 @@ impl WordMotionWrapper {
         )?))
     }
 
-    fn imap_ctrl_w(
+    fn imap(
         _lua: &Lua,
         this: &mut Self,
-        (buffer, cursor): (Table, Vec<usize>),
-    ) -> mlua::Result<ImapCtrlWOutputWrapper> {
+        (buffer, motion, cursor): (Table, mlua::String, Vec<usize>),
+    ) -> mlua::Result<ImapOutputWrapper> {
         if cursor.len() != 5 {
             return Err(mlua::Error::runtime(
                 "cursor must contain exactly 5 elements",
@@ -285,9 +285,11 @@ impl WordMotionWrapper {
         let buffer = TableBufferWrapper(buffer);
         let mut cursor_arr = [0usize; 5];
         cursor_arr.copy_from_slice(&cursor);
-        Ok(ImapCtrlWOutputWrapper(
-            this.wm.imap_ctrl_w(&buffer, cursor_arr)?,
-        ))
+        Ok(ImapOutputWrapper(this.wm.imap(
+            &buffer,
+            &motion.as_bytes(),
+            cursor_arr,
+        )?))
     }
 
     fn preview_nmap(
@@ -337,7 +339,7 @@ impl UserData for WordMotionWrapper {
         methods.add_method_mut("nmap", Self::nmap);
         methods.add_method_mut("xmap", Self::xmap);
         methods.add_method_mut("omap", Self::omap);
-        methods.add_method_mut("imap_ctrl_w", Self::imap_ctrl_w);
+        methods.add_method_mut("imap", Self::imap);
         methods.add_method_mut("preview_nmap", Self::preview_nmap);
     }
 }
@@ -478,11 +480,11 @@ impl LazyWordMotionWrapper {
         )?))
     }
 
-    fn imap_ctrl_w(
+    fn imap(
         _lua: &Lua,
         this: &mut Self,
-        (buffer, cursor): (Table, Vec<usize>),
-    ) -> mlua::Result<ImapCtrlWOutputWrapper> {
+        (buffer, motion, cursor): (Table, mlua::String, Vec<usize>),
+    ) -> mlua::Result<ImapOutputWrapper> {
         if cursor.len() != 5 {
             return Err(mlua::Error::runtime(
                 "cursor must contain exactly 5 elements",
@@ -491,9 +493,11 @@ impl LazyWordMotionWrapper {
         let buffer = TableBufferWrapper(buffer);
         let mut cursor_arr = [0usize; 5];
         cursor_arr.copy_from_slice(&cursor);
-        Ok(ImapCtrlWOutputWrapper(
-            this.wm.imap_ctrl_w(&buffer, cursor_arr)?,
-        ))
+        Ok(ImapOutputWrapper(this.wm.imap(
+            &buffer,
+            &motion.as_bytes(),
+            cursor_arr,
+        )?))
     }
 
     fn preview_nmap(
@@ -543,7 +547,7 @@ impl UserData for LazyWordMotionWrapper {
         methods.add_method_mut("nmap", Self::nmap);
         methods.add_method_mut("xmap", Self::xmap);
         methods.add_method_mut("omap", Self::omap);
-        methods.add_method_mut("imap_ctrl_w", Self::imap_ctrl_w);
+        methods.add_method_mut("imap", Self::imap);
         methods.add_method_mut("preview_nmap", Self::preview_nmap);
     }
 }
