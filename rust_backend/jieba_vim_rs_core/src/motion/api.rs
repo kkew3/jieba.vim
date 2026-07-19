@@ -325,9 +325,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
     ) -> Result<ffi::ImapOutput, B::Error> {
         let output = match motion {
             // \<C-W>
-            b"\x17" | b"\\u0017" => {
-                self.imap_ctrl_w_helper(buffer, cursor.into())
-            }
+            b"\x17" | b"\\u0017" => self.imap_ctrl_w(buffer, cursor.into()),
             // \<C-Left>. Also accepting double-backslash version due to json-
             // decoding issue in Vim. Same below.
             b"\x80\xfdU" | b"\\u0080\\u00fdU" | b"\\\\u0080\\\\u00fdU" => {

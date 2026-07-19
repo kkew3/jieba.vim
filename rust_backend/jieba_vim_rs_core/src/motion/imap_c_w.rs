@@ -23,7 +23,7 @@ use super::primitives::text_object::PreviousWord;
 
 impl<C: JiebaPlaceholder> WordMotion<C> {
     /// Delete the word before the cursor.
-    pub(crate) fn imap_ctrl_w_helper<B: BufferLike + ?Sized>(
+    pub fn imap_ctrl_w<B: BufferLike + ?Sized>(
         &self,
         buffer: &B,
         mut cursor: Position,
