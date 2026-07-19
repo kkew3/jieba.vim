@@ -23,7 +23,11 @@ impl KeywordCutter {
 }
 
 impl JiebaPlaceholder for KeywordCutter {
-    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
-        self.0.cut(sentence)
+    fn cut_hmm_into_char_counts(&self, sentence: &str) -> Vec<usize> {
+        self.0
+            .cut(sentence)
+            .into_iter()
+            .map(|part| part.chars().count())
+            .collect()
     }
 }

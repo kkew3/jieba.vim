@@ -68,8 +68,8 @@ impl<C> Tokenizer<C> {
 }
 
 impl<C: JiebaPlaceholder> JiebaPlaceholder for Tokenizer<C> {
-    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
-        self.jieba.cut_hmm(sentence)
+    fn cut_hmm_into_char_counts(&self, sentence: &str) -> Vec<usize> {
+        self.jieba.cut_hmm_into_char_counts(sentence)
     }
 }
 
@@ -697,10 +697,7 @@ fn cut_hanzi_group_and_count_chars<C: JiebaPlaceholder>(
         .collect();
     let cut_char_counts0 = chain_into_vec(
         [0],
-        jieba
-            .cut_hmm(&group_string_no_marks)
-            .into_iter()
-            .map(|part| part.chars().count()),
+        jieba.cut_hmm_into_char_counts(&group_string_no_marks),
     );
 
     append_mark_to_cuts(&marks, &cut_char_counts0)

@@ -18,8 +18,8 @@
 /// Jieba-like types, defined so that this crate won't need to actually depend
 /// on `jieba-rs`.
 pub trait JiebaPlaceholder {
-    /// Cut sentence with `hmm` enabled.
-    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str>;
+    /// Cut sentence into char counts with `hmm` enabled.
+    fn cut_hmm_into_char_counts(&self, sentence: &str) -> Vec<usize>;
 }
 
 #[cfg(test)]
@@ -27,7 +27,10 @@ pub use jieba_vim_rs_test::keyword_cutter::KeywordCutter;
 
 #[cfg(test)]
 impl JiebaPlaceholder for KeywordCutter {
-    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
+    fn cut_hmm_into_char_counts(&self, sentence: &str) -> Vec<usize> {
         self.cut(sentence)
+            .into_iter()
+            .map(|part| part.chars().count())
+            .collect()
     }
 }

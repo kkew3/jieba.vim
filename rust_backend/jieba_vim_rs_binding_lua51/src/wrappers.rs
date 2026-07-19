@@ -43,8 +43,12 @@ impl BufferLike for TableBufferWrapper {
 struct JiebaWrapper(Jieba);
 
 impl JiebaPlaceholder for JiebaWrapper {
-    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
-        self.0.cut(sentence, true)
+    fn cut_hmm_into_char_counts(&self, sentence: &str) -> Vec<usize> {
+        self.0
+            .cut(sentence, true)
+            .into_iter()
+            .map(|token| token.end - token.start)
+            .collect()
     }
 }
 
@@ -53,27 +57,34 @@ struct LazyJiebaWrapper {
     jieba: OnceLock<Jieba>,
 }
 
+impl LazyJiebaWrapper {
+    fn init_jieba(&self) -> Jieba {
+        match &self.path {
+            None => Jieba::new(),
+            Some(path) => {
+                let mut reader =
+                    BufReader::new(File::open(path).unwrap_or_else(|err| {
+                        panic!("failed to open file `{}` due to: {}", path, err)
+                    }));
+                Jieba::with_dict(&mut reader).unwrap_or_else(|err| {
+                    panic!(
+                        "failed to initialize jieba from file `{}` due to: {}",
+                        path, err
+                    )
+                })
+            }
+        }
+    }
+}
+
 impl JiebaPlaceholder for LazyJiebaWrapper {
-    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
+    fn cut_hmm_into_char_counts(&self, sentence: &str) -> Vec<usize> {
         self.jieba
-            .get_or_init(|| match &self.path {
-                None => Jieba::new(),
-                Some(path) => {
-                    let mut reader = BufReader::new(
-                        File::open(path).unwrap_or_else(|err| {
-                            panic!(
-                                "failed to open file `{}` due to: {}",
-                                path, err
-                            )
-                        }),
-                    );
-                    Jieba::with_dict(&mut reader)
-                        .unwrap_or_else(|err| {
-                            panic!("failed to initialize jieba from file `{}` due to: {}", path, err)
-                        })
-                }
-            })
+            .get_or_init(|| self.init_jieba())
             .cut(sentence, true)
+            .into_iter()
+            .map(|token| token.end - token.start)
+            .collect()
     }
 }
 
