@@ -8,6 +8,6 @@ name = "jieba_vim_jieba_vim_rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-mlua = { version = "0.11.6", features = ["lua51", "module"] }
+mlua = { version = "0.12.0", features = ["lua51", "module"] }
 jieba-rs = { version = "0.10.2" }
 jieba_vim_rs_core = { path = "../jieba_vim_rs_core" }

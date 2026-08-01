@@ -15,4 +15,4 @@ jieba-rs = { version = "0.10.2" }
 jieba_vim_rs_core = { path = "../jieba_vim_rs_core" }
 
 [build-dependencies]
-pyo3-build-config = "0.28.0"
+pyo3-build-config = "0.29.0"
