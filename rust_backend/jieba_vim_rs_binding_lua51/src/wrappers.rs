@@ -286,7 +286,7 @@ impl WordMotionWrapper {
     fn imap(
         _lua: &Lua,
         this: &mut Self,
-        (buffer, motion, cursor): (Table, mlua::String, Vec<usize>),
+        (buffer, motion, cursor): (Table, mlua::LuaString, Vec<usize>),
     ) -> mlua::Result<ImapOutputWrapper> {
         if cursor.len() != 5 {
             return Err(mlua::Error::runtime(
@@ -494,7 +494,7 @@ impl LazyWordMotionWrapper {
     fn imap(
         _lua: &Lua,
         this: &mut Self,
-        (buffer, motion, cursor): (Table, mlua::String, Vec<usize>),
+        (buffer, motion, cursor): (Table, mlua::LuaString, Vec<usize>),
     ) -> mlua::Result<ImapOutputWrapper> {
         if cursor.len() != 5 {
             return Err(mlua::Error::runtime(
