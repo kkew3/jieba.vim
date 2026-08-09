@@ -1,5 +1,61 @@
 # Changelog
 
+## v2.2.0 - 2026-08-09
+
+Features:
+
+- Implement [`i_CTRL-W`][i_CTRL-W] ([#97], [#130]). Support of option [`'backspace'`][backspace] is leaved as future works.
+- (*experimental feature*) Implement arrow mappings ([#98], [#134]).
+
+Bug fixes:
+
+- Fix build script on minority platforms ([#119], [#122]).
+- Fix spurious error message when cdylib is not loaded successfully ([#127]).
+- Fix spurious error message when user dictionary is missing ([#132]).
+
+Documentation:
+
+- Add demo gif ([#115]).
+- Add benchmark ([#116]).
+- Mention [`tpope/vim-repeat`][vim-repeat] in Installation section of README ([#118], [#133]).
+- Add manually typeset vim help ([#136]).
+
+Dev:
+
+- Reimplement jieba mappings with [`<Cmd>`-mapping][cmd-mapping] to improve efficiency and compatibility with builtin mappings ([#111]).
+- Add smoke test for the post-update hook `jieba_vim#install()` ([#123]).
+- Expose `jieba_vim#install()` error outputs to users via `g:jieba_vim_build_error` who are likely in need in case build failed ([#128]).
+- Improve `<expr>`-mappings ([#129]).
+- Bump core dependency [`jieba-rs`][jieba-rs] to 0.10 ([#135]).
+
+Thanks:
+
+- [@BaksiLi] ([#132], [#133])
+
+[#115]: https://github.com/kkew3/jieba.vim/pull/115
+[#116]: https://github.com/kkew3/jieba.vim/pull/116
+[cmd-mapping]: https://vimhelp.org/map.txt.html#%3CCmd%3E
+[#111]: https://github.com/kkew3/jieba.vim/pull/111
+[#123]: https://github.com/kkew3/jieba.vim/pull/123
+[#119]: https://github.com/kkew3/jieba.vim/issues/119
+[#122]: https://github.com/kkew3/jieba.vim/pull/122
+[#127]: https://github.com/kkew3/jieba.vim/pull/127
+[#128]: https://github.com/kkew3/jieba.vim/pull/128
+[#129]: https://github.com/kkew3/jieba.vim/pull/129
+[i_CTRL-W]: https://vimhelp.org/insert.txt.html#i_CTRL-W
+[#97]: https://github.com/kkew3/jieba.vim/issues/97
+[#130]: https://github.com/kkew3/jieba.vim/pull/130
+[backspace]: https://vimhelp.org/options.txt.html#%27backspace%27
+[#132]: https://github.com/kkew3/jieba.vim/pull/132
+[#118]: https://github.com/kkew3/jieba.vim/issues/118
+[#133]: https://github.com/kkew3/jieba.vim/pull/133
+[#98]: https://github.com/kkew3/jieba.vim/issues/98
+[#134]: https://github.com/kkew3/jieba.vim/pull/134
+[#135]: https://github.com/kkew3/jieba.vim/pull/135
+[#136]: https://github.com/kkew3/jieba.vim/pull/136
+[@BaksiLi]: https://github.com/BaksiLi
+
+
 ## v2.1.1 - 2026-06-03
 
 Bug fixes:
