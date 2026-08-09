@@ -425,11 +425,16 @@ EOF
 endif
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelNmap"), a:000)
     return g:model_output
 endfunction
+
+" define mapping
+nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
 
 " state_before setup
 let &selection = "exclusive"
@@ -451,6 +456,9 @@ augroup jieba_test_case_autocmd_events_monitoring
     au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
     au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
 augroup END
+
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
 
 " state_before checking
 if visualmode() !=# "v"
@@ -479,7 +487,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal! w
+execute "normal! w"
 execute "normal! \\<Esc>"
 
 let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -515,11 +523,16 @@ endif
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelNmap"), a:000)
     return g:model_output
 endfunction
+
+" define mapping
+nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
 
 " state_before setup
 let &selection = "exclusive"
@@ -541,6 +554,9 @@ augroup jieba_test_case_autocmd_events_monitoring
     au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
     au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
 augroup END
+
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
 
 " state_before checking
 if visualmode() !=# "v"
@@ -569,7 +585,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-call JiebaNmap("w", 0, "JiebaOracleModel")
+execute "normal w"
 execute "normal! \\<Esc>"
 
 let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -642,11 +658,16 @@ EOF
 endif
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelXmap"), a:000)
     return g:model_output
 endfunction
+
+" define mapping
+xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
 
 " state_before setup
 let &virtualedit = "onemore"
@@ -668,6 +689,9 @@ augroup jieba_test_case_autocmd_events_monitoring
     au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
     au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
 augroup END
+
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
 
 " state_before checking
 if &virtualedit !=# "onemore"
@@ -696,7 +720,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal! gv1e
+execute "normal! gv1e"
 execute "normal! \\<Esc>"
 
 let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -737,11 +761,16 @@ endif
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelXmap"), a:000)
     return g:model_output
 endfunction
+
+" define mapping
+xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
 
 " state_before setup
 let &virtualedit = "onemore"
@@ -763,6 +792,9 @@ augroup jieba_test_case_autocmd_events_monitoring
     au CursorMoved * call IncrementAutocmdEventCount("CursorMoved")
     au CmdlineChanged * call IncrementAutocmdEventCount("CmdlineChanged")
 augroup END
+
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
 
 " state_before checking
 if &virtualedit !=# "onemore"
@@ -791,7 +823,7 @@ endif
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-call JiebaXmap("e", 1, "JiebaOracleModel")
+execute "normal gv1e"
 execute "normal! \\<Esc>"
 
 let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -909,11 +941,16 @@ EOF
 endif
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelOmap"), a:000)
     return g:model_output
 endfunction
+
+" define mapping
+onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
 
 " state_before setup
 
@@ -930,12 +967,15 @@ augroup jieba_test_case_autocmd_events_monitoring
     autocmd!
 augroup END
 
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
+
 " state_before checking
 
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-normal! "ad2W
+execute "normal! \\"ad2W"
 execute "normal! \\<Esc>"
 
 let s:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)
@@ -975,11 +1015,16 @@ endif
 silent execute "source " . expand("%:p:h") . "/Session.vim"
 
 " define oracle model
+let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0080\\\\u00fdV", "\\<S-Left>": "\\\\u0080#4", "\\<S-Right>": "\\\\u0080%i"}
 function! JiebaOracleModel(...)
-    let g:model_input = a:000
+    let g:model_input = copy(a:000)
+    let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
     let g:model_output = call(function("JiebaModelOmap"), a:000)
     return g:model_output
 endfunction
+
+" define mapping
+onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
 
 " state_before setup
 
@@ -996,12 +1041,15 @@ augroup jieba_test_case_autocmd_events_monitoring
     autocmd!
 augroup END
 
+" clear reserved marks
+call setpos("'z", [0, 0, 0, 0])
+
 " state_before checking
 
 
 let g:jieba_test_case_events_count = {}
 " cursor movement
-call JiebaOmap("W", 0, 2, "d", "a", "JiebaOracleModel")
+execute "normal \\"ad2W"
 execute "normal! \\<Esc>"
 
 let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)

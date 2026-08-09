@@ -9,7 +9,7 @@ on:
       - reopened
   push:
     branches:
-      - rust
+      - main
 
 jobs:
   build-jieba-vim-cdylib:
@@ -95,6 +95,12 @@ jobs:
           - distr: vim
             version: v9.1.0000
             glue-lang: py311
+          - distr: nvim
+            version: v0.11.5
+            glue-lang: lua51
+          - distr: nvim
+            version: v0.12.2
+            glue-lang: lua51
     env:
       # uv variables
       UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest
@@ -122,27 +128,18 @@ jobs:
       - name: Expand basic integrated cases template
         shell: bash
         run: make -C test/cases/basic_integrated_verification clean all
-      - name: Get jieba.vim cdylib for +python3
-        if: matrix.vim.glue-lang == 'py311' || matrix.vim.glue-lang == 'py39'
+      - name: Get jieba.vim cdylib for vim(+python3)
+        if: matrix.vim.distr == 'vim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-python
           path: pythonx/jieba_vim
-      - name: Get jieba.vim cdylib for nvim/+lua
-        if: matrix.vim.glue-lang == 'lua51'
+      - name: Get jieba.vim cdylib for nvim
+        if: matrix.vim.distr == 'nvim'
         uses: actions/download-artifact@v7
         with:
           name: jieba-vim-cdylib-lua
           path: lua/jieba_vim
-      - name: Recover file modes due to download-artifact's limitation
-        shell: bash
-        run: |
-          if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
-          fi
-          if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 lua/jieba_vim/jieba_vim_rs.so
-          fi
       - name: Vim sanity check
         shell: bash
         run: |
@@ -198,7 +195,7 @@ jobs:
           set -e
           echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
           if [ $exit_code != 0 ]; then
-            false
+            exit $exit_code
           fi
       - name: Check basic integrated case verification exit code
         shell: bash
@@ -206,7 +203,7 @@ jobs:
           code="${{ steps.run-bi-case-verification.outputs.exit_code }}"
           if [ "$code" != 0 ] && [ "$code" != 1 ] && [ "$code" != 125 ]; then
             echo "bi case verification may have panicked" >&2
-            false
+            exit $code
           fi
       - name: Indicate whether basic integrated case verification has failed
         id: indicate-state
@@ -214,7 +211,7 @@ jobs:
         run: |
           TOFILE=bi-success-${{ steps.safe-version.outputs.vim_dist_name }}.txt
           echo "tofile=$TOFILE" >> "$GITHUB_OUTPUT"
-          cat <<EOF > "$TOFILE"
+          cat <<'EOF' > "$TOFILE"
           ${{ steps.run-bi-case-verification.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.vim.glue-lang }}
           EOF
       - uses: actions/upload-artifact@v6
@@ -290,9 +287,8 @@ jobs:
       Integrated test for
       ${{ matrix.vim.distr }}@${{ matrix.vim.version }}
       +${{ matrix.vim.glue-lang }}
-    runs-on: ubuntu-24.04
-    needs:
-      - build-jieba-vim-cdylib
+      on ${{ matrix.vim.os }}
+    runs-on: ${{ matrix.vim.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -300,15 +296,51 @@ jobs:
           - distr: vim
             version: v8.2.3455
             glue-lang: py39
+            os: ubuntu-24.04
           - distr: vim
             version: v9.1.0000
             glue-lang: py311
+            os: ubuntu-24.04
+          - distr: vim
+            version: v9.2.0321
+            glue-lang: py311
+            os: ubuntu-24.04
           - distr: nvim
             version: v0.10.2
             glue-lang: lua51
+            os: ubuntu-24.04
+          - distr: nvim
+            version: v0.10.2
+            glue-lang: lua51
+            os: windows-latest
+          - distr: nvim
+            version: v0.10.2
+            glue-lang: lua51
+            os: macos-14
           - distr: nvim
             version: v0.11.5
             glue-lang: lua51
+            os: ubuntu-24.04
+          - distr: nvim
+            version: v0.11.5
+            glue-lang: lua51
+            os: windows-latest
+          - distr: nvim
+            version: v0.11.5
+            glue-lang: lua51
+            os: macos-14
+          - distr: nvim
+            version: v0.12.2
+            glue-lang: lua51
+            os: ubuntu-24.04
+          - distr: nvim
+            version: v0.12.2
+            glue-lang: lua51
+            os: windows-latest
+          - distr: nvim
+            version: v0.12.2
+            glue-lang: lua51
+            os: macos-14
     env:
       # uv variables
       UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest
@@ -318,6 +350,9 @@ jobs:
       GLUE_LANG: ${{ matrix.vim.glue-lang }}
       JIEBA_VIM_DIR: ${{ github.workspace }}
       VIM_REPEAT_DIR: ${{ github.workspace }}/.vim_bundle/vim-repeat
+      # jieba.vim build variables
+      JIEBA_VIM_BUILD_FROM_SOURCE: '1'
+      JIEBA_VIM_INSTALL_NVIM: ${{ matrix.vim.distr == 'nvim' && '1' || '' }}
     steps:
       # Prepare env.
       - uses: actions/checkout@v6
@@ -334,37 +369,41 @@ jobs:
       - name: Run uv-sync
         shell: bash
         run: uv sync
-      - name: Get jieba.vim cdylib for +python3
-        if: matrix.vim.glue-lang == 'py311' || matrix.vim.glue-lang == 'py39'
-        uses: actions/download-artifact@v7
-        with:
-          name: jieba-vim-cdylib-python
-          path: pythonx/jieba_vim
-      - name: Get jieba.vim cdylib for nvim/+lua
-        if: matrix.vim.glue-lang == 'lua51'
-        uses: actions/download-artifact@v7
-        with:
-          name: jieba-vim-cdylib-lua
-          path: lua/jieba_vim
-      - name: Recover file modes due to download-artifact's limitation
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build jieba.vim cdylib
         shell: bash
         run: |
-          if [ -f pythonx/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 pythonx/jieba_vim/jieba_vim_rs.so
-          fi
-          if [ -f lua/jieba_vim/jieba_vim_rs.so ]; then
-            chmod 755 lua/jieba_vim/jieba_vim_rs.so
-          fi
+          case ${{ matrix.vim.os }} in
+            windows-*)
+              powershell -ExecutionPolicy Bypass -file ./build.ps1
+              ;;
+            *)
+              ./build.sh
+              ;;
+          esac
       - name: Get a filename-safe version of vim.version
         id: safe-version
         shell: bash
         run: |
           SAFE_VERSION="$(echo "${{ matrix.vim.version }}" | tr . _)"
           echo "safe_version=${SAFE_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "vim_dist_name=${{ matrix.vim.distr }}_${SAFE_VERSION}_${{ matrix.vim.glue-lang }}" >> "$GITHUB_OUTPUT"
+          echo "vim_dist_name=${{ matrix.vim.distr }}_${SAFE_VERSION}_${{ matrix.vim.glue-lang }}_${{ matrix.vim.os }}" >> "$GITHUB_OUTPUT"
       - name: Expand templates
         shell: bash
-        run: make -C test/cases clean all
+        run: |
+          case ${{ matrix.vim.os }} in
+            windows-*)
+              choco install make
+              ;;
+            macos-*)
+              brew install make
+              ;;
+          esac
+          make -C test/cases clean all
+        env:
+          # This should fix UnicodeEncodeError on Windows.
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: utf-8
       - name: Setup vim plugins
         shell: bash
         run: |
@@ -404,7 +443,7 @@ jobs:
             set -e
             if [ $exit_code != 0 ] && [ $exit_code != 125 ]; then
               echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
-              false
+              exit $exit_code
             fi
             if [ -z "$cum_exit_code" ]; then
               cum_exit_code=$exit_code
@@ -419,7 +458,7 @@ jobs:
           code="${{ steps.run-i-test.outputs.exit_code }}"
           if [ "$code" != 0 ] && [ "$code" != 1 ] && [ "$code" != 125 ]; then
             echo "bi case verification may have panicked" >&2
-            false
+            exit $code
           fi
       - name: Indicate whether integrated test has failed
         id: indicate-state
@@ -427,19 +466,19 @@ jobs:
         run: |
           TOFILE=i-success-${{ steps.safe-version.outputs.vim_dist_name }}.txt
           echo "tofile=$TOFILE" >> "$GITHUB_OUTPUT"
-          cat <<EOF > "$TOFILE"
-          ${{ steps.run-i-test.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.vim.glue-lang }}
+          cat <<'EOF' > "$TOFILE"
+          ${{ steps.run-i-test.outputs.exit_code }} ${{ matrix.vim.distr }} @${{ matrix.vim.version }} +${{ matrix.vim.glue-lang }} on ${{ matrix.vim.os }}
           EOF
       - uses: actions/upload-artifact@v6
         with:
-          name: i-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
+          name: i-success-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}-${{ matrix.vim.os }}
           path: ${{ steps.indicate-state.outputs.tofile }}
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
       - uses: actions/upload-artifact@v6
         with:
-          name: i-report-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}
+          name: i-report-${{ matrix.vim.distr }}-${{ matrix.vim.version }}-${{ matrix.vim.glue-lang }}-${{ matrix.vim.os }}
           path: |
             i_test/warns_${{ steps.safe-version.outputs.vim_dist_name }}
             i_test/errs_${{ steps.safe-version.outputs.vim_dist_name }}
@@ -513,7 +552,7 @@ jobs:
         shell: bash
         run: |
           cd rust_backend/jieba_vim_rs_core
-          cargo test -r --test golden_master -- unit-*.jsonl
+          cargo test -r --test golden_master -- -q unit-*.jsonl
 
   coverage:
     name: Test coverage
@@ -555,70 +594,9 @@ jobs:
             --exclude-files 'jieba_vim_rs_binding_lua51/*' \
             --exclude-files 'jieba_vim_rs_binding_py3/*' \
             --packages jieba_vim_rs_core
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         with:
           files: rust_backend/cobertura.xml
           disable_search: true
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
-
-  build:
-    name: Build for ${{ matrix.job.target }}
-    runs-on: ${{ matrix.job.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        job:
-          # This is enabled because wall time check in unit tests has been
-          # removed. But the issue might not be resolved yet. See more at
-          # https://github.com/kkew3/jieba.vim/issues/8.
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-22.04-arm
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-22.04
-          - target: aarch64-apple-darwin
-            os: macos-14
-          # macos-15-intel runner is only valid until August 2027. We will need
-          # to revert this change after that.
-          - target: x86_64-apple-darwin
-            os: macos-15-intel
-          - target: x86_64-pc-windows-msvc
-            os: windows-2022
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install ARM compiler toolchain
-        if: matrix.job.target == 'aarch64-unknown-linux-gnu'
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            gcc-aarch64-linux-gnu libc6-dev-arm64-cross
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          target: ${{ matrix.job.target }}
-          toolchain: stable
-      - name: Show version information (Rust, cargo, gcc)
-        shell: bash
-        run: |
-          gcc --version || true
-          rustup -V
-          rustup toolchain list
-          rustup default
-          rustup target list | grep installed
-          cargo -V
-          rustc -V
-      - name: Build
-        shell: bash
-        run: |
-          cargo clean \
-            --manifest-path rust_backend/Cargo.toml
-          cargo build --locked -r \
-            --target=${{ matrix.job.target }} \
-            --package jieba_vim_rs_binding_lua51 \
-            --manifest-path rust_backend/Cargo.toml
-          cargo clean \
-            --manifest-path rust_backend/Cargo.toml
-          cargo build --locked -r \
-            --target=${{ matrix.job.target }} \
-            --package jieba_vim_rs_binding_py3 \
-            --manifest-path rust_backend/Cargo.toml

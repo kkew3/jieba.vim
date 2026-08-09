@@ -270,6 +270,14 @@ def test_parse_buffer_expr():
         visual_end=None,
         cursor=[0, 1, 5, 0, 5],
     )
+    assert m.BufferExpr.parse("abc·def|␊", span) == m.BufferExpr(
+        clean_buffer=["abc def"],
+        langle=None,
+        rangle=None,
+        visual_begin=None,
+        visual_end=None,
+        cursor=[0, 1, 8, 0, 8],
+    )
     assert m.BufferExpr.parse("<[ab]c·|def\\>␊", span) == m.BufferExpr(
         clean_buffer=["abc def"],
         langle=[0, 1, 1, 0],

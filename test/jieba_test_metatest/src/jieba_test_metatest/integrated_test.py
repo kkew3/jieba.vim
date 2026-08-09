@@ -25,7 +25,11 @@ from typing import Literal
 from . import vimscript_transpiler as vim
 from .dots_progress import DotsProgress
 from .executor import pmap
-from .motion_keys import WORD_MOTION_KEYS, WORD_TEXT_OBJECTS
+from .motion_keys import (
+    WORD_MOTION_KEYS,
+    WORD_TEXT_OBJECTS,
+    WORD_MOTION_INSERT_KEYS,
+)
 from .parser import (
     AutocmdEventCountExpr,
     BufferExpr,
@@ -211,17 +215,30 @@ class IntegratedBlock:
         outfile.write("\n")
 
         # Define jieba mappings.
+        map_names = {
+            "\\<C-w>": "C_w",
+            "\\<C-Left>": "C_Left",
+            "\\<C-Right": "C_Right",
+            "\\<S-Left>": "S_Left",
+            "\\<S-Right>": "S_Right",
+        }
         for k in WORD_MOTION_KEYS:
+            k_unescaped = k[1:] if k.startswith("\\<") else k
             outfile.write(f"""\
-nmap {k} <Plug>(Jieba_{k})
-xmap {k} <Plug>(Jieba_{k})
-omap {k} <Plug>(Jieba_{k})
+nmap {k_unescaped} <Plug>(Jieba_{map_names.get(k, k)})
+xmap {k_unescaped} <Plug>(Jieba_{map_names.get(k, k)})
+omap {k_unescaped} <Plug>(Jieba_{map_names.get(k, k)})
 """)
         for k in WORD_TEXT_OBJECTS:
             outfile.write(f"""\
 xmap {k} <Plug>(Jieba_{k})
 omap {k} <Plug>(Jieba_{k})
 """)
+        for k in WORD_MOTION_INSERT_KEYS:
+            k_unescaped = k[1:] if k.startswith("\\<") else k
+            outfile.write(
+                f"imap {k_unescaped} <Plug>(Jieba_{map_names.get(k, k)})\n"
+            )
 
         # Write state_before setup.
         outfile.write('" state_before setup\n')
@@ -292,7 +309,7 @@ endfunction
         for event_name in self.autocmd_event_counts_to_verify:
             outfile.write(
                 "    au {event} * call IncrementAutocmdEventCount({key})\n".format(
-                    event=event_name, key=vim.lit(event_name)
+                    event=event_name.name, key=vim.lit(event_name.name)
                 )
             )
         outfile.write("augroup END\n\n")
@@ -356,6 +373,13 @@ endfunction
         outfile.write(
             "let g:jieba_test_case_events_count_frozen = copy(g:jieba_test_case_events_count)\n\n"
         )
+        # Need this line because `call feedkeys(":\\<C-u>call Checks()\\<CR>", "nt")`
+        # below contributes one extra count of CmdlineLeave event.
+        outfile.write("""\
+if exists("g:jieba_test_case_events_count_frozen.CmdlineLeave")
+    let g:jieba_test_case_events_count_frozen["CmdlineLeave"] -= 1
+endif
+""")
 
         # Autocmd event counts checking.
         outfile.write('" autocmd event counts checking\n')

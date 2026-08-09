@@ -47,6 +47,10 @@ pub mod ffi {
         pub selection: &'static [u8],
         pub prevent_change: &'static [u8],
     }
+
+    pub struct ImapOutput {
+        pub cursor: Position,
+    }
 }
 
 /// Output types for inner-crate use.
@@ -111,6 +115,10 @@ mod inner {
         pub prevent_change: bool,
     }
 
+    pub struct ImapOutput {
+        pub cursor: Position,
+    }
+
     fn to_prevent_change(prevent_change: bool) -> &'static [u8] {
         if prevent_change { b"1" } else { b"0" }
     }
@@ -156,10 +164,18 @@ mod inner {
             }
         }
     }
+
+    impl From<ImapOutput> for ffi::ImapOutput {
+        fn from(value: ImapOutput) -> Self {
+            Self {
+                cursor: value.cursor.into(),
+            }
+        }
+    }
 }
 
 pub(crate) use inner::{
-    MotionType, NmapOutput, OmapOutput, VisualMode, XmapOutput,
+    ImapOutput, MotionType, NmapOutput, OmapOutput, VisualMode, XmapOutput,
 };
 
 impl<C> WordMotion<C> {
@@ -295,6 +311,37 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             }
             b"aw" | b"aW" => {
                 self.omap_aw(buffer, cursor, count, motion[1] == b'w', operator)
+            }
+            _ => unreachable!("invalid motion key sequence: {:?}", motion),
+        }?;
+        Ok(output.into())
+    }
+
+    pub fn imap<B: BufferLike + ?Sized>(
+        &mut self,
+        buffer: &B,
+        motion: &[u8],
+        cursor: ffi::CursorPositionCurswant,
+    ) -> Result<ffi::ImapOutput, B::Error> {
+        let output = match motion {
+            // \<C-W>
+            b"\x17" | b"\\u0017" => self.imap_ctrl_w(buffer, cursor.into()),
+            // \<C-Left>. Also accepting double-backslash version due to json-
+            // decoding issue in Vim. Same below.
+            b"\x80\xfdU" | b"\\u0080\\u00fdU" | b"\\\\u0080\\\\u00fdU" => {
+                self.imap_ctrl_left(buffer, cursor.into())
+            }
+            // \<C-Right>
+            b"\x80\xfdV" | b"\\u0080\\u00fdV" | b"\\\\u0080\\\\u00fdV" => {
+                self.imap_ctrl_right(buffer, cursor.into())
+            }
+            // \<S-Left>
+            b"\x80#4" | b"\\u0080#4" | b"\\\\u0080#4" => {
+                self.imap_shift_left(buffer, cursor.into())
+            }
+            // \<S-Right>
+            b"\x80%i" | b"\\u0080%i" | b"\\\\u0080%i" => {
+                self.imap_shift_right(buffer, cursor.into())
             }
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
         }?;

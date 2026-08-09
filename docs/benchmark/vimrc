@@ -1,0 +1,20 @@
+let s:script_dir = expand("<sfile>:p:h")
+if !has("nvim") && has("mac") && !has("python3")
+    " macOS default Python
+    set pythonthreedll=/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/Current/Python3
+endif
+
+" === BEGIN of plugins
+call plug#begin(s:script_dir . "/.vim_bundle")
+Plug 'kkew3/jieba.vim', { 'branch': 'release', 'do': { -> jieba_vim#install() } }
+call plug#end()
+" === END of plugins
+
+" Necessary to install jieba.vim.
+set nocompatible
+
+" Used to wrap up the benchmark session cleanly.
+set noswapfile
+
+" One-liner config for jieba.vim.
+let g:jieba_vim_keymap = 1

@@ -54,9 +54,11 @@ mod bckend_word;
 mod current_word;
 mod end_word;
 mod fwd_word;
+mod prev_word;
 
 pub use bck_word::BackwardWord;
 pub use bckend_word::BackwardEndWord;
 pub use current_word::CurrentWord;
 pub use end_word::EndWord;
 pub use fwd_word::ForwardWord;
+pub use prev_word::PreviousWord;

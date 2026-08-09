@@ -19,7 +19,7 @@ use std::sync::OnceLock;
 use jieba_rs::Jieba;
 use jieba_vim_rs_core::BufferLike;
 use jieba_vim_rs_core::motion::{
-    NmapOutput, OmapOutput, WordMotion, XmapOutput,
+    ImapOutput, NmapOutput, OmapOutput, WordMotion, XmapOutput,
 };
 use jieba_vim_rs_core::token::{JiebaPlaceholder, Tokenizer};
 use mlua::{IntoLua, Lua, ObjectLike, Table, UserData, UserDataMethods, Value};
@@ -43,8 +43,12 @@ impl BufferLike for TableBufferWrapper {
 struct JiebaWrapper(Jieba);
 
 impl JiebaPlaceholder for JiebaWrapper {
-    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
-        self.0.cut(sentence, true)
+    fn cut_hmm_into_char_counts(&self, sentence: &str) -> Vec<usize> {
+        self.0
+            .cut(sentence, true)
+            .into_iter()
+            .map(|token| token.end - token.start)
+            .collect()
     }
 }
 
@@ -53,27 +57,34 @@ struct LazyJiebaWrapper {
     jieba: OnceLock<Jieba>,
 }
 
+impl LazyJiebaWrapper {
+    fn init_jieba(&self) -> Jieba {
+        match &self.path {
+            None => Jieba::new(),
+            Some(path) => {
+                let mut reader =
+                    BufReader::new(File::open(path).unwrap_or_else(|err| {
+                        panic!("failed to open file `{}` due to: {}", path, err)
+                    }));
+                Jieba::with_dict(&mut reader).unwrap_or_else(|err| {
+                    panic!(
+                        "failed to initialize jieba from file `{}` due to: {}",
+                        path, err
+                    )
+                })
+            }
+        }
+    }
+}
+
 impl JiebaPlaceholder for LazyJiebaWrapper {
-    fn cut_hmm<'a>(&self, sentence: &'a str) -> Vec<&'a str> {
+    fn cut_hmm_into_char_counts(&self, sentence: &str) -> Vec<usize> {
         self.jieba
-            .get_or_init(|| match &self.path {
-                None => Jieba::new(),
-                Some(path) => {
-                    let mut reader = BufReader::new(
-                        File::open(path).unwrap_or_else(|err| {
-                            panic!(
-                                "failed to open file `{}` due to: {}",
-                                path, err
-                            )
-                        }),
-                    );
-                    Jieba::with_dict(&mut reader)
-                        .unwrap_or_else(|err| {
-                            panic!("failed to initialize jieba from file `{}` due to: {}", path, err)
-                        })
-                }
-            })
+            .get_or_init(|| self.init_jieba())
             .cut(sentence, true)
+            .into_iter()
+            .map(|token| token.end - token.start)
+            .collect()
     }
 }
 
@@ -116,6 +127,16 @@ impl IntoLua for OmapOutputWrapper {
         table.set("prevent_change", to_utf8(self.0.prevent_change))?;
         table.set("selection", to_utf8(self.0.selection))?;
         table.set("visualmode", to_utf8(self.0.visualmode))?;
+        Ok(Value::Table(table))
+    }
+}
+
+pub struct ImapOutputWrapper(ImapOutput);
+
+impl IntoLua for ImapOutputWrapper {
+    fn into_lua(self, lua: &Lua) -> mlua::prelude::LuaResult<Value> {
+        let table = lua.create_table()?;
+        table.set("cursor", self.0.cursor)?;
         Ok(Value::Table(table))
     }
 }
@@ -262,6 +283,26 @@ impl WordMotionWrapper {
         )?))
     }
 
+    fn imap(
+        _lua: &Lua,
+        this: &mut Self,
+        (buffer, motion, cursor): (Table, mlua::LuaString, Vec<usize>),
+    ) -> mlua::Result<ImapOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(mlua::Error::runtime(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let buffer = TableBufferWrapper(buffer);
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(ImapOutputWrapper(this.wm.imap(
+            &buffer,
+            &motion.as_bytes(),
+            cursor_arr,
+        )?))
+    }
+
     fn preview_nmap(
         _lua: &Lua,
         this: &mut Self,
@@ -309,6 +350,7 @@ impl UserData for WordMotionWrapper {
         methods.add_method_mut("nmap", Self::nmap);
         methods.add_method_mut("xmap", Self::xmap);
         methods.add_method_mut("omap", Self::omap);
+        methods.add_method_mut("imap", Self::imap);
         methods.add_method_mut("preview_nmap", Self::preview_nmap);
     }
 }
@@ -449,6 +491,26 @@ impl LazyWordMotionWrapper {
         )?))
     }
 
+    fn imap(
+        _lua: &Lua,
+        this: &mut Self,
+        (buffer, motion, cursor): (Table, mlua::LuaString, Vec<usize>),
+    ) -> mlua::Result<ImapOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(mlua::Error::runtime(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let buffer = TableBufferWrapper(buffer);
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(ImapOutputWrapper(this.wm.imap(
+            &buffer,
+            &motion.as_bytes(),
+            cursor_arr,
+        )?))
+    }
+
     fn preview_nmap(
         _lua: &Lua,
         this: &mut Self,
@@ -496,6 +558,7 @@ impl UserData for LazyWordMotionWrapper {
         methods.add_method_mut("nmap", Self::nmap);
         methods.add_method_mut("xmap", Self::xmap);
         methods.add_method_mut("omap", Self::omap);
+        methods.add_method_mut("imap", Self::imap);
         methods.add_method_mut("preview_nmap", Self::preview_nmap);
     }
 }
