@@ -19,6 +19,7 @@ Documentation:
 - Add benchmark ([#116]).
 - Mention [`tpope/vim-repeat`][vim-repeat] in Installation section of README ([#118], [#133]).
 - Add manually typeset vim help ([#136]).
+- Add changelog ([#139]).
 
 Dev:
 
@@ -53,6 +54,7 @@ Thanks:
 [#134]: https://github.com/kkew3/jieba.vim/pull/134
 [#135]: https://github.com/kkew3/jieba.vim/pull/135
 [#136]: https://github.com/kkew3/jieba.vim/pull/136
+[#139]: https://github.com/kkew3/jieba.vim/pull/139
 [@BaksiLi]: https://github.com/BaksiLi
 
 
