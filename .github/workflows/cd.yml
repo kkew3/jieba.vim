@@ -282,21 +282,28 @@ jobs:
     needs:
       - check-for-release
       - ensure-release
+    env:
+      UV_PROJECT: ${{ github.workspace }}/dev_scripts
+      UV_PYTHON_DOWNLOADS: automatic
+      UV_MANAGED_PYTHON: '1'
     steps:
       - uses: actions/checkout@v6
+      - name: Setup uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: '0.11.16'
       - name: Get release note from changelog
         shell: bash
         run: |
           v=${{ needs.check-for-release.outputs.release-tag-name }}
-          perl -sne 'if(/^## /){$p=0;$p=1 if /^## \Q$v/} print if $p' -- -v=$v CHANGELOG.md \
-            | tac \
-            | sed '/./,$!d' \
-            | tac \
-            > RELEASE_NOTE
+          uv run dev_scripts/get_release_note.py $v > RELEASE_NOTE
           if [ ! -s RELEASE_NOTE ]; then
             echo "Release note is empty" >&2
             exit 1
           fi
+      - name: Print release note
+        shell: bash
+        run: cat RELEASE_NOTE
       - uses: actions/upload-artifact@v6
         with:
           name: release-note
