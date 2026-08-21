@@ -336,6 +336,7 @@ jobs:
           files: |
             jieba_vim_rs-*
           tag_name: ${{ needs.check-for-release.outputs.release-tag-name }}
+          target_commitish: release
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
