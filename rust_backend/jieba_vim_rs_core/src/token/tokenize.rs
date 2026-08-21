@@ -15,6 +15,7 @@
 //! This module defines the tokens, and the tokenizer.
 
 use std::fmt::{self, Debug};
+use std::iter;
 
 use super::JiebaPlaceholder;
 use super::char::{self, CharType, NonWordCharType, WordCharType};
@@ -521,7 +522,9 @@ fn group_chars_rule(
         Some(mut group) => match &mut group {
             MaybeImplicitCharTokenGroup::CharTokenGroup(cg) => {
                 match cg.push(c) {
-                    Err(joined) => chain_into_vec([group], joined.into_vec()),
+                    Err(joined) => {
+                        chain_into_vec(iter::once(group), joined.into_vec())
+                    }
                     Ok(()) => vec![group],
                 }
             }
@@ -696,7 +699,7 @@ fn cut_hanzi_group_and_count_chars<C: JiebaPlaceholder>(
         })
         .collect();
     let cut_char_counts0 = chain_into_vec(
-        [0],
+        iter::once(0),
         jieba.cut_hmm_into_char_counts(&group_string_no_marks),
     );
 
@@ -912,7 +915,7 @@ fn remove_implicit_whitespace_rule(
         // Remove this implicit whitespace.
         ImplicitWhitespace(_) => prev_group.into_iter().collect(),
         // Otherwise, return as is.
-        CharTokenGroup(group) => chain_into_vec(prev_group, [group]),
+        CharTokenGroup(group) => chain_into_vec(prev_group, iter::once(group)),
     }
 }
 
