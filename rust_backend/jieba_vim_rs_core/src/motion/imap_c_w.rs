@@ -29,7 +29,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         mut cursor: Position,
     ) -> Result<ImapOutput, B::Error> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, true);
-        let mut motion = PreviousWord::default();
+        let mut motion = PreviousWord;
         let _ = motion.map(&mut buffer, 1, &mut cursor)?;
         Ok(ImapOutput { cursor })
     }
