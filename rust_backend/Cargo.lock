@@ -444,7 +444,7 @@ dependencies = [
 
 [[package]]
 name = "jieba_vim_rs_core"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "bstr",
  "clap",

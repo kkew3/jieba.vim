@@ -15,6 +15,7 @@
 //! This module defines the tokens, and the tokenizer.
 
 use std::fmt::{self, Debug};
+use std::iter;
 
 use super::JiebaPlaceholder;
 use super::char::{self, CharType, NonWordCharType, WordCharType};
@@ -521,7 +522,9 @@ fn group_chars_rule(
         Some(mut group) => match &mut group {
             MaybeImplicitCharTokenGroup::CharTokenGroup(cg) => {
                 match cg.push(c) {
-                    Err(joined) => chain_into_vec([group], joined.into_vec()),
+                    Err(joined) => {
+                        chain_into_vec(iter::once(group), joined.into_vec())
+                    }
                     Ok(()) => vec![group],
                 }
             }
@@ -696,7 +699,7 @@ fn cut_hanzi_group_and_count_chars<C: JiebaPlaceholder>(
         })
         .collect();
     let cut_char_counts0 = chain_into_vec(
-        [0],
+        iter::once(0),
         jieba.cut_hmm_into_char_counts(&group_string_no_marks),
     );
 
@@ -912,7 +915,7 @@ fn remove_implicit_whitespace_rule(
         // Remove this implicit whitespace.
         ImplicitWhitespace(_) => prev_group.into_iter().collect(),
         // Otherwise, return as is.
-        CharTokenGroup(group) => chain_into_vec(prev_group, [group]),
+        CharTokenGroup(group) => chain_into_vec(prev_group, iter::once(group)),
     }
 }
 
@@ -920,21 +923,6 @@ fn remove_implicit_whitespace(
     groups: Vec<MaybeImplicitCharTokenGroup>,
 ) -> Vec<CharTokenGroup> {
     stack_merge(groups, remove_implicit_whitespace_rule)
-}
-
-impl<C: JiebaPlaceholder> Tokenizer<C> {
-    /// Parse a vec of [`CharToken`]s into `word`s and space.
-    fn parse_chars_into_words(
-        &self,
-        line: &str,
-        chars: Vec<CharToken>,
-    ) -> Vec<Token> {
-        let groups = group_chars(chars);
-        let groups = convert_first_cdm_group(groups);
-        let groups = cut_hanzi(groups, line, self);
-        let groups = remove_implicit_whitespace(groups);
-        groups.into_iter().map(Token::from).collect()
-    }
 }
 
 /// Concatenate contiguous non-space [`MaybeImplicitCharTokenGroup`]s.
@@ -977,33 +965,19 @@ fn concat_nonspace_groups(
 }
 
 impl<C: JiebaPlaceholder> Tokenizer<C> {
-    /// Parse a vec of [`CharToken`]s into `WORD`s and space.
-    #[allow(non_snake_case)]
-    fn parse_chars_into_WORDs(
-        &self,
-        line: &str,
-        chars: Vec<CharToken>,
-    ) -> Vec<Token> {
-        let groups = group_chars(chars);
-        let groups = convert_first_cdm_group(groups);
-        let groups = cut_hanzi(groups, line, self);
-        let groups = concat_nonspace_groups(groups);
-        let groups = remove_implicit_whitespace(groups);
-        groups.into_iter().map(Token::from).collect()
-    }
-}
-
-impl<C: JiebaPlaceholder> Tokenizer<C> {
     /// Parse `line` into tokens. If `into_word` is `true`, the non-space
-    /// tokens will be interpretable as `word`s; otherwise, they will be
-    /// `WORD`s. The columns of the resulting [`Token`]s are indexed from 0.
+    /// tokens will be interpreted as `word`s; otherwise, they will be `WORD`s.
+    /// The columns of the resulting [`Token`]s are indexed from 0.
     pub fn parse_str(&self, line: &str, into_word: bool) -> Vec<Token> {
-        let chars = self.parse_str_into_chars(line, 0);
-        if into_word {
-            self.parse_chars_into_words(line, chars)
-        } else {
-            self.parse_chars_into_WORDs(line, chars)
-        }
+        let chars: Vec<CharToken> = self.parse_str_into_chars(line, 0);
+        let mut groups: Vec<MaybeImplicitCharTokenGroup> = group_chars(chars);
+        groups = convert_first_cdm_group(groups);
+        groups = cut_hanzi(groups, line, self);
+        if !into_word {
+            groups = concat_nonspace_groups(groups);
+        };
+        let groups: Vec<CharTokenGroup> = remove_implicit_whitespace(groups);
+        groups.into_iter().map(Token::from).collect()
     }
 
     /// Call [`shift1`](Token::shift1) patch after

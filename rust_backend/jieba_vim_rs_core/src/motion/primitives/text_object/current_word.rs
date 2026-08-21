@@ -46,7 +46,7 @@ impl Motion<VisualRange> for CurrentWord {
         let mut include_white = false;
         let mut start_pos = None;
         if count > 0 && cursor.langle == cursor.rangle {
-            let cursor_token = get_cursor_token(&mut cursor.rangle, buffer)?;
+            let cursor_token = get_cursor_token(&cursor.rangle, buffer)?;
             let start_col = cursor_token.first_char();
             cursor.rangle.col = start_col;
             start_pos = Some(cursor.rangle);

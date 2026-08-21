@@ -271,10 +271,10 @@ impl Motion<Position> for InclEndWord {
             },
             GToken::Eol(_) => true,
         };
-        if need_incl {
-            if self.incl.map(buffer, 1, cursor)? == MotionState::Failure {
-                return Ok(MotionState::Failure);
-            }
+        if need_incl
+            && self.incl.map(buffer, 1, cursor)? == MotionState::Failure
+        {
+            return Ok(MotionState::Failure);
         }
         self.end.map(buffer, 1, cursor)
     }

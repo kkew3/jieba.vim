@@ -216,10 +216,10 @@ impl Motion<Position> for InclForwardWord {
             GToken::Eol(_) => true,
             GToken::T(t) => t.at_end(cursor.col),
         };
-        if need_incl {
-            if self.incl.map(buffer, 1, cursor)? == MotionState::Failure {
-                return Ok(MotionState::Failure);
-            }
+        if need_incl
+            && self.incl.map(buffer, 1, cursor)? == MotionState::Failure
+        {
+            return Ok(MotionState::Failure);
         }
         self.fwd.map(buffer, 1, cursor)
     }
