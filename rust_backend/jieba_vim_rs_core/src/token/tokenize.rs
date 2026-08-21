@@ -995,8 +995,8 @@ impl<C: JiebaPlaceholder> Tokenizer<C> {
 
 impl<C: JiebaPlaceholder> Tokenizer<C> {
     /// Parse `line` into tokens. If `into_word` is `true`, the non-space
-    /// tokens will be interpretable as `word`s; otherwise, they will be
-    /// `WORD`s. The columns of the resulting [`Token`]s are indexed from 0.
+    /// tokens will be interpreted as `word`s; otherwise, they will be `WORD`s.
+    /// The columns of the resulting [`Token`]s are indexed from 0.
     pub fn parse_str(&self, line: &str, into_word: bool) -> Vec<Token> {
         let chars = self.parse_str_into_chars(line, 0);
         if into_word {
