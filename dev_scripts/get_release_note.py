@@ -19,6 +19,12 @@ def get_release_note(tag_name: str) -> list[str]:
     # Pop trailing blank lines.
     while release_note_lines and not release_note_lines[-1].strip():
         release_note_lines.pop()
+    # Drop the leading heading, since GitHub Releases page already shows the
+    # release tag name and the released date.
+    assert release_note_lines[0].startswith("## ")
+    del release_note_lines[0]
+    while release_note_lines and not release_note_lines[0].strip():
+        del release_note_lines[0]
     return release_note_lines
 
 
