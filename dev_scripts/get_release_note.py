@@ -52,7 +52,7 @@ def fix_missing_links_(release_note_lines: list[str]) -> None:
         for link in possibly_missing_link_def:
             if link in line:
                 missing_link_def.add(global_link_def[link])
-    release_note_lines.extend(missing_link_def)
+    release_note_lines.extend(sorted(missing_link_def))
 
 
 def main():
