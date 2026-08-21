@@ -3,24 +3,19 @@
 # Usage: uv run --project dev_scripts dev_scripts/get_release_note.py vX.X.X
 
 import re
-import subprocess
 import sys
 
 
 def get_release_note(tag_name: str) -> list[str]:
-    release_note_lines = subprocess.run(
-        [
-            "perl",
-            "-sne",
-            "if(/^## /){$p=0;$p=1 if /^## \\Q$v/} print if $p",
-            "--",
-            f"-v={tag_name}",
-            "CHANGELOG.md",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.splitlines()
+    release_note_lines = []
+    in_release_note = False
+    with open("CHANGELOG.md", encoding="utf-8") as infile:
+        for line in infile:
+            line = line.rstrip("\n")
+            if line.startswith("## "):
+                in_release_note = line.startswith(f"## {tag_name}")
+            if in_release_note:
+                release_note_lines.append(line)
     # Pop trailing blank lines.
     while release_note_lines and not release_note_lines[-1].strip():
         release_note_lines.pop()
