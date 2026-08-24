@@ -637,7 +637,7 @@ impl<C> Tokenizer<C> {
 }
 
 /// Concatenate contiguous [`WordCharGroupType::Other`] groups, and insert
-/// implict whitespace in between otherwise. We assume that both `prev_group`
+/// implicit whitespace in between otherwise. We assume that both `prev_group`
 /// and `group` are of major class [`CharGroupType::Word`]. Panics if they
 /// aren't.
 fn insert_implicit_whitespace_in_cut_result_rule(
@@ -848,7 +848,7 @@ impl Debug for Token {
 impl Token {
     /// Used to shift `self` one column to the right, such that the columns
     /// are indexed from 1. This is a quick patch so that the indexing basis
-    /// comforms to Vim's rule.
+    /// conforms to Vim's rule.
     fn shift1(&mut self) {
         self.col.start_byte_index += 1;
         self.col.excl_start_byte_index += 1;

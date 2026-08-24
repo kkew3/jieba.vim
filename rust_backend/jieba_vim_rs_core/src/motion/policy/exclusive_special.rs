@@ -58,7 +58,7 @@ impl<'o> ExclusiveSpecial for OperatorRange<'o> {
         }
 
         let (start, end) = self.start_end_ord_mut();
-        // exclusive-special appies to motions ending in column 1.
+        // exclusive-special applies to motions ending in column 1.
         if end.col > 1 {
             return Ok(());
         }

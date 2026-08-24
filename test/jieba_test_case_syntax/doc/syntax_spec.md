@@ -107,7 +107,7 @@ The order of different directives inside a block does not matter.
 # Escape sequences
 
 Whitespace serves only readability purpose in a test case file.
-When inputing whitespace or special characters in directives `K`, `S0`, `S1`, escape sequences should be used.
+When inputting whitespace or special characters in directives `K`, `S0`, `S1`, escape sequences should be used.
 For example,
 
 - `\<Space>` represents ` `.
@@ -417,7 +417,7 @@ call JiebaNmap("w", 0, "JiebaOracleModel")
 
 ## To bootstrap case verification
 
-Knowning how to implement the Rust model correctly is a non-trivial task due to hidden states (e.g. the transient operation range of operator-pending mode), combinatorially large design space and peculiar corner cases (e.g. d-special).
+Knowing how to implement the Rust model correctly is a non-trivial task due to hidden states (e.g. the transient operation range of operator-pending mode), combinatorially large design space and peculiar corner cases (e.g. d-special).
 However, verifying whether it aligns with the oracle (i.e. a running Vim instance) in a dichotomy sense is easy.
 Given a Rust model, we may run it on random-generated or manually-written test cases and see if it aligns with the oracle; if true, we materialize the oracle's behavior in `jieba_test_case` (unparsing); else, return an error for further investigation.
 If the Rust model behaves well enough, we are able to generate massive test cases automatically.
