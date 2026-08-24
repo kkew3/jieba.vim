@@ -10,7 +10,7 @@
 ==============================================================================
 CONTENTS                                                      *jieba-contents*
   1. Introduction .............................................. |jieba-intro|
-  2. Configuraiton ............................................ |jieba-config|
+  2. Configuration ............................................ |jieba-config|
   3. Mappings ............................................... |jieba-mappings|
      3.1 Word motions ................................... |jieba-word-motions|
      3.2 Word text objects .............................. |jieba-text-objects|

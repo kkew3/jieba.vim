@@ -47,7 +47,7 @@ pub trait TokenLikeExt: TokenLike {
 
     // This is how we define the cursor being "over" a token:
     //
-    // /// `true` if the columnn `col` is on or off (in one word, over) self
+    // /// `true` if the column `col` is on or off (in one word, over) self
     // /// token. In other words, return `true` if the column position is
     // /// contained in self token.
     // fn is_over(&self, col: usize) -> bool {

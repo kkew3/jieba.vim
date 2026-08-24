@@ -4,7 +4,7 @@
 
 Features:
 
-- Implement [`i_CTRL-W`][i_CTRL-W] ([#97], [#130]). Support of option [`'backspace'`][backspace] is leaved as future works.
+- Implement [`i_CTRL-W`][i_CTRL-W] ([#97], [#130]). Support of option [`'backspace'`][backspace] is left for future work.
 - (*experimental feature*) Implement arrow mappings ([#98], [#134]).
 
 Bug fixes:
