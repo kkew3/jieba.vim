@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.x.x
+
+Dev:
+
+- Bump the minimum python3 version to 3.8 ([#148]).
+
+[#148]: https://github.com/kkew3/jieba.vim/pull/148
+
+
 ## v2.2.0 - 2026-08-09
 
 Features:
