@@ -565,7 +565,124 @@ function! JiebaOmapRepeatExpr(motion, repeat, model_funcname)
     return "\<Esc>\<Cmd>call JiebaOmapRepeat('" . l:equiv_motion . "', " . a:repeat . ", " . v:count1 . ", '" . v:operator . "', '" . v:register . "', '" . a:model_funcname . "')\<CR>"
 endfunction
 
+function! s:JiebaRepositionCursor(curswant)
+    if has("patch-8.2.5034") || has("nvim")
+        call cursor(0, virtcol2col(0, line("."), a:curswant))
+    else
+        execute "normal! " . a:curswant . "|"
+        call cursor(0, col("."))
+    endif
+endfunction
+
+function! JiebaOmapSimpleExpr(motion, model_funcname, ...)
+    if a:0
+        let l:count = a:1
+        let l:operator = a:2
+        let l:register = a:3
+    else
+        let l:count = v:count1
+        let l:operator = v:operator
+        let l:register = v:register
+    endif
+
+    if a:motion ==# "\<C-Left>"
+        let l:equiv_motion = "B"
+    elseif a:motion ==# "\<S-Left>"
+        let l:equiv_motion = "b"
+    elseif a:motion ==# "\<C-Right>"
+        let l:equiv_motion = "W"
+    elseif a:motion ==# "\<S-Right>"
+        let l:equiv_motion = "w"
+    else
+        let l:equiv_motion = a:motion
+    endif
+    let l:orig_curpos = getcurpos()
+    let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, l:equiv_motion, l:orig_curpos, l:count, l:operator)
+
+    if l:orig_curpos[0:3] ==# l:result_dict["langle"]
+        " This is a simple motion.
+        let l:target_pos = l:result_dict["rangle"][1:2]
+    elseif l:orig_curpos[0:3] ==# l:result_dict["rangle"]
+        " This is not a simple motion, but can be reduced to one by swapping
+        " langle and rangle positions.
+        let l:target_pos = l:result_dict["langle"][1:2]
+    else
+        " This is not a simple motion.
+        return ""
+    endif
+
+    if a:0
+        if l:result_dict["prevent_change"]
+            call cursor(l:result_dict["cursor"][1:2])
+            call s:ConsumeChars()
+            return
+        endif
+        if l:operator ==# "d" && l:result_dict["visualmode"] ==# "V" && !&startofline
+            if s:IsForwardMotion(l:equiv_motion)
+                let l:end_pos = l:result_dict["rangle"]
+            else
+                let l:end_pos = l:result_dict["langle"]
+            endif
+            " We need this line of code to decide whether to re-position cursor
+            " after d-special when 'startofline' is unset.
+            if !empty(getline(l:end_pos[1]))
+                let s:jieba_vim_omap_orig_curswant = l:orig_curpos[4]
+                augroup jieba_vim_reposition_cursor
+                    autocmd!
+                    " For CursorMoved trick see https://github.com/tpope/vim-repeat/issues/8#issuecomment-13951082
+                    autocmd CursorMoved <buffer>
+                                \ call <SID>JiebaRepositionCursor(s:jieba_vim_omap_orig_curswant) |
+                                \ unlet! s:jieba_vim_reposition_cursor |
+                                \ autocmd! jieba_vim_reposition_cursor
+                augroup END
+            endif
+
+            set startofline
+            augroup jieba_vim_reset_startofline
+                autocmd!
+                " For CursorMoved trick see https://github.com/tpope/vim-repeat/issues/8#issuecomment-13951082
+                autocmd CursorMoved <buffer>
+                            \ set nostartofline |
+                            \ autocmd! jieba_vim_reset_startofline
+            augroup END
+        endif
+
+        call cursor(l:target_pos)
+
+        if l:operator !=# "y"
+            let l:cmd = '"' . l:register . l:operator . "\<Plug>(Jieba_internal_o_" . l:equiv_motion . ")"
+            silent! call repeat#set(l:cmd, l:count)
+            " Seems that the g:repeat_tick trick described in https://github.com/tpope/vim-repeat/issues/8#issuecomment-13951082
+            " is not necessary here. Hence we didn't define the repeat_tick
+            " augroup.
+        endif
+        return
+    endif
+
+    let l:call_self = "call JiebaOmapSimpleExpr('"
+                \ . l:equiv_motion . "', '"
+                \ . a:model_funcname . "', "
+                \ . l:count . ", '"
+                \ . l:operator . "', '"
+                \ . l:register . "', 1)"
+    if l:result_dict["prevent_change"]
+        return "\<Esc>\<Cmd>" . l:call_self . "\<CR>"
+    endif
+    if l:result_dict["visualmode"] ==# "V"
+        let l:v = "V"
+    elseif l:result_dict["selection"] ==# "inclusive"
+        let l:v = "v"
+    else
+        let l:v = ""
+    endif
+    return l:v . "\<Cmd>" . l:call_self . "\<CR>"
+endfunction
+
 function! JiebaOmapExpr(motion, model_funcname)
+    let l:x = JiebaOmapSimpleExpr(a:motion, a:model_funcname)
+    if !empty(l:x)
+        return l:x
+    endif
     return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
 endfunction
 
