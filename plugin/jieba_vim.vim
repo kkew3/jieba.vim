@@ -650,7 +650,7 @@ function! JiebaOmapSimpleExpr(motion, model_funcname, ...)
         call cursor(l:target_pos)
 
         if l:operator !=# "y"
-            let l:cmd = '"' . l:register . l:operator . "\<Plug>(Jieba_" . a:motion . ")"
+            let l:cmd = '"' . l:register . l:operator . "\<Plug>(Jieba_internal_o_" . a:motion . ")"
                         \ . (l:operator ==# "c" ? "\<C-r>.\<Esc>" : "")
             silent! call repeat#set(l:cmd, l:count)
             " Seems that the g:repeat_tick trick described in https://github.com/tpope/vim-repeat/issues/8#issuecomment-13951082
