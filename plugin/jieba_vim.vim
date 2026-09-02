@@ -651,7 +651,6 @@ function! JiebaOmapSimpleExpr(motion, model_funcname, ...)
 
         if l:operator !=# "y"
             let l:cmd = '"' . l:register . l:operator . "\<Plug>(Jieba_internal_o_" . l:equiv_motion . ")"
-                        \ . (l:operator ==# "c" ? "\<C-r>.\<Esc>" : "")
             silent! call repeat#set(l:cmd, l:count)
             " Seems that the g:repeat_tick trick described in https://github.com/tpope/vim-repeat/issues/8#issuecomment-13951082
             " is not necessary here. Hence we didn't define the repeat_tick
