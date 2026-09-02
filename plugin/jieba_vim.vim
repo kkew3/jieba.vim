@@ -311,10 +311,6 @@ function! s:IsForwardMotion(motion)
     return a:motion ==? "w" || a:motion ==? "e" || a:motion ==? "iw" || a:motion ==? "aw"
 endfunction
 
-function! s:IsSimpleMotion(motion)
-    return a:motion ==? "w" || a:motion ==? "b" || a:motion ==? "e" || a:motion ==? "ge"
-endfunction
-
 function s:JiebaModelOmapProcessed(model_funcname, motion, curpos, count, operator)
     if a:model_funcname !=# ""
         let l:result_dict = function(a:model_funcname)(a:motion, a:curpos, a:count, a:operator)
@@ -578,7 +574,17 @@ function! s:JiebaRepositionCursor(curswant)
     endif
 endfunction
 
-function! JiebaOmapSimpleExpr(motion, model_funcname, count, operator, register, ...)
+function! JiebaOmapSimpleExpr(motion, model_funcname, ...)
+    if a:0
+        let l:count = a:1
+        let l:operator = a:2
+        let l:register = a:3
+    else
+        let l:count = v:count1
+        let l:operator = v:operator
+        let l:register = v:register
+    endif
+
     if a:motion ==# "\<C-Left>"
         let l:equiv_motion = "B"
     elseif a:motion ==# "\<S-Left>"
@@ -591,15 +597,20 @@ function! JiebaOmapSimpleExpr(motion, model_funcname, count, operator, register,
         let l:equiv_motion = a:motion
     endif
     let l:orig_curpos = getcurpos()
-    let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, l:equiv_motion, l:orig_curpos, a:count, a:operator)
+    let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, l:equiv_motion, l:orig_curpos, l:count, l:operator)
 
-    if a:0 && a:1
+    " If this is not a simple motion, return empty.
+    if l:orig_curpos[0:3] !=# l:result_dict["langle"]
+        return ""
+    endif
+
+    if a:0
         if l:result_dict["prevent_change"]
             call cursor(l:result_dict["cursor"][1:2])
             call s:ConsumeChars()
             return
         endif
-        if a:operator ==# "d" && l:result_dict["visualmode"] ==# "V" && !&startofline
+        if l:operator ==# "d" && l:result_dict["visualmode"] ==# "V" && !&startofline
             if s:IsForwardMotion(a:motion)
                 let l:end_pos = l:result_dict["rangle"]
             else
@@ -631,10 +642,10 @@ function! JiebaOmapSimpleExpr(motion, model_funcname, count, operator, register,
 
         call cursor(l:result_dict["rangle"][1:2])
 
-        if a:operator !=# "y"
-            let l:cmd = '"' . a:register . a:operator . "\<Plug>(Jieba_" . a:motion . ")"
-                        \ . (a:operator ==# "c" ? "\<C-r>.\<Esc>" : "")
-            silent! call repeat#set(l:cmd, a:count)
+        if l:operator !=# "y"
+            let l:cmd = '"' . l:register . l:operator . "\<Plug>(Jieba_" . a:motion . ")"
+                        \ . (l:operator ==# "c" ? "\<C-r>.\<Esc>" : "")
+            silent! call repeat#set(l:cmd, l:count)
             " Seems that the g:repeat_tick trick described in https://github.com/tpope/vim-repeat/issues/8#issuecomment-13951082
             " is not necessary here. Hence we didn't define the repeat_tick
             " augroup.
@@ -645,9 +656,9 @@ function! JiebaOmapSimpleExpr(motion, model_funcname, count, operator, register,
     let l:call_self = "call JiebaOmapSimpleExpr('"
                 \ . a:motion . "', '"
                 \ . a:model_funcname . "', "
-                \ . a:count . ", '"
-                \ . a:operator . "', '"
-                \ . a:register . "', 1)"
+                \ . l:count . ", '"
+                \ . l:operator . "', '"
+                \ . l:register . "', 1)"
     if l:result_dict["prevent_change"]
         return "\<Esc>\<Cmd>" . l:call_self . "\<CR>"
     endif
@@ -662,16 +673,15 @@ function! JiebaOmapSimpleExpr(motion, model_funcname, count, operator, register,
 endfunction
 
 function! JiebaOmapExpr(motion, model_funcname)
-    if s:IsSimpleMotion(a:motion)
-        return JiebaOmapSimpleExpr(a:motion, a:model_funcname, v:count1, v:operator, v:register)
+    let l:x = JiebaOmapSimpleExpr(a:motion, a:model_funcname)
+    if !empty(l:x)
+        return l:x
     endif
     return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
 endfunction
 
 for ky in s:motions + s:objects
-    if !s:IsSimpleMotion(ky)
-        execute 'onoremap <expr> <silent> <Plug>(Jieba_internal_o_' . ky . ') JiebaOmapRepeatExpr("' . ky . '", 1, "")'
-    endif
+    execute 'onoremap <expr> <silent> <Plug>(Jieba_internal_o_' . ky . ') JiebaOmapRepeatExpr("' . ky . '", 1, "")'
     execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaOmapExpr("' . ky . '", "")'
 endfor
 onoremap <expr> <silent> <Plug>(Jieba_internal_o_C_Left) JiebaOmapRepeatExpr("\<C-Left>", 1, "")
