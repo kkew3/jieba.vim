@@ -599,8 +599,15 @@ function! JiebaOmapSimpleExpr(motion, model_funcname, ...)
     let l:orig_curpos = getcurpos()
     let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, l:equiv_motion, l:orig_curpos, l:count, l:operator)
 
-    " If this is not a simple motion, return empty.
-    if l:orig_curpos[0:3] !=# l:result_dict["langle"]
+    if l:orig_curpos[0:3] ==# l:result_dict["langle"]
+        " This is a simple motion.
+        let l:target_pos = l:result_dict["rangle"][1:2]
+    elseif l:orig_curpos[0:3] ==# l:result_dict["rangle"]
+        " This is not a simple motion, but can be reduced to one by swapping
+        " langle and rangle positions.
+        let l:target_pos = l:result_dict["langle"][1:2]
+    else
+        " This is not a simple motion.
         return ""
     endif
 
@@ -640,7 +647,7 @@ function! JiebaOmapSimpleExpr(motion, model_funcname, ...)
             augroup END
         endif
 
-        call cursor(l:result_dict["rangle"][1:2])
+        call cursor(l:target_pos)
 
         if l:operator !=# "y"
             let l:cmd = '"' . l:register . l:operator . "\<Plug>(Jieba_" . a:motion . ")"
