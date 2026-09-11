@@ -49,29 +49,12 @@ function s:JiebaPreviewCancel()
     execute "hi clear JiebaPreview"
 endfunction
 
-function s:JiebaModelPreview(...)
-    call jieba_vim#loader#ensure_loaded()
-
-    if has("nvim")
-        return luaeval("jieba_vim:preview_nmap(jieba_vim.buffer, unpack(_A))",
-            \ a:000)
-    else
-        " In patch-9.1.0844 Vim introduced py3eval({expr}, [{locals}]) api.
-        " But in order to work with Vim before that patch, we have to work
-        " with this awkward syntax. The same applies below for all calls to
-        " `py3eval()`.
-        let l:args = a:000
-        return py3eval(
-            \ "jieba_vim.navigation.preview_nmap(vim.current.buffer, *vim.eval('l:args'))")
-    endif
-endfunction
-
 function! s:JiebaPreview(motion)
     let l:limit = get(g:, "jieba_vim_preview_limits", 0)
     if l:limit < 0
         let l:limit = 99999
     endif
-    let l:cursor_positions = s:JiebaModelPreview(a:motion, getcurpos(), l:limit)
+    let l:cursor_positions = jieba_vim#model#preview(a:motion, getcurpos(), l:limit)
     if empty(l:cursor_positions)
         call s:JiebaPreviewCancel()
     else
@@ -91,55 +74,12 @@ for ky in s:motions
 endfor
 nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>call <SID>JiebaPreviewCancel()<CR>
 
-function! JiebaModelNmap(...)
-    call jieba_vim#loader#ensure_loaded()
-
-    if has("nvim")
-        return luaeval("jieba_vim:nmap(jieba_vim.buffer, unpack(_A))", a:000)
-    else
-        return py3eval(
-            \ "jieba_vim.navigation.nmap(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
-
-function! JiebaModelXmap(...)
-    call jieba_vim#loader#ensure_loaded()
-
-    if has("nvim")
-        return luaeval("jieba_vim:xmap(jieba_vim.buffer, unpack(_A))", a:000)
-    else
-        return py3eval(
-            \ "jieba_vim.navigation.xmap(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
-
-function! JiebaModelOmap(...)
-    call jieba_vim#loader#ensure_loaded()
-
-    if has("nvim")
-        return luaeval("jieba_vim:omap(jieba_vim.buffer, unpack(_A))", a:000)
-    else
-        return py3eval(
-            \ "jieba_vim.navigation.omap(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
-
-function! JiebaModelImap(...)
-    call jieba_vim#loader#ensure_loaded()
-
-    if has("nvim")
-        return luaeval("jieba_vim:imap(jieba_vim.buffer, unpack(_A))", a:000)
-    else
-        return py3eval(
-            \ "jieba_vim.navigation.imap(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
 
 function! JiebaNmap(motion, count, model_funcname)
     if a:model_funcname !=# ""
         let l:result_dict = function(a:model_funcname)(a:motion, getcurpos(), a:count)
     else
-        let l:result_dict = JiebaModelNmap(a:motion, getcurpos(), a:count)
+        let l:result_dict = jieba_vim#model#nmap(a:motion, getcurpos(), a:count)
     endif
     call cursor(l:result_dict["cursor"][1:2])
     if l:result_dict["prevent_change"]
@@ -160,7 +100,7 @@ function! JiebaXmap(motion, count, model_funcname)
     if a:model_funcname !=# ""
         let l:result_dict = function(a:model_funcname)(l:vmode, a:motion, l:visual_begin, l:visial_end, a:count)
     else
-        let l:result_dict = JiebaModelXmap(l:vmode, a:motion, l:visual_begin, l:visial_end, a:count)
+        let l:result_dict = jieba_vim#model#xmap(l:vmode, a:motion, l:visual_begin, l:visial_end, a:count)
     endif
     noautocmd execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
     call setpos("'<", l:result_dict["langle"])
@@ -176,27 +116,14 @@ function! JiebaXmap(motion, count, model_funcname)
     endif
 endfunction
 
-function s:JiebaModelOmapProcessed(model_funcname, motion, curpos, count, operator)
-    if a:model_funcname !=# ""
-        let l:result_dict = function(a:model_funcname)(a:motion, a:curpos, a:count, a:operator)
-    else
-        let l:result_dict = JiebaModelOmap(a:motion, a:curpos, a:count, a:operator)
-    endif
-    " Check if we are selecting an empty region.
-    if l:result_dict["langle"] ==# l:result_dict["rangle"]
-        \ && l:result_dict["selection"] ==# "exclusive"
-        \ && l:result_dict["visualmode"] !=# "V"
-        \ && !l:result_dict["prevent_change"]
-        \ && stridx(&cpoptions, "E") >= 0
-        let l:result_dict["prevent_change"] = 1
-    endif
-    return l:result_dict
-endfunction
-
 function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     let l:orig_curpos = getcurpos()
     if type(a:model_funcname) == v:t_string
-        let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, a:motion, l:orig_curpos, a:count, a:operator)
+        if a:model_funcname !=# ""
+            let l:result_dict = function(a:model_funcname)(a:motion, l:orig_curpos, a:count, a:operator)
+        else
+            let l:result_dict = jieba_vim#model#omap(a:motion, l:orig_curpos, a:count, a:operator)
+        endif
     else
         let l:result_dict = a:model_funcname
     endif
@@ -306,7 +233,7 @@ function! s:JiebaImapCtrlWExpr(model_funcname)
         if a:model_funcname !=# ""
             let l:result_dict = function(a:model_funcname)("\<C-w>", l:curpos)
         else
-            let l:result_dict = JiebaModelImap("\<C-w>", l:curpos)
+            let l:result_dict = jieba_vim#model#imap("\<C-w>", l:curpos)
         endif
     endif
     if l:curpos[3] > 0
@@ -318,7 +245,7 @@ function! s:JiebaImapCtrlWExpr(model_funcname)
             if a:model_funcname !=# ""
                 let l:result_dict = function(a:model_funcname)("\<C-w>", l:curpos)
             else
-                let l:result_dict = JiebaModelImap("\<C-w>", l:curpos)
+                let l:result_dict = jieba_vim#model#imap("\<C-w>", l:curpos)
             endif
         endif
         return "\<Cmd>call jieba_vim#utils#del_to_cursor("
@@ -332,7 +259,7 @@ function! s:JiebaImapArrowExpr(motion, model_funcname)
     if a:model_funcname !=# ""
         let l:result_dict = function(a:model_funcname)(a:motion, l:curpos)
     else
-        let l:result_dict = JiebaModelImap(a:motion, l:curpos)
+        let l:result_dict = jieba_vim#model#imap(a:motion, l:curpos)
     endif
     return "\<Cmd>call cursor("
         \ . l:result_dict["cursor"][1] . ","
@@ -386,7 +313,12 @@ xnoremap <expr> <silent> <Plug>(Jieba_C_Right) JiebaXmapExpr("\<C-Right>", "")
 xnoremap <expr> <silent> <Plug>(Jieba_S_Right) JiebaXmapExpr("\<S-Right>", "")
 
 function! JiebaOmapRepeat(motion, repeat, count, operator, register, model_funcname)
-    let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, a:motion, getcurpos(), a:count, a:operator)
+    let l:orig_curpos = getcurpos()
+    if a:model_funcname !=# ""
+        let l:result_dict = function(a:model_funcname)(a:motion, l:orig_curpos, a:count, a:operator)
+    else
+        let l:result_dict = jieba_vim#model#omap(a:motion, l:orig_curpos, a:count, a:operator)
+    endif
     if !l:result_dict["prevent_change"] && a:operator !=# "y"
         silent! call repeat#setreg(a:operator . "\<Plug>(Jieba_internal_o_" . a:motion . ")", a:register)
     endif
