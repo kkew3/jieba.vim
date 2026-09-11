@@ -305,10 +305,10 @@ EOF
     def write_vimscript_setup(self, outfile):
         # Define oracle model.
         func = {
-            "n": "JiebaModelNmap",
-            "x": "JiebaModelXmap",
-            "o": "JiebaModelOmap",
-            "i": "JiebaModelImap",
+            "n": "jieba_vim#model#nmap",
+            "x": "jieba_vim#model#xmap",
+            "o": "jieba_vim#model#omap",
+            "i": "jieba_vim#model#imap",
         }[self.mode]
         outfile.write(f"""\
 " define oracle model

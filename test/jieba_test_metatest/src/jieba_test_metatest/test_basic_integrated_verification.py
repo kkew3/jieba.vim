@@ -429,7 +429,7 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelNmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#nmap"), a:000)
     return g:model_output
 endfunction
 
@@ -527,7 +527,7 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelNmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#nmap"), a:000)
     return g:model_output
 endfunction
 
@@ -662,7 +662,7 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelXmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#xmap"), a:000)
     return g:model_output
 endfunction
 
@@ -765,7 +765,7 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelXmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#xmap"), a:000)
     return g:model_output
 endfunction
 
@@ -945,7 +945,7 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelOmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#omap"), a:000)
     return g:model_output
 endfunction
 
@@ -1019,7 +1019,7 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelOmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#omap"), a:000)
     return g:model_output
 endfunction
 
