@@ -13,18 +13,12 @@
 " under the License.
 
 
-""
-" @section Introduction, intro
-" @stylized jieba.vim
-" @library
-" @order intro config commands mappings opt-dependency
-" jieba.vim 是一个基于 jieba 中文分词插件.
-
-
 if exists("g:loaded_jieba_vim")
     finish
 endif
 let g:loaded_jieba_vim = 1
+
+
 ""
 " (默认 1)：是/否 (1/0) 延迟加载 jieba 词典直到有中文出现。
 let g:jieba_vim_lazy = get(g:, 'jieba_vim_lazy', 1)
@@ -32,7 +26,6 @@ let g:jieba_vim_lazy = get(g:, 'jieba_vim_lazy', 1)
 ""
 " (默认空)：若为非空字符串，加载此文件路径所指向的用户自定义词典。
 let g:jieba_vim_user_dict = get(g:, 'jieba_vim_user_dict', '')
-
 
 ""
 " (默认 0)：是/否 (1/0) 自动开启 keymap（不包含预览）。
@@ -114,31 +107,6 @@ command! JiebaPreviewCancel call <SID>JiebaPreviewCancel()
 let s:motions = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
 let s:objects = ["iw", "iW", "aw", "aW"]
 
-""
-" @section Mappings, mappings
-" 提供以下 `<Plug>()` 映射，其中 X 表示 Vim word motion/text object 按键，即
-" b、B、ge、gE、w、W、e、E、iw、iW、aw、aW：
-"
-"   - `<Plug>(Jieba_preview_cancel)`：即 |:JiebaPreviewCancel| 命令
-"   - `<Plug>(Jieba_preview_X)`：预览增强了的 X 的跳转位置
-"   - `<Plug>(Jieba_X)`: 增强了的 X，同时在 normal、operator-pending、visual 三种模式下可用，以及可与 count 协同使用。例如假设 w 被映射到 `<Plug>(Jieba_w)`，那么 3w 将是向后跳三个词，d3w 是删除后三个词
-"
-" 注意 word text object (即 iw、iW、aw、aW 没有 normal 模式下的映射)。
-"
-" 用户可自行在 .vimrc 中将按键映射到这些 `<Plug>()` 映射。例如：
-" >
-"   nmap <LocalLeader>jw <Plug>(Jieba_preview_w)
-"   " 等等，以及
-"   map w <Plug>(Jieba_w)
-"   " 等等
-" <
-" 提供快捷开关 g:jieba_vim_keymap，可通过在 .vimrc 中将其设为 1 来开启对十二个
-" word motion/text object 的 nmap, xmap 和 omap。
-
-""
-" @section Optional Dependency, opt-dependency
-" 如果用户安装了 `tpope/vim-repeat` (https://github.com/tpope/vim-repeat)，可使用 |.|
-" 重复上一次 word operation。例如 `dw.` 相当于 `dwdw`。
 
 function s:JiebaPreviewCancel()
     execute "hi clear JiebaPreview"
