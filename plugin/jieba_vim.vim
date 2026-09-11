@@ -223,17 +223,6 @@ function! JiebaModelImap(...)
     endif
 endfunction
 
-function! s:ConsumeChars()
-    while 1
-        let l:ch = getchar(1)
-        " Testing against 27 (\<Esc>) is necessary; otherwise Vim will crash.
-        if l:ch ==# 0 || l:ch ==# 27
-            break
-        endif
-        call getchar(0)
-    endwhile
-endfunction
-
 function! JiebaNmap(motion, count, model_funcname)
     if a:model_funcname !=# ""
         let l:result_dict = function(a:model_funcname)(a:motion, getcurpos(), a:count)
@@ -241,8 +230,8 @@ function! JiebaNmap(motion, count, model_funcname)
         let l:result_dict = JiebaModelNmap(a:motion, getcurpos(), a:count)
     endif
     call cursor(l:result_dict["cursor"][1:2])
-    if l:result_dict["prevent_change"] && !exists("$JIEBA_TEST_CASE")
-        call s:ConsumeChars()
+    if l:result_dict["prevent_change"]
+        call jieba_vim#utils#consume_chars()
     endif
 endfunction
 
@@ -270,13 +259,9 @@ function! JiebaXmap(motion, count, model_funcname)
     else
         noautocmd normal! gv
     endif
-    if l:result_dict["prevent_change"] && !exists("$JIEBA_TEST_CASE")
-        call s:ConsumeChars()
+    if l:result_dict["prevent_change"]
+        call jieba_vim#utils#consume_chars()
     endif
-endfunction
-
-function! s:IsForwardMotion(motion)
-    return a:motion ==? "w" || a:motion ==? "e" || a:motion ==? "iw" || a:motion ==? "aw"
 endfunction
 
 function s:JiebaModelOmapProcessed(model_funcname, motion, curpos, count, operator)
@@ -308,9 +293,7 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     if l:result_dict["prevent_change"]
         " Land the cursor to potentially a new position.
         call cursor(l:result_dict["cursor"][1:2])
-        if !exists("$JIEBA_TEST_CASE")
-            call s:ConsumeChars()
-        endif
+        call jieba_vim#utils#consume_chars()
     else
         if a:operator !=# "y"
             " This no-op line effectively sets an undoable checkpoint such that
@@ -336,7 +319,7 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
 
         " ===
         " Select ...
-        if s:IsForwardMotion(a:motion)
+        if jieba_vim#utils#is_forward_motion(a:motion)
             let l:start_pos = l:result_dict["langle"]
             let l:end_pos = l:result_dict["rangle"]
         else
@@ -404,23 +387,6 @@ function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
     endif
 endfunction
 
-function! JiebaDelToCursor(start_col, cur_col)
-    let l:line = getline(".")
-    if a:start_col > 1
-        let l:head = l:line[0:a:start_col - 2]
-    else
-        let l:head = ""
-    endif
-    if a:cur_col < col("$")
-        let l:tail = l:line[a:cur_col - 1:]
-    else
-        let l:tail = ""
-    endif
-    let l:line_modified = l:head . l:tail
-    call setline(".", l:line_modified)
-    call cursor(0, a:start_col)
-endfunction
-
 function! s:JiebaImapCtrlWExpr(model_funcname)
     " l:curpos: [_, lnum, col, off, _]
     let l:curpos = getcurpos()
@@ -443,7 +409,7 @@ function! s:JiebaImapCtrlWExpr(model_funcname)
                 let l:result_dict = JiebaModelImap("\<C-w>", l:curpos)
             endif
         endif
-        return "\<Cmd>call JiebaDelToCursor("
+        return "\<Cmd>call jieba_vim#utils#del_to_cursor("
             \ . l:result_dict["cursor"][2] . ","
             \ . l:curpos[2] . ")\<CR>"
     endif
@@ -587,17 +553,10 @@ if g:jieba_vim_keymap
     imap <C-w> <Plug>(Jieba_C_w)
 endif
 
-function s:UpdateIsk()
-    if has("nvim")
-        lua jieba_vim:update_isk(vim.o.iskeyword)
-    else
-        py3 jieba_vim.navigation.update_isk(vim.eval('&iskeyword'))
-    endif
-endfunction
 
 augroup jieba_vim_update_isk
     autocmd!
-    autocmd OptionSet iskeyword call s:UpdateIsk()
+    autocmd OptionSet iskeyword call jieba_vim#utils#update_isk()
 augroup END
 
 
