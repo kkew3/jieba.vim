@@ -49,6 +49,9 @@ function! jieba_vim#utils#is_forward_motion(motion)
 endfunction
 
 function jieba_vim#utils#update_isk()
+    if !get(g:, "jieba_vim_loaded_cdylib", 0)
+        return
+    endif
     if has("nvim")
         lua jieba_vim:update_isk(vim.o.iskeyword)
     else
