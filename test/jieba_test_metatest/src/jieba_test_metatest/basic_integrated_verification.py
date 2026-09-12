@@ -324,10 +324,10 @@ endfunction
 
         # Define mapping.
         expr_func = {
-            "n": "JiebaNmapExpr",
-            "x": "JiebaXmapExpr",
-            "o": "JiebaOmapExpr",
-            "i": "JiebaImapExpr",
+            "n": "jieba_vim#mapping#nmap_expr",
+            "x": "jieba_vim#mapping#xmap_expr",
+            "o": "jieba_vim#mapping#omap_expr",
+            "i": "jieba_vim#mapping#imap_expr",
         }[self.mode]
         motion_key_unescaped = (
             self.motion_key[1:]

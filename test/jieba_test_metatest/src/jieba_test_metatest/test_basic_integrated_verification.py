@@ -434,7 +434,7 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
+nnoremap <expr> <silent> w jieba_vim#mapping#nmap_expr("w", "JiebaOracleModel")
 
 " state_before setup
 let &selection = "exclusive"
@@ -532,7 +532,7 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
+nnoremap <expr> <silent> w jieba_vim#mapping#nmap_expr("w", "JiebaOracleModel")
 
 " state_before setup
 let &selection = "exclusive"
@@ -667,7 +667,7 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
+xnoremap <expr> <silent> e jieba_vim#mapping#xmap_expr("e", "JiebaOracleModel")
 
 " state_before setup
 let &virtualedit = "onemore"
@@ -770,7 +770,7 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
+xnoremap <expr> <silent> e jieba_vim#mapping#xmap_expr("e", "JiebaOracleModel")
 
 " state_before setup
 let &virtualedit = "onemore"
@@ -950,7 +950,7 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
+onoremap <expr> <silent> W jieba_vim#mapping#omap_expr("W", "JiebaOracleModel")
 
 " state_before setup
 
@@ -1024,7 +1024,7 @@ function! JiebaOracleModel(...)
 endfunction
 
 " define mapping
-onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
+onoremap <expr> <silent> W jieba_vim#mapping#omap_expr("W", "JiebaOracleModel")
 
 " state_before setup
 
