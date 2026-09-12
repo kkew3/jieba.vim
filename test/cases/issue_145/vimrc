@@ -14,6 +14,8 @@
 
 execute "source " . expand("<sfile>:p:h:h") . "/vimrc"
 
+let g:jieba_vim_experimental_opfunc = 1
+
 if !exists("$VIM_SURROUND_DIR")
     echoerr '$VIM_SURROUND_DIR not set'
     cquit 9
