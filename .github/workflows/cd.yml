@@ -243,6 +243,7 @@ jobs:
               vim -Nu NONE -n -Es \
                 +"set rtp^=." \
                 +"runtime plugin/jieba_vim.vim" \
+                +'runtime! plugin/jieba_vim/**/*.vim' \
                 +"call jieba_vim#install()" \
                 +"qa"
               ;;
@@ -250,6 +251,7 @@ jobs:
               nvim --headless -u NONE --clean \
                 +"set rtp^=." \
                 +"runtime plugin/jieba_vim.vim" \
+                +'runtime! plugin/jieba_vim/**/*.vim' \
                 +"call jieba_vim#install()" \
                 +"qa"
               ;;

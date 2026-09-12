@@ -31,597 +31,92 @@ let g:jieba_vim_user_dict = get(g:, 'jieba_vim_user_dict', '')
 " (默认 0)：是/否 (1/0) 自动开启 keymap（不包含预览）。
 let g:jieba_vim_keymap = get(g:, 'jieba_vim_keymap', 0)
 
+""
+" (默认 0)：motion 预览上限。若为正数，预览该次数内 motion 后的光标位置；
+" 若为 0，预览当前行；否则预览 99999 次内 motion 后的光标位置。
+let g:jieba_vim_preview_limits = get(g:, "jieba_vim_preview_limits", 0)
+
 if !has("nvim") && !has('python3')
     echoerr "python3 is required by jieba.vim"
     finish
 endif
 
-" Reference: https://github.com/junegunn/fzf/blob/master/plugin/fzf.vim
-let s:is_win = has("win32") || has("win64")
-if s:is_win && &shellslash
-    set noshellslash
-    let s:base_dir = expand("<sfile>:h:h")
-    set shellslash
-else
-    let s:base_dir = expand("<sfile>:h:h")
-endif
-
-if s:is_win && !has("win32unix") && has("nvim")
-    let s:cdylib_suffix = ".dll"
-elseif s:is_win && !has("win32unix")
-    let s:cdylib_suffix = ".pyd"
-else
-    let s:cdylib_suffix = ".so"
-endif
-
-function! s:CheckCdylib() abort
-    if has("nvim")
-        if filereadable(s:base_dir . "/lua/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
-            lua jieba_vim = require("jieba_vim")
-            let s:loaded_jieba_vim_cdylib = 1
-        else
-            let s:loaded_jieba_vim_cdylib = 0
-        endif
-    else
-        if filereadable(s:base_dir . "/pythonx/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
-            py3 import jieba_vim.navigation
-            let s:loaded_jieba_vim_cdylib = 1
-        else
-            let s:loaded_jieba_vim_cdylib = 0
-        endif
-    endif
-endfunction
-
-let s:loaded_jieba_vim_cdylib = 0
-call s:CheckCdylib()
-
-function! s:InitWordMotion() abort
-    if !s:loaded_jieba_vim_cdylib
-        return
-    endif
-    let l:args = [g:jieba_vim_user_dict, &iskeyword, str2nr(g:jieba_vim_lazy)]
-    if has("nvim")
-        let l:init_word_motion_err = luaeval("jieba_vim:init_word_motion(unpack(_A))", l:args)
-        if l:init_word_motion_err !=# ""
-            echoerr l:init_word_motion_err
-            return
-        endif
-    else
-        let l:init_word_motion_err = py3eval(
-            \ "jieba_vim.navigation.init_word_motion(*vim.eval('l:args'))")
-        if l:init_word_motion_err !=# "" && l:init_word_motion_err !=# v:none
-            echoerr l:init_word_motion_err
-            return
-        endif
-    endif
-    let s:loaded_jieba_vim_word_motion = 1
-endfunction
-
-let s:loaded_jieba_vim_word_motion = 0
-call s:InitWordMotion()
 
 ""
 " 取消按词跳转位置预览
-command! JiebaPreviewCancel call <SID>JiebaPreviewCancel()
+command! JiebaPreviewCancel call jieba_vim#mapping#preview_cancel()
+
+
+function! s:escape_key(key, ...)
+    if stridx(a:key, "_") < 0
+        return a:key
+    endif
+    if a:0 && a:1
+        return eval('"\<' . substitute(a:key, "_", "-", "") . '>"')
+    endif
+    return "<" . substitute(a:key, "_", "-", "") . ">"
+endfunction
 
 let s:motions = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
 let s:objects = ["iw", "iW", "aw", "aW"]
+let s:arrows = ["C_Left", "S_Left", "C_Right", "S_Right"]
+let s:ispecial = ["C_w"]
 
-
-function s:JiebaPreviewCancel()
-    execute "hi clear JiebaPreview"
-endfunction
-
-function s:JiebaModelPreview(...)
-    if !s:loaded_jieba_vim_cdylib 
-        throw "cdylib unloaded; run jieba_vim#install() first"
-    endif
-    if !s:loaded_jieba_vim_word_motion
-        throw "word_motion uninitialized; check jieba_vim config"
-    endif
-
-    if has("nvim")
-        return luaeval("jieba_vim:preview_nmap(jieba_vim.buffer, unpack(_A))",
-            \ a:000)
-    else
-        " In patch-9.1.0844 Vim introduced py3eval({expr}, [{locals}]) api.
-        " But in order to work with Vim before that patch, we have to work
-        " with this awkward syntax. The same applies below for all calls to
-        " `py3eval()`.
-        let l:args = a:000
-        return py3eval(
-            \ "jieba_vim.navigation.preview_nmap(vim.current.buffer, *vim.eval('l:args'))")
-    endif
-endfunction
-
-function! s:JiebaPreview(motion)
-    let l:limit = get(g:, "jieba_vim_preview_limits", 0)
-    if l:limit < 0
-        let l:limit = 99999
-    endif
-    let l:cursor_positions = s:JiebaModelPreview(a:motion, getcurpos(), l:limit)
-    if empty(l:cursor_positions)
-        call s:JiebaPreviewCancel()
-    else
-        execute "hi link JiebaPreview IncSearch"
-        let l:pattern = '%' . l:cursor_positions[0][1] . 'c%' . l:cursor_positions[0][0] . 'l'
-        for pos in l:cursor_positions[1:]
-            let l:pattern .= '|%' . pos[1] . 'c%' . pos[0] . 'l'
-        endfor
-        for pos in l:cursor_positions
-            execute 'match JiebaPreview /\v' . l:pattern . '/'
-        endfor
-    endif
-endfunction
 
 for ky in s:motions
-    execute 'nnoremap <silent> <Plug>(Jieba_preview_' . ky . ') :<C-u>call <SID>JiebaPreview("' . ky . '")<CR>'
+    execute 'nnoremap <silent> <Plug>(Jieba_preview_' . ky . ') '
+        \ . ':<C-u>call jieba_vim#mapping#preview(' . string(ky) . ')<CR>'
 endfor
-nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>call <SID>JiebaPreviewCancel()<CR>
+nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>call jieba_vim#mapping#preview_cancel()<CR>
 
-function! JiebaModelNmap(...)
-    if !s:loaded_jieba_vim_cdylib
-        throw "cdylib unloaded; run jieba_vim#install() first"
-    endif
-    if !s:loaded_jieba_vim_word_motion
-        throw "word_motion uninitialized; check jieba_vim config"
-    endif
-
-    if has("nvim")
-        return luaeval("jieba_vim:nmap(jieba_vim.buffer, unpack(_A))", a:000)
-    else
-        return py3eval(
-            \ "jieba_vim.navigation.nmap(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
-
-function! JiebaModelXmap(...)
-    if !s:loaded_jieba_vim_cdylib
-        throw "cdylib unloaded; run jieba_vim#install() first"
-    endif
-    if !s:loaded_jieba_vim_word_motion
-        throw "word_motion uninitialized; check jieba_vim config"
-    endif
-
-    if has("nvim")
-        return luaeval("jieba_vim:xmap(jieba_vim.buffer, unpack(_A))", a:000)
-    else
-        return py3eval(
-            \ "jieba_vim.navigation.xmap(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
-
-function! JiebaModelOmap(...)
-    if !s:loaded_jieba_vim_cdylib
-        throw "cdylib unloaded; run jieba_vim#install() first"
-    endif
-    if !s:loaded_jieba_vim_word_motion
-        throw "word_motion uninitialized; check jieba_vim config"
-    endif
-
-    if has("nvim")
-        return luaeval("jieba_vim:omap(jieba_vim.buffer, unpack(_A))", a:000)
-    else
-        return py3eval(
-            \ "jieba_vim.navigation.omap(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
-
-function! JiebaModelImap(...)
-    if !s:loaded_jieba_vim_cdylib
-        throw "cdylib unloaded; run jieba_vim#install() first"
-    endif
-    if !s:loaded_jieba_vim_word_motion
-        throw "word_motion uninitialized; check jieba_vim config"
-    endif
-
-    if has("nvim")
-        return luaeval("jieba_vim:imap(jieba_vim.buffer, unpack(_A))", a:000)
-    else
-        return py3eval(
-            \ "jieba_vim.navigation.imap(vim.current.buffer, *vim.eval('a:000'))")
-    endif
-endfunction
-
-function! s:ConsumeChars()
-    while 1
-        let l:ch = getchar(1)
-        " Testing against 27 (\<Esc>) is necessary; otherwise Vim will crash.
-        if l:ch ==# 0 || l:ch ==# 27
-            break
-        endif
-        call getchar(0)
-    endwhile
-endfunction
-
-function! JiebaNmap(motion, count, model_funcname)
-    if a:model_funcname !=# ""
-        let l:result_dict = function(a:model_funcname)(a:motion, getcurpos(), a:count)
-    else
-        let l:result_dict = JiebaModelNmap(a:motion, getcurpos(), a:count)
-    endif
-    call cursor(l:result_dict["cursor"][1:2])
-    if l:result_dict["prevent_change"] && !exists("$JIEBA_TEST_CASE")
-        call s:ConsumeChars()
-    endif
-endfunction
-
-function! JiebaXmap(motion, count, model_funcname)
-    noautocmd execute "normal! \<Esc>"
-    let l:orig_mark_a = getpos("'a")
-    let l:orig_mark_b = getpos("'b")
-    noautocmd silent execute "normal! gvomaomb\<Esc>"
-    let l:visual_begin = getpos("'a")
-    let l:visial_end = getpos("'b")
-    call setpos("'a", l:orig_mark_a)
-    call setpos("'b", l:orig_mark_b)
-    let l:vmode = visualmode()
-    if a:model_funcname !=# ""
-        let l:result_dict = function(a:model_funcname)(l:vmode, a:motion, l:visual_begin, l:visial_end, a:count)
-    else
-        let l:result_dict = JiebaModelXmap(l:vmode, a:motion, l:visual_begin, l:visial_end, a:count)
-    endif
-    noautocmd execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
-    call setpos("'<", l:result_dict["langle"])
-    call setpos("'>", l:result_dict["rangle"])
-    if l:result_dict["visualmode"] ==# "v" && l:vmode !=# "v"
-        " Release a ModeChanged event when the visualmode did change.
-        normal! gv
-    else
-        noautocmd normal! gv
-    endif
-    if l:result_dict["prevent_change"] && !exists("$JIEBA_TEST_CASE")
-        call s:ConsumeChars()
-    endif
-endfunction
-
-function! s:IsForwardMotion(motion)
-    return a:motion ==? "w" || a:motion ==? "e" || a:motion ==? "iw" || a:motion ==? "aw"
-endfunction
-
-function s:JiebaModelOmapProcessed(model_funcname, motion, curpos, count, operator)
-    if a:model_funcname !=# ""
-        let l:result_dict = function(a:model_funcname)(a:motion, a:curpos, a:count, a:operator)
-    else
-        let l:result_dict = JiebaModelOmap(a:motion, a:curpos, a:count, a:operator)
-    endif
-    " Check if we are selecting an empty region.
-    if l:result_dict["langle"] ==# l:result_dict["rangle"]
-        \ && l:result_dict["selection"] ==# "exclusive"
-        \ && l:result_dict["visualmode"] !=# "V"
-        \ && !l:result_dict["prevent_change"]
-        \ && stridx(&cpoptions, "E") >= 0
-        let l:result_dict["prevent_change"] = 1
-    endif
-    return l:result_dict
-endfunction
-
-function! JiebaOmap(motion, repeat, count, operator, register, model_funcname)
-    let l:orig_curpos = getcurpos()
-    if type(a:model_funcname) == v:t_string
-        let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, a:motion, l:orig_curpos, a:count, a:operator)
-    else
-        let l:result_dict = a:model_funcname
-    endif
-    call cursor(l:result_dict["langle"][1:2])
-
-    if l:result_dict["prevent_change"]
-        " Land the cursor to potentially a new position.
-        call cursor(l:result_dict["cursor"][1:2])
-        if !exists("$JIEBA_TEST_CASE")
-            call s:ConsumeChars()
-        endif
-    else
-        if a:operator !=# "y"
-            " This no-op line effectively sets an undoable checkpoint such that
-            " |u| undos all operations up to this line.
-            call setline(".", getline("."))
-        endif
-
-        " Save original states.
-        let l:orig_mark_a = getpos("'a")
-        let l:orig_startofline = &startofline
-        let l:orig_eventignore = &eventignore
-
-        " We need this option for cursor to be correctly positioned after
-        " d-special.
-        set startofline
-
-        " Ignore certain events to match the builtin behavior.
-        let l:ignored_events = "InsertEnter,InsertLeave"
-        if exists('##ModeChanged')
-            let l:ignored_events = l:ignored_events . ",ModeChanged"
-        endif
-        let &eventignore = l:ignored_events
-
-        " ===
-        " Select ...
-        if s:IsForwardMotion(a:motion)
-            let l:start_pos = l:result_dict["langle"]
-            let l:end_pos = l:result_dict["rangle"]
-        else
-            let l:start_pos = l:result_dict["rangle"]
-            let l:end_pos = l:result_dict["langle"]
-        endif
-        call cursor(l:start_pos[1:2])
-
-        " We need this line of code to decide whether to re-position cursor
-        " after d-special when 'startofline' is unset.
-        let l:need_repos = !empty(getline(l:end_pos[1]))
-
-        " .. and execute
-        let l:cont = a:operator ==# "c" && a:repeat ? @. : ""
-        if l:result_dict["visualmode"] ==# "V"
-            " Linewise operation.
-            let l:op_lines = l:end_pos[1] - l:start_pos[1] + 1
-            execute 'normal! "' . a:register . l:op_lines . a:operator . a:operator . l:cont
-        else
-            " Characterwise operation.
-            let l:v = l:result_dict["selection"] ==# "inclusive" ? "v" : ""
-            call setpos("'a", l:end_pos)
-            execute 'normal! "' . a:register . a:operator . l:v . "`a" . l:cont
-        endif
-        " ===
-
-        " Restore original states.
-        let &eventignore = l:orig_eventignore
-        let &startofline = l:orig_startofline
-        call setpos("'a", l:orig_mark_a)
-
-        " Land the cursor to potentially a new position.
-        " If we have used d-special, the cursor should already be placed by
-        " Vim.
-        if l:result_dict["visualmode"] !=# "V"
-            call cursor(l:result_dict["cursor"][1:2])
-        endif
-
-        " Cursor re-positioning of d-special in case 'startofline' is 0.
-        if &startofline ==# 0 && l:need_repos && l:result_dict["visualmode"] ==# "V"
-            if has("patch-8.2.5034") || has("nvim")
-                call cursor(0, virtcol2col(0, line("."), l:orig_curpos[4]))
-            else
-                execute "normal! " . l:orig_curpos[4] . "|"
-                call cursor(0, col("."))
-            endif
-        endif
-
-        " Special treatment to |c| which needs to drop the user in insert mode.
-        if a:operator ==# "c" && a:repeat == 0
-            if l:result_dict["cursor"][2] >= col("$")
-                if exists("$JIEBA_TEST_CASE")
-                    normal! A
-                else
-                    startinsert!
-                endif
-            else
-                if exists("$JIEBA_TEST_CASE")
-                    normal! i
-                else
-                    startinsert
-                endif
-            endif
-        endif
-    endif
-endfunction
-
-function! JiebaDelToCursor(start_col, cur_col)
-    let l:line = getline(".")
-    if a:start_col > 1
-        let l:head = l:line[0:a:start_col - 2]
-    else
-        let l:head = ""
-    endif
-    if a:cur_col < col("$")
-        let l:tail = l:line[a:cur_col - 1:]
-    else
-        let l:tail = ""
-    endif
-    let l:line_modified = l:head . l:tail
-    call setline(".", l:line_modified)
-    call cursor(0, a:start_col)
-endfunction
-
-function! s:JiebaImapCtrlWExpr(model_funcname)
-    " l:curpos: [_, lnum, col, off, _]
-    let l:curpos = getcurpos()
-    if exists("$JIEBA_TEST_CASE")
-        if a:model_funcname !=# ""
-            let l:result_dict = function(a:model_funcname)("\<C-w>", l:curpos)
-        else
-            let l:result_dict = JiebaModelImap("\<C-w>", l:curpos)
-        endif
-    endif
-    if l:curpos[3] > 0
-        return "\<Cmd>call cursor(0," . l:curpos[2] . ",0)\<CR>"
-    elseif l:curpos[2] ==# 1
-        return "\<BS>"
-    else
-        if !exists("$JIEBA_TEST_CASE")
-            if a:model_funcname !=# ""
-                let l:result_dict = function(a:model_funcname)("\<C-w>", l:curpos)
-            else
-                let l:result_dict = JiebaModelImap("\<C-w>", l:curpos)
-            endif
-        endif
-        return "\<Cmd>call JiebaDelToCursor("
-            \ . l:result_dict["cursor"][2] . ","
-            \ . l:curpos[2] . ")\<CR>"
-    endif
-endfunction
-
-function! s:JiebaImapArrowExpr(motion, model_funcname)
-    let l:curpos = getcurpos()
-    if a:model_funcname !=# ""
-        let l:result_dict = function(a:model_funcname)(a:motion, l:curpos)
-    else
-        let l:result_dict = JiebaModelImap(a:motion, l:curpos)
-    endif
-    return "\<Cmd>call cursor("
-        \ . l:result_dict["cursor"][1] . ","
-        \ . l:result_dict["cursor"][2] . ")\<CR>"
-endfunction
-
-function! JiebaNmapExpr(motion, model_funcname)
-    if a:motion ==# "\<C-Left>"
-        let l:equiv_motion = "B"
-    elseif a:motion ==# "\<S-Left>"
-        let l:equiv_motion = "b"
-    elseif a:motion ==# "\<C-Right>"
-        let l:equiv_motion = "W"
-    elseif a:motion ==# "\<S-Right>"
-        let l:equiv_motion = "w"
-    else
-        let l:equiv_motion = a:motion
-    endif
-    return "\<Cmd>call JiebaNmap('" . l:equiv_motion . "', v:count1, '" . a:model_funcname . "')\<CR>"
-endfunction
-
-for ky in s:motions
-    execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaNmapExpr("' . ky . '", "")'
+for ky in s:motions + s:arrows
+    execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') '
+        \ . 'jieba_vim#mapping#nmap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
 endfor
-nnoremap <expr> <silent> <Plug>(Jieba_C_Left) JiebaNmapExpr("\<C-Left>", "")
-nnoremap <expr> <silent> <Plug>(Jieba_S_Left) JiebaNmapExpr("\<S-Left>", "")
-nnoremap <expr> <silent> <Plug>(Jieba_C_Right) JiebaNmapExpr("\<C-Right>", "")
-nnoremap <expr> <silent> <Plug>(Jieba_S_Right) JiebaNmapExpr("\<S-Right>", "")
 
-function! JiebaXmapExpr(motion, model_funcname)
-    if a:motion ==# "\<C-Left>"
-        let l:equiv_motion = "B"
-    elseif a:motion ==# "\<S-Left>"
-        let l:equiv_motion = "b"
-    elseif a:motion ==# "\<C-Right>"
-        let l:equiv_motion = "W"
-    elseif a:motion ==# "\<S-Right>"
-        let l:equiv_motion = "w"
-    else
-        let l:equiv_motion = a:motion
-    endif
-    return "\<Cmd>call JiebaXmap('" . l:equiv_motion . "', v:count1, '" . a:model_funcname . "')\<CR>"
-endfunction
-
-for ky in s:motions + s:objects
-    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaXmapExpr("' . ky . '", "")'
+for ky in s:motions + s:objects + s:arrows
+    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' .ky . ') '
+        \ . 'jieba_vim#mapping#xmap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
 endfor
-xnoremap <expr> <silent> <Plug>(Jieba_C_Left) JiebaXmapExpr("\<C-Left>", "")
-xnoremap <expr> <silent> <Plug>(Jieba_S_Left) JiebaXmapExpr("\<S-Left>", "")
-xnoremap <expr> <silent> <Plug>(Jieba_C_Right) JiebaXmapExpr("\<C-Right>", "")
-xnoremap <expr> <silent> <Plug>(Jieba_S_Right) JiebaXmapExpr("\<S-Right>", "")
 
-function! JiebaOmapRepeat(motion, repeat, count, operator, register, model_funcname)
-    let l:result_dict = s:JiebaModelOmapProcessed(a:model_funcname, a:motion, getcurpos(), a:count, a:operator)
-    if !l:result_dict["prevent_change"] && a:operator !=# "y"
-        silent! call repeat#setreg(a:operator . "\<Plug>(Jieba_internal_o_" . a:motion . ")", a:register)
-    endif
-    call JiebaOmap(a:motion, a:repeat, a:count, a:operator, a:register, l:result_dict)
-    if !l:result_dict["prevent_change"] && a:operator !=# "y"
-        silent! call repeat#set(a:operator . "\<Plug>(Jieba_internal_o_" . a:motion . ")", a:count)
-    endif
-endfunction
-
-function! JiebaOmapRepeatExpr(motion, repeat, model_funcname)
-    if a:motion ==# "\<C-Left>"
-        let l:equiv_motion = "B"
-    elseif a:motion ==# "\<S-Left>"
-        let l:equiv_motion = "b"
-    elseif a:motion ==# "\<C-Right>"
-        let l:equiv_motion = "W"
-    elseif a:motion ==# "\<S-Right>"
-        let l:equiv_motion = "w"
-    else
-        let l:equiv_motion = a:motion
-    endif
-    return "\<Esc>\<Cmd>call JiebaOmapRepeat('" . l:equiv_motion . "', " . a:repeat . ", " . v:count1 . ", '" . v:operator . "', '" . v:register . "', '" . a:model_funcname . "')\<CR>"
-endfunction
-
-function! JiebaOmapExpr(motion, model_funcname)
-    return JiebaOmapRepeatExpr(a:motion, 0, a:model_funcname)
-endfunction
-
-for ky in s:motions + s:objects
-    execute 'onoremap <expr> <silent> <Plug>(Jieba_internal_o_' . ky . ') JiebaOmapRepeatExpr("' . ky . '", 1, "")'
-    execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') JiebaOmapExpr("' . ky . '", "")'
+for ky in s:motions + s:objects + s:arrows
+    execute 'onoremap <expr> <silent> <Plug>(Jieba_internal_o_' . ky . ') '
+        \ . 'jieba_vim#mapping#omap_playback_expr(' . string(s:escape_key(ky, 1)) . ', 1, "")'
+    execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') '
+        \ . 'jieba_vim#mapping#omap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
 endfor
-onoremap <expr> <silent> <Plug>(Jieba_internal_o_C_Left) JiebaOmapRepeatExpr("\<C-Left>", 1, "")
-onoremap <expr> <silent> <Plug>(Jieba_internal_o_S_Left) JiebaOmapRepeatExpr("\<S-Left>", 1, "")
-onoremap <expr> <silent> <Plug>(Jieba_internal_o_C_Right) JiebaOmapRepeatExpr("\<C-Right>", 1, "")
-onoremap <expr> <silent> <Plug>(Jieba_internal_o_S_Right) JiebaOmapRepeatExpr("\<S-Right>", 1, "")
-onoremap <expr> <silent> <Plug>(Jieba_C_Left) JiebaOmapExpr("\<C-Left>", "")
-onoremap <expr> <silent> <Plug>(Jieba_S_Left) JiebaOmapExpr("\<S-Left>", "")
-onoremap <expr> <silent> <Plug>(Jieba_C_Right) JiebaOmapExpr("\<C-Right>", "")
-onoremap <expr> <silent> <Plug>(Jieba_S_Right) JiebaOmapExpr("\<S-Right>", "")
 
-function! JiebaImapExpr(motion, model_funcname)
-    if a:motion ==# "\<C-w>"
-        return s:JiebaImapCtrlWExpr(a:model_funcname)
-    else
-        return s:JiebaImapArrowExpr(a:motion, a:model_funcname)
-    endif
-endfunction
+for ky in s:arrows + s:ispecial
+    execute 'inoremap <expr> <silent> <Plug>(Jieba_' . ky . ') '
+        \ . 'jieba_vim#mapping#imap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
+endfor
 
-inoremap <expr> <silent> <Plug>(Jieba_C_w) JiebaImapExpr("\<C-w>", "")
-inoremap <expr> <silent> <Plug>(Jieba_C_Left) JiebaImapExpr("\<C-Left>", "")
-inoremap <expr> <silent> <Plug>(Jieba_S_Left) JiebaImapExpr("\<S-Left>", "")
-inoremap <expr> <silent> <Plug>(Jieba_C_Right) JiebaImapExpr("\<C-Right>", "")
-inoremap <expr> <silent> <Plug>(Jieba_S_Right) JiebaImapExpr("\<S-Right>", "")
-
-let s:modes = ["n", "x", "o"]
-if g:jieba_vim_keymap
-    for ky in s:motions
-        for md in s:modes
-            execute md . "map " . ky . " <Plug>(Jieba_" . ky . ")"
-        endfor
-    endfor
-    for md in s:modes
-        execute md . "map <C-Left> <Plug>(Jieba_C_Left)"
-        execute md . "map <S-Left> <Plug>(Jieba_S_Left)"
-        execute md . "map <C-Right> <Plug>(Jieba_C_Right)"
-        execute md . "map <S-Right> <Plug>(Jieba_S_Right)"
+function! jieba_vim#default_keymap()
+    for ky in s:motions + s:arrows
+        execute "nmap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
+        execute "xmap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
+        execute "omap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
     endfor
     for ky in s:objects
-        for md in s:modes
-            if md !=# "n"
-                execute md . "map " . ky . " <Plug>(Jieba_" . ky . ")"
-            endif
-        endfor
+        execute "xmap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
+        execute "omap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
     endfor
-    imap <C-w> <Plug>(Jieba_C_w)
+    for ky in s:ispecial
+        execute "imap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
+    endfor
+endfunction
+
+if g:jieba_vim_keymap
+    call jieba_vim#default_keymap()
 endif
 
-function s:UpdateIsk()
-    if has("nvim")
-        lua jieba_vim:update_isk(vim.o.iskeyword)
-    else
-        py3 jieba_vim.navigation.update_isk(vim.eval('&iskeyword'))
-    endif
-endfunction
 
 augroup jieba_vim_update_isk
     autocmd!
-    autocmd OptionSet iskeyword call s:UpdateIsk()
+    autocmd OptionSet iskeyword call jieba_vim#utils#update_isk()
 augroup END
 
 
-" Reference: https://github.com/junegunn/fzf/blob/master/plugin/fzf.vim
 function! jieba_vim#install()
-    if s:is_win && !has("win32unix")
-        let l:script = s:base_dir . "/build.ps1"
-        let l:script = "powershell -ExecutionPolicy Bypass -file " . shellescape(l:script)
-    else
-        let l:script = s:base_dir . "/build.sh"
-    endif
-    if has("nvim")
-        let $JIEBA_VIM_INSTALL_NVIM = "1"
-    endif
-    let g:jieba_vim_build_error = system(l:script)
-    if v:shell_error
-        throw "jieba_vim#install: build script " . l:script
-            \ . " returns " . v:shell_error
-            \ . " (see g:jieba_vim_build_error)"
-    else
-        unlet g:jieba_vim_build_error
-    endif
-    let s:loaded_jieba_vim_cdylib = 0
-    call s:CheckCdylib()
-    let s:loaded_jieba_vim_word_motion = 0
-    call s:InitWordMotion()
+    call jieba_vim#loader#install()
 endfunction

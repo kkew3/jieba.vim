@@ -18,7 +18,8 @@ CONTENTS                                                      *jieba-contents*
      3.4 Word motion preview ................................. |jieba-preview|
   4. Commands ............................................... |jieba-commands|
   5. Functions ............................................. |jieba-functions|
-  6. Optional dependency .............................. |jieba-opt-dependency|
+  6. Global indicators ............................. |jieba-global-indicators|
+  7. Optional dependency .............................. |jieba-opt-dependency|
 
 
 ==============================================================================
@@ -37,7 +38,9 @@ CONFIGURATION                                                   *jieba-config*
 是/否 (1/0) 自动启用默认键位映射。
 
 注意，本插件默认不映射任何按键，需要用户通过 |jieba-mappings| 自行绑定键位。
-若希望快速启用默认键位（不包括跳转预览与实验性功能），可启用此设置。
+若希望快速启用默认键位（不包括跳转预览与实验性功能），可启用此设置。默认键位
+由 |jieba_vim#default_keymap()| 定义，因此也可以设置该选项为 0, 同时手动通过
+|:autocmd| 等方式调用 |jieba_vim#default_keymap()| 实现相似功能。
 
 默认: 0
 
@@ -51,6 +54,13 @@ CONFIGURATION                                                   *jieba-config*
 用户词典范例见 https://github.com/fxsjy/jieba/blob/master/test/userdict.txt。
 
 默认: ""（空字符串，使用默认词典）
+
+                                                  *g:jieba_vim_preview_limits*
+用于设置 |jieba-preview| 的 {motion} 预览上界。若为正数 N，则预览该次数内的
+{motion} 目标位置；若为 0, 则预览当前行的所有目标位置；否则，相当于 N 等于
+99999。
+
+默认: 0（预览当前行）
 
 
 ==============================================================================
@@ -106,6 +116,7 @@ WORD TEXT OBJECTS
         omap iw <Plug>(Jieba_iw)
         " [remaining mappings ..]
 <
+注意 text-objects 按定义不存在 |nmap| 映射。
 
                                                            *jieba-ins-special*
 INSERT SPECIAL KEYS
@@ -169,6 +180,28 @@ FUNCTIONS                                                    *jieba-functions*
 jieba_vim#install()                                      *jieba_vim#install()*
                            用于安装 jieba.vim。常作为 post-update hook 使用；
                            如果 post-update hook 自动运行失败，也可手动调用。
+
+
+jieba_vim#default_keymap()                        *jieba_vim#default_keymap()*
+                           用于启用默认键位。常通过设置 |g:jieba_vim_keymap|
+                           为 1 自动运行，也可手动调用。
+
+
+==============================================================================
+GLOBAL INDICATORS                                    *jieba-global-indicators*
+
+                                                   *g:jieba_vim_loaded_cdylib*
+若为 1，说明 jieba.vim 的 C 链接库加载成功。否则，调用 |jieba_vim#install()|
+以下载或本地编译链接库。
+
+                                              *g:jieba_vim_loaded_word_motion*
+若为 1，说明 jieba.vim 的后端加载成功。否则，需要检查用户配置。例如，无效的
+用户词典路径（见 |g:jieba_vim_user_dict|）常导致后端加载失败。
+
+                                                     *g:jieba_vim_build_error*
+若该变量存在，说明上一次 |jieba_vim#install()| 运行失败，且该变量包含了安装
+脚本的标准输出（stdout）；是否包含错误输出（stderr）取决于运行时 'shellredir'
+的值，例如 Unix 系统下 'shell' 为 "bash" 或 "zsh" 时默认包含错误输出。
 
 
 ==============================================================================
