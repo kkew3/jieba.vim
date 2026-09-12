@@ -32,7 +32,8 @@ let g:jieba_vim_user_dict = get(g:, 'jieba_vim_user_dict', '')
 let g:jieba_vim_keymap = get(g:, 'jieba_vim_keymap', 0)
 
 ""
-" TODO
+" (默认 0)：motion 预览上限。若为正数，预览该次数内 motion 后的光标位置；
+" 若为 0，预览当前行；否则预览 99999 次内 motion 后的光标位置。
 let g:jieba_vim_preview_limits = get(g:, "jieba_vim_preview_limits", 0)
 
 if !has("nvim") && !has('python3')
