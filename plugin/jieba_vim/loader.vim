@@ -32,33 +32,33 @@ else
 endif
 
 function! jieba_vim#loader#check_cdylib() abort
-    let g:loaded_jieba_vim_cdylib = get(g:, "loaded_jieba_vim_cdylib", 0)
-    if g:loaded_jieba_vim_cdylib
+    let g:jieba_vim_loaded_cdylib = get(g:, "jieba_vim_loaded_cdylib", 0)
+    if g:jieba_vim_loaded_cdylib
         return
     endif
     if has("nvim")
         if filereadable(s:base_dir . "/lua/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
             lua jieba_vim = require("jieba_vim")
-            let g:loaded_jieba_vim_cdylib = 1
+            let g:jieba_vim_loaded_cdylib = 1
         else
-            let g:loaded_jieba_vim_cdylib = 0
+            let g:jieba_vim_loaded_cdylib = 0
         endif
     else
         if filereadable(s:base_dir . "/pythonx/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
             py3 import jieba_vim.navigation
-            let g:loaded_jieba_vim_cdylib = 1
+            let g:jieba_vim_loaded_cdylib = 1
         else
-            let g:loaded_jieba_vim_cdylib = 0
+            let g:jieba_vim_loaded_cdylib = 0
         endif
     endif
 endfunction
 
 function! jieba_vim#loader#init_word_motion() abort
-    let g:loaded_jieba_vim_word_motion = get(g:, "loaded_jieba_vim_word_motion", 0)
-    if g:loaded_jieba_vim_word_motion
+    let g:jieba_vim_loaded_word_motion = get(g:, "jieba_vim_loaded_word_motion", 0)
+    if g:jieba_vim_loaded_word_motion
         return
     endif
-    if !g:loaded_jieba_vim_cdylib
+    if !g:jieba_vim_loaded_cdylib
         return
     endif
     let l:args = [g:jieba_vim_user_dict, &iskeyword, str2nr(g:jieba_vim_lazy)]
@@ -76,7 +76,7 @@ function! jieba_vim#loader#init_word_motion() abort
             return
         endif
     endif
-    let g:loaded_jieba_vim_word_motion = 1
+    let g:jieba_vim_loaded_word_motion = 1
 endfunction
 
 " Reference: https://github.com/junegunn/fzf/blob/master/plugin/fzf.vim
@@ -98,8 +98,8 @@ function! jieba_vim#loader#install()
     else
         unlet g:jieba_vim_build_error
     endif
-    unlet! g:loaded_jieba_vim_cdylib
-    unlet! g:loaded_jieba_vim_word_motion
+    unlet! g:jieba_vim_loaded_cdylib
+    unlet! g:jieba_vim_loaded_word_motion
     call jieba_vim#loader#check_cdylib()
     call jieba_vim#loader#init_word_motion()
 endfunction
@@ -107,10 +107,10 @@ endfunction
 function! jieba_vim#loader#ensure_loaded() abort
     call jieba_vim#loader#check_cdylib()
     call jieba_vim#loader#init_word_motion()
-    if !g:loaded_jieba_vim_cdylib 
+    if !g:jieba_vim_loaded_cdylib 
         throw "cdylib unloaded; run jieba_vim#install() first"
     endif
-    if !g:loaded_jieba_vim_word_motion
+    if !g:jieba_vim_loaded_word_motion
         throw "word_motion uninitialized; check jieba_vim config"
     endif
 endfunction
