@@ -1,5 +1,9 @@
 # Taxonomy of tests
 
+Date: April 30, 2026 | Author: Kaiwen Wu
+
+## Introduction
+
 To ensure `jieba.vim` matches Vim builtin behavior as much as possible, several kinds of tests are run as part of CI.
 
 ## Unit case verification
