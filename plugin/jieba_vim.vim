@@ -46,73 +46,68 @@ endif
 " 取消按词跳转位置预览
 command! JiebaPreviewCancel call jieba_vim#mapping#preview_cancel()
 
+
+function! s:escape_key(key, ...)
+    if stridx(a:key, "_") < 0
+        return a:key
+    endif
+    if a:0 && a:1
+        return eval('"\<' . substitute(a:key, "_", "-", "") . '>"')
+    endif
+    return "<" . substitute(a:key, "_", "-", "") . ">"
+endfunction
+
 let s:motions = ["w", "W", "e", "E", "b", "B", "ge", "gE"]
 let s:objects = ["iw", "iW", "aw", "aW"]
+let s:arrows = ["C_Left", "S_Left", "C_Right", "S_Right"]
+let s:ispecial = ["C_w"]
 
 
 for ky in s:motions
-    execute 'nnoremap <silent> <Plug>(Jieba_preview_' . ky . ') :<C-u>call jieba_vim#mapping#preview("' . ky . '")<CR>'
+    execute 'nnoremap <silent> <Plug>(Jieba_preview_' . ky . ') '
+        \ . ':<C-u>call jieba_vim#mapping#preview(' . string(ky) . ')<CR>'
 endfor
 nnoremap <silent> <Plug>(Jieba_preview_cancel) :<C-u>call jieba_vim#mapping#preview_cancel()<CR>
 
-
-for ky in s:motions
-    execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') jieba_vim#mapping#nmap_expr("' . ky . '", "")'
+for ky in s:motions + s:arrows
+    execute 'nnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') '
+        \ . 'jieba_vim#mapping#nmap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
 endfor
-nnoremap <expr> <silent> <Plug>(Jieba_C_Left) jieba_vim#mapping#nmap_expr("\<C-Left>", "")
-nnoremap <expr> <silent> <Plug>(Jieba_S_Left) jieba_vim#mapping#nmap_expr("\<S-Left>", "")
-nnoremap <expr> <silent> <Plug>(Jieba_C_Right) jieba_vim#mapping#nmap_expr("\<C-Right>", "")
-nnoremap <expr> <silent> <Plug>(Jieba_S_Right) jieba_vim#mapping#nmap_expr("\<S-Right>", "")
 
-for ky in s:motions + s:objects
-    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' . ky . ') jieba_vim#mapping#xmap_expr("' . ky . '", "")'
+for ky in s:motions + s:objects + s:arrows
+    execute 'xnoremap <expr> <silent> <Plug>(Jieba_' .ky . ') '
+        \ . 'jieba_vim#mapping#xmap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
 endfor
-xnoremap <expr> <silent> <Plug>(Jieba_C_Left) jieba_vim#mapping#xmap_expr("\<C-Left>", "")
-xnoremap <expr> <silent> <Plug>(Jieba_S_Left) jieba_vim#mapping#xmap_expr("\<S-Left>", "")
-xnoremap <expr> <silent> <Plug>(Jieba_C_Right) jieba_vim#mapping#xmap_expr("\<C-Right>", "")
-xnoremap <expr> <silent> <Plug>(Jieba_S_Right) jieba_vim#mapping#xmap_expr("\<S-Right>", "")
 
-
-for ky in s:motions + s:objects
-    execute 'onoremap <expr> <silent> <Plug>(Jieba_internal_o_' . ky . ') jieba_vim#mapping#omap_playback_expr("' . ky . '", 1, "")'
-    execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') jieba_vim#mapping#omap_expr("' . ky . '", "")'
+for ky in s:motions + s:objects + s:arrows
+    execute 'onoremap <expr> <silent> <Plug>(Jieba_internal_o_' . ky . ') '
+        \ . 'jieba_vim#mapping#omap_playback_expr(' . string(s:escape_key(ky, 1)) . ', 1, "")'
+    execute 'onoremap <expr> <silent> <Plug>(Jieba_' . ky . ') '
+        \ . 'jieba_vim#mapping#omap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
 endfor
-onoremap <expr> <silent> <Plug>(Jieba_internal_o_C_Left) jieba_vim#mapping#omap_playback_expr("\<C-Left>", 1, "")
-onoremap <expr> <silent> <Plug>(Jieba_internal_o_S_Left) jieba_vim#mapping#omap_playback_expr("\<S-Left>", 1, "")
-onoremap <expr> <silent> <Plug>(Jieba_internal_o_C_Right) jieba_vim#mapping#omap_playback_expr("\<C-Right>", 1, "")
-onoremap <expr> <silent> <Plug>(Jieba_internal_o_S_Right) jieba_vim#mapping#omap_playback_expr("\<S-Right>", 1, "")
-onoremap <expr> <silent> <Plug>(Jieba_C_Left) jieba_vim#mapping#omap_expr("\<C-Left>", "")
-onoremap <expr> <silent> <Plug>(Jieba_S_Left) jieba_vim#mapping#omap_expr("\<S-Left>", "")
-onoremap <expr> <silent> <Plug>(Jieba_C_Right) jieba_vim#mapping#omap_expr("\<C-Right>", "")
-onoremap <expr> <silent> <Plug>(Jieba_S_Right) jieba_vim#mapping#omap_expr("\<S-Right>", "")
 
-inoremap <expr> <silent> <Plug>(Jieba_C_w) jieba_vim#mapping#imap_expr("\<C-w>", "")
-inoremap <expr> <silent> <Plug>(Jieba_C_Left) jieba_vim#mapping#imap_expr("\<C-Left>", "")
-inoremap <expr> <silent> <Plug>(Jieba_S_Left) jieba_vim#mapping#imap_expr("\<S-Left>", "")
-inoremap <expr> <silent> <Plug>(Jieba_C_Right) jieba_vim#mapping#imap_expr("\<C-Right>", "")
-inoremap <expr> <silent> <Plug>(Jieba_S_Right) jieba_vim#mapping#imap_expr("\<S-Right>", "")
+for ky in s:arrows + s:ispecial
+    execute 'inoremap <expr> <silent> <Plug>(Jieba_' . ky . ') '
+        \ . 'jieba_vim#mapping#imap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
+endfor
 
-let s:modes = ["n", "x", "o"]
-if g:jieba_vim_keymap
-    for ky in s:motions
-        for md in s:modes
-            execute md . "map " . ky . " <Plug>(Jieba_" . ky . ")"
-        endfor
-    endfor
-    for md in s:modes
-        execute md . "map <C-Left> <Plug>(Jieba_C_Left)"
-        execute md . "map <S-Left> <Plug>(Jieba_S_Left)"
-        execute md . "map <C-Right> <Plug>(Jieba_C_Right)"
-        execute md . "map <S-Right> <Plug>(Jieba_S_Right)"
+function! jieba_vim#default_keymap()
+    for ky in s:motions + s:arrows
+        execute "nmap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
+        execute "xmap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
+        execute "omap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
     endfor
     for ky in s:objects
-        for md in s:modes
-            if md !=# "n"
-                execute md . "map " . ky . " <Plug>(Jieba_" . ky . ")"
-            endif
-        endfor
+        execute "xmap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
+        execute "omap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
     endfor
-    imap <C-w> <Plug>(Jieba_C_w)
+    for ky in s:ispecial
+        execute "imap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
+    endfor
+endfunction
+
+if g:jieba_vim_keymap
+    call jieba_vim#default_keymap()
 endif
 
 
