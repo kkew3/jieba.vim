@@ -5,8 +5,10 @@
 Dev:
 
 - Bump the minimum python3 version to 3.8 ([#148]).
+- Place jieba.vim vimscript functions under the namespace `jieba_vim`, and improve the public functional API ([#152]).
 
 [#148]: https://github.com/kkew3/jieba.vim/pull/148
+[#152]: https://github.com/kkew3/jieba.vim/pull/152
 
 
 ## v2.2.0 - 2026-08-09
