@@ -410,14 +410,7 @@ jobs:
         run: |
           mkdir -p .vim_bundle
           git clone https://github.com/tpope/vim-repeat.git .vim_bundle/vim-repeat
-          case ${{ matrix.vim.distr }} in
-            nvim)
-              git clone https://github.com/kylechui/nvim-surround.git .vim_bundle/vim-surround
-              ;;
-            vim)
-              git clone https://github.com/tpope/vim-surround.git .vim_bundle/vim-surround
-              ;;
-          esac
+          git clone https://github.com/tpope/vim-surround.git .vim_bundle/vim-surround
 
       # Do the job.
       - name: Run integrated test
