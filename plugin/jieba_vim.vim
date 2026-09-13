@@ -36,6 +36,10 @@ let g:jieba_vim_keymap = get(g:, 'jieba_vim_keymap', 0)
 " 若为 0，预览当前行；否则预览 99999 次内 motion 后的光标位置。
 let g:jieba_vim_preview_limits = get(g:, "jieba_vim_preview_limits", 0)
 
+""
+" (默认 0)：是/否 (1/0) 启用对 |g@| 的实验性支持。
+let g:jieba_vim_experimental_opfunc = get(g:, "jieba_vim_experimental_opfunc", 0)
+
 if !has("nvim") && !has('python3')
     echoerr "python3 is required by jieba.vim"
     finish
