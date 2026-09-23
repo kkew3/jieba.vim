@@ -62,6 +62,19 @@ CONFIGURATION                                                   *jieba-config*
 
 默认: 0（预览当前行）
 
+                                             *g:jieba_vim_experimental_opfunc*
+是/否 (1/0) 启用对 |g@| 的实验性支持。
+
+若为 1, 则通过可视选择实现 |g@| 的 |omap|，从而支持任意 'operatorfunc'，其
+代价为无法保证没有作用于可视模式的副作用，例如在一些情况下 |`<| 及 |`>| 会
+被意外覆写。若为 0, 则通过操作符重放实现 |g@| 的 |omap|，从而不引入任何
+副作用，其代价为无法支持调用 |getchar()| 的 'operatorfunc'。
+
+具体细节参见设计文档
+https://github.com/kkew3/jieba.vim/blob/main/docs/design_choices/0003-omap-impl-tradeoff.md。
+
+默认: 0
+
 
 ==============================================================================
 MAPPINGS                                                      *jieba-mappings*

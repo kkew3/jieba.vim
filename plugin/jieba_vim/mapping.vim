@@ -250,7 +250,110 @@ function! jieba_vim#mapping#omap_playback_expr(motion, repeat, model_funcname)
     return "\<Esc>\<Cmd>call jieba_vim#mapping#omap_playback('" . l:equiv_motion . "', " . a:repeat . ", " . v:count1 . ", '" . v:operator . "', '" . v:register . "', '" . a:model_funcname . "')\<CR>"
 endfunction
 
+function s:omap_visual_restore_visual()
+    if empty(s:jieba_vim_last_visualmode)
+        call visualmode(1)
+    elseif s:jieba_vim_last_visualmode != s:jieba_vim_last_model_visualmode
+        silent! execute "normal! " . s:jieba_vim_last_visualmode . "\<Esc>"
+    endif
+    call setpos("'<", s:jieba_vim_last_langle)
+    call setpos("'>", s:jieba_vim_last_rangle)
+    unlet! s:jieba_vim_last_langle
+    unlet! s:jieba_vim_last_rangle
+    unlet! s:jieba_vim_last_visualmode
+    unlet! s:jieba_vim_last_model_visualmode
+endfunction
+
+function jieba_vim#mapping#omap_visual_expr(motion, model_funcname, ...)
+    let l:count = v:count1
+    let l:operator = v:operator
+    let l:register = v:register
+
+    " Fallback to well-established playback implementation unless we are
+    " dealing with |g@|.
+    if l:operator !=# "g@"
+        return ""
+    endif
+
+    if a:motion ==# "\<C-Left>"
+        let l:equiv_motion = "B"
+    elseif a:motion ==# "\<S-Left>"
+        let l:equiv_motion = "b"
+    elseif a:motion ==# "\<C-Right>"
+        let l:equiv_motion = "W"
+    elseif a:motion ==# "\<S-Right>"
+        let l:equiv_motion = "w"
+    else
+        let l:equiv_motion = a:motion
+    endif
+    let l:orig_curpos = getcurpos()
+    if a:model_funcname !=# ""
+        let l:result_dict = function(a:model_funcname)(l:equiv_motion, l:orig_curpos, l:count, l:operator)
+    else
+        let l:result_dict = jieba_vim#model#omap(l:equiv_motion, l:orig_curpos, l:count, l:operator)
+    endif
+
+    if a:0
+        if l:result_dict["prevent_change"]
+            let l:keys = "\<Esc>\<Cmd>call jieba_vim#utils#consume_chars()\<Bar>"
+                    \ . "call cursor(" . l:result_dict["cursor"][1]
+                    \ . "," . l:result_dict["cursor"][2] . ")\<CR>"
+            call feedkeys(l:keys, "ni")
+            return
+        endif
+
+        " Save original states.
+        let s:jieba_vim_last_langle = getpos("'<")
+        let s:jieba_vim_last_rangle = getpos("'>")
+        let s:jieba_vim_last_visualmode = visualmode()
+        let s:jieba_vim_last_model_visualmode = l:result_dict["visualmode"]
+        " Restore original states.
+        " For CursorMoved trick see https://github.com/tpope/vim-repeat/issues/8#issuecomment-13951082
+        augroup jieba_vim_restore_langle_rangle
+            autocmd!
+            autocmd CursorMoved <buffer>
+                \ call <SID>omap_visual_restore_visual() |
+                \ autocmd! jieba_vim_restore_langle_rangle
+        augroup END
+
+        " Select ...
+        silent! execute "normal! " . l:result_dict["visualmode"] . "\<Esc>"
+        if jieba_vim#utils#is_forward_motion(a:motion)
+            let l:start_pos = l:result_dict["langle"]
+            let l:end_pos = l:result_dict["rangle"]
+        else
+            let l:start_pos = l:result_dict["rangle"]
+            let l:end_pos = l:result_dict["langle"]
+        endif
+        call setpos("'<", l:start_pos)
+        call setpos("'>", l:end_pos)
+        if l:result_dict["selection"] ==# "exclusive"
+            let l:rangle = getpos("'>")
+            let l:rangle[2] = l:rangle[2] - 1
+            call setpos("'>", l:rangle)
+        endif
+        normal! gv
+        return
+    endif
+
+    if l:result_dict["prevent_change"]
+        return "\<Esc>\<Cmd>call jieba_vim#utils#consume_chars()\<Bar>"
+                \ . "call cursor(" . l:result_dict["cursor"][1]
+                \ . "," . l:result_dict["cursor"][2] . ")\<CR>"
+    endif
+    let l:call_self = "call jieba_vim#mapping#omap_visual_expr('"
+                \ . l:equiv_motion . "', '"
+                \ . a:model_funcname . "', 1)"
+    return "\<Cmd>" . l:call_self . "\<CR>"
+endfunction
+
 function! jieba_vim#mapping#omap_expr(motion, model_funcname)
+    if g:jieba_vim_experimental_opfunc
+        let l:x = jieba_vim#mapping#omap_visual_expr(a:motion, a:model_funcname)
+        if !empty(l:x)
+            return l:x
+        endif
+    endif
     return jieba_vim#mapping#omap_playback_expr(a:motion, 0, a:model_funcname)
 endfunction
 
