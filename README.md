@@ -94,6 +94,7 @@ let g:jieba_vim_keymap = 1
 | `g:jieba_vim_lazy`| 是否延迟加载词典直到中文出现 | `1`（是） |
 | `g:jieba_vim_user_dict` | 用户自定义词典路径 | `""` |
 | `g:jieba_vim_keymap` | 是否自动启用默认键映射 | `0`（否） |
+| `g:jieba_vim_experimental_opfunc` | 是否启用对任意 `'opfunc'` 的支持，详见[文档](./doc/jieba_vim.txt) | `0`（否）|
 
 ## 开发者
 
@@ -220,6 +221,7 @@ let g:jieba_vim_keymap = 1
 | `g:jieba_vim_lazy` | Whether to delay loading the dictionary until Chinese characters appear | `1` (yes) |
 | `g:jieba_vim_user_dict` | Path to user-defined custom dictionary | `""` |
 | `g:jieba_vim_keymap` | Whether to automatically enable default key mappings | `0` (no) |
+| `g:jieba_vim_experimental_opfunc` | Whether to enable extended support of arbitrary `'opfunc'`; refer to the [doc](./doc/jieba_vim.txt) for more detail | `0` (no) |
 
 ## For Developers
 
