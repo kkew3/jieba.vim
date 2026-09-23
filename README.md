@@ -112,6 +112,18 @@ cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 
 ## FAQ
 
+<p>
+<details>
+<summary>FAQ 目录</summary>
+<ul>
+<li>Vim 至少需要什么版本</li>
+<li>如何与 im-select.nvim 配套使用</li>
+<li>如何与 vim-surround / nvim-surround 配套使用</li>
+<li>如何与 rime.vim 配套使用</li>
+</ul>
+</details>
+</p>
+
 见 [docs/faq.md](./docs/faq.md)。
 
 ## 在本地复现 Demo 动图
@@ -238,6 +250,18 @@ For the remaining, please refer to [CI](./.github/workflows/ci.yml).
 See [TODO.md](./TODO.md).
 
 ## FAQ
+
+<p>
+<details>
+<summary>FAQ Contents</summary>
+<ul>
+<li>What's the minimum required Vim version</li>
+<li>How to use in parallel with im-select.nvim</li>
+<li>How to use in parallel with vim-surround / nvim-surround</li>
+<li>How to use in parallel with rime.vim</li>
+</ul>
+</details>
+</p>
 
 See [docs/faq.md](./docs/faq.md).
 
