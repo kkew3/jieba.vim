@@ -94,6 +94,7 @@ let g:jieba_vim_keymap = 1
 | `g:jieba_vim_lazy`| 是否延迟加载词典直到中文出现 | `1`（是） |
 | `g:jieba_vim_user_dict` | 用户自定义词典路径 | `""` |
 | `g:jieba_vim_keymap` | 是否自动启用默认键映射 | `0`（否） |
+| `g:jieba_vim_experimental_opfunc` | 是否启用对任意 `'opfunc'` 的支持，详见[文档](./doc/jieba_vim.txt) | `0`（否）|
 
 ## 开发者
 
@@ -110,6 +111,18 @@ cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 见 [TODO.md](./TODO.md)。
 
 ## FAQ
+
+<p>
+<details>
+<summary>FAQ 目录</summary>
+<ul>
+<li>Vim 至少需要什么版本</li>
+<li>如何与 im-select.nvim 配套使用</li>
+<li>如何与 vim-surround / nvim-surround 配套使用</li>
+<li>如何与 rime.vim 配套使用</li>
+</ul>
+</details>
+</p>
 
 见 [docs/faq.md](./docs/faq.md)。
 
@@ -220,6 +233,7 @@ let g:jieba_vim_keymap = 1
 | `g:jieba_vim_lazy` | Whether to delay loading the dictionary until Chinese characters appear | `1` (yes) |
 | `g:jieba_vim_user_dict` | Path to user-defined custom dictionary | `""` |
 | `g:jieba_vim_keymap` | Whether to automatically enable default key mappings | `0` (no) |
+| `g:jieba_vim_experimental_opfunc` | Whether to enable extended support of arbitrary `'opfunc'`; refer to the [doc](./doc/jieba_vim.txt) for more detail | `0` (no) |
 
 ## For Developers
 
@@ -236,6 +250,18 @@ For the remaining, please refer to [CI](./.github/workflows/ci.yml).
 See [TODO.md](./TODO.md).
 
 ## FAQ
+
+<p>
+<details>
+<summary>FAQ Contents</summary>
+<ul>
+<li>What's the minimum required Vim version</li>
+<li>How to use in parallel with im-select.nvim</li>
+<li>How to use in parallel with vim-surround / nvim-surround</li>
+<li>How to use in parallel with rime.vim</li>
+</ul>
+</details>
+</p>
 
 See [docs/faq.md](./docs/faq.md).
 
