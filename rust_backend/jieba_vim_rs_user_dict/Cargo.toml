@@ -1,0 +1,9 @@
+[package]
+name = "jieba_vim_rs_user_dict"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+jieba-rs = { version = "0.10.2" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_yaml_ng = "0.10.0"
