@@ -120,6 +120,7 @@ cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 <li>如何与 im-select.nvim 配套使用</li>
 <li>如何与 vim-surround / nvim-surround 配套使用</li>
 <li>如何与 rime.vim 配套使用</li>
+<li>是否支持加载 Rime 词典</li>
 </ul>
 </details>
 </p>
@@ -259,6 +260,7 @@ See [TODO.md](./TODO.md).
 <li>How to use in parallel with im-select.nvim</li>
 <li>How to use in parallel with vim-surround / nvim-surround</li>
 <li>How to use in parallel with rime.vim</li>
+<li>Is loading Rime dictionary supported</li>
 </ul>
 </details>
 </p>
