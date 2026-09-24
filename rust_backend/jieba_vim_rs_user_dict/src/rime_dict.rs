@@ -123,7 +123,7 @@ pub fn load_from_rime_dict(path: &str) -> crate::Result<Jieba> {
     let path: PathBuf = path.into();
     if let Some(dir) = path.parent() {
         for name in header.import_tables {
-            let imported_path = dir.join(name);
+            let imported_path = dir.join(format!("{name}.dict.yaml"));
             load_from_rime_dict_helper(imported_path, &mut jieba)?;
         }
     }
