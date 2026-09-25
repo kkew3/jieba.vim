@@ -35,6 +35,10 @@ let g:jieba_vim_experimental_opfunc = 1
 
 [`rime.vim`][rime.vim] 是基于 [Rime][rime] 的 Vim/Neovim 中文输入法。为达成最大集成度同样可以考虑启用 `g:jieba_vim_experimental_opfunc` 开关。但这并不是必需的；如果介意其局限性且仅需基础集成，可以不启用。
 
+# 是否支持加载 Rime 词典
+
+见 [#156]。
+
 [im-select]: https://github.com/keaising/im-select.nvim
 [lazy]: https://lazy.folke.io/
 [issue83]: https://github.com/kkew3/jieba.vim/issues/83
@@ -45,3 +49,4 @@ let g:jieba_vim_experimental_opfunc = 1
 [0003]: https://github.com/kkew3/jieba.vim/blob/main/docs/design_choices/0003-omap-impl-tradeoff.md
 [rime.vim]: https://github.com/TSalmon3/rime.vim
 [rime]: https://rime.im
+[#156]: https://github.com/kkew3/jieba.vim/issues/156
