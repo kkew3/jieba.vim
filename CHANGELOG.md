@@ -6,6 +6,10 @@ Features:
 
 - (*experimental feature*) Extended support of arbitrary [`g@`][g@] operator ([#145], [#153], [#150]).
 
+Bug fixes:
+
+- Fix cursor positioning in dot-repeat of `c` operator ([#160]).
+
 Dev:
 
 - Bump the minimum python3 version to 3.8 ([#148]).
@@ -17,6 +21,7 @@ Dev:
 [#150]: https://github.com/kkew3/jieba.vim/pull/150
 [#148]: https://github.com/kkew3/jieba.vim/pull/148
 [#152]: https://github.com/kkew3/jieba.vim/pull/152
+[#160]: https://github.com/kkew3/jieba.vim/pull/160
 
 
 ## v2.2.0 - 2026-08-09
