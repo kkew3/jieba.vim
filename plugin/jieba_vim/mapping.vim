@@ -186,7 +186,7 @@ function! s:omap_playback_core(motion, repeat, count, operator, register, model_
         " Land the cursor to potentially a new position.
         " If we have used d-special, the cursor should already be placed by
         " Vim.
-        if l:result_dict["visualmode"] !=# "V"
+        if l:result_dict["visualmode"] !=# "V" && !a:repeat
             call cursor(l:result_dict["cursor"][1:2])
         endif
 
