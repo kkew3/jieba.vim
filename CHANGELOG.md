@@ -14,6 +14,7 @@ Dev:
 
 - Bump the minimum python3 version to 3.8 ([#148]).
 - Place jieba.vim vimscript functions under the namespace `jieba_vim`, and improve the public functional API ([#152]).
+- Improve Wall time of building from source ([#161]).
 
 [g@]: https://vimhelp.org/map.txt.html#g%40
 [#145]: https://github.com/kkew3/jieba.vim/issues/145
@@ -22,6 +23,7 @@ Dev:
 [#148]: https://github.com/kkew3/jieba.vim/pull/148
 [#152]: https://github.com/kkew3/jieba.vim/pull/152
 [#160]: https://github.com/kkew3/jieba.vim/pull/160
+[#161]: https://github.com/kkew3/jieba.vim/pull/161
 
 
 ## v2.2.0 - 2026-08-09
