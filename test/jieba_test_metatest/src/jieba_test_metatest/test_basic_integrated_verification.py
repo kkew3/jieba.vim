@@ -429,12 +429,12 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelNmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#nmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
+nnoremap <expr> <silent> w jieba_vim#mapping#nmap_expr("w", "JiebaOracleModel")
 
 " state_before setup
 let &selection = "exclusive"
@@ -527,12 +527,12 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelNmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#nmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-nnoremap <expr> <silent> w JiebaNmapExpr("w", "JiebaOracleModel")
+nnoremap <expr> <silent> w jieba_vim#mapping#nmap_expr("w", "JiebaOracleModel")
 
 " state_before setup
 let &selection = "exclusive"
@@ -662,12 +662,12 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelXmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#xmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
+xnoremap <expr> <silent> e jieba_vim#mapping#xmap_expr("e", "JiebaOracleModel")
 
 " state_before setup
 let &virtualedit = "onemore"
@@ -765,12 +765,12 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelXmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#xmap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-xnoremap <expr> <silent> e JiebaXmapExpr("e", "JiebaOracleModel")
+xnoremap <expr> <silent> e jieba_vim#mapping#xmap_expr("e", "JiebaOracleModel")
 
 " state_before setup
 let &virtualedit = "onemore"
@@ -945,12 +945,12 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelOmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#omap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
+onoremap <expr> <silent> W jieba_vim#mapping#omap_expr("W", "JiebaOracleModel")
 
 " state_before setup
 
@@ -1019,12 +1019,12 @@ let s:map_motions = {"\\<C-Left>": "\\\\u0080\\\\u00fdU", "\\<C-Right>": "\\\\u0
 function! JiebaOracleModel(...)
     let g:model_input = copy(a:000)
     let g:model_input[0] = get(s:map_motions, g:model_input[0], g:model_input[0])
-    let g:model_output = call(function("JiebaModelOmap"), a:000)
+    let g:model_output = call(function("jieba_vim#model#omap"), a:000)
     return g:model_output
 endfunction
 
 " define mapping
-onoremap <expr> <silent> W JiebaOmapExpr("W", "JiebaOracleModel")
+onoremap <expr> <silent> W jieba_vim#mapping#omap_expr("W", "JiebaOracleModel")
 
 " state_before setup
 

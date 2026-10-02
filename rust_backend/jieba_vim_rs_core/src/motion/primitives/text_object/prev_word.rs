@@ -80,19 +80,19 @@ fn find_stop_point<L: IntoIterator<Item = GToken>>(
             match first {
                 GToken::Eol(_) => unreachable!(),
                 GToken::T(first_t) => {
-                    if first_t.ty == TokenType::Space {
-                        if let Some(second) = line.next() {
-                            match second {
-                                GToken::Eol(_) => unreachable!(),
-                                GToken::T(second_t) => match second_t.ty {
-                                    // By tokenization, there can't be two
-                                    // adjacent Space tokens.
-                                    TokenType::Space => unreachable!(),
-                                    TokenType::Word => {
-                                        *col = second.first_char();
-                                    }
-                                },
-                            }
+                    if first_t.ty == TokenType::Space
+                        && let Some(second) = line.next()
+                    {
+                        match second {
+                            GToken::Eol(_) => unreachable!(),
+                            GToken::T(second_t) => match second_t.ty {
+                                // By tokenization, there can't be two adjacent
+                                // Space tokens.
+                                TokenType::Space => unreachable!(),
+                                TokenType::Word => {
+                                    *col = second.first_char();
+                                }
+                            },
                         }
                     }
                 }

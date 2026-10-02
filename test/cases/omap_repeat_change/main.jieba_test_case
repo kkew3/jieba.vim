@@ -12,33 +12,15 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-// This file contains test cases that check for re-positioning the cursor after
-// d-special when 'startofline' option is unset.
-
 #V 5
 
 #X i
+#B0 |abc·def·ghi␊
 
-K d2w
-S0 startofline=0
-B0 |a␊␊··def␊
-B1 ··|def␊
-S1 startofline=0
+K cwfoo w
+B1 foo·|def·ghi␊
 
-K d2w
-S0 startofline=0
-B0 |a␊b␊··def␊
-B1 |··def␊
-S1 startofline=0
-
-K d2w
-S0 startofline=0
-B0 |␊␊··def␊
-B1 ··|def␊
-S1 startofline=0
-
-K d2w
-S0 startofline=0
-B0 |␊b␊··def␊
-B1 |··def␊
-S1 startofline=0
+K cwfoo w .
+B1 foo·fo|o·ghi␊
+// Wrong behavior:
+// B1 foo·|foo·ghi␊

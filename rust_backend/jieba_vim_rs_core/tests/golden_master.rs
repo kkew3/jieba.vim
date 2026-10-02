@@ -42,10 +42,10 @@ struct Cli {
     /// Run test cases that contain this string only.
     #[arg(short, long)]
     case: Option<String>,
-    /// The jsonl files containing model inputs/outputs origined from last unit
-    /// verification. If the files are named ending with ".gz", they will be
-    /// decompressed automatically. Will also read all jsonl or jsonl.gz files
-    /// under directory pointed to by env variable GOLDEN_MASTER_DIR.
+    /// The jsonl files containing model inputs/outputs originated from last
+    /// unit verification. If the files are named ending with ".gz", they will
+    /// be decompressed automatically. Will also read all jsonl or jsonl.gz
+    /// files under directory pointed to by env variable GOLDEN_MASTER_DIR.
     test_info_jsonl: Vec<PathBuf>,
 }
 

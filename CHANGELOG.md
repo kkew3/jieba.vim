@@ -1,10 +1,36 @@
 # Changelog
 
+## v2.3.0 - 2026-10-02
+
+Features:
+
+- (*experimental feature*) Extended support of arbitrary [`g@`][g@] operator ([#145], [#153], [#150]).
+
+Bug fixes:
+
+- Fix cursor positioning in dot-repeat of `c` operator ([#160]).
+
+Dev:
+
+- Bump the minimum python3 version to 3.8 ([#148]).
+- Place jieba.vim vimscript functions under the namespace `jieba_vim`, and improve the public functional API ([#152]).
+- Improve Wall time of building from source ([#161]).
+
+[g@]: https://vimhelp.org/map.txt.html#g%40
+[#145]: https://github.com/kkew3/jieba.vim/issues/145
+[#153]: https://github.com/kkew3/jieba.vim/pull/153
+[#150]: https://github.com/kkew3/jieba.vim/pull/150
+[#148]: https://github.com/kkew3/jieba.vim/pull/148
+[#152]: https://github.com/kkew3/jieba.vim/pull/152
+[#160]: https://github.com/kkew3/jieba.vim/pull/160
+[#161]: https://github.com/kkew3/jieba.vim/pull/161
+
+
 ## v2.2.0 - 2026-08-09
 
 Features:
 
-- Implement [`i_CTRL-W`][i_CTRL-W] ([#97], [#130]). Support of option [`'backspace'`][backspace] is leaved as future works.
+- Implement [`i_CTRL-W`][i_CTRL-W] ([#97], [#130]). Support of option [`'backspace'`][backspace] is left for future work.
 - (*experimental feature*) Implement arrow mappings ([#98], [#134]).
 
 Bug fixes:

@@ -13,7 +13,7 @@
 
 - 混合架构：Vimscript 负责集成，Rust 核心通过 cdylib 提供高性能分词；预编译二进制托管于 [GitHub Releases][releases]，覆盖主流平台。两者通过 python3 (Vim) 或 lua5.1 (Neovim) 桥接。
 - 兼容性保障：84,000+ 自动化 Vim 用例验证，确保在纯 ASCII 文本中与原生 word motions / text objects 行为完全一致。
-- 完整支持：全部 17 个 word motions / text objects（`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `CTRL-Left` / `SHIFT-Left` / `CTRL-Right` / `Shift-Right` / `iw` / `iW` / `aw` / `aW` / `i_CTRL-W`），覆盖 normal / visual / operator-pending 模式，支持计数前缀与所有字符操作，支持 register，以及通过 [`tpope/vim-repeat`][vim-repeat] 支持 [`.`][dot-repeat] 重复上一操作。
+- 完整支持：全部 17 个 word motions / text objects（`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `CTRL-Left` / `SHIFT-Left` / `CTRL-Right` / `SHIFT-Right` / `iw` / `iW` / `aw` / `aW` / `i_CTRL-W`），覆盖 normal / visual / operator-pending 模式，支持计数前缀与所有字符操作，支持 register，以及通过 [`tpope/vim-repeat`][vim-repeat] 支持 [`.`][dot-repeat] 重复上一操作。
 - 灵活配置：尊重 [`'iskeyword'`][isk] 设置，允许自定义分词边界；支持惰性加载词典，按需启用。
 - 帮助文档：可使用 `:h jieba_vim.txt` 在 Vim/Nvim 内查看[文档](./doc/jieba_vim.txt)。
 
@@ -94,6 +94,7 @@ let g:jieba_vim_keymap = 1
 | `g:jieba_vim_lazy`| 是否延迟加载词典直到中文出现 | `1`（是） |
 | `g:jieba_vim_user_dict` | 用户自定义词典路径 | `""` |
 | `g:jieba_vim_keymap` | 是否自动启用默认键映射 | `0`（否） |
+| `g:jieba_vim_experimental_opfunc` | 是否启用对任意 `'opfunc'` 的支持，详见[文档](./doc/jieba_vim.txt) | `0`（否）|
 
 ## 开发者
 
@@ -110,6 +111,19 @@ cargo test --locked -r --manifest-path rust_backend/Cargo.toml
 见 [TODO.md](./TODO.md)。
 
 ## FAQ
+
+<p>
+<details>
+<summary>FAQ 目录</summary>
+<ul>
+<li>Vim 至少需要什么版本</li>
+<li>如何与 im-select.nvim 配套使用</li>
+<li>如何与 vim-surround / nvim-surround 配套使用</li>
+<li>如何与 rime.vim 配套使用</li>
+<li>是否支持加载 Rime 词典</li>
+</ul>
+</details>
+</p>
 
 见 [docs/faq.md](./docs/faq.md)。
 
@@ -139,7 +153,7 @@ Apache license v2；部分文件参照 [vim-LICENSE.txt](./vim-LICENSE.txt).
 
 - Hybrid Architecture: Vimscript handles integration while the Rust core delivers high-performance word segmentation via cdylib; precompiled binaries are hosted on [GitHub Releases][releases], covering major platforms. Rust and Vimscript are bridged by python3 (Vim) or lua5.1 (Neovim).
 - Compatibility Assurance: 84,000+ automated Vim test cases ensure behavior fully consistent with native word motions / text objects when handling pure ASCII text.
-- Complete Support: All 17 word motions / text objects (`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `CTRL-Left` / `SHIFT-Left` / `CTRL-Right` / `Shift-Right` / `iw` / `iW` / `aw` / `aW` / `i_CTRL-W`), covering normal / visual / operator-pending modes, supporting count prefixes and all character operators, supporting registers, and supporting [`.`][dot-repeat] to repeat the last operation via [tpope/vim-repeat][vim-repeat].
+- Complete Support: All 17 word motions / text objects (`w` / `W` / `b` / `B` / `e` / `E` / `ge` / `gE` / `CTRL-Left` / `SHIFT-Left` / `CTRL-Right` / `SHIFT-Right` / `iw` / `iW` / `aw` / `aW` / `i_CTRL-W`), covering normal / visual / operator-pending modes, supporting count prefixes and all character operators, supporting registers, and supporting [`.`][dot-repeat] to repeat the last operation via [tpope/vim-repeat][vim-repeat].
 - Flexible Configuration: Respects [`'iskeyword'`][isk] settings, allowing custom word boundary definitions; supports lazy-loading dictionaries, enabling on-demand activation.
 - Help documentation: Check the help [documentation](./doc/jieba_vim.txt) with `:h jieba_vim.txt` within Vim/Nvim.
 
@@ -220,6 +234,7 @@ let g:jieba_vim_keymap = 1
 | `g:jieba_vim_lazy` | Whether to delay loading the dictionary until Chinese characters appear | `1` (yes) |
 | `g:jieba_vim_user_dict` | Path to user-defined custom dictionary | `""` |
 | `g:jieba_vim_keymap` | Whether to automatically enable default key mappings | `0` (no) |
+| `g:jieba_vim_experimental_opfunc` | Whether to enable extended support of arbitrary `'opfunc'`; refer to the [doc](./doc/jieba_vim.txt) for more detail | `0` (no) |
 
 ## For Developers
 
@@ -236,6 +251,19 @@ For the remaining, please refer to [CI](./.github/workflows/ci.yml).
 See [TODO.md](./TODO.md).
 
 ## FAQ
+
+<p>
+<details>
+<summary>FAQ Contents</summary>
+<ul>
+<li>What's the minimum required Vim version</li>
+<li>How to use in parallel with im-select.nvim</li>
+<li>How to use in parallel with vim-surround / nvim-surround</li>
+<li>How to use in parallel with rime.vim</li>
+<li>Is loading Rime dictionary supported</li>
+</ul>
+</details>
+</p>
 
 See [docs/faq.md](./docs/faq.md).
 

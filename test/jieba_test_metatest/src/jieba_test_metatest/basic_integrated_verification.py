@@ -305,10 +305,10 @@ EOF
     def write_vimscript_setup(self, outfile):
         # Define oracle model.
         func = {
-            "n": "JiebaModelNmap",
-            "x": "JiebaModelXmap",
-            "o": "JiebaModelOmap",
-            "i": "JiebaModelImap",
+            "n": "jieba_vim#model#nmap",
+            "x": "jieba_vim#model#xmap",
+            "o": "jieba_vim#model#omap",
+            "i": "jieba_vim#model#imap",
         }[self.mode]
         outfile.write(f"""\
 " define oracle model
@@ -324,10 +324,10 @@ endfunction
 
         # Define mapping.
         expr_func = {
-            "n": "JiebaNmapExpr",
-            "x": "JiebaXmapExpr",
-            "o": "JiebaOmapExpr",
-            "i": "JiebaImapExpr",
+            "n": "jieba_vim#mapping#nmap_expr",
+            "x": "jieba_vim#mapping#xmap_expr",
+            "o": "jieba_vim#mapping#omap_expr",
+            "i": "jieba_vim#mapping#imap_expr",
         }[self.mode]
         motion_key_unescaped = (
             self.motion_key[1:]
