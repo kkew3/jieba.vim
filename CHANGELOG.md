@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.3.1 - 2026-10-02
+
+This release patches [v2.3.0].
+
+Bug fixes:
+
+- Fix `ModuleNotFoundError` during jieba.vim post-update hook ([#165]).
+
+[v2.3.0]: https://github.com/kkew3/jieba.vim/releases/tag/v2.3.0
+[#165]: https://github.com/kkew3/jieba.vim/pull/165
+
+
 ## v2.3.0 - 2026-10-02
 
 Features:
