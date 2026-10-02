@@ -45,7 +45,12 @@ function! jieba_vim#loader#check_cdylib() abort
         endif
     else
         if filereadable(s:base_dir . "/pythonx/jieba_vim/jieba_vim_rs" . s:cdylib_suffix)
-            py3 import jieba_vim.navigation
+            try
+                py3 import jieba_vim.navigation
+            catch /ModuleNotFoundError/
+                py3 import importlib; importlib.invalidate_caches()
+                py3 import jieba_vim.navigation
+            endtry
             let g:jieba_vim_loaded_cdylib = 1
         else
             let g:jieba_vim_loaded_cdylib = 0
