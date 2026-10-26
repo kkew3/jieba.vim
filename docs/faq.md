@@ -37,7 +37,7 @@ let g:jieba_vim_experimental_opfunc = 1
 
 # 是否支持加载 Rime 词典
 
-见 [#156]。
+目前仅支持加载自定义 jieba 字典，理由见 [#156]。但是可以自行构造符合自己需求的 jieba 字典，详见 <https://github.com/kkew3/jieba-em-train/blob/master/demo.ipynb>。
 
 [im-select]: https://github.com/keaising/im-select.nvim
 [lazy]: https://lazy.folke.io/
