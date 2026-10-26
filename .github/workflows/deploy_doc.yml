@@ -1,0 +1,68 @@
+name: Deploy vim help to Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "doc/jieba_vim.txt"
+      - "docs/faq.md"
+      - "dev_scripts/vimhelp/**"
+      - ".github/workflows/deploy_doc.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build-doc:
+    runs-on: ubuntu-latest
+    env:
+      UV_PROJECT: ${{ github.workspace }}/dev_scripts
+      UV_PYTHON_DOWNLOADS: automatic
+      UV_MANAGED_PYTHON: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: '0.12.23'
+          enable-cache: true
+      - name: Run uv-sync
+        shell: bash
+        run: uv sync
+      - name: Ensure empty site directory
+        shell: bash
+        run: mkdir _site
+      - name: Convert vim help to html
+        shell: bash
+        run: |
+          uv run dev_scripts/vimhelp/h2h.py -i doc -o _site
+          mv _site/jieba_vim.txt.html _site/index.html
+      - name: Install pandoc
+        uses: pandoc/actions/setup@v1
+        with:
+          version: 3.9
+      - name: Convert faq to html
+        shell: bash
+        run: |
+          uv run dev_scripts/vimhelp/faq2h.py -o _site docs/faq.md
+          mv _site/faq.md.html _site/faq.html
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-doc
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v5
+        id: deployment
