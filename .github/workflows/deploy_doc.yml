@@ -48,6 +48,15 @@ jobs:
         run: |
           uv run dev_scripts/vimhelp/faq2h.py -o _site docs/faq.md
           mv _site/faq.md.html _site/faq.html
+      - name: List site files
+        shell: bash
+        run: ls -F _site
+      - name: Print index html
+        shell: bash
+        run: cat _site/index.html
+      - name: Print faq html
+        shell: bash
+        run: cat _site/faq.html
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
