@@ -9,6 +9,8 @@
 
 [![demo](./docs/demo/demo_vim.gif)](./docs/demo/README.md)
 
+<div style="text-align:center">~ <a href="https://kkew3.github.io/jieba.vim">点此查看中文文档站</a> ~</div>
+
 ## 核心特性
 
 - 混合架构：Vimscript 负责集成，Rust 核心通过 cdylib 提供高性能分词；预编译二进制托管于 [GitHub Releases][releases]，覆盖主流平台。两者通过 python3 (Vim) 或 lua5.1 (Neovim) 桥接。
