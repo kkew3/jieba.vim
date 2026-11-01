@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.x.x
+
+Dev:
+
+- Bump core dependency [`jieba-rs`][jieba-rs] to 0.11 ([#170]).
+
+[#170]: https://github.com/kkew3/jieba.vim/pull/170
+
+
 ## v2.3.1 - 2026-10-02
 
 This release patches [v2.3.0].
