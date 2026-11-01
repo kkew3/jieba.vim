@@ -9,5 +9,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 mlua = { version = "0.12.0", features = ["lua51", "module"] }
-jieba-rs = { version = "0.10.2" }
+jieba-rs = { version = "0.11.0" }
 jieba_vim_rs_core = { path = "../jieba_vim_rs_core" }
