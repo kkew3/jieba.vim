@@ -29,11 +29,9 @@
 //!
 //! Check <https://vimhelp.org/motion.txt.html#exclusive> for details.
 
+use crate::BufferLike;
 use crate::motion::api::MotionType;
-use crate::token::TokenLike;
 
-use super::core::buffer::ParsedBufferLike;
-use super::core::iter::{ExtendedInlineTokensIter, GToken};
 use super::core::position::OperatorRange;
 use super::primitives::predicate::OnOrBeforeFirstNonBlanks;
 
@@ -41,16 +39,16 @@ use super::primitives::predicate::OnOrBeforeFirstNonBlanks;
 /// exclusive motions, and update current motion accordingly. See
 /// <https://vimhelp.org/motion.txt.html#exclusive> for details.
 pub trait ExclusiveSpecial {
-    fn exclusive_special<B: ParsedBufferLike + ?Sized>(
+    fn exclusive_special<B: BufferLike + ?Sized>(
         &mut self,
-        buffer: &mut B,
+        buffer: &B,
     ) -> Result<(), B::Error>;
 }
 
 impl<'o> ExclusiveSpecial for OperatorRange<'o> {
-    fn exclusive_special<B: ParsedBufferLike + ?Sized>(
+    fn exclusive_special<B: BufferLike + ?Sized>(
         &mut self,
-        buffer: &mut B,
+        buffer: &B,
     ) -> Result<(), B::Error> {
         // exclusive-special applies to characterwise exclusive motions.
         if self.mtype != MotionType::CharExclusive {
@@ -71,18 +69,14 @@ impl<'o> ExclusiveSpecial for OperatorRange<'o> {
         if start.on_or_before_first_non_blank(buffer)? {
             self.mtype = MotionType::LineInclusive;
         } else {
-            let tokens = buffer.getline_parsed(end.lnum)?;
-            let mut line = ExtendedInlineTokensIter::new(tokens).rev();
-            let eol = line.next().unwrap();
-            match eol {
-                GToken::Eol(col) => {
-                    if col > 1 {
-                        let last_token = line.next().unwrap();
-                        end.col = last_token.last_char();
-                        self.mtype = MotionType::CharInclusive;
-                    }
-                }
-                GToken::T(_) => unreachable!(),
+            let line = buffer.getline(end.lnum)?;
+            if !line.is_empty() {
+                end.col = line
+                    .char_indices()
+                    .next_back()
+                    .map(|(j, _)| j + 1)
+                    .unwrap();
+                self.mtype = MotionType::CharInclusive;
             }
         }
         Ok(())
