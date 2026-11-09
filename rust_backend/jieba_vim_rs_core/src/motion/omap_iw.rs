@@ -44,13 +44,13 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         let s = motion_rangle.map(&mut buffer, count, &mut orng)?;
         orng.cursor = orng.langle;
         if s == MotionState::Success {
-            orng.exclusive_special(&mut buffer)?;
-            orng.d_special(&mut buffer)?;
+            orng.exclusive_special(&buffer)?;
+            orng.d_special(&buffer)?;
             orng.yank_linewise();
         } else {
             orng.cursor = orng.rangle;
         }
-        orng.position_cursor(&mut buffer)?;
+        orng.position_cursor(&buffer)?;
         let OperatorRange {
             cursor,
             langle,

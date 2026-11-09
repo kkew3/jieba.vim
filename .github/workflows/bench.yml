@@ -17,6 +17,8 @@ jobs:
       UV_MANAGED_PYTHON: '1'
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # needed to compare with base
       - name: Setup uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
@@ -27,7 +29,7 @@ jobs:
       - name: Write report
         shell: bash
         continue-on-error: true
-        run: uv run run_bench.py --base ${{ github.base_ref }} > bench_base.md
+        run: uv run run_bench.py --base ${{ github.event.pull_request.base.sha }} > bench_base.md
       - uses: actions/upload-artifact@v6
         with:
           name: benchcmp-${{ github.event.pull_request.base.sha }}-${{ github.event.pull_request.head.sha }}
@@ -48,7 +50,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0  # needed to get latest release tag
+          fetch-depth: 0  # needed to get latest release tag and compare with base
+          fetch-tags: true
       - name: Setup uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:

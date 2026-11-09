@@ -12,8 +12,6 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-use std::collections::HashMap;
-
 use crate::BufferLike;
 use crate::token::{JiebaPlaceholder, Token, Tokenizer};
 
@@ -31,7 +29,7 @@ pub struct ParsedBuffer<'b, 'p, B: ?Sized, C> {
     buffer: &'b B,
     tokenizer: &'p Tokenizer<C>,
     into_word: bool,
-    parsed_lines: HashMap<usize, Vec<Token>>,
+    parsed_line: Option<(usize, Vec<Token>)>,
 }
 
 impl<'b, 'p, B: ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
@@ -44,7 +42,7 @@ impl<'b, 'p, B: ?Sized, C> ParsedBuffer<'b, 'p, B, C> {
             buffer,
             tokenizer,
             into_word,
-            parsed_lines: HashMap::new(),
+            parsed_line: None,
         }
     }
 }
@@ -67,12 +65,16 @@ impl<'b, 'p, B: BufferLike + ?Sized, C: JiebaPlaceholder> ParsedBufferLike
     for ParsedBuffer<'b, 'p, B, C>
 {
     fn getline_parsed(&mut self, lnum: usize) -> Result<&[Token], B::Error> {
-        if !self.parsed_lines.contains_key(&lnum) {
-            let line = self.buffer.getline(lnum)?;
-            let parsed_line = self.tokenizer.parse_str1(&line, self.into_word);
-            self.parsed_lines.insert(lnum, parsed_line);
+        let line = self.buffer.getline(lnum)?;
+        let (parsed_lnum, parsed_line) =
+            self.parsed_line.get_or_insert_with(|| {
+                (lnum, self.tokenizer.parse_str1(&line, self.into_word))
+            });
+        if *parsed_lnum != lnum {
+            *parsed_lnum = lnum;
+            *parsed_line = self.tokenizer.parse_str1(&line, self.into_word);
         }
-        Ok(self.parsed_lines.get(&lnum).unwrap())
+        Ok(parsed_line)
     }
 }
 

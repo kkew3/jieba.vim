@@ -22,11 +22,9 @@
 //!
 //! Check <https://vimhelp.org/change.txt.html#d-special> for details.
 
+use crate::BufferLike;
 use crate::motion::api::MotionType;
-use crate::token::TokenType;
 
-use super::core::buffer::ParsedBufferLike;
-use super::core::iter::{ExtendedInlineTokensIter, GToken, TokenLikeExt};
 use super::core::position::OperatorRange;
 use super::primitives::predicate::OnOrBeforeFirstNonBlanks;
 
@@ -34,16 +32,16 @@ use super::primitives::predicate::OnOrBeforeFirstNonBlanks;
 /// linewise if true. See <https://vimhelp.org/change.txt.html#d-special> for
 /// details.
 pub trait DSpecial {
-    fn d_special<B: ParsedBufferLike + ?Sized>(
+    fn d_special<B: BufferLike + ?Sized>(
         &mut self,
-        buffer: &mut B,
+        buffer: &B,
     ) -> Result<(), B::Error>;
 }
 
 impl<'o> DSpecial for OperatorRange<'o> {
-    fn d_special<B: ParsedBufferLike + ?Sized>(
+    fn d_special<B: BufferLike + ?Sized>(
         &mut self,
-        buffer: &mut B,
+        buffer: &B,
     ) -> Result<(), B::Error> {
         // d-special applies only to operator "d".
         if self.operator != b"d" {
@@ -70,23 +68,18 @@ impl<'o> DSpecial for OperatorRange<'o> {
         let rlnum = end.lnum;
         let rcol = end.col;
 
-        let rtokens = buffer.getline_parsed(rlnum)?;
-        let mut rline = ExtendedInlineTokensIter::new(rtokens).skip_col(rcol);
-        if let GToken::T(t) = rline.next().unwrap()
-            && t.ty == TokenType::Word
-        {
-            if self.mtype == MotionType::CharExclusive {
-                return Ok(());
-            }
-            if !t.at_end(rcol) {
-                return Ok(());
-            }
-        }
-        for token in rline {
-            if let GToken::T(t) = token
-                && t.ty == TokenType::Word
+        let rline = buffer.getline(rlnum)?;
+        let mut rchars = rline[rcol - 1..].chars();
+        if let Some(cursor_char) = rchars.next() {
+            if !cursor_char.is_whitespace()
+                && self.mtype == MotionType::CharExclusive
             {
                 return Ok(());
+            }
+            for c in rchars {
+                if !c.is_whitespace() {
+                    return Ok(());
+                }
             }
         }
 

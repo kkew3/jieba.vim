@@ -70,11 +70,11 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             let mut motion_rangle = ForwardWord::new(true);
             let _ = motion_rangle.map(&mut buffer, count, &mut orng.rangle)?;
         }
-        orng.adjust_cursor(&mut buffer)?;
-        orng.exclusive_special(&mut buffer)?;
-        orng.d_special(&mut buffer)?;
+        orng.adjust_cursor(&buffer)?;
+        orng.exclusive_special(&buffer)?;
+        orng.d_special(&buffer)?;
         orng.yank_linewise();
-        orng.position_cursor(&mut buffer)?;
+        orng.position_cursor(&buffer)?;
         let OperatorRange {
             cursor,
             langle,
