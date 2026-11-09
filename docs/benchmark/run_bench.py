@@ -209,7 +209,7 @@ def main():
 |--------|---------|----------------|
 | Mean (ms) | {nvim_head_mean} | {nvim_jieba_head_mean} |
 | Std (ms) | {nvim_head_std} | {nvim_jieba_head_std} |
-| Q90 (ms) | N/A | {nvim_jieba_head_q90} |
+| Q90 (ms) | {nvim_head_q90} | {nvim_jieba_head_q90} |
 
 ## Jieba (warmup)
 
