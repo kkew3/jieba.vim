@@ -44,3 +44,9 @@ repos:
         entry: machine-generated files maintained by the CI pipeline should not be modified locally
         language: fail
         files: '^(test/cases/bootstrap/main\.jieba_test_case|test/cases/bootstrapped/[^_].*\.jieba_test_case)$'
+      - id: update-benchmark-result-md
+        name: update benchmark result markdown
+        entry: uv run --directory docs/benchmark run_bench.py --report --write
+        language: system
+        files: ^docs/benchmark/bench_result\.(json|md)$
+        pass_filenames: false
