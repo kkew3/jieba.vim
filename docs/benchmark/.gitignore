@@ -1,3 +1,6 @@
 /.vim_bundle/
 /.nvim_bundle/
 /.venv/
+/data_zh.txt
+/bench_output_*.txt
+.ruff_cache/

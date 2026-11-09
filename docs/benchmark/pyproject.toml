@@ -3,8 +3,10 @@ name = "jieba-vim-benchmark"
 version = "0.1.0"
 description = "jieba.vim benchmark harness"
 requires-python = ">=3.11"
-dependencies = [
-    "matplotlib>=3.10.9",
+dependencies = []
+
+[project.optional-dependencies]
+bench = [
     "numpy>=2.4.6",
 ]
 
