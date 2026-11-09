@@ -6,8 +6,6 @@ import time
 from contextlib import suppress
 from pathlib import Path
 
-import numpy as np
-
 VERSION = 1
 BENCH_FILE = "bench_result.json"
 BENCH_REPORT = "bench_result.md"
@@ -26,6 +24,8 @@ def run_build(vim):
 
 
 def run_bench(vim, repeat_warmup):
+    import numpy as np
+
     if vim == "vim":
         cmd = f"{vim} -es -u vimrc -S bench.vim data_zh.txt"
     else:

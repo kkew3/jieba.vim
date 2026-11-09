@@ -6,12 +6,15 @@ requires-python = ">=3.11"
 name = "jieba-vim-benchmark"
 version = "0.1.0"
 source = { virtual = "." }
-dependencies = [
+
+[package.optional-dependencies]
+bench = [
     { name = "numpy" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.4.6" }]
+requires-dist = [{ name = "numpy", marker = "extra == 'bench'", specifier = ">=2.4.6" }]
+provides-extras = ["bench"]
 
 [[package]]
 name = "numpy"
