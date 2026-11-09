@@ -1,0 +1,118 @@
+name: Benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/benchmark/bench_result.json"
+
+jobs:
+  # Note that this job does not run benchmark locally.
+  compare-with-base:
+    runs-on: ubuntu-latest
+    env:
+      UV_PROJECT: ${{ github.workspace }}/docs/benchmark
+      UV_WORKING_DIR: ${{ github.workspace }}/docs/benchmark
+      UV_PYTHON_DOWNLOADS: automatic
+      UV_MANAGED_PYTHON: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: '0.12.23'
+      - name: Run uv-sync
+        shell: bash
+        run: uv sync
+      - name: Write report
+        shell: bash
+        continue-on-error: true
+        run: uv run run_bench.py --base ${{ github.base_ref }} > bench_base.md
+      - uses: actions/upload-artifact@v6
+        with:
+          name: benchcmp-${{ github.base_ref }}-${{ github.head_ref }}
+          path: bench_base.md
+          if-no-files-found: error
+          retention-days: 1
+
+  # Note that this job does not run benchmark locally.
+  compare-with-release:
+    runs-on: ubuntu-latest
+    env:
+      UV_PROJECT: ${{ github.workspace }}/docs/benchmark
+      UV_WORKING_DIR: ${{ github.workspace }}/docs/benchmark
+      UV_PYTHON_DOWNLOADS: automatic
+      UV_MANAGED_PYTHON: '1'
+    outputs:
+      release-ref: ${{ steps.get-release-ref.outputs.release_ref }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: '0.12.23'
+      - name: Run uv-sync
+        shell: bash
+        run: uv sync
+      - name: Get latest release
+        id: get-release-ref
+        shell: bash
+        run: |
+          RELEASE_REF="$(git tag --list 'v*' --sort=-version:refname | head -1)"
+          echo "release_ref=${RELEASE_REF}" >> "$GITHUB_OUTPUT"
+      - name: Write report
+        shell: bash
+        continue-on-error: true
+        run: uv run run_bench.py --base ${{ steps.get-release-ref.outputs.release_ref }} > bench_release.md
+      - uses: actions/upload-artifact@v6
+        with:
+          name: benchcmp-${{ steps.get-release-ref.outputs.release_ref }}-${{ github.head_ref }}
+          path: bench_release.md
+          if-no-files-found: error
+          retention-days: 1
+
+  post-pr:
+    runs-on: ubuntu-latest
+    needs:
+      - compare-with-base
+      - compare-with-release
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Get bench base
+        uses: actions/download-artifact@v7
+        with:
+          name: benchcmp-${{ github.base_ref }}-${{ github.head_ref }}
+      - name: Get bench release
+        uses: actions/download-artifact@v7
+        with:
+          name: benchcmp-${{ needs.compare-with-release.outputs.release-ref }}-${{ github.head_ref }}
+      - name: Draft benchmark report
+        shell: bash
+        run: |
+          touch bench.md
+          echo "# Benchmark comparing with BASE ${{ github.base_ref }}" >> bench.md
+          echo >> bench.md
+          if [ -s bench_base.md ]; then
+            sed 's/^#/##/' bench_base.md >> bench.md
+          else
+            echo "BASE is not benchmarked." >> bench.md
+          fi
+          echo >> bench.md
+          echo "---" >> bench.md
+          echo >> bench.md
+          echo "# Benchmark comparing with RELEASE ${{ needs.compare-with-release.outputs.release-ref }}" >> bench.md
+          echo >> bench.md
+          if [ -s bench_release.md ]; then
+            sed 's/^#/##/' bench_release.md >> bench.md
+          else
+            echo "RELEASE is not benchmarked." >> bench.md
+          fi
+      - name: Post benchmark report
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_REPO: ${{ github.repository }}
+        run: gh pr comment $PR_NUMBER --body-file bench.md
