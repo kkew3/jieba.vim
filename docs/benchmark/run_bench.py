@@ -39,6 +39,7 @@ def run_bench(vim, repeat_warmup):
     data = np.loadtxt("bench_output_std.txt")
     stdrun_mean = np.mean(data[1:])
     stdrun_std = np.std(data[1:])
+    stdrun_q90 = np.quantile(data[1:], 0.9)
 
     # Run jieba motion (warmup).
     del os.environ["RUN_BUILTIN"]
@@ -71,7 +72,11 @@ def run_bench(vim, repeat_warmup):
 
     return {
         "vim_version": vim_version,
-        "builtin": {"mean": float(stdrun_mean), "std": float(stdrun_std)},
+        "builtin": {
+            "mean": float(stdrun_mean),
+            "std": float(stdrun_std),
+            "q90": float(stdrun_q90),
+        },
         "jieba": {
             "warmup": {
                 "mean": float(np.mean(warmup)),
@@ -162,11 +167,10 @@ def main():
         ctx = {}
         for vim in ["vim", "nvim"]:
             ctx[f"{vim}_version"] = head[vim]["vim_version"]
-            for field in ["mean", "std"]:
+            for field in ["mean", "std", "q90"]:
                 ctx[f"{vim}_head_{field}"] = fmt_num(
                     head[vim]["builtin"][field] * 1000
                 )
-            for field in ["mean", "std", "q90"]:
                 ctx[f"{vim}_jieba_head_{field}"] = fmt_num(
                     head[vim]["jieba"]["warmed"][field] * 1000
                 )
@@ -185,7 +189,7 @@ def main():
 |--------|---------|----------------|
 | Mean (ms) | {vim_head_mean} | {vim_jieba_head_mean} |
 | Std (ms) | {vim_head_std} | {vim_jieba_head_std} |
-| Q90 (ms) | N/A | {vim_jieba_head_q90} |
+| Q90 (ms) | {vim_head_q90} | {vim_jieba_head_q90} |
 
 ## Jieba (warmup)
 
@@ -244,22 +248,20 @@ def main():
     for vim in ["vim", "nvim"]:
         for dname, dict_ in zip(["base", "head"], [base, head]):
             ctx[f"{vim}_{dname}_version"] = dict_[vim]["vim_version"]
-        for field in ["mean", "std"]:
+        for field in ["mean", "std", "q90"]:
             for dname, dict_ in zip(["base", "head"], [base, head]):
                 ctx[f"{vim}_{dname}_{field}"] = fmt_num(
                     dict_[vim]["builtin"][field] * 1000
                 )
-            ctx[f"{vim}_change_{field}"] = fmt_num(
-                change_builtin(base[vim], head[vim], field) * 100
-            )
-        for field in ["mean", "std", "q90"]:
-            for dname, dict_ in zip(["base", "head"], [base, head]):
                 ctx[f"{vim}_jieba_{dname}_{field}"] = fmt_num(
                     dict_[vim]["jieba"]["warmed"][field] * 1000
                 )
                 ctx[f"{vim}_warmup_{dname}_{field}"] = fmt_num(
                     dict_[vim]["jieba"]["warmup"][field]
                 )
+            ctx[f"{vim}_change_{field}"] = fmt_num(
+                change_builtin(base[vim], head[vim], field) * 100
+            )
             ctx[f"{vim}_jieba_change_{field}"] = fmt_num(
                 builtin_adjusted_change_warmed(base[vim], head[vim], field)
                 * 100
@@ -282,6 +284,7 @@ def main():
 |--------|------|------|-------------|
 | Builtin mean (ms) | {vim_base_mean} | {vim_head_mean} | {vim_change_mean} |
 | Builtin std (ms) | {vim_base_std} | {vim_head_std} | {vim_change_std} |
+| Builtin Q90 (ms) | {vim_base_q90} | {vim_head_q90} | {vim_change_q90} |
 
 ## Jieba (warmed)
 
