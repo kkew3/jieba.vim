@@ -106,7 +106,9 @@ def change_warmup(base, head, field):
     return head["jieba"]["warmup"][field] / base["jieba"]["warmup"][field] - 1
 
 
-def fmt_num(x):
+def fmt_num(x, pcnt=False):
+    if pcnt:
+        return f"{x:.2f}"
     return f"{x:.2e}"
 
 
@@ -260,14 +262,15 @@ def main():
                     dict_[vim]["jieba"]["warmup"][field]
                 )
             ctx[f"{vim}_change_{field}"] = fmt_num(
-                change_builtin(base[vim], head[vim], field) * 100
+                change_builtin(base[vim], head[vim], field) * 100, pcnt=True
             )
             ctx[f"{vim}_jieba_change_{field}"] = fmt_num(
                 builtin_adjusted_change_warmed(base[vim], head[vim], field)
-                * 100
+                * 100,
+                pcnt=True,
             )
             ctx[f"{vim}_warmup_change_{field}"] = fmt_num(
-                change_warmup(base[vim], head[vim], field) * 100
+                change_warmup(base[vim], head[vim], field) * 100, pcnt=True
             )
 
     print(
