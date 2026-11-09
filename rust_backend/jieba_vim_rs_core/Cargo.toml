@@ -4,7 +4,6 @@ version = "0.7.1"
 edition = "2024"
 
 [dependencies]
-unic-emoji-char = "0.9"
 
 [dev-dependencies]
 proptest = "1.11"
