@@ -6,7 +6,12 @@ Dev:
 
 - Bump core dependency [`jieba-rs`][jieba-rs] to 0.11 ([#170]).
 
+Documentation:
+
+- Remove figures from benchmark to avoid inflating the repository ([#173]).
+
 [#170]: https://github.com/kkew3/jieba.vim/pull/170
+[#173]: https://github.com/kkew3/jieba.vim/pull/173
 
 
 ## v2.3.1 - 2026-10-02
