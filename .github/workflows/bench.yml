@@ -30,7 +30,7 @@ jobs:
         run: uv run run_bench.py --base ${{ github.base_ref }} > bench_base.md
       - uses: actions/upload-artifact@v6
         with:
-          name: benchcmp-${{ github.base_ref }}-${{ github.head_ref }}
+          name: benchcmp-${{ github.event.pull_request.base.sha }}-${{ github.event.pull_request.head.sha }}
           path: bench_base.md
           if-no-files-found: error
           retention-days: 1
@@ -66,7 +66,7 @@ jobs:
         run: uv run run_bench.py --base ${{ steps.get-release-ref.outputs.release_ref }} > bench_release.md
       - uses: actions/upload-artifact@v6
         with:
-          name: benchcmp-${{ steps.get-release-ref.outputs.release_ref }}-${{ github.head_ref }}
+          name: benchcmp-${{ steps.get-release-ref.outputs.release_ref }}-${{ github.event.pull_request.head.sha }}
           path: bench_release.md
           if-no-files-found: error
           retention-days: 1
@@ -83,11 +83,11 @@ jobs:
       - name: Get bench base
         uses: actions/download-artifact@v7
         with:
-          name: benchcmp-${{ github.base_ref }}-${{ github.head_ref }}
+          name: benchcmp-${{ github.event.pull_request.base.sha }}-${{ github.event.pull_request.head.sha }}
       - name: Get bench release
         uses: actions/download-artifact@v7
         with:
-          name: benchcmp-${{ needs.compare-with-release.outputs.release-ref }}-${{ github.head_ref }}
+          name: benchcmp-${{ needs.compare-with-release.outputs.release-ref }}-${{ github.event.pull_request.head.sha }}
       - name: Draft benchmark report
         shell: bash
         run: |
