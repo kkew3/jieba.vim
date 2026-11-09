@@ -157,6 +157,7 @@ def main():
                 Path(__file__).parent / BENCH_FILE, "w", encoding="utf-8"
             ) as f:
                 json.dump(head, f, indent=2)
+                f.write("\n")
 
         ctx = {}
         for vim in ["vim", "nvim"]:
