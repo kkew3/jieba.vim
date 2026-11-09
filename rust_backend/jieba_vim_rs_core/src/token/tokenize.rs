@@ -208,9 +208,6 @@ enum WordCharGroupType {
 /// Non-word character group types.
 #[derive(Debug, PartialEq, Eq)]
 enum NonWordCharGroupType {
-    /// A sequence of [`CharType::Word`] that contains [`WordCharType::Hanzi`].
-    /// This happens when '@' is not in `'iskeyword'`.
-    Hanzi,
     /// A sequence of [`CharType::NonWord`] that ends with a
     /// [`NonWordCharType::RightPunc`].
     RightPuncEnding,
@@ -248,9 +245,6 @@ impl From<CharToken> for CharTokenGroup {
                     CharGroupType::NonWord(
                         NonWordCharGroupType::RightPuncEnding,
                     )
-                }
-                CharType::NonWord(NonWordCharType::Hanzi) => {
-                    CharGroupType::NonWord(NonWordCharGroupType::Hanzi)
                 }
                 CharType::NonWord(NonWordCharType::Other) => {
                     CharGroupType::NonWord(NonWordCharGroupType::Other)
@@ -389,10 +383,6 @@ impl CharTokenGroup {
             | (G::NonWord(NG::RightPuncEnding), CombiningDiacriticalMark) => {
                 do_push(self, c)
             }
-            (G::NonWord(NG::Hanzi), NonWord(N::Hanzi))
-            | (G::NonWord(NG::Hanzi), CombiningDiacriticalMark) => {
-                do_push(self, c)
-            }
 
             (G::NonWord(NG::Other), NonWord(N::Other))
             | (G::NonWord(NG::Other), CombiningDiacriticalMark) => {
@@ -428,9 +418,6 @@ impl CharTokenGroup {
                 Err(CharTokenGroupPushError::Singleton(c.into()))
             }
 
-            (G::NonWord(NG::Hanzi), NonWord(_)) => {
-                Err(CharTokenGroupPushError::Singleton(c.into()))
-            }
             (G::NonWord(NG::RightPuncEnding), Word(_)) => {
                 let c = CharTokenGroup::from(c);
                 let ispace = ImplicitWhitespace;
@@ -438,7 +425,6 @@ impl CharTokenGroup {
             }
             (G::NonWord(_), Space)
             | (G::NonWord(_), Word(_))
-            | (G::NonWord(_), NonWord(N::Hanzi))
             | (G::NonWord(_), Emoji) => {
                 Err(CharTokenGroupPushError::Singleton(c.into()))
             }
@@ -1481,7 +1467,10 @@ mod tests {
                 "a-z,48-57,.,-,>",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, build_simple_tokens(vec![("B超foo_bar", Word)]));
+            assert_eq!(
+                tokens,
+                build_simple_tokens(vec![("B超", Word), ("foo_bar", Word)])
+            );
         }
     }
 
@@ -1645,7 +1634,8 @@ mod tests {
                 tokens,
                 build_simple_tokens(vec![
                     ("（", Word),
-                    ("你好世界", Word),
+                    ("你好", Word),
+                    ("世界", Word),
                     ("——", Word),
                     ("世界", Word),
                     ("）。", Word)
@@ -1664,7 +1654,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                build_simple_tokens(vec![("（你好世界——世界）。", Word)])
+                build_simple_tokens(vec![
+                    ("（你好", Word),
+                    ("世界——世界）。", Word)
+                ])
             );
         }
 
@@ -1680,7 +1673,8 @@ mod tests {
                 tokens,
                 build_simple_tokens(vec![
                     ("（", Word),
-                    ("你好世界", Word),
+                    ("你好", Word),
+                    ("世界", Word),
                     ("——", Word),
                     ("世界", Word),
                     ("）。", Word)
@@ -1699,7 +1693,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                build_simple_tokens(vec![("（你好世界——世界）。", Word)])
+                build_simple_tokens(vec![
+                    ("（你好", Word),
+                    ("世界——世界）。", Word)
+                ])
             );
         }
     }
@@ -2273,7 +2270,13 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, true);
-            assert_eq!(tokens, vec![Token::new(0, 3, 11, 14, Word)]);
+            assert_eq!(
+                tokens,
+                vec![
+                    Token::new(0, 3, 3, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
+            );
         }
 
         #[test]
@@ -2285,7 +2288,13 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 3, 11, 14, Word)]);
+            assert_eq!(
+                tokens,
+                vec![
+                    Token::new(0, 3, 3, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
+            );
         }
     }
 
@@ -2337,7 +2346,13 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, true);
-            assert_eq!(tokens, vec![Token::new(0, 5, 11, 14, Word)]);
+            assert_eq!(
+                tokens,
+                vec![
+                    Token::new(0, 5, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
+            );
         }
 
         #[test]
@@ -2349,7 +2364,13 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 5, 11, 14, Word)]);
+            assert_eq!(
+                tokens,
+                vec![
+                    Token::new(0, 5, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
+            );
         }
     }
 
@@ -2401,7 +2422,13 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, true);
-            assert_eq!(tokens, vec![Token::new(0, 3, 9, 14, Word)]);
+            assert_eq!(
+                tokens,
+                vec![
+                    Token::new(0, 3, 3, 6, Word),
+                    Token::new(6, 9, 9, 14, Word)
+                ]
+            );
         }
 
         #[test]
@@ -2413,7 +2440,13 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 3, 9, 14, Word)]);
+            assert_eq!(
+                tokens,
+                vec![
+                    Token::new(0, 3, 3, 6, Word),
+                    Token::new(6, 9, 9, 14, Word)
+                ]
+            );
         }
     }
 
@@ -2630,7 +2663,8 @@ mod tests {
                 tokens,
                 vec![
                     Token::new(0, 2, 0, 2, Word),
-                    Token::new(2, 5, 11, 14, Word)
+                    Token::new(2, 5, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word),
                 ]
             );
         }
@@ -2644,7 +2678,13 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 2, 11, 14, Word)]);
+            assert_eq!(
+                tokens,
+                vec![
+                    Token::new(0, 2, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
+            );
         }
 
         #[test]
@@ -2659,7 +2699,8 @@ mod tests {
                 tokens,
                 vec![
                     Token::new(0, 2, 0, 2, Word),
-                    Token::new(2, 5, 11, 14, Word)
+                    Token::new(2, 5, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word),
                 ]
             );
         }
@@ -2673,7 +2714,13 @@ mod tests {
                 "",
             );
             let tokens = parse_str_test(&tokenizer, SENT, false);
-            assert_eq!(tokens, vec![Token::new(0, 2, 11, 14, Word)]);
+            assert_eq!(
+                tokens,
+                vec![
+                    Token::new(0, 2, 5, 8, Word),
+                    Token::new(8, 11, 11, 14, Word)
+                ]
+            );
         }
     }
 
@@ -2955,7 +3002,8 @@ mod tests {
             assert_eq!(
                 tokens,
                 build_simple_tokens(vec![
-                    ("你好你好", Word),
+                    ("你好", Word),
+                    ("你好", Word),
                     ("\u{1f596}", Word),
                     ("世界", Word)
                 ])
@@ -2973,7 +3021,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                build_simple_tokens(vec![("你好你好\u{1f596}世界", Word)])
+                build_simple_tokens(vec![
+                    ("你好", Word),
+                    ("你好\u{1f596}世界", Word)
+                ])
             );
         }
 
@@ -2988,7 +3039,8 @@ mod tests {
             assert_eq!(
                 tokens,
                 build_simple_tokens(vec![
-                    ("你好你好", Word),
+                    ("你好", Word),
+                    ("你好", Word),
                     ("\u{1f596}", Word),
                     ("世界", Word)
                 ])
@@ -3006,7 +3058,10 @@ mod tests {
             let tokens = parse_str_test(&tokenizer, SENT, false);
             assert_eq!(
                 tokens,
-                build_simple_tokens(vec![("你好你好\u{1f596}世界", Word)])
+                build_simple_tokens(vec![
+                    ("你好", Word),
+                    ("你好\u{1f596}世界", Word)
+                ])
             );
         }
     }
