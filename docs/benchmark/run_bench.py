@@ -10,6 +10,7 @@ import numpy as np
 
 VERSION = 1
 BENCH_FILE = "bench_result.json"
+BENCH_REPORT = "bench_result.md"
 
 
 def download_dataset():
@@ -112,27 +113,50 @@ def main():
         "--base",
         help="without this, run benchmark; otherwise, compare HEAD against BASE",
     )
+    parser.add_argument(
+        "--report",
+        action="store_true",
+        help=(
+            "when `--base` is not specified, "
+            "generate markdown report only without running benchmark"
+        ),
+    )
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help=(
+            "when `--base` is not specified, "
+            f"write the report to ./{BENCH_REPORT} rather than printing to "
+            "stdout"
+        ),
+    )
     args = parser.parse_args()
 
     if not args.base:
-        download_dataset()
+        if args.report:
+            with open(
+                Path(__file__).parent / BENCH_FILE, encoding="utf-8"
+            ) as infile:
+                head = json.load(infile)
+        else:
+            download_dataset()
 
-        run_build("vim")
-        vim_bench_zh = run_bench("vim", repeat_warmup=20)
+            run_build("vim")
+            vim_bench_zh = run_bench("vim", repeat_warmup=20)
 
-        run_build("nvim")
-        nvim_bench_zh = run_bench("nvim", repeat_warmup=20)
+            run_build("nvim")
+            nvim_bench_zh = run_bench("nvim", repeat_warmup=20)
 
-        head = {
-            "version": VERSION,
-            "vim": vim_bench_zh,
-            "nvim": nvim_bench_zh,
-        }
+            head = {
+                "version": VERSION,
+                "vim": vim_bench_zh,
+                "nvim": nvim_bench_zh,
+            }
 
-        with open(
-            Path(__file__).parent / BENCH_FILE, "w", encoding="utf-8"
-        ) as f:
-            json.dump(head, f, indent=2)
+            with open(
+                Path(__file__).parent / BENCH_FILE, "w", encoding="utf-8"
+            ) as f:
+                json.dump(head, f, indent=2)
 
         ctx = {}
         for vim in ["vim", "nvim"]:
@@ -149,8 +173,7 @@ def main():
                     head[vim]["jieba"]["warmup"][field]
                 )
 
-        print(
-            """\
+        report = """\
 # Vim
 
 > version: `{vim_version}`
@@ -190,9 +213,15 @@ def main():
 | Mean (s) | {nvim_warmup_head_mean} |
 | Std (s) | {nvim_warmup_head_std} |
 | Q90 (s) | {nvim_warmup_head_q90} |
-""".format(**ctx),
-            end="",
-        )
+""".format(**ctx)
+
+        if args.write:
+            with open(
+                Path(__file__).parent / BENCH_REPORT, "w", encoding="utf-8"
+            ) as f:
+                f.write(report)
+        else:
+            print(report, end="")
 
         return
 
