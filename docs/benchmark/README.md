@@ -5,6 +5,14 @@
 We move the cursor by `<Plug>(Jieba_w)` 50000 times in long-form Chinese text and report the mean, stdev, and 90th quantile.
 Check [bench_result.md](./bench_result.md) for the results.
 
+To run the benchmark yourself locally, simply:
+
+```bash
+uv sync --extra bench
+# Need to have `vim` and `nvim` on PATH.
+uv run run_bench.py
+```
+
 ## Dataset
 
 We use [CMRC 2018](https://github.com/ymcui/cmrc2018).
