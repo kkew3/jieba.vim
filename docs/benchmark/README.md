@@ -1,17 +1,9 @@
 # Benchmark
 
-![warm-start histogram](./bench_output_hist.jpg)
+## How we run benchmark
 
-![warmup time](./bench_output_warmup.jpg)
-
-## Summary of result
-
-We move the cursor 50000 times in long-form Chinese text and plot the histogram.
-For Vim, the mean Wall time is **0.1** milliseconds.
-For Neovim, the mean Wall time is **0.15** milliseconds.
-This is already *absolutely* super fast, and there is no empirical necessity to compare with other baseline implementations.
-
-To load the dictionary, both Vim and Neovim need 0.08 seconds.
+We move the cursor by `<Plug>(Jieba_w)` 50000 times in long-form Chinese text and report the mean, stdev, and 90th quantile.
+Check [bench_result.md](./bench_result.md) for the results.
 
 ## Dataset
 
