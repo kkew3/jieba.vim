@@ -47,6 +47,8 @@ jobs:
       release-ref: ${{ steps.get-release-ref.outputs.release_ref }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # needed to get latest release tag
       - name: Setup uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
@@ -60,6 +62,7 @@ jobs:
         run: |
           RELEASE_REF="$(git tag --list 'v*' --sort=-version:refname | head -1)"
           echo "release_ref=${RELEASE_REF}" >> "$GITHUB_OUTPUT"
+          echo "--> ${RELEASE_REF}"
       - name: Write report
         shell: bash
         continue-on-error: true
