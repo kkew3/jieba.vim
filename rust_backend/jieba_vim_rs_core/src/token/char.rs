@@ -129,10 +129,12 @@ macro_rules! SPACE {
 /// 汉字 characters. See [`WordCharType::Hanzi`].
 macro_rules! HANZI {
     () => {
+        // CJK unified ideographs. Placed at the top because rust tends to
+        // check patterns top-down, and this range covers almost all 汉字
+        // characters.
+        '\u{4e00}'..='\u{9fff}'
         // Ideographic number zero.
-        '\u{3007}'
-        // CJK unified ideographs.
-        | '\u{4e00}'..='\u{9fff}'
+        | '\u{3007}'
         // CJK unified ideographs extension A.
         | '\u{3400}'..='\u{4dbf}'
         // CJK compatibility ideographs.
