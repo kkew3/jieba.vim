@@ -340,6 +340,7 @@ macro_rules! EMOJI {
     };
 }
 
+// TODO: merge some of these into HANZI patterns.
 /// Other unicodes that are always words per Vim C source.
 macro_rules! WORD_UNICODES {
     () => {
