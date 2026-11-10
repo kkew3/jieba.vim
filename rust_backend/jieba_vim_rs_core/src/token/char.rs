@@ -340,6 +340,24 @@ macro_rules! EMOJI {
     };
 }
 
+/// Other unicodes that are always words per Vim C source.
+macro_rules! WORD_UNICODES {
+    () => {
+        // Superscript.
+        '\u{2070}'..='\u{207f}'
+        // Subscript.
+        | '\u{2080}'..='\u{2094}'
+        // braille.
+        | '\u{2800}'..='\u{28ff}'
+        // Hiragana.
+        | '\u{3040}'..='\u{309f}'
+        // Katakana.
+        | '\u{30a0}'..='\u{30ff}'
+        // Hangul Syllables.
+        | '\u{ac00}'..='\u{d7a3}'
+    };
+}
+
 // == END OF QUOTES FROM Vim C source code by Bram Moolenaar
 
 /// Categorize a char into [`CharType`], according to [`WordPredicate`].
@@ -367,6 +385,7 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
                     CharType::Word(WordCharType::Other)
                 }
                 EMOJI!() => CharType::Emoji,
+                WORD_UNICODES!() => CharType::Word(WordCharType::Other),
                 c => {
                     if c.is_alphabetic()
                         && word_predicate.is_unicode_alphabet_word()
@@ -439,6 +458,10 @@ mod tests {
             categorize_char('\u{02b1}', &wp), // spacing modifier letter
             CharType::Word(WordCharType::Other)
         ));
+        assert!(matches!(
+            categorize_char('や', &wp),
+            CharType::Word(WordCharType::Other)
+        ));
 
         // Lowercase ASCII iskeyword.
         let wp = WordPredicate::from_isk_opt(b"a-z").unwrap();
@@ -488,6 +511,10 @@ mod tests {
         ));
         assert!(matches!(
             categorize_char('\u{02b1}', &wp), // spacing modifier letter
+            CharType::Word(WordCharType::Other)
+        ));
+        assert!(matches!(
+            categorize_char('や', &wp),
             CharType::Word(WordCharType::Other)
         ));
 
@@ -541,6 +568,10 @@ mod tests {
             categorize_char('\u{02b1}', &wp), // spacing modifier letter
             CharType::Word(WordCharType::Other)
         ));
+        assert!(matches!(
+            categorize_char('や', &wp),
+            CharType::Word(WordCharType::Other)
+        ));
 
         // Digits and '>' iskeyword.
         let wp = WordPredicate::from_isk_opt(b"48-57,>").unwrap();
@@ -590,6 +621,10 @@ mod tests {
         ));
         assert!(matches!(
             categorize_char('\u{02b1}', &wp), // spacing modifier letter
+            CharType::Word(WordCharType::Other)
+        ));
+        assert!(matches!(
+            categorize_char('や', &wp),
             CharType::Word(WordCharType::Other)
         ));
     }
