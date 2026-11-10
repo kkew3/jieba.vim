@@ -1399,8 +1399,11 @@ mod tests {
             assert_eq!(
                 tokens,
                 build_simple_tokens(vec![
+                    // "B" is not a word.
                     ("B", Word),
+                    // "超" is a word.
                     ("超", Word),
+                    // "foo_bar" is not a word.
                     ("foo_bar", Word)
                 ])
             );
@@ -1439,10 +1442,37 @@ mod tests {
             assert_eq!(
                 tokens,
                 build_simple_tokens(vec![
-                    // "B" and "超" are two tokens because they are of
-                    // different character classes.
+                    // "B" is not a word.
                     ("B", Word),
+                    // "超" is a word.
                     ("超", Word),
+                    // "foo" is a word.
+                    ("foo", Word),
+                    // "_" is not a word.
+                    ("_", Word),
+                    // "bar" is a word.
+                    ("bar", Word)
+                ])
+            );
+        }
+
+        #[test]
+        fn c_isk_word2() {
+            use TokenType::*;
+            let tokenizer = Tokenizer::new(
+                KeywordCutter::new([
+                    "B超".into(),
+                    "foo".into(),
+                    "_".into(),
+                    "bar".into(),
+                ]),
+                "a-z,A-Z,48-57,.,-,>", // note the inclusion of capital letters
+            );
+            let tokens = parse_str_test(&tokenizer, SENT, true);
+            assert_eq!(
+                tokens,
+                build_simple_tokens(vec![
+                    ("B超", Word),
                     // "foo" is a word.
                     ("foo", Word),
                     // "_" is not a word.
@@ -1555,6 +1585,25 @@ mod tests {
                 build_simple_tokens(vec![
                     ("B", Word),
                     ("超", Word),
+                    ("，", Word),
+                    ("foo", Word),
+                    ("。。。", Word)
+                ])
+            );
+        }
+
+        #[test]
+        fn c_isk_word2() {
+            use TokenType::*;
+            let tokenizer = Tokenizer::new(
+                KeywordCutter::new(["B超".into()]),
+                "a-z,A-Z,48-57,.,-,>", // note the inclusion of capital letters
+            );
+            let tokens = parse_str_test(&tokenizer, SENT, true);
+            assert_eq!(
+                tokens,
+                build_simple_tokens(vec![
+                    ("B超", Word),
                     ("，", Word),
                     ("foo", Word),
                     ("。。。", Word)
