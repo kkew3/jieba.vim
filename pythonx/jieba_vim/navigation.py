@@ -88,6 +88,18 @@ def preview_nmap(buffer, motion, cursor, preview_limit):
     return word_motion.preview_nmap(buffer, motion, cursor, preview_limit)
 
 
+def cword(buffer, cursor, word):
+    cursor = ints(cursor)
+    word = bool(int(word))
+    return word_motion.cword(buffer, cursor, word)
+
+
+def ctoken(buffer, cursor, word):
+    cursor = ints(cursor)
+    word = bool(int(word))
+    return word_motion.ctoken(buffer, cursor, word)
+
+
 def update_isk(isk):
     isk = as_bytes(isk)
     word_motion.set_isk(isk)

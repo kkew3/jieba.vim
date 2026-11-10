@@ -19,7 +19,7 @@ use std::sync::OnceLock;
 use jieba_rs::Jieba;
 use jieba_vim_rs_core::BufferLike;
 use jieba_vim_rs_core::motion::{
-    ImapOutput, NmapOutput, OmapOutput, WordMotion, XmapOutput,
+    CwordOutput, ImapOutput, NmapOutput, OmapOutput, WordMotion, XmapOutput,
 };
 use jieba_vim_rs_core::token::{JiebaPlaceholder, Tokenizer};
 use pyo3::exceptions::{PyIOError, PyValueError};
@@ -176,6 +176,26 @@ impl<'py> IntoPyObject<'py> for ImapOutputWrapper {
         let dict = PyDict::new(py);
         let [a, b, c, d] = self.0.cursor;
         dict.set_item("cursor", vec![a, b, c, d])?;
+        Ok(dict)
+    }
+}
+
+pub struct CwordOutputWrapper(CwordOutput);
+
+impl<'py> IntoPyObject<'py> for CwordOutputWrapper {
+    type Target = PyDict;
+    type Output = Bound<'py, Self::Target>;
+    type Error = PyErr;
+
+    fn into_pyobject(
+        self,
+        py: Python<'py>,
+    ) -> Result<Self::Output, Self::Error> {
+        let dict = PyDict::new(py);
+        dict.set_item("first_char", self.0.first_char)?;
+        dict.set_item("last_char", self.0.last_char)?;
+        dict.set_item("last_char1", self.0.last_char1)?;
+        dict.set_item("prevent_change", self.0.prevent_change)?;
         Ok(dict)
     }
 }
@@ -354,6 +374,46 @@ impl WordMotionWrapper {
             preview_limit,
         )
     }
+
+    pub fn cword(
+        &mut self,
+        buffer: &Bound<'_, PyAny>,
+        cursor: Vec<usize>,
+        word: bool,
+    ) -> PyResult<CwordOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(CwordOutputWrapper(self.wm.cword(
+            &BoundWrapper(buffer),
+            cursor_arr,
+            word,
+        )?))
+    }
+
+    pub fn ctoken(
+        &mut self,
+        buffer: &Bound<'_, PyAny>,
+        cursor: Vec<usize>,
+        word: bool,
+    ) -> PyResult<CwordOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(CwordOutputWrapper(self.wm.ctoken(
+            &BoundWrapper(buffer),
+            cursor_arr,
+            word,
+        )?))
+    }
 }
 
 #[pyclass]
@@ -524,5 +584,45 @@ impl LazyWordMotionWrapper {
             (lnum, col),
             preview_limit,
         )
+    }
+
+    pub fn cword(
+        &mut self,
+        buffer: &Bound<'_, PyAny>,
+        cursor: Vec<usize>,
+        word: bool,
+    ) -> PyResult<CwordOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(CwordOutputWrapper(self.wm.cword(
+            &BoundWrapper(buffer),
+            cursor_arr,
+            word,
+        )?))
+    }
+
+    pub fn ctoken(
+        &mut self,
+        buffer: &Bound<'_, PyAny>,
+        cursor: Vec<usize>,
+        word: bool,
+    ) -> PyResult<CwordOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(PyValueError::new_err(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(CwordOutputWrapper(self.wm.ctoken(
+            &BoundWrapper(buffer),
+            cursor_arr,
+            word,
+        )?))
     }
 }
