@@ -31,6 +31,20 @@ VISUAL 模式按单词扩张选区、按单词复制、删词、改词等操作�
 并允许自定义用户词典，从而自定义分词边界。
 
 
+                                                    *jieba-word*  *jieba-WORD*
+与 Vim 相似，|jieba-word| 是由连续的 word 字符组成的序列，而 |jieba-WORD| 则
+是由连续的非空白字符组成的序列。对于 ASCII 以及 Latin-1 字符，是否属于 word
+字符由 'iskeyword' 决定；其它字符则根据其 Unicode 类别判断。这与 Vim 的行为
+基本一致。例如，中文字符总是 word 字符。
+
+对于包含中文字符的 word 字符序列，jieba.vim 会调用 jieba-rs
+( https://github.com/messense/jieba-rs ) 进行分词，并在各分词之间插入虚拟
+空白，使每个分词成为独立的 |jieba-word|。|jieba-mappings| 以这些 word 为
+单位进行操作。这些虚拟空白用于在概念上分隔 |jieba-word| 和 |jieba-WORD|，不
+实际存在于 Vim 缓冲区。此外，某些中文标点（例如逗号和句号）之后也会插入这种
+虚拟空白，从而禁止 |jieba-WORD| 越过这些标点。
+
+
 ==============================================================================
 CONFIGURATION                                                   *jieba-config*
 
@@ -220,7 +234,7 @@ GLOBAL INDICATORS                                    *jieba-global-indicators*
 ==============================================================================
 OPTIONAL DEPENDENCY                                     *jieba-opt-dependency*
 
-如果用户安装了 `tpope/vim-repeat` (https://github.com/tpope/vim-repeat)，可
+如果用户安装了 `tpope/vim-repeat` ( https://github.com/tpope/vim-repeat )，可
 使用 |.| 重复上一次修改。例如 `dw.` 相当于 `dwdw`。
 
 
