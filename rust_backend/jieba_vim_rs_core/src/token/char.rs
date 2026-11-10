@@ -31,11 +31,17 @@ pub enum CharType {
     /// which might be included in the future in case of frequent need in
     /// practice.
     CombiningDiacriticalMark,
-    /// Emojis are essentially non-word characters. However, Vim treats emojis
-    /// differently from other non-word characters such as punctuation. For
-    /// example, `🖖🖖🖖🖖,,,abc` contains three tokens (vulcan salutes,
-    /// commas, and "abc"), instead of two tokens (vulcan salutes and commas,
-    /// and "abc").
+    // We should have listed emoji as a subtype of [`Word`](Self::Word).
+    // Nevertheless, this will cause trouble, because in current tokenization
+    // procedure, all char groups can be bipartited in terms of whether it
+    // contains 汉字. Since we also want emojis to stand on their own without
+    // being merged into [`WordCharType::Other`], we have to list emoji as a
+    // separate category. This is indeed awkward. But as current policy isn't
+    // doing any harm either, we will postpone fixing this to future work.
+    /// Emojis appears to be non-word characters at first glance. Current Vim,
+    /// however, treats emojis as words. For example, `🖖🖖🖖🖖,,,abc` contains
+    /// three tokens (vulcan salutes, commas, and "abc"), instead of two tokens
+    /// (vulcan salutes and commas, and "abc").
     Emoji,
 }
 
