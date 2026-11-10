@@ -377,6 +377,8 @@ pub fn categorize_char(c: char, word_predicate: &WordPredicate) -> CharType {
                 // 汉字 are always words regardless if `'iskeyword'`. See
                 // charset.c and mbyte.c of Vim C source codebase.
                 HANZI!() => CharType::Word(WordCharType::Hanzi),
+                // TODO: conditionally set right_punc as word if their ascii
+                //       counterparts are word per `word_predicate`.
                 RIGHT_PUNC!() => CharType::NonWord(NonWordCharType::RightPunc),
                 // Although not `is_alphabetic`, apparently spacing modifier
                 // letters are word characters in Vim (both compatible and
