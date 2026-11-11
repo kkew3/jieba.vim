@@ -58,3 +58,60 @@ function! jieba_vim#utils#update_isk()
         py3 jieba_vim.navigation.update_isk(vim.eval('&iskeyword'))
     endif
 endfunction
+
+function! s:clear_current_token_match(word) abort
+    if a:word
+        let l:match_id = get(b:, "jieba_vim_current_token_match_id", -1)
+    else
+        let l:match_id = get(b:, "jieba_vim_current_big_token_match_id", -1)
+    endif
+    if l:match_id != -1
+        call matchdelete(l:match_id)
+    endif
+    if a:word
+        let b:jieba_vim_current_token_match_id = -1
+    else
+        let b:jieba_vim_current_big_token_match_id = -1
+    endif
+endfunction
+
+function! s:set_current_token_match(pattern, word)
+    if a:word
+        let b:jieba_vim_current_token_match_id = matchadd("JiebaHighlightCurrentToken", a:pattern)
+    else
+        let b:jieba_vim_current_big_token_match_id = matchadd("JiebaHighlightCurrentBigToken", a:pattern)
+    endif
+endfunction
+
+function! jieba_vim#utils#update_current_token_highlighting()
+    if !get(g:, "jieba_vim_loaded_cdylib", 0) || !get(g:, "jieba_vim_highlight_current_token", 0) || mode() != "n"
+        call jieba_vim#utils#clear_current_token_highlighting()
+        return
+    endif
+    let l:curpos = getcurpos()
+
+    let l:result_dict = jieba_vim#model#ctoken(l:curpos, 0)
+    call s:clear_current_token_match(0)
+    if !l:result_dict["prevent_change"]
+        let l:pattern = '\v'
+            \ . "%>" . (l:result_dict["first_char"] - 1) . "c"
+            \ . "%<" . l:result_dict["last_char1"] . "c"
+            \ . "%" . l:curpos[1] . "l"
+        call s:set_current_token_match(l:pattern, 0)
+    endif
+
+    let l:result_dict = jieba_vim#model#ctoken(l:curpos, 1)
+    call s:clear_current_token_match(1)
+    if !l:result_dict["prevent_change"]
+        let l:pattern = '\v'
+            \ . "%>" . (l:result_dict["first_char"] - 1) . "c"
+            \ . "%<" . l:result_dict["last_char1"] . "c"
+            \ . "%" . l:curpos[1] . "l"
+        call s:set_current_token_match(l:pattern, 1)
+    endif
+endfunction
+
+function! jieba_vim#utils#clear_current_token_highlighting()
+    call s:clear_current_token_match(0)
+    call s:clear_current_token_match(1)
+endfunction

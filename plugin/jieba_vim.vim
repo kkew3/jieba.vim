@@ -40,6 +40,10 @@ let g:jieba_vim_preview_limits = get(g:, "jieba_vim_preview_limits", 0)
 " (默认 0)：是/否 (1/0) 启用对 |g@| 的实验性支持。
 let g:jieba_vim_experimental_opfunc = get(g:, "jieba_vim_experimental_opfunc", 0)
 
+""
+" (默认 0)：是/否 (1/0) 启用高亮光标下 token。
+let g:jieba_vim_highlight_current_token = get(g:, "jieba_vim_highlight_current_token", 0)
+
 if !has("nvim") && !has('python3')
     echoerr "python3 is required by jieba.vim"
     finish
@@ -121,6 +125,17 @@ endif
 augroup jieba_vim_update_isk
     autocmd!
     autocmd OptionSet iskeyword call jieba_vim#utils#update_isk()
+augroup END
+
+
+hi default link JiebaHighlightCurrentToken ColorColumn
+hi default link JiebaHighlightCurrentBigToken CursorColumn
+
+augroup jieba_vim_highlight_current_token
+    autocmd!
+    autocmd BufLeave,WinLeave * call jieba_vim#utils#clear_current_token_highlighting()
+    autocmd CursorMoved,InsertLeave * call jieba_vim#utils#update_current_token_highlighting()
+    autocmd ModeChanged n:* call jieba_vim#utils#clear_current_token_highlighting()
 augroup END
 
 
