@@ -48,7 +48,7 @@ function! jieba_vim#utils#is_forward_motion(motion)
     return a:motion ==? "w" || a:motion ==? "e" || a:motion ==? "iw" || a:motion ==? "aw"
 endfunction
 
-function jieba_vim#utils#update_isk()
+function! jieba_vim#utils#update_isk()
     if !get(g:, "jieba_vim_loaded_cdylib", 0)
         return
     endif

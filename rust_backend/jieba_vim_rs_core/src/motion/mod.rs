@@ -39,4 +39,6 @@ mod xmap_iw;
 mod xmap_w;
 
 pub use api::WordMotion;
-pub use api::ffi::{ImapOutput, NmapOutput, OmapOutput, XmapOutput};
+pub use api::ffi::{
+    CwordOutput, ImapOutput, NmapOutput, OmapOutput, XmapOutput,
+};

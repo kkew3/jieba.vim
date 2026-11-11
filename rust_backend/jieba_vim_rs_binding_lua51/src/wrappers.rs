@@ -19,7 +19,7 @@ use std::sync::OnceLock;
 use jieba_rs::Jieba;
 use jieba_vim_rs_core::BufferLike;
 use jieba_vim_rs_core::motion::{
-    ImapOutput, NmapOutput, OmapOutput, WordMotion, XmapOutput,
+    CwordOutput, ImapOutput, NmapOutput, OmapOutput, WordMotion, XmapOutput,
 };
 use jieba_vim_rs_core::token::{JiebaPlaceholder, Tokenizer};
 use mlua::{IntoLua, Lua, ObjectLike, Table, UserData, UserDataMethods, Value};
@@ -137,6 +137,19 @@ impl IntoLua for ImapOutputWrapper {
     fn into_lua(self, lua: &Lua) -> mlua::prelude::LuaResult<Value> {
         let table = lua.create_table()?;
         table.set("cursor", self.0.cursor)?;
+        Ok(Value::Table(table))
+    }
+}
+
+pub struct CwordOutputWrapper(CwordOutput);
+
+impl IntoLua for CwordOutputWrapper {
+    fn into_lua(self, lua: &Lua) -> mlua::Result<Value> {
+        let table = lua.create_table()?;
+        table.set("first_char", self.0.first_char)?;
+        table.set("last_char", self.0.last_char)?;
+        table.set("last_char1", self.0.last_char1)?;
+        table.set("prevent_change", to_utf8(self.0.prevent_change))?;
         Ok(Value::Table(table))
     }
 }
@@ -342,6 +355,42 @@ impl WordMotionWrapper {
             .map(|(lnum, col)| [lnum, col])
             .collect())
     }
+
+    fn cword(
+        _lua: &Lua,
+        this: &mut Self,
+        (buffer, cursor, word): (Table, Vec<usize>, bool),
+    ) -> mlua::Result<CwordOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(mlua::Error::runtime(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let buffer = TableBufferWrapper(buffer);
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(CwordOutputWrapper(
+            this.wm.cword(&buffer, cursor_arr, word)?,
+        ))
+    }
+
+    fn ctoken(
+        _lua: &Lua,
+        this: &mut Self,
+        (buffer, cursor, word): (Table, Vec<usize>, bool),
+    ) -> mlua::Result<CwordOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(mlua::Error::runtime(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let buffer = TableBufferWrapper(buffer);
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(CwordOutputWrapper(
+            this.wm.ctoken(&buffer, cursor_arr, word)?,
+        ))
+    }
 }
 
 impl UserData for WordMotionWrapper {
@@ -352,6 +401,8 @@ impl UserData for WordMotionWrapper {
         methods.add_method_mut("omap", Self::omap);
         methods.add_method_mut("imap", Self::imap);
         methods.add_method_mut("preview_nmap", Self::preview_nmap);
+        methods.add_method_mut("cword", Self::cword);
+        methods.add_method_mut("ctoken", Self::ctoken);
     }
 }
 
@@ -550,6 +601,42 @@ impl LazyWordMotionWrapper {
             .map(|(lnum, col)| [lnum, col])
             .collect())
     }
+
+    fn cword(
+        _lua: &Lua,
+        this: &mut Self,
+        (buffer, cursor, word): (Table, Vec<usize>, bool),
+    ) -> mlua::Result<CwordOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(mlua::Error::runtime(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let buffer = TableBufferWrapper(buffer);
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(CwordOutputWrapper(
+            this.wm.cword(&buffer, cursor_arr, word)?,
+        ))
+    }
+
+    fn ctoken(
+        _lua: &Lua,
+        this: &mut Self,
+        (buffer, cursor, word): (Table, Vec<usize>, bool),
+    ) -> mlua::Result<CwordOutputWrapper> {
+        if cursor.len() != 5 {
+            return Err(mlua::Error::runtime(
+                "cursor must contain exactly 5 elements",
+            ));
+        }
+        let buffer = TableBufferWrapper(buffer);
+        let mut cursor_arr = [0usize; 5];
+        cursor_arr.copy_from_slice(&cursor);
+        Ok(CwordOutputWrapper(
+            this.wm.ctoken(&buffer, cursor_arr, word)?,
+        ))
+    }
 }
 
 impl UserData for LazyWordMotionWrapper {
@@ -560,5 +647,7 @@ impl UserData for LazyWordMotionWrapper {
         methods.add_method_mut("omap", Self::omap);
         methods.add_method_mut("imap", Self::imap);
         methods.add_method_mut("preview_nmap", Self::preview_nmap);
+        methods.add_method_mut("cword", Self::cword);
+        methods.add_method_mut("ctoken", Self::ctoken);
     }
 }

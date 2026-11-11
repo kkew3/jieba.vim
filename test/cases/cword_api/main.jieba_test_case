@@ -1,0 +1,148 @@
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy
+// of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+// This file contains tests for the jieba_vim#cword() and jieba_vim#ctoken()
+// APIs.
+//
+// Best viewed in Vim.
+
+#V 5
+#X i
+
+#S0 iskeyword=a-z
+
+// Cursor on word
+
+B0 |abc,·def␊
+K x
+B1 ab|cabc,·def␊
+
+B0 |abc,·def␊
+K X
+B1 abc|,abc,·def␊
+
+B0 |abc,·def␊
+K y
+B1 ab|cabc,·def␊
+
+B0 |abc,·def␊
+K Y
+B1 abc|,abc,·def␊
+
+B0 ab|c,·def␊
+K x
+B1 abab|cc,·def␊
+
+B0 ab|c,·def␊
+K X
+B1 ababc|,c,·def␊
+
+B0 ab|c,·def␊
+K y
+B1 abab|cc,·def␊
+
+B0 ab|c,·def␊
+K Y
+B1 ababc|,c,·def␊
+
+// Cursor on space
+
+B0 |···abc,·def␊
+K x
+B1 ab|c···abc,·def␊
+
+B0 |···abc,·def␊
+K X
+B1 abc|,···abc,·def␊
+
+B0 |···abc,·def␊
+K y
+B1 ··|····abc,·def␊
+
+B0 |···abc,·def␊
+K Y
+B1 ··|····abc,·def␊
+
+// Cursor on space, no further word
+
+B0 |···,,,␊
+K x
+B1 ,,|,···,,,␊
+
+B0 |···,,,␊
+K X
+B1 ,,|,···,,,␊
+
+B0 |···,,,␊
+K y
+B1 ··|····,,,␊
+
+B0 |···,,,␊
+K Y
+B1 ··|····,,,␊
+
+
+// Cursor on space, no further word or WORD
+
+B0 |···␊
+K x
+B1 |···␊
+
+B0 |···␊
+K X
+B1 |···␊
+
+B0 |···␊
+K y
+B1 ··|····␊
+
+B0 |···␊
+K Y
+B1 ··|····␊
+
+// Cursor on WORD
+
+B0 |,,,abc␊
+K x
+B1 ab|c,,,abc␊
+
+B0 |,,,abc␊
+K X
+B1 ,,,ab|c,,,abc␊
+
+B0 |,,,abc␊
+K y
+B1 ,,|,,,,abc␊
+
+B0 |,,,abc␊
+K Y
+B1 ,,,ab|c,,,abc␊
+
+// Cursor on WORD, no further word
+
+B0 |,,,···␊
+K x
+B1 ,,|,,,,···␊
+
+B0 |,,,···␊
+K X
+B1 ,,|,,,,···␊
+
+B0 |,,,···␊
+K y
+B1 ,,|,,,,···␊
+
+B0 |,,,···␊
+K Y
+B1 ,,|,,,,···␊
