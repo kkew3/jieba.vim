@@ -2,6 +2,10 @@
 
 ## v2.x.x
 
+Features:
+
+- Add `jieba_vim#cword()` and `jieba_vim#ctoken()` APIs that return the word/token under cursor ([#169]).
+
 Bug fixes:
 
 - Fix CJK Ideographs (and Hiragana, etc.) not recognized as word when `@` is not contained in `'iskeyword'` ([#175]).
@@ -17,6 +21,7 @@ Documentation:
 [#170]: https://github.com/kkew3/jieba.vim/pull/170
 [#173]: https://github.com/kkew3/jieba.vim/pull/173
 [#175]: https://github.com/kkew3/jieba.vim/pull/175
+[#169]: https://github.com/kkew3/jieba.vim/issues/169
 
 
 ## v2.3.1 - 2026-10-02
