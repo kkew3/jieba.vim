@@ -1,10 +1,9 @@
 [package]
 name = "jieba_vim_rs_core"
-version = "0.7.1"
+version = "0.8.0"
 edition = "2024"
 
 [dependencies]
-unic-emoji-char = "0.9"
 
 [dev-dependencies]
 proptest = "1.11"
