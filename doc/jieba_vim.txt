@@ -15,7 +15,8 @@ CONTENTS                                                      *jieba-contents*
      3.1 Word motions ................................... |jieba-word-motions|
      3.2 Word text objects .............................. |jieba-text-objects|
      3.3 Insert special keys ............................. |jieba-ins-special|
-     3.4 Word motion preview ................................. |jieba-preview|
+     3.4 Command line ........................................ |jieba-cmdline|
+     3.5 Word motion preview ................................. |jieba-preview|
   4. Commands ............................................... |jieba-commands|
   5. Functions ............................................. |jieba-functions|
   6. Global indicators ............................. |jieba-global-indicators|
@@ -52,9 +53,10 @@ CONFIGURATION                                                   *jieba-config*
 是/否 (1/0) 自动启用默认键位映射。
 
 注意，本插件默认不映射任何按键，需要用户通过 |jieba-mappings| 自行绑定键位。
-若希望快速启用默认键位（不包括跳转预览与实验性功能），可启用此设置。默认键位
-由 |jieba_vim#default_keymap()| 定义，因此也可以设置该选项为 0, 同时手动通过
-|:autocmd| 等方式调用 |jieba_vim#default_keymap()| 实现相似功能。
+若希望快速启用默认键位（不包括跳转预览、实验性功能及参考实现），可启用此
+设置。默认键位由 |jieba_vim#default_keymap()| 定义，因此也可以设置该选项
+为 0, 同时手动通过 |:autocmd| 等方式调用 |jieba_vim#default_keymap()| 实现
+相似功能。
 
 默认: 0
 
@@ -168,6 +170,22 @@ INSERT SPECIAL KEYS
 
         imap <C-w> <Plug>(Jieba_C_w)
         " [remaining mappings ..]
+<
+
+COMMAND LINE                                                   *jieba-cmdline*
+
+以下所有命令行键位为对应 Vim 原生键位的中文增强版本。目前为参考实现，不保证与
+Vim 原生行为的完全兼容性。
+
+<Plug> 映射              对应的 Vim 原生键位  ~
+------------------------------------------------------------------------------
+<Plug>(Jieba_C_r_C_w)   |c_<C-r>_<C-w>|               *<Plug>(Jieba_C_r_C_w)*
+<Plug>(Jieba_C_r_C_a)   |c_<C-r>_<C-a>|               *<Plug>(Jieba_C_r_C_a)*
+
+键位映射示例： >vim
+
+        cmap <C-r><C-w> <Plug>(Jieba_C_r_C_w)
+        cmap <C-r><C-a> <Plug>(Jieba_C_r_C_a)
 <
 
                                                                *jieba-preview*
