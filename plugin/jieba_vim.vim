@@ -124,3 +124,26 @@ augroup END
 function! jieba_vim#install()
     call jieba_vim#loader#install()
 endfunction
+
+
+function! jieba_vim#cword(...)
+    let l:word = a:0 ? str2nr(a:1) : 1
+    let l:result_dict = jieba_vim#model#cword(getcurpos(), l:word)
+    if l:result_dict["prevent_change"]
+        return ""
+    endif
+    let l:line = getline(".")
+    " -1: first_char indexed from 1 whereas string indexed from 0;
+    " -2: same as above; furthermore, Vim string slice is doubly inclusive.
+    return l:line[l:result_dict["first_char"] - 1 : l:result_dict["last_char1"] - 2]
+endfunction
+
+function! jieba_vim#ctoken(...)
+    let l:word = a:0 ? str2nr(a:1) : 1
+    let l:result_dict = jieba_vim#model#ctoken(getcurpos(), l:word)
+    if l:result_dict["prevent_change"]
+        return ""
+    endif
+    let l:line = getline(".")
+    return l:line[l:result_dict["first_char"] - 1 : l:result_dict["last_char1"] - 2]
+endfunction
