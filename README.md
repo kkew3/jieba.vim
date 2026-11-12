@@ -82,6 +82,12 @@ nmap <LocalLeader>jc <Plug>(Jieba_preview_cancel)
 
 > 当前暂不支持预览 text objects 和箭头键位。
 
+亦可在普通模式中随时高亮光标下 token：
+
+```vim
+let g:jieba_vim_highlight_current_token = 1
+```
+
 ### 非侵入式设计
 
 默认**不映射任何按键**，通过 `<Plug>(Jieba_*)` 映射与命令供用户自由配置。若希望快速启用默认行为（不包括跳转预览和实验性功能），可在 `~/.vimrc` 中：
@@ -222,6 +228,12 @@ nmap <LocalLeader>jc <Plug>(Jieba_preview_cancel)
 Additionally, the `:JiebaPreviewCancel` command is provided to cancel word motion previews.
 
 > Preview for text objects and arrow mappings is currently not supported.
+
+Furthermore, the token under cursor can be highlighted in normal mode with the following configuration:
+
+```vim
+let g:jieba_vim_highlight_current_token = 1
+```
 
 ### Non-intrusive Design
 
