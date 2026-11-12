@@ -404,3 +404,22 @@ function! jieba_vim#mapping#imap_expr(motion, model_funcname)
         return s:imap_arrow_expr(a:motion, a:model_funcname)
     endif
 endfunction
+
+function! jieba_vim#mapping#cmap_ctrlr_expr(word, model_funcname)
+    let l:curpos = getcurpos()
+    if a:model_funcname !=# ""
+        let l:result_dict = function(a:model_funcname)(l:curpos, a:word)
+    else
+        let l:result_dict = jieba_vim#model#cword(l:curpos, a:word)
+    endif
+    if l:result_dict["prevent_change"]
+        echohl ErrorMsg
+        echoerr "E348: No string under cursor"
+        echohl None
+        return ""
+    else
+        let l:line = getline(".")
+        let l:cword = l:line[l:result_dict["first_char"] - 1 : l:result_dict["last_char1"] - 2]
+        return l:cword
+    endif
+endfunction

@@ -95,6 +95,9 @@ for ky in s:arrows + s:ispecial
         \ . 'jieba_vim#mapping#imap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
 endfor
 
+cnoremap <expr> <Plug>(Jieba_C_r_C_w) jieba_vim#mapping#cmap_ctrlr_expr(1, "")
+cnoremap <expr> <Plug>(Jieba_C_r_C_a) jieba_vim#mapping#cmap_ctrlr_expr(0, "")
+
 function! jieba_vim#default_keymap()
     for ky in s:motions + s:arrows
         execute "nmap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"

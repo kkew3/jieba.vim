@@ -4,7 +4,8 @@
 
 Features:
 
-- Add `jieba_vim#cword()` and `jieba_vim#ctoken()` APIs that return the word/token under cursor ([#169]).
+- Add `jieba_vim#cword()` and `jieba_vim#ctoken()` APIs that return the word/token under cursor ([#169], [#177]).
+- Add `c_<C-R>_<C-W>` and `c_<C-R>_<C-A>` mappings for cmdline editing ([#178]).
 
 Bug fixes:
 
@@ -22,6 +23,8 @@ Documentation:
 [#173]: https://github.com/kkew3/jieba.vim/pull/173
 [#175]: https://github.com/kkew3/jieba.vim/pull/175
 [#169]: https://github.com/kkew3/jieba.vim/issues/169
+[#177]: https://github.com/kkew3/jieba.vim/pull/177
+[#178]: https://github.com/kkew3/jieba.vim/pull/178
 
 
 ## v2.3.1 - 2026-10-02
