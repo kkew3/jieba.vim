@@ -95,6 +95,28 @@ https://github.com/kkew3/jieba.vim/blob/main/docs/design_choices/0003-omap-impl-
 ==============================================================================
 MAPPINGS                                                      *jieba-mappings*
 
+jieba.vim 映射总览如下（不包括 |jieba-preview| 映射）：
+
+Vim 模式           <Plug> 映射                ~
+------------------------------------------------------------------------------
+`nxo`                |<Plug>(Jieba_w)|, |<Plug>(Jieba_W)|
+`nxo`                |<Plug>(Jieba_b)|, |<Plug>(Jieba_B)|
+`nxo`                |<Plug>(Jieba_e)|, |<Plug>(Jieba_E)|
+`nxo`                |<Plug>(Jieba_ge)|, |<Plug>(Jieba_gE)|
+`nxoi`(*)            |<Plug>(Jieba_C_Left)|, |<Plug>(Jieba_S_Left)|
+`nxoi`(*)            |<Plug>(Jieba_C_Right)|, |<Plug>(Jieba_S_Right)|
+`xo`                 |<Plug>(Jieba_iw)|, |<Plug>(Jieba_iW)|
+`xo`                 |<Plug>(Jieba_aw)|, |<Plug>(Jieba_aW)|
+`i`                  |<Plug>(Jieba_C_w)|
+`c`   (+)            |<Plug>(Jieba_C_r_C_w)|, |<Plug>(Jieba_C_r_C_a)|
+
+注：
+
+(*): 箭头映射在插入模式下为实验性支持，不保证与 Vim 原生行为的完全兼容
+     性。
+(+): 命令行编辑功能为基于 |jieba_vim#cword()| 的参考实现，不保证与 Vim
+     原生行为的完全兼容性。
+
                                                           *jieba-word-motions*
 WORD MOTIONS
 
