@@ -254,14 +254,14 @@ jieba_vim#default_keymap()                        *jieba_vim#default_keymap()*
                            为 1 自动运行，也可手动调用。
 
 
-jieba_vim#cword([expr])                                    *jieba_vim#cword()*
+jieba_vim#cword([{expr}])                                  *jieba_vim#cword()*
                            返回当前光标下的 |jieba-word|；如果传入 0，则返回
                            当前光标下的 |jieba-WORD|。如果当前光标下不存在
                            |jieba-WORD|，返回空字符串。作用相当于 Vim 中的
                            `expand("<cword>")` 或 `expand("<cWORD>")`。
 
 
-jieba_vim#ctoken([expr])                                  *jieba_vim#ctoken()*
+jieba_vim#ctoken([{expr}])                                *jieba_vim#ctoken()*
                            返回当前光标下的 token；如果传入 0，则返回以 WORD
                            分词时当前光标下的 token。如果当前光标位于空行或
                            一行中最后一个字符之后（见 'virtualedit'），返回空
