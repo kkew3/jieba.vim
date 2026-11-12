@@ -126,18 +126,18 @@ WORD MOTIONS
 
 <Plug> 映射              对应的 Vim 原生键位  ~
 ------------------------------------------------------------------------------
-<Plug>(Jieba_w)         |w|                           *<Plug>(Jieba_w)*
-<Plug>(Jieba_S_Right)   |<S-Right>|                   *<Plug>(Jieba_S_Right)*
-<Plug>(Jieba_W)         |W|                           *<Plug>(Jieba_W)*
-<Plug>(Jieba_C_Right)   |<C-Right>|                   *<Plug>(Jieba_C_Right)*
-<Plug>(Jieba_e)         |e|                           *<Plug>(Jieba_e)*
-<Plug>(Jieba_E)         |E|                           *<Plug>(Jieba_E)*
-<Plug>(Jieba_b)         |b|                           *<Plug>(Jieba_b)*
-<Plug>(Jieba_S_Left)    |<S-Left>|                    *<Plug>(Jieba_S_Left)*
-<Plug>(Jieba_B)         |B|                           *<Plug>(Jieba_B)*
-<Plug>(Jieba_C_Left)    |<C-Left>|                    *<Plug>(Jieba_C_Left)*
-<Plug>(Jieba_ge)        |ge|                          *<Plug>(Jieba_ge)*
-<Plug>(Jieba_gE)        |gE|                          *<Plug>(Jieba_gE)*
+<Plug>(Jieba_w)          |w|                           *<Plug>(Jieba_w)*
+<Plug>(Jieba_S_Right)    |<S-Right>|                   *<Plug>(Jieba_S_Right)*
+<Plug>(Jieba_W)          |W|                           *<Plug>(Jieba_W)*
+<Plug>(Jieba_C_Right)    |<C-Right>|                   *<Plug>(Jieba_C_Right)*
+<Plug>(Jieba_e)          |e|                           *<Plug>(Jieba_e)*
+<Plug>(Jieba_E)          |E|                           *<Plug>(Jieba_E)*
+<Plug>(Jieba_b)          |b|                           *<Plug>(Jieba_b)*
+<Plug>(Jieba_S_Left)     |<S-Left>|                    *<Plug>(Jieba_S_Left)*
+<Plug>(Jieba_B)          |B|                           *<Plug>(Jieba_B)*
+<Plug>(Jieba_C_Left)     |<C-Left>|                    *<Plug>(Jieba_C_Left)*
+<Plug>(Jieba_ge)         |ge|                          *<Plug>(Jieba_ge)*
+<Plug>(Jieba_gE)         |gE|                          *<Plug>(Jieba_gE)*
 
 键位映射示例： >vim
 
@@ -156,10 +156,10 @@ WORD TEXT OBJECTS
 
 <Plug> 映射              对应的 Vim 原生键位  ~
 ------------------------------------------------------------------------------
-<Plug>(Jieba_iw)        |iw|                          *<Plug>(Jieba_iw)*
-<Plug>(Jieba_iW)        |iW|                          *<Plug>(Jieba_iW)*
-<Plug>(Jieba_aw)        |aw|                          *<Plug>(Jieba_aw)*
-<Plug>(Jieba_aW)        |aW|                          *<Plug>(Jieba_aW)*
+<Plug>(Jieba_iw)         |iw|                          *<Plug>(Jieba_iw)*
+<Plug>(Jieba_iW)         |iW|                          *<Plug>(Jieba_iW)*
+<Plug>(Jieba_aw)         |aw|                          *<Plug>(Jieba_aw)*
+<Plug>(Jieba_aW)         |aW|                          *<Plug>(Jieba_aW)*
 
 键位映射示例： >vim
 
@@ -176,17 +176,17 @@ INSERT SPECIAL KEYS
 
 <Plug> 映射              对应的 Vim 原生键位  ~
 ------------------------------------------------------------------------------
-<Plug>(Jieba_C_w)       |i_CTRL-W|                    *<Plug>(Jieba_C_w)*
+<Plug>(Jieba_C_w)        |i_CTRL-W|                    *<Plug>(Jieba_C_w)*
 
 
 实验性键位单独在下面列出，不保证与 Vim 原生行为的完全兼容性。
 
 <Plug> 映射              对应的 Vim 原生键位  ~
 ------------------------------------------------------------------------------
-<Plug>(Jieba_S_Left)    |i_<S-Left>|                  |<Plug>(Jieba_S_Left)|
-<Plug>(Jieba_C_Left)    |i_<C-Left>|                  |<Plug>(Jieba_C_Left)|
-<Plug>(Jieba_S_Right)   |i_<S-Right>|                 |<Plug>(Jieba_S_Right)|
-<Plug>(Jieba_C_Right)   |i_<C-Right>|                 |<Plug>(Jieba_C_Right)|
+<Plug>(Jieba_S_Left)     |i_<S-Left>|                  |<Plug>(Jieba_S_Left)|
+<Plug>(Jieba_C_Left)     |i_<C-Left>|                  |<Plug>(Jieba_C_Left)|
+<Plug>(Jieba_S_Right)    |i_<S-Right>|                 |<Plug>(Jieba_S_Right)|
+<Plug>(Jieba_C_Right)    |i_<C-Right>|                 |<Plug>(Jieba_C_Right)|
 
 键位映射示例： >vim
 
@@ -201,8 +201,8 @@ Vim 原生行为的完全兼容性。
 
 <Plug> 映射              对应的 Vim 原生键位  ~
 ------------------------------------------------------------------------------
-<Plug>(Jieba_C_r_C_w)   |c_<C-r>_<C-w>|               *<Plug>(Jieba_C_r_C_w)*
-<Plug>(Jieba_C_r_C_a)   |c_<C-r>_<C-a>|               *<Plug>(Jieba_C_r_C_a)*
+<Plug>(Jieba_C_r_C_w)    |c_<C-r>_<C-w>|               *<Plug>(Jieba_C_r_C_w)*
+<Plug>(Jieba_C_r_C_a)    |c_<C-r>_<C-a>|               *<Plug>(Jieba_C_r_C_a)*
 
 键位映射示例： >vim
 
@@ -218,14 +218,14 @@ WORD MOTION PREVIEW
 <Plug> 映射                  预览的 jieba_vim 键位  ~
 ------------------------------------------------------------------------------
 <Plug>(Jieba_preview_cancel) 取消预览         *<Plug>(Jieba_preview_cancel)*
-<Plug>(Jieba_preview_w)     |<Plug>(Jieba_w)| *<Plug>(Jieba_preview_w)*
-<Plug>(Jieba_preview_W)     |<Plug>(Jieba_W)| *<Plug>(Jieba_preview_W)*
-<Plug>(Jieba_preview_e)     |<Plug>(Jieba_e)| *<Plug>(Jieba_preview_e)*
-<Plug>(Jieba_preview_E)     |<Plug>(Jieba_E)| *<Plug>(Jieba_preview_E)*
-<Plug>(Jieba_preview_b)     |<Plug>(Jieba_b)| *<Plug>(Jieba_preview_b)*
-<Plug>(Jieba_preview_B)     |<Plug>(Jieba_B)| *<Plug>(Jieba_preview_B)*
-<Plug>(Jieba_preview_ge)    |<Plug>(Jieba_ge)|*<Plug>(Jieba_preview_ge)*
-<Plug>(Jieba_preview_gE)    |<Plug>(Jieba_gE)|*<Plug>(Jieba_preview_gE)*
+<Plug>(Jieba_preview_w)      |<Plug>(Jieba_w)|  *<Plug>(Jieba_preview_w)*
+<Plug>(Jieba_preview_W)      |<Plug>(Jieba_W)|  *<Plug>(Jieba_preview_W)*
+<Plug>(Jieba_preview_e)      |<Plug>(Jieba_e)|  *<Plug>(Jieba_preview_e)*
+<Plug>(Jieba_preview_E)      |<Plug>(Jieba_E)|  *<Plug>(Jieba_preview_E)*
+<Plug>(Jieba_preview_b)      |<Plug>(Jieba_b)|  *<Plug>(Jieba_preview_b)*
+<Plug>(Jieba_preview_B)      |<Plug>(Jieba_B)|  *<Plug>(Jieba_preview_B)*
+<Plug>(Jieba_preview_ge)     |<Plug>(Jieba_ge)| *<Plug>(Jieba_preview_ge)*
+<Plug>(Jieba_preview_gE)     |<Plug>(Jieba_gE)| *<Plug>(Jieba_preview_gE)*
 
 键位映射示例： >vim
 
