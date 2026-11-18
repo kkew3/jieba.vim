@@ -166,6 +166,7 @@ function! s:omap_playback_core(motion, repeat, count, operator, register, model_
 
         " .. and execute
         let l:cont = a:operator ==# "c" && a:repeat ? @. : ""
+        " [#179](https://github.com/kkew3/jieba.vim/issues/179):
         " An explicit unnamed register prefix (|quotequote|) like `""d` makes
         " Neovim update register 0 as well, clobbering the last yank. Only
         " prefix a register when the user actually asked for one.
