@@ -166,15 +166,19 @@ function! s:omap_playback_core(motion, repeat, count, operator, register, model_
 
         " .. and execute
         let l:cont = a:operator ==# "c" && a:repeat ? @. : ""
+        " An explicit unnamed register prefix (|quotequote|) like `""d` makes
+        " Neovim update register 0 as well, clobbering the last yank. Only
+        " prefix a register when the user actually asked for one.
+        let l:reg = a:register ==# '"' ? '' : '"' . a:register
         if l:result_dict["visualmode"] ==# "V"
             " Linewise operation.
             let l:op_lines = l:end_pos[1] - l:start_pos[1] + 1
-            execute 'normal! "' . a:register . l:op_lines . a:operator . a:operator . l:cont
+            execute 'normal! ' . l:reg . l:op_lines . a:operator . a:operator . l:cont
         else
             " Characterwise operation.
             let l:v = l:result_dict["selection"] ==# "inclusive" ? "v" : ""
             call setpos("'a", l:end_pos)
-            execute 'normal! "' . a:register . a:operator . l:v . "`a" . l:cont
+            execute 'normal! ' . l:reg . a:operator . l:v . "`a" . l:cont
         endif
         " ===
 
