@@ -10,6 +10,7 @@ Features:
 Bug fixes:
 
 - Fix CJK Ideographs (and Hiragana, etc.) not recognized as word when `@` is not contained in `'iskeyword'` ([#175]).
+- Do not clobber register 0 on playback without an explicit register ([#179], [#180]).
 
 Dev:
 
@@ -19,12 +20,19 @@ Documentation:
 
 - Remove figures from benchmark to avoid inflating the repository ([#173]).
 
+Thanks:
+
+- [@minortex] ([#180])
+
 [#170]: https://github.com/kkew3/jieba.vim/pull/170
 [#173]: https://github.com/kkew3/jieba.vim/pull/173
 [#175]: https://github.com/kkew3/jieba.vim/pull/175
 [#169]: https://github.com/kkew3/jieba.vim/issues/169
 [#177]: https://github.com/kkew3/jieba.vim/pull/177
 [#178]: https://github.com/kkew3/jieba.vim/pull/178
+[#179]: https://github.com/kkew3/jieba.vim/issues/179
+[#180]: https://github.com/kkew3/jieba.vim/pull/180
+[@minortex]: https://github.com/minortex
 
 
 ## v2.3.1 - 2026-10-02

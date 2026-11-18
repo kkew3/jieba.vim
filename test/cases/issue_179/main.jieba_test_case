@@ -1,0 +1,151 @@
+// Copyright 2026 Kaiwen Wu. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy
+// of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+// This file contains test cases regarding issue 179
+// (https://github.com/kkew3/jieba.vim/issues/179).
+//
+// Best viewed in Vim.
+
+#V 5
+
+## Builtin behaviors
+#X i
+#B0 |aaa␊bbb␊
+
+// Unnamed inline yank goes to "0 and "".
+K y;w X
+B1 aaa␊bbb␊0:aaa␊1:␊-:␊a:␊":aaa␊
+
+// Unnamed multiline yank goes to "0 and "".
+K y2;w X
+B1 aaa␊bbb␊0:aaa␊bbb␊1:␊-:␊a:␊":aaa␊bbb␊
+
+// Named inline yank goes to the named register and "".
+K "ay;w X
+B1 aaa␊bbb␊0:␊1:␊-:␊a:aaa␊":aaa␊
+
+// Named multiline yank goes to the named register and "".
+K "ay2;w X
+B1 aaa␊bbb␊0:␊1:␊-:␊a:aaa␊bbb␊":aaa␊bbb␊
+
+// Unnamed inline delete goes to "- and "".
+K d;w X
+B1 ␊bbb␊0:␊1:␊-:aaa␊a:␊":aaa␊
+
+// Unnamed multiline delete goes to "1 and "".
+K d2;w X
+B1 ␊0:␊1:aaa␊bbb␊-:␊a:␊":aaa␊bbb␊
+
+// Named inline delete goes to the named register and "".
+K "ad;w X
+B1 ␊bbb␊0:␊1:␊-:␊a:aaa␊":aaa␊
+
+// Named multiline delete goes to "1, the named register and "".
+K "ad2;w X
+B1 ␊0:␊1:aaa␊bbb␊-:␊a:aaa␊bbb␊":aaa␊bbb␊
+
+## Example stated at https://github.com/kkew3/jieba.vim/issues/179#issue-6448979658
+#X i
+
+B0 |aaa␊bbb␊
+K 1gg0yiw 2gg0daw X
+B1 aaa␊␊0:aaa␊1:bbb␊-:bbb␊a:␊":bbb␊
+
+// Expected behaviors:
+// (CAVEAT: different from builtin behaviors, register "1 is always written)
+//
+// - Unnamed yank goes to "0 and "".
+// - Named yank goes to the named register and "".
+// - Unnamed inline delete goes to "1, "- and "".
+// - Unnamed multiline delete goes to "1 and "".
+// - Named inline delete goes to "1, the named register and "".
+// - Named multiline delete goes to "1, the named register and "".
+## More test cases
+#X i
+#B0 |aaa␊bbb␊
+
+// Unnamed inline yank.
+K yw X
+B1 aaa␊bbb␊0:aaa␊1:␊-:␊a:␊":aaa␊
+
+// Unnamed multiline yank.
+K y2w X
+B1 aaa␊bbb␊0:aaa␊bbb␊1:␊-:␊a:␊":aaa␊bbb␊
+
+// Named inline yank.
+K "ayw X
+B1 aaa␊bbb␊0:␊1:␊-:␊a:aaa␊":aaa␊
+
+// Named multiline yank.
+K "ay2w X
+B1 aaa␊bbb␊0:␊1:␊-:␊a:aaa␊bbb␊":aaa␊bbb␊
+
+// Unnamed inline delete.
+K dw X
+B1 ␊bbb␊0:␊1:aaa␊-:aaa␊a:␊":aaa␊
+
+// Unnamed multiline delete.
+K d2w X
+B1 ␊0:␊1:aaa␊bbb␊-:␊a:␊":aaa␊bbb␊
+
+// Named inline delete.
+K "adw X
+B1 ␊bbb␊0:␊1:aaa␊-:␊a:aaa␊":aaa␊
+
+// Named multiline delete.
+K "ad2w X
+B1 ␊0:␊1:aaa␊bbb␊-:␊a:aaa␊bbb␊":aaa␊bbb␊
+
+// Expected behaviors:
+//
+// - Unnamed inline delete goes to "1, "- and "".
+// - Unnamed multiline delete goes to "1 and "".
+## Dot-repeat for unnamed deletes
+#X i
+
+// Inline delete, repeat inline delete.
+B0 |aaa␊bbb␊ccc␊ddd␊
+K dw 3gg0 .
+B1 ␊bbb␊|␊ddd␊
+
+B0 |aaa␊bbb␊ccc␊ddd␊
+K dw 3gg0 . X
+B1 ␊bbb␊␊ddd␊0:␊1:ccc␊-:ccc␊a:␊":ccc␊
+
+// Multiline delete, repeat inline delete.
+B0 |aaa␊bbb␊ccc␊ddd␊
+K d2w 4gg0 .
+B1 ccc␊|␊
+
+B0 |aaa␊bbb␊ccc␊ddd␊
+K d2w 4gg0 . X
+B1 ccc␊␊0:␊1:ddd␊-:ddd␊a:␊":ddd␊
+
+// Inline delete, repeat multiline delete.
+B0 aaa␊bbb␊ccc␊|ddd␊
+K d2w gg0 .
+B1 |ccc␊␊
+
+B0 aaa␊bbb␊ccc␊|ddd␊
+K d2w gg0 . X
+B1 ccc␊␊0:␊1:aaa␊bbb␊-:ddd␊a:␊":aaa␊bbb␊
+
+// Multiline delete, repeat multiline delete.
+B0 |aaa␊bbb␊ccc␊ddd␊
+K d2w .
+B1 |␀
+
+B0 |aaa␊bbb␊ccc␊ddd␊
+K d2w . X
+B1 ␊0:␊1:ccc␊ddd␊-:␊a:␊":ccc␊ddd␊
