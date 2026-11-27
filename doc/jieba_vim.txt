@@ -270,6 +270,165 @@ jieba_vim#ctoken([{word}])                                *jieba_vim#ctoken()*
                            |jieba-word|，而 `ctoken()` 会返回光标下的 token，
                            无论其是否为 word。
 
+
+MODEL API                                              *jieba-model-functions*
+
+以下为模型 API。如果对现有 mapping 实现不满意，可以通过查询对应模型，实现符合
+自己需求的键位映射。
+
+                                                   *jieba_vim#model#preview()*
+jieba_vim#model#preview({motion}, {curpos}, {limit})
+
+    返回一个列表，其中每一个元素为 [lnum, col] 对，表示 |nmap| 下 {motion} 的
+    目标位置，列表的长度由 {limit} 的值决定。
+
+    函数参数为：
+        a:motion  包含对应 |motion| 键位的字符串。支持以下字符串：
+                  `"w"`、`"W"`、`"b"`、`"B"`、`"e"`、`"E"`、`"ge"`、`"gE"`。
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]。
+        a:limit   一个非负整数，含义见 |g:jieba_vim_preview_limits|。
+
+    调用示例：  >vim
+
+        let result_dict = jieba_vim#model#preview("w", getcurpos(), 0)
+<
+
+                                                      *jieba_vim#model#nmap()*
+jieba_vim#model#nmap({motion}, {curpos}, {count})
+
+    返回一个字典，包含以下键值对：
+        cursor            目标位置列表，列表元素为 [bufnum, lnum, col, off]。
+        prevent_change    如果 |nmap| 失败，该值为真。
+
+    函数参数为：
+        a:motion  包含对应 |motion| 键位的字符串。支持以下字符串：
+                  `"w"`、`"W"`、`"b"`、`"B"`、`"e"`、`"E"`、`"ge"`、`"gE"`。
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                  其中 `bufnum` 应为 0。
+        a:count   |motion| 计数，应为非负整数。若为 0，其效果等价于 1。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#nmap("w", getcurpos(), v:count)
+<
+
+                                                      *jieba_vim#model#xmap()*
+jieba_vim#model#xmap({visualmode}, {motion}, {vbegin}, {vend}, {count})
+
+    返回一个字典，包含以下键值对：
+        visualmode        目标 VISUAL 模式。其为 `"v"` 时表示应按字符选中
+                          选区；为 `"V"` 时表示应按行选中；为 `"\<C-v>"` 时
+                          表示应按 block 选中。通常与 `a:visualmode` 相同。
+        langle            目标选区的开始位置，值为 [bufnum, lnum, col, off]。
+        rangle            目标选区的结束位置，值为 [bufnum, lnum, col, off]。
+        prevent_change    如果 `xmap` 失败，该值为真。
+
+    函数参数为：
+        a:visualmode  当前 VISUAL 模式。
+        a:motion      包含对应 |motion| 键位的字符串。支持以下字符串：
+                      `"w"`、`"W"`、`"b"`、`"B"`、`"e"`、`"E"`、`"ge"`、
+                      `"gE"`、`"iw"`、`"iW"`、`"aw"`、`"aW"`。
+        a:vbegin      当前选区的开始位置，格式为 [bufnum, lnum, col, off]，
+                      其中 `bufnum` 应为 0。
+        a:vend        当前选区的结束位置，格式为 [bufnum, lnum, col, off]，
+                      其中 `bufnum` 应为 0。
+        a:count       |motion| 计数，应为非负整数。若为 0，其效果等价于 1。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#xmap(
+            \ visualmode(), "w", getpos("'<"), getpos("'>"), v:count)
+<
+
+                                                      *jieba_vim#model#omap()*
+jieba_vim#model#omap({motion}, {curpos}, {count}, {operator})
+
+    返回一个字典，包含以下键值对：
+        cursor          目标光标位置，格式为 [bufnum, lnum, col, off]。
+        langle          操作开始位置，格式为 [bufnum, lnum, col, off]。
+        rangle          操作结束位置，格式为 [bufnum, lnum, col, off]。
+        visualmode      若为 `"V"`，则表示目标操作为行操作；否则，若为 `"v"`，
+                        则表示目标操作为字符操作。
+        selection       若为 `"exclusive"` 且目标操作为字符操作，则表示目标
+                        操作同时为 |exclusive|；否则，若为 `"inclusive"` 且目标
+                        操作为字符操作，则表示目标操作同时为 |inclusive|。
+        prevent_change  如果 `omap` 失败，该值为真。
+
+    函数参数为：
+        a:motion    包含对应 |motion| 键位的字符串。支持以下字符串：
+                    `"w"`、`"W"`、`"b"`、`"B"`、`"e"`、`"E"`、`"ge"`、`"gE"`、
+                    `"iw"`、`"iW"`、`"aw"`、`"aW"`。
+        a:curpos    光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                    其中 `bufnum` 应为 0。
+        a:count     |motion| 计数，应为非负整数。若为 0，其效果等价于 1。
+        a:operator  包含操作符的字符串。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#omap(
+            \ "w", getcurpos(), v:count, v:operator)
+<
+
+                                                      *jieba_vim#model#imap()*
+jieba_vim#model#imap({motion}, {curpos})
+
+    返回一个字典，包含以下键值对：
+        cursor  目标光标位置，格式为 [bufnum, lnum, col, off]。
+
+    函数参数为：
+        a:motion  包含对应 |motion| 键位的字符串。支持以下字符串：
+                  `"\<C-w>"`、`"\<C-Left>"`、`"\<S-Left>"`、`"\<C-Right>"`、
+                  `"\<S-Right>"`。
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                  其中 `bufnum` 应为 0。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#imap("\<C-w>", getcurpos())
+<
+
+                                                     *jieba_vim#model#cword()*
+jieba_vim#model#cword({curpos}, {word})
+
+    返回一个字典，包含以下键值对：
+        first_char      光标下 |cword| 第一个字符的列数。
+        last_char       光标下 |cword| 最后一个字符的列数。
+        last_char1      光标下 |cword| 最后一个字符的列数 + 最后一个字符的
+                        编码（目前固定为 UTF-8）长度。
+        prevent_change  如果光标下没有 |cword|，该值为真。
+
+    函数参数为：
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                  其中 `bufnum` 应为 0。
+        a:word    若为 1，则查询光标下的 |cword|；若为 0，则查询光标下的
+                  |cWORD|。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#cword(getcurpos(), 1)
+<
+
+                                                    *jieba_vim#model#ctoken()*
+jieba_vim#model#ctoken({curpos}, {word})
+
+    返回一个字典，包含以下键值对：
+        first_char      光标下 token 第一个字符的列数。
+        last_char       光标下 token 最后一个字符的列数。
+        last_char1      光标下 token 最后一个字符的列数 + 最后一个字符的
+                        编码（目前固定为 UTF-8）长度。
+        prevent_change  如果光标下没有 token，该值为真。
+
+    函数参数为：
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                  其中 `bufnum` 应为 0。
+        a:word    若为 1，则查询光标下的 token；若为 0，则查询光标下的
+                  TOKEN。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#ctoken(getcurpos(), 1)
+<
+
 ==============================================================================
 GLOBAL INDICATORS                                    *jieba-global-indicators*
 
