@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.x.x
+## v2.4.0 - 2026-11-28
 
 Features:
 
