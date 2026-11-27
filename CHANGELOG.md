@@ -19,6 +19,7 @@ Dev:
 Documentation:
 
 - Remove figures from benchmark to avoid inflating the repository ([#173]).
+- Add model APIs to Vim help text ([#171], [#181]).
 
 Thanks:
 
@@ -32,6 +33,8 @@ Thanks:
 [#178]: https://github.com/kkew3/jieba.vim/pull/178
 [#179]: https://github.com/kkew3/jieba.vim/issues/179
 [#180]: https://github.com/kkew3/jieba.vim/pull/180
+[#171]: https://github.com/kkew3/jieba.vim/issues/171
+[#181]: https://github.com/kkew3/jieba.vim/pull/181
 [@minortex]: https://github.com/minortex
 
 
