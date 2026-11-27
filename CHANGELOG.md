@@ -4,21 +4,21 @@
 
 Features:
 
-- Add `jieba_vim#cword()` and `jieba_vim#ctoken()` APIs that return the word/token under cursor ([#169], [#177]).
+- Add `jieba_vim#cword()` and `jieba_vim#ctoken()` APIs to return the word/token under the cursor ([#169], [#177]).
 - Add `c_<C-R>_<C-W>` and `c_<C-R>_<C-A>` mappings for cmdline editing ([#178]).
 
 Bug fixes:
 
-- Fix CJK Ideographs (and Hiragana, etc.) not recognized as word when `@` is not contained in `'iskeyword'` ([#175]).
-- Do not clobber register 0 on playback without an explicit register ([#179], [#180]).
+- Fix CJK Ideographs (and Hiragana, etc.) not being recognized as words when `@` is not included in `'iskeyword'` ([#175]).
+- Avoid clobbering register 0 during playback when no explicit register is specified ([#179], [#180]).
 
 Dev:
 
-- Bump core dependency [`jieba-rs`][jieba-rs] to 0.11 ([#170]).
+- Bump core dependency [`jieba-rs`][jieba-rs] to 0.11, halving warmup wall time to 0.04 seconds ([#170]).
 
 Documentation:
 
-- Remove figures from benchmark to avoid inflating the repository ([#173]).
+- Remove benchmark figures to avoid inflating the repository ([#173]).
 - Add model APIs to Vim help text ([#171], [#181]).
 
 Thanks:
