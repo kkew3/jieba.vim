@@ -12,23 +12,23 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use crate::BufferLike;
 use crate::motion::api::MotionType;
 
-use super::core::buffer::ParsedBufferLike;
 use super::core::position::{OperatorRange, Position};
 
 /// Position the cursor after an operator-pending motion.
 pub trait PositionCursor {
-    fn position_cursor<B: ParsedBufferLike + ?Sized>(
+    fn position_cursor<B: BufferLike + ?Sized>(
         &mut self,
-        buffer: &mut B,
+        buffer: &B,
     ) -> Result<(), B::Error>;
 }
 
 impl<'o> PositionCursor for OperatorRange<'o> {
-    fn position_cursor<B: ParsedBufferLike + ?Sized>(
+    fn position_cursor<B: BufferLike + ?Sized>(
         &mut self,
-        buffer: &mut B,
+        buffer: &B,
     ) -> Result<(), B::Error> {
         // Re-position the cursor within remaining lines after deletion to keep
         // its position valid.

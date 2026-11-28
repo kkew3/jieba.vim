@@ -244,6 +244,7 @@ mod tests {
                 start + (token_nchars - 1) * char_len,
                 start + token_nchars * char_len,
                 TokenType::Word,
+                true,
             )
         }
         let mut tokens_buffer = Vec::new();

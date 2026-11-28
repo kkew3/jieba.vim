@@ -15,7 +15,10 @@
 //! The main interface of module [`jieba_vim_rs_core::motion`](crate::motion).
 
 use crate::BufferLike;
-use crate::token::{JiebaPlaceholder, Tokenizer};
+use crate::token::{JiebaPlaceholder, TokenLike, Tokenizer};
+
+use super::core::buffer::ParsedBuffer;
+use super::core::cword;
 
 pub struct WordMotion<C> {
     pub(super) tokenizer: Tokenizer<C>,
@@ -50,6 +53,13 @@ pub mod ffi {
 
     pub struct ImapOutput {
         pub cursor: Position,
+    }
+
+    pub struct CwordOutput {
+        pub first_char: usize,
+        pub last_char: usize,
+        pub last_char1: usize,
+        pub prevent_change: &'static [u8],
     }
 }
 
@@ -346,5 +356,55 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
             _ => unreachable!("invalid motion key sequence: {:?}", motion),
         }?;
         Ok(output.into())
+    }
+
+    pub fn cword<B: BufferLike + ?Sized>(
+        &mut self,
+        buffer: &B,
+        cursor: ffi::CursorPositionCurswant,
+        word: bool,
+    ) -> Result<ffi::CwordOutput, B::Error> {
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let token_opt = cword::find_cword(&mut buffer, &cursor.into())?;
+        let output = match token_opt {
+            Some(t) => ffi::CwordOutput {
+                first_char: t.first_char(),
+                last_char: t.last_char(),
+                last_char1: t.last_char1(),
+                prevent_change: b"0",
+            },
+            None => ffi::CwordOutput {
+                first_char: 0,
+                last_char: 0,
+                last_char1: 0,
+                prevent_change: b"1",
+            },
+        };
+        Ok(output)
+    }
+
+    pub fn ctoken<B: BufferLike + ?Sized>(
+        &mut self,
+        buffer: &B,
+        cursor: ffi::CursorPositionCurswant,
+        word: bool,
+    ) -> Result<ffi::CwordOutput, B::Error> {
+        let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
+        let token_opt = cword::find_ctoken(&mut buffer, &cursor.into())?;
+        let output = match token_opt {
+            Some(t) => ffi::CwordOutput {
+                first_char: t.first_char(),
+                last_char: t.last_char(),
+                last_char1: t.last_char1(),
+                prevent_change: b"0",
+            },
+            None => ffi::CwordOutput {
+                first_char: 0,
+                last_char: 0,
+                last_char1: 0,
+                prevent_change: b"1",
+            },
+        };
+        Ok(output)
     }
 }

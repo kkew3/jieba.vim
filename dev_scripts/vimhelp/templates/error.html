@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="light dark">
+<script src="{{'theme-init.js'|static_path}}"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{project.name}}: {{error.code}} {{error.name}}</title>
+<link rel="shortcut icon" href="{{project.favicon|static_path}}">
+<link rel="search" type="application/opensearchdescription+xml" title="{{project.name}} help" href="/opensearch.xml">
+<link rel="stylesheet" href="{{'vimhelp.css'|static_path}}">
+</head>
+<body class="http-error-page">
+<div class="bar">
+  <div class="ql">
+    Quick links:
+    <a href="/">help overview</a> &middot;
+    <a href="/quickref.txt.html">quick reference</a> &middot;
+    <a href="/usr_toc.txt.html">user manual toc</a> &middot;
+    <a href="/#reference_toc">reference manual toc</a>
+    {% if project.name == "Vim" %}
+    &middot; <a href="/vim_faq.txt.html">faq</a>
+    {% endif %}
+  </div>
+</div>
+<main class="http-error">
+  <p class="http-error-site">{{project.name}} help</p>
+  <h1>{{error.code}} {{error.name}}</h1>
+  <p>{{message}}</p>
+</main>
+{% include "footer.html" %}
+</body>
+</html>

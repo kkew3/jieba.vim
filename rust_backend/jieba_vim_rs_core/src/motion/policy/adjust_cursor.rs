@@ -21,39 +21,35 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
+use crate::BufferLike;
 use crate::motion::api::MotionType;
-use crate::token::TokenLike;
 
-use super::core::buffer::ParsedBufferLike;
-use super::core::iter::{ExtendedInlineTokensIter, GToken};
 use super::core::position::{OperatorRange, Position};
 
 /// Used after a movement command: If the cursor ends up on the Eol(_),
 /// may move it back to the last character in the line and make the motion
 /// inclusive.
 pub trait AdjustCursor {
-    fn adjust_cursor<B: ParsedBufferLike + ?Sized>(
+    fn adjust_cursor<B: BufferLike + ?Sized>(
         &mut self,
-        buffer: &mut B,
+        buffer: &B,
     ) -> Result<(), B::Error>;
 }
 
 impl AdjustCursor for Position {
     /// Adjust cursor after an nmap motion.
-    fn adjust_cursor<B: ParsedBufferLike + ?Sized>(
+    fn adjust_cursor<B: BufferLike + ?Sized>(
         &mut self,
-        buffer: &mut B,
+        buffer: &B,
     ) -> Result<(), B::Error> {
-        let tokens = buffer.getline_parsed(self.lnum)?;
-        let mut line =
-            ExtendedInlineTokensIter::new(tokens).take_col_rev(self.col);
-        let cursor_token = line.next().unwrap();
-        if let GToken::Eol(col) = cursor_token
-            && col > 1
-        {
-            // There must be at least one token before an Eol(_).
-            let prev_token = line.next().unwrap();
-            self.col = prev_token.last_char();
+        let line = buffer.getline(self.lnum)?;
+        if !line.is_empty() && line.len() + 1 == self.col {
+            self.col = line
+                .char_indices()
+                .next_back()
+                .map(|(j, _)| j + 1)
+                // unwrap: there must be at least one token before an Eol(_).
+                .unwrap();
         }
         Ok(())
     }
@@ -61,9 +57,9 @@ impl AdjustCursor for Position {
 
 impl<'o> AdjustCursor for OperatorRange<'o> {
     /// Adjust `rangle` after an omap motion.
-    fn adjust_cursor<B: ParsedBufferLike + ?Sized>(
+    fn adjust_cursor<B: BufferLike + ?Sized>(
         &mut self,
-        buffer: &mut B,
+        buffer: &B,
     ) -> Result<(), B::Error> {
         let start_col = self.rangle.col;
         self.rangle.adjust_cursor(buffer)?;

@@ -1,0 +1,32 @@
+" Copyright 2026 Kaiwen Wu. All Rights Reserved.
+"
+" Licensed under the Apache License, Version 2.0 (the "License"); you may not
+" use this file except in compliance with the License. You may obtain a copy
+" of the License at
+"
+"     http://www.apache.org/licenses/LICENSE-2.0
+"
+" Unless required by applicable law or agreed to in writing, software
+" distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+" WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+" License for the specific language governing permissions and limitations
+" under the License.
+
+execute "source " . expand("<sfile>:p:h:h") . "/vimrc"
+
+cmap <C-r><C-w> <Plug>(Jieba_C_r_C_w)
+cmap <C-r><C-a> <Plug>(Jieba_C_r_C_a)
+
+" Test idea comes from chaoren/vim-wordmotion
+" (https://github.com/chaoren/vim-wordmotion/blob/master/tests/crcw.vader).
+
+function! s:replace_crcw()
+    execute "normal :s/\<C-r>\<C-w>/X/\<CR>"
+endfunction
+
+function! s:replace_crca()
+    execute "normal :s/\<C-r>\<C-a>/X/\<CR>"
+endfunction
+
+nnoremap x :call <SID>replace_crcw()<CR>
+nnoremap X :call <SID>replace_crca()<CR>

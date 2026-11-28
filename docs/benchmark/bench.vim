@@ -1,5 +1,5 @@
-function! Bench(bang)
-    let l:mycount = 50000
+function! Bench(bang, measure_warmup)
+    let l:mycount = a:measure_warmup ? 10 : 50000
     let l:output = []
     let l:cmd = a:bang ? "normal! w" : "normal w"
     while l:mycount > 0
@@ -13,5 +13,12 @@ function! Bench(bang)
     call writefile(l:output, "bench_output_" . l:label . ".txt")
 endfunction
 
-call Bench(0)
+let s:measure_warmup = exists("$MEASURE_WARMUP") ? 1 : 0
+let s:std_run = exists("$RUN_BUILTIN") ? 1 : 0
+
+if !s:std_run && !exists("g:loaded_jieba_vim")
+    cquit
+    finish
+endif
+call Bench(s:std_run, s:measure_warmup)
 quit

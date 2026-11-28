@@ -95,6 +95,9 @@ for ky in s:arrows + s:ispecial
         \ . 'jieba_vim#mapping#imap_expr(' . string(s:escape_key(ky, 1)) . ', "")'
 endfor
 
+cnoremap <expr> <Plug>(Jieba_C_r_C_w) jieba_vim#mapping#cmap_ctrlr_expr(1, "")
+cnoremap <expr> <Plug>(Jieba_C_r_C_a) jieba_vim#mapping#cmap_ctrlr_expr(0, "")
+
 function! jieba_vim#default_keymap()
     for ky in s:motions + s:arrows
         execute "nmap " . s:escape_key(ky) . " <Plug>(Jieba_" . ky . ")"
@@ -123,4 +126,27 @@ augroup END
 
 function! jieba_vim#install()
     call jieba_vim#loader#install()
+endfunction
+
+
+function! jieba_vim#cword(...)
+    let l:word = a:0 ? str2nr(a:1) : 1
+    let l:result_dict = jieba_vim#model#cword(getcurpos(), l:word)
+    if l:result_dict["prevent_change"]
+        return ""
+    endif
+    let l:line = getline(".")
+    " -1: first_char indexed from 1 whereas string indexed from 0;
+    " -2: same as above; furthermore, Vim string slice is doubly inclusive.
+    return l:line[l:result_dict["first_char"] - 1 : l:result_dict["last_char1"] - 2]
+endfunction
+
+function! jieba_vim#ctoken(...)
+    let l:word = a:0 ? str2nr(a:1) : 1
+    let l:result_dict = jieba_vim#model#ctoken(getcurpos(), l:word)
+    if l:result_dict["prevent_change"]
+        return ""
+    endif
+    let l:line = getline(".")
+    return l:line[l:result_dict["first_char"] - 1 : l:result_dict["last_char1"] - 2]
 endfunction

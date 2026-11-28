@@ -74,6 +74,16 @@ function M.preview_nmap(self, buffer, motion, cursor, preview_limit)
     return self.word_motion:preview_nmap(buffer, motion, cursor, preview_limit)
 end
 
+function M.cword(self, buffer, cursor, word)
+    word = (word > 0)
+    return self.word_motion:cword(buffer, cursor, word)
+end
+
+function M.ctoken(self, buffer, cursor, word)
+    word = (word > 0)
+    return self.word_motion:ctoken(buffer, cursor, word)
+end
+
 function M.update_isk(self, isk)
     self.word_motion:set_isk(isk)
 end

@@ -15,7 +15,8 @@ CONTENTS                                                      *jieba-contents*
      3.1 Word motions ................................... |jieba-word-motions|
      3.2 Word text objects .............................. |jieba-text-objects|
      3.3 Insert special keys ............................. |jieba-ins-special|
-     3.4 Word motion preview ................................. |jieba-preview|
+     3.4 Command line ........................................ |jieba-cmdline|
+     3.5 Word motion preview ................................. |jieba-preview|
   4. Commands ............................................... |jieba-commands|
   5. Functions ............................................. |jieba-functions|
   6. Global indicators ............................. |jieba-global-indicators|
@@ -31,6 +32,20 @@ VISUAL 模式按单词扩张选区、按单词复制、删词、改词等操作�
 并允许自定义用户词典，从而自定义分词边界。
 
 
+                                                    *jieba-word*  *jieba-WORD*
+与 Vim 相似，|jieba-word| 是由连续的 word 字符组成的序列，而 |jieba-WORD| 则
+是由连续的非空白字符组成的序列。对于 ASCII 以及 Latin-1 字符，是否属于 word
+字符由 'iskeyword' 决定；其它字符则根据其 Unicode 类别判断。这与 Vim 的行为
+基本一致。例如，中文字符总是 word 字符。
+
+对于包含中文字符的 word 字符序列，jieba.vim 会调用 jieba-rs
+( https://github.com/messense/jieba-rs ) 进行分词，并在各分词之间插入虚拟
+空白，使每个分词成为独立的 |jieba-word|。|jieba-mappings| 以这些 word 为
+单位进行操作。这些虚拟空白用于在概念上分隔 |jieba-word| 和 |jieba-WORD|，不
+实际存在于 Vim 缓冲区。此外，某些中文标点（例如逗号和句号）之后也会插入这种
+虚拟空白，从而禁止 |jieba-WORD| 越过这些标点。
+
+
 ==============================================================================
 CONFIGURATION                                                   *jieba-config*
 
@@ -38,9 +53,10 @@ CONFIGURATION                                                   *jieba-config*
 是/否 (1/0) 自动启用默认键位映射。
 
 注意，本插件默认不映射任何按键，需要用户通过 |jieba-mappings| 自行绑定键位。
-若希望快速启用默认键位（不包括跳转预览与实验性功能），可启用此设置。默认键位
-由 |jieba_vim#default_keymap()| 定义，因此也可以设置该选项为 0, 同时手动通过
-|:autocmd| 等方式调用 |jieba_vim#default_keymap()| 实现相似功能。
+若希望快速启用默认键位（不包括跳转预览、实验性功能及参考实现），可启用此
+设置。默认键位由 |jieba_vim#default_keymap()| 定义，因此也可以设置该选项
+为 0, 同时手动通过 |:autocmd| 等方式调用 |jieba_vim#default_keymap()| 实现
+相似功能。
 
 默认: 0
 
@@ -79,6 +95,28 @@ https://github.com/kkew3/jieba.vim/blob/main/docs/design_choices/0003-omap-impl-
 ==============================================================================
 MAPPINGS                                                      *jieba-mappings*
 
+jieba.vim 映射总览如下（不包括 |jieba-preview| 映射）：
+
+Vim 模式           <Plug> 映射                ~
+------------------------------------------------------------------------------
+`nxo`                |<Plug>(Jieba_w)|, |<Plug>(Jieba_W)|
+`nxo`                |<Plug>(Jieba_b)|, |<Plug>(Jieba_B)|
+`nxo`                |<Plug>(Jieba_e)|, |<Plug>(Jieba_E)|
+`nxo`                |<Plug>(Jieba_ge)|, |<Plug>(Jieba_gE)|
+`nxoi`(*)            |<Plug>(Jieba_C_Left)|, |<Plug>(Jieba_S_Left)|
+`nxoi`(*)            |<Plug>(Jieba_C_Right)|, |<Plug>(Jieba_S_Right)|
+`xo`                 |<Plug>(Jieba_iw)|, |<Plug>(Jieba_iW)|
+`xo`                 |<Plug>(Jieba_aw)|, |<Plug>(Jieba_aW)|
+`i`                  |<Plug>(Jieba_C_w)|
+`c`   (+)            |<Plug>(Jieba_C_r_C_w)|, |<Plug>(Jieba_C_r_C_a)|
+
+注：
+
+(*): 箭头映射在插入模式下为实验性支持，不保证与 Vim 原生行为的完全兼容
+     性。
+(+): 命令行编辑功能为基于 |jieba_vim#cword()| 的参考实现，不保证与 Vim
+     原生行为的完全兼容性。
+
                                                           *jieba-word-motions*
 WORD MOTIONS
 
@@ -88,18 +126,18 @@ WORD MOTIONS
 
 <Plug> 映射              对应的 Vim 原生键位  ~
 ------------------------------------------------------------------------------
-<Plug>(Jieba_w)         |w|                           *<Plug>(Jieba_w)*
-<Plug>(Jieba_S_Right)   |<S-Right>|                   *<Plug>(Jieba_S_Right)*
-<Plug>(Jieba_W)         |W|                           *<Plug>(Jieba_W)*
-<Plug>(Jieba_C_Right)   |<C-Right>|                   *<Plug>(Jieba_C_Right)*
-<Plug>(Jieba_e)         |e|                           *<Plug>(Jieba_e)*
-<Plug>(Jieba_E)         |E|                           *<Plug>(Jieba_E)*
-<Plug>(Jieba_b)         |b|                           *<Plug>(Jieba_b)*
-<Plug>(Jieba_S_Left)    |<S-Left>|                    *<Plug>(Jieba_S_Left)*
-<Plug>(Jieba_B)         |B|                           *<Plug>(Jieba_B)*
-<Plug>(Jieba_C_Left)    |<C-Left>|                    *<Plug>(Jieba_C_Left)*
-<Plug>(Jieba_ge)        |ge|                          *<Plug>(Jieba_ge)*
-<Plug>(Jieba_gE)        |gE|                          *<Plug>(Jieba_gE)*
+<Plug>(Jieba_w)          |w|                           *<Plug>(Jieba_w)*
+<Plug>(Jieba_S_Right)    |<S-Right>|                   *<Plug>(Jieba_S_Right)*
+<Plug>(Jieba_W)          |W|                           *<Plug>(Jieba_W)*
+<Plug>(Jieba_C_Right)    |<C-Right>|                   *<Plug>(Jieba_C_Right)*
+<Plug>(Jieba_e)          |e|                           *<Plug>(Jieba_e)*
+<Plug>(Jieba_E)          |E|                           *<Plug>(Jieba_E)*
+<Plug>(Jieba_b)          |b|                           *<Plug>(Jieba_b)*
+<Plug>(Jieba_S_Left)     |<S-Left>|                    *<Plug>(Jieba_S_Left)*
+<Plug>(Jieba_B)          |B|                           *<Plug>(Jieba_B)*
+<Plug>(Jieba_C_Left)     |<C-Left>|                    *<Plug>(Jieba_C_Left)*
+<Plug>(Jieba_ge)         |ge|                          *<Plug>(Jieba_ge)*
+<Plug>(Jieba_gE)         |gE|                          *<Plug>(Jieba_gE)*
 
 键位映射示例： >vim
 
@@ -118,10 +156,10 @@ WORD TEXT OBJECTS
 
 <Plug> 映射              对应的 Vim 原生键位  ~
 ------------------------------------------------------------------------------
-<Plug>(Jieba_iw)        |iw|                          *<Plug>(Jieba_iw)*
-<Plug>(Jieba_iW)        |iW|                          *<Plug>(Jieba_iW)*
-<Plug>(Jieba_aw)        |aw|                          *<Plug>(Jieba_aw)*
-<Plug>(Jieba_aW)        |aW|                          *<Plug>(Jieba_aW)*
+<Plug>(Jieba_iw)         |iw|                          *<Plug>(Jieba_iw)*
+<Plug>(Jieba_iW)         |iW|                          *<Plug>(Jieba_iW)*
+<Plug>(Jieba_aw)         |aw|                          *<Plug>(Jieba_aw)*
+<Plug>(Jieba_aW)         |aW|                          *<Plug>(Jieba_aW)*
 
 键位映射示例： >vim
 
@@ -138,22 +176,38 @@ INSERT SPECIAL KEYS
 
 <Plug> 映射              对应的 Vim 原生键位  ~
 ------------------------------------------------------------------------------
-<Plug>(Jieba_C_w)       |i_CTRL-W|                    *<Plug>(Jieba_C_w)*
+<Plug>(Jieba_C_w)        |i_CTRL-W|                    *<Plug>(Jieba_C_w)*
 
 
-实验性键位单独在下面列出，不保证与 Vim 原生行为的兼容性。
+实验性键位单独在下面列出，不保证与 Vim 原生行为的完全兼容性。
 
 <Plug> 映射              对应的 Vim 原生键位  ~
 ------------------------------------------------------------------------------
-<Plug>(Jieba_S_Left)    |i_<S-Left>|                  |<Plug>(Jieba_S_Left)|
-<Plug>(Jieba_C_Left)    |i_<C-Left>|                  |<Plug>(Jieba_C_Left)|
-<Plug>(Jieba_S_Right)   |i_<S-Right>|                 |<Plug>(Jieba_S_Right)|
-<Plug>(Jieba_C_Right)   |i_<C-Right>|                 |<Plug>(Jieba_C_Right)|
+<Plug>(Jieba_S_Left)     |i_<S-Left>|                  |<Plug>(Jieba_S_Left)|
+<Plug>(Jieba_C_Left)     |i_<C-Left>|                  |<Plug>(Jieba_C_Left)|
+<Plug>(Jieba_S_Right)    |i_<S-Right>|                 |<Plug>(Jieba_S_Right)|
+<Plug>(Jieba_C_Right)    |i_<C-Right>|                 |<Plug>(Jieba_C_Right)|
 
 键位映射示例： >vim
 
         imap <C-w> <Plug>(Jieba_C_w)
         " [remaining mappings ..]
+<
+
+COMMAND LINE                                                   *jieba-cmdline*
+
+以下所有命令行键位为对应 Vim 原生键位的中文增强版本。目前为参考实现，不保证与
+Vim 原生行为的完全兼容性。
+
+<Plug> 映射              对应的 Vim 原生键位  ~
+------------------------------------------------------------------------------
+<Plug>(Jieba_C_r_C_w)    |c_<C-r>_<C-w>|               *<Plug>(Jieba_C_r_C_w)*
+<Plug>(Jieba_C_r_C_a)    |c_<C-r>_<C-a>|               *<Plug>(Jieba_C_r_C_a)*
+
+键位映射示例： >vim
+
+        cmap <C-r><C-w> <Plug>(Jieba_C_r_C_w)
+        cmap <C-r><C-a> <Plug>(Jieba_C_r_C_a)
 <
 
                                                                *jieba-preview*
@@ -164,14 +218,14 @@ WORD MOTION PREVIEW
 <Plug> 映射                  预览的 jieba_vim 键位  ~
 ------------------------------------------------------------------------------
 <Plug>(Jieba_preview_cancel) 取消预览         *<Plug>(Jieba_preview_cancel)*
-<Plug>(Jieba_preview_w)     |<Plug>(Jieba_w)| *<Plug>(Jieba_preview_w)*
-<Plug>(Jieba_preview_W)     |<Plug>(Jieba_W)| *<Plug>(Jieba_preview_W)*
-<Plug>(Jieba_preview_e)     |<Plug>(Jieba_e)| *<Plug>(Jieba_preview_e)*
-<Plug>(Jieba_preview_E)     |<Plug>(Jieba_E)| *<Plug>(Jieba_preview_E)*
-<Plug>(Jieba_preview_b)     |<Plug>(Jieba_b)| *<Plug>(Jieba_preview_b)*
-<Plug>(Jieba_preview_B)     |<Plug>(Jieba_B)| *<Plug>(Jieba_preview_B)*
-<Plug>(Jieba_preview_ge)    |<Plug>(Jieba_ge)|*<Plug>(Jieba_preview_ge)*
-<Plug>(Jieba_preview_gE)    |<Plug>(Jieba_gE)|*<Plug>(Jieba_preview_gE)*
+<Plug>(Jieba_preview_w)      |<Plug>(Jieba_w)|  *<Plug>(Jieba_preview_w)*
+<Plug>(Jieba_preview_W)      |<Plug>(Jieba_W)|  *<Plug>(Jieba_preview_W)*
+<Plug>(Jieba_preview_e)      |<Plug>(Jieba_e)|  *<Plug>(Jieba_preview_e)*
+<Plug>(Jieba_preview_E)      |<Plug>(Jieba_E)|  *<Plug>(Jieba_preview_E)*
+<Plug>(Jieba_preview_b)      |<Plug>(Jieba_b)|  *<Plug>(Jieba_preview_b)*
+<Plug>(Jieba_preview_B)      |<Plug>(Jieba_B)|  *<Plug>(Jieba_preview_B)*
+<Plug>(Jieba_preview_ge)     |<Plug>(Jieba_ge)| *<Plug>(Jieba_preview_ge)*
+<Plug>(Jieba_preview_gE)     |<Plug>(Jieba_gE)| *<Plug>(Jieba_preview_gE)*
 
 键位映射示例： >vim
 
@@ -200,6 +254,181 @@ jieba_vim#default_keymap()                        *jieba_vim#default_keymap()*
                            为 1 自动运行，也可手动调用。
 
 
+jieba_vim#cword([{word}])                                  *jieba_vim#cword()*
+                           返回当前光标下的 |jieba-word|；如果传入 0，则返回
+                           当前光标下的 |jieba-WORD|。如果当前光标下不存在
+                           |jieba-WORD|，返回空字符串。作用相当于 Vim 中的
+                           `expand("<cword>")` 或 `expand("<cWORD>")`。
+
+
+jieba_vim#ctoken([{word}])                                *jieba_vim#ctoken()*
+                           返回当前光标下的 token；如果传入 0，则返回以 WORD
+                           分词时当前光标下的 token。如果当前光标位于空行或
+                           一行中最后一个字符之后（见 'virtualedit'），返回空
+                           字符串。和 |jieba_vim#cword()| 的区别是，如果光标
+                           处于非 word 字符上，`cword()` 会返回光标后的第一个
+                           |jieba-word|，而 `ctoken()` 会返回光标下的 token，
+                           无论其是否为 word。
+
+
+MODEL API                                              *jieba-model-functions*
+
+以下为模型 API。如果对现有 mapping 实现不满意，可以通过查询对应模型，实现符合
+自己需求的键位映射。
+
+                                                   *jieba_vim#model#preview()*
+jieba_vim#model#preview({motion}, {curpos}, {limit})
+
+    返回一个列表，其中每一个元素为 [lnum, col] 对，表示 |nmap| 下 {motion} 的
+    目标位置，列表的长度由 {limit} 的值决定。
+
+    函数参数为：
+        a:motion  包含对应 |motion| 键位的字符串。支持以下字符串：
+                  `"w"`、`"W"`、`"b"`、`"B"`、`"e"`、`"E"`、`"ge"`、`"gE"`。
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]。
+        a:limit   一个非负整数，含义见 |g:jieba_vim_preview_limits|。
+
+    调用示例：  >vim
+
+        let result_dict = jieba_vim#model#preview("w", getcurpos(), 0)
+<
+
+                                                      *jieba_vim#model#nmap()*
+jieba_vim#model#nmap({motion}, {curpos}, {count})
+
+    返回一个字典，包含以下键值对：
+        cursor            目标位置列表，列表元素为 [bufnum, lnum, col, off]。
+        prevent_change    如果 |nmap| 失败，该值为真。
+
+    函数参数为：
+        a:motion  包含对应 |motion| 键位的字符串。支持以下字符串：
+                  `"w"`、`"W"`、`"b"`、`"B"`、`"e"`、`"E"`、`"ge"`、`"gE"`。
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                  其中 `bufnum` 应为 0。
+        a:count   |motion| 计数，应为非负整数。若为 0，其效果等价于 1。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#nmap("w", getcurpos(), v:count)
+<
+
+                                                      *jieba_vim#model#xmap()*
+jieba_vim#model#xmap({visualmode}, {motion}, {vbegin}, {vend}, {count})
+
+    返回一个字典，包含以下键值对：
+        visualmode        目标 VISUAL 模式。其为 `"v"` 时表示应按字符选中
+                          选区；为 `"V"` 时表示应按行选中；为 `"\<C-v>"` 时
+                          表示应按 block 选中。通常与 `a:visualmode` 相同。
+        langle            目标选区的开始位置，值为 [bufnum, lnum, col, off]。
+        rangle            目标选区的结束位置，值为 [bufnum, lnum, col, off]。
+        prevent_change    如果 `xmap` 失败，该值为真。
+
+    函数参数为：
+        a:visualmode  当前 VISUAL 模式。
+        a:motion      包含对应 |motion| 键位的字符串。支持以下字符串：
+                      `"w"`、`"W"`、`"b"`、`"B"`、`"e"`、`"E"`、`"ge"`、
+                      `"gE"`、`"iw"`、`"iW"`、`"aw"`、`"aW"`。
+        a:vbegin      当前选区的开始位置，格式为 [bufnum, lnum, col, off]，
+                      其中 `bufnum` 应为 0。
+        a:vend        当前选区的结束位置，格式为 [bufnum, lnum, col, off]，
+                      其中 `bufnum` 应为 0。
+        a:count       |motion| 计数，应为非负整数。若为 0，其效果等价于 1。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#xmap(
+            \ visualmode(), "w", getpos("'<"), getpos("'>"), v:count)
+<
+
+                                                      *jieba_vim#model#omap()*
+jieba_vim#model#omap({motion}, {curpos}, {count}, {operator})
+
+    返回一个字典，包含以下键值对：
+        cursor          目标光标位置，格式为 [bufnum, lnum, col, off]。
+        langle          操作开始位置，格式为 [bufnum, lnum, col, off]。
+        rangle          操作结束位置，格式为 [bufnum, lnum, col, off]。
+        visualmode      若为 `"V"`，则表示目标操作为行操作；否则，若为 `"v"`，
+                        则表示目标操作为字符操作。
+        selection       若为 `"exclusive"` 且目标操作为字符操作，则表示目标
+                        操作同时为 |exclusive|；否则，若为 `"inclusive"` 且目标
+                        操作为字符操作，则表示目标操作同时为 |inclusive|。
+        prevent_change  如果 `omap` 失败，该值为真。
+
+    函数参数为：
+        a:motion    包含对应 |motion| 键位的字符串。支持以下字符串：
+                    `"w"`、`"W"`、`"b"`、`"B"`、`"e"`、`"E"`、`"ge"`、`"gE"`、
+                    `"iw"`、`"iW"`、`"aw"`、`"aW"`。
+        a:curpos    光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                    其中 `bufnum` 应为 0。
+        a:count     |motion| 计数，应为非负整数。若为 0，其效果等价于 1。
+        a:operator  包含操作符的字符串。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#omap(
+            \ "w", getcurpos(), v:count, v:operator)
+<
+
+                                                      *jieba_vim#model#imap()*
+jieba_vim#model#imap({motion}, {curpos})
+
+    返回一个字典，包含以下键值对：
+        cursor  目标光标位置，格式为 [bufnum, lnum, col, off]。
+
+    函数参数为：
+        a:motion  包含对应 |motion| 键位的字符串。支持以下字符串：
+                  `"\<C-w>"`、`"\<C-Left>"`、`"\<S-Left>"`、`"\<C-Right>"`、
+                  `"\<S-Right>"`。
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                  其中 `bufnum` 应为 0。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#imap("\<C-w>", getcurpos())
+<
+
+                                                     *jieba_vim#model#cword()*
+jieba_vim#model#cword({curpos}, {word})
+
+    返回一个字典，包含以下键值对：
+        first_char      光标下 |cword| 第一个字符的列数。
+        last_char       光标下 |cword| 最后一个字符的列数。
+        last_char1      光标下 |cword| 最后一个字符的列数 + 最后一个字符的
+                        编码（目前固定为 UTF-8）长度。
+        prevent_change  如果光标下没有 |cword|，该值为真。
+
+    函数参数为：
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                  其中 `bufnum` 应为 0。
+        a:word    若为 1，则查询光标下的 |cword|；若为 0，则查询光标下的
+                  |cWORD|。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#cword(getcurpos(), 1)
+<
+
+                                                    *jieba_vim#model#ctoken()*
+jieba_vim#model#ctoken({curpos}, {word})
+
+    返回一个字典，包含以下键值对：
+        first_char      光标下 token 第一个字符的列数。
+        last_char       光标下 token 最后一个字符的列数。
+        last_char1      光标下 token 最后一个字符的列数 + 最后一个字符的
+                        编码（目前固定为 UTF-8）长度。
+        prevent_change  如果光标下没有 token，该值为真。
+
+    函数参数为：
+        a:curpos  光标位置列表，格式为 [bufnum, lnum, col, off, curswant]，
+                  其中 `bufnum` 应为 0。
+        a:word    若为 1，则查询光标下的 token；若为 0，则查询光标下的
+                  TOKEN。
+
+    调用示例：   >vim
+
+        let result_dict = jieba_vim#model#ctoken(getcurpos(), 1)
+<
+
 ==============================================================================
 GLOBAL INDICATORS                                    *jieba-global-indicators*
 
@@ -220,7 +449,7 @@ GLOBAL INDICATORS                                    *jieba-global-indicators*
 ==============================================================================
 OPTIONAL DEPENDENCY                                     *jieba-opt-dependency*
 
-如果用户安装了 `tpope/vim-repeat` (https://github.com/tpope/vim-repeat)，可
+如果用户安装了 `tpope/vim-repeat` ( https://github.com/tpope/vim-repeat )，可
 使用 |.| 重复上一次修改。例如 `dw.` 相当于 `dwdw`。
 
 

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+{% if theme %}
+<html lang="zh-Hans" class="{{theme}}">
+{% else %}
+<html lang="zh-Hans">
+{% endif %}
+<head>
+<meta charset="UTF-8">
+{% if theme %}
+<meta name="color-scheme" content="only {{theme}}">
+{% else %}
+<meta name="color-scheme" content="light dark">
+{% endif %}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="{{project.name}} faq page, always up-to-date">
+<title>{{project.name}}: {{filename}}</title>
+
+<link rel="stylesheet" href="{{'vimhelp.css'|static_path}}">
+<noscript><link rel="stylesheet" href="{{'noscript.css'|static_path}}"></noscript>
+<script defer src="{{'vimhelp.js'|static_path}}"></script>
+</head>
+
+<body>
+<p class="site-note">This is an HTML version of the <a href="{{project.url}}" target="_blank" rel="noopener noreferrer">{{project.name}}</a> faq{% if version %}, current as of {{project.name}} <a href="{{project.url}}/commit/{{version.rev}}">{{version.short_rev}}</a>{% endif %}.</p>
+
+{% set sitenavi %}
+<div class="ql">
+快捷链接:
+<a href="index.html">中文文档</a>
+&middot; <a href="faq.html">常见问题</a>
+</div>
+{% endset %}
+
+<div class="bar">
+  {{sitenavi}}
+</div>
+
+<main>
+<div class="faq-content">{{content|safe}}</div>
+</main>
+<div class="bar">{{sitenavi}}</div>
+{% include "footer.html" %}
+</body>
+
+</html>

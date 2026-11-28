@@ -1,5 +1,43 @@
 # Changelog
 
+## v2.4.0 - 2026-11-28
+
+Features:
+
+- Add `jieba_vim#cword()` and `jieba_vim#ctoken()` APIs to return the word/token under the cursor ([#169], [#177]).
+- Add `c_<C-R>_<C-W>` and `c_<C-R>_<C-A>` mappings for cmdline editing ([#178]).
+
+Bug fixes:
+
+- Fix CJK Ideographs (and Hiragana, etc.) not being recognized as words when `@` is not included in `'iskeyword'` ([#175]).
+- Avoid clobbering register 0 during playback when no explicit register is specified ([#179], [#180]).
+
+Dev:
+
+- Bump core dependency [`jieba-rs`][jieba-rs] to 0.11, halving warmup wall time to 0.04 seconds ([#170]).
+
+Documentation:
+
+- Remove benchmark figures to avoid inflating the repository ([#173]).
+- Add model APIs to Vim help text ([#171], [#181]).
+
+Thanks:
+
+- [@minortex] ([#180])
+
+[#170]: https://github.com/kkew3/jieba.vim/pull/170
+[#173]: https://github.com/kkew3/jieba.vim/pull/173
+[#175]: https://github.com/kkew3/jieba.vim/pull/175
+[#169]: https://github.com/kkew3/jieba.vim/issues/169
+[#177]: https://github.com/kkew3/jieba.vim/pull/177
+[#178]: https://github.com/kkew3/jieba.vim/pull/178
+[#179]: https://github.com/kkew3/jieba.vim/issues/179
+[#180]: https://github.com/kkew3/jieba.vim/pull/180
+[#171]: https://github.com/kkew3/jieba.vim/issues/171
+[#181]: https://github.com/kkew3/jieba.vim/pull/181
+[@minortex]: https://github.com/minortex
+
+
 ## v2.3.1 - 2026-10-02
 
 This release patches [v2.3.0].

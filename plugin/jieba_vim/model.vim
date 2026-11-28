@@ -86,3 +86,25 @@ function! jieba_vim#model#imap(...)
             \ "jieba_vim.navigation.imap(vim.current.buffer, *vim.eval('a:000'))")
     endif
 endfunction
+
+function! jieba_vim#model#cword(...)
+    call jieba_vim#loader#ensure_loaded()
+
+    if has("nvim")
+        return luaeval("jieba_vim:cword(jieba_vim.buffer, unpack(_A))", a:000)
+    else
+        return py3eval(
+            \ "jieba_vim.navigation.cword(vim.current.buffer, *vim.eval('a:000'))")
+    endif
+endfunction
+
+function! jieba_vim#model#ctoken(...)
+    call jieba_vim#loader#ensure_loaded()
+
+    if has("nvim")
+        return luaeval("jieba_vim:ctoken(jieba_vim.buffer, unpack(_A))", a:000)
+    else
+        return py3eval(
+            \ "jieba_vim.navigation.ctoken(vim.current.buffer, *vim.eval('a:000'))")
+    endif
+endfunction

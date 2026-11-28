@@ -316,7 +316,7 @@ jobs:
           - distr: nvim
             version: v0.10.2
             glue-lang: lua51
-            os: macos-14
+            os: macos-15
           - distr: nvim
             version: v0.11.5
             glue-lang: lua51
@@ -328,7 +328,7 @@ jobs:
           - distr: nvim
             version: v0.11.5
             glue-lang: lua51
-            os: macos-14
+            os: macos-15
           - distr: nvim
             version: v0.12.2
             glue-lang: lua51
@@ -340,7 +340,7 @@ jobs:
           - distr: nvim
             version: v0.12.2
             glue-lang: lua51
-            os: macos-14
+            os: macos-15
     env:
       # uv variables
       UV_PROJECT: ${{ github.workspace }}/test/jieba_test_metatest

@@ -55,11 +55,11 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         let mut motion_rangle = BackwardEndWord::new(false);
         let s = motion_rangle.map(&mut buffer, count, &mut orng.rangle)?;
         if s == MotionState::Success {
-            orng.exclusive_special(&mut buffer)?;
-            orng.d_special(&mut buffer)?;
+            orng.exclusive_special(&buffer)?;
+            orng.d_special(&buffer)?;
         }
         orng.cursor = orng.rangle;
-        orng.position_cursor(&mut buffer)?;
+        orng.position_cursor(&buffer)?;
         let OperatorRange {
             cursor,
             langle,

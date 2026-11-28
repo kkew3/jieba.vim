@@ -15,6 +15,7 @@
 //! Core infrastructure and low-level mechanics for motions.
 
 pub mod buffer;
+pub mod cword;
 pub mod failure;
 pub mod iter;
 pub mod motion;

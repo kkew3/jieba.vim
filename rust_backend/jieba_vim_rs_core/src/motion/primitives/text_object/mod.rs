@@ -45,7 +45,7 @@ use super::misc::{Dec, Decl, Incl};
 #[cfg(test)]
 macro_rules! atoken_vec {
     ($($start:literal..$end:literal as $ty:ident),*) => {
-        vec![$(Token::new($start, $start + 1, $end - 1, $end, TokenType::$ty)),*]
+        vec![$(Token::new($start, $start + 1, $end - 1, $end, TokenType::$ty, true)),*]
     };
 }
 

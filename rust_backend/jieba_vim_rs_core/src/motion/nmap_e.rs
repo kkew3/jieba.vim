@@ -49,7 +49,7 @@ impl<C: JiebaPlaceholder> WordMotion<C> {
         let mut buffer = ParsedBuffer::new(buffer, &self.tokenizer, word);
         let mut motion = EndWord::new(false, false);
         let s = motion.map(&mut buffer, count, &mut cursor)?;
-        cursor.adjust_cursor(&mut buffer)?;
+        cursor.adjust_cursor(&buffer)?;
         Ok(NmapOutput {
             cursor,
             prevent_change: s.into_prevent_change(),
